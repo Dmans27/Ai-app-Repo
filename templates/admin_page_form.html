@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if page %}Edit{% else %}New{% endif %} Page</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+  <div class="container" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <h1 style="margin:0;">{% if page %}Edit{% else %}New{% endif %} Page</h1>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn" href="/admin">← Back</a>
+        <a class="btn" href="/admin/listings">Listings</a>
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="divide" style="margin-top:14px; padding:14px; border:1px solid rgba(239,68,68,.4);">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    {% if page %}
+      <form id="ai-form"
+            method="post"
+            action="{{ url_for('admin_ai_generate', page_id=page.id) }}"
+            autocomplete="off"
+            style="margin: 12px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+
+        <input type="text" name="topic" id="ai-topic" autocomplete="off"
+               placeholder="Topic (optional)" style="width: 320px;">
+
+        <input type="text" name="audience" id="ai-audience" autocomplete="off"
+               placeholder="Audience (optional)" style="width: 320px;">
+
+        <input type="text" name="tone" id="ai-tone" autocomplete="off"
+               placeholder="Tone (optional)" style="width: 240px;">
+
+        <button id="ai-generate-btn" type="button">Generate content with AI</button>
+        <button type="button" id="refresh-sources-btn">Refresh sources</button>
+
+        <span id="ai-status" style="font-size:12px; opacity:.75;"></span>
+        <span id="sources-status" style="font-size:12px; opacity:.75;"></span>
+      </form>
+
+      <div id="sources-list" style="margin-top:12px;"></div>
+    {% else %}
+      <div class="divide" style="margin: 12px 0; padding: 12px; opacity: .85;">
+        Save this page first to enable AI generation.
+      </div>
+    {% endif %}
+
+    <!-- MAIN PAGE FORM -->
+    <form class="divide" method="post" style="margin-top:14px; padding:14px; display:grid; gap:12px;">
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Slug (URL)</div>
+        <input autocomplete="off" name="slug" required
+               value="{{ page.slug if page else '' }}"
+               placeholder="example: boa-cover-letter"
+               style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit;">
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Title</div>
+        <input autocomplete="off" name="title" required
+               value="{{ page.title if page else '' }}"
+               placeholder="Page title"
+               style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit;">
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Description</div>
+        <textarea name="description" rows="3"
+                  style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit;">{{ page.description if page else '' }}</textarea>
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Card Image</div>
+
+        <input
+          type="text"
+          id="card_image_url"
+          name="card_image_url"
+          value="{{ page.card_image_url if page else '' }}"
+          placeholder="/static/uploads/example.jpg"
+          style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit; margin-bottom:10px;"
+        >
+
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <input type="file" id="imageUpload" accept="image/*">
+          <button type="button" class="btn" onclick="uploadImage()">Upload Image</button>
+        </div>
+
+        <div style="font-size:12px; opacity:.75; margin-top:8px;">
+          Upload an image, then click Save to keep it on the page record.
+        </div>
+      </label>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Template</div>
+          <input autocomplete="off" name="template"
+                 value="{{ page.template if page else 'landing_default' }}"
+                 style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit;">
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Status</div>
+          <select name="status"
+                  style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit;">
+            <option value="draft" {% if page and page.status=='draft' %}selected{% endif %}>Draft</option>
+            <option value="published" {% if page and page.status=='published' %}selected{% endif %}>Published</option>
+          </select>
+        </label>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+        <button class="btn" type="submit">Save</button>
+      </div>
+    </form>
+
+    <hr style="margin:24px 0; opacity:.25;">
+
+    <h2 style="margin:0 0 10px 0;">Paragraph Sections</h2>
+
+    {% if page %}
+
+      <h2>Hero Header</h2>
+
+      <form method="post"
+            action="/admin/pages/{{ page.id }}/hero/update"
+            class="divide"
+            style="padding:14px; display:grid; gap:12px;">
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">
+            Tag title (small heading)
+          </div>
+          <input autocomplete="off"
+            name="tag_title"
+            value="{{ page.tag_title or '' }}"
+            placeholder="Romance"
+            style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">
+            Hero H1 title
+          </div>
+          <input autocomplete="off"
+            name="hero_title"
+            value="{{ page.hero_title or '' }}"
+            placeholder="Major World Cities Map with Multiple Routes"
+            style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn" type="submit">
+            Save Hero Header
+          </button>
+        </div>
+      </form>
+
+      <!-- Add new section -->
+      <h2 style="margin:20px 0 10px 0;">Sections</h2>
+
+      <form method="POST"
+            enctype="multipart/form-data"
+            action="{{ url_for('admin_add_section', page_id=page.id) }}"
+            class="divide"
+            style="padding:14px; display:grid; gap:12px;">
+
+        <input type="hidden" id="submit_kind" name="submit_kind" value="section">
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Section type</div>
+          <select name="section_type"
+                  style="width:100%; padding:10px 12px; border-radius:10px;">
+            <option value="paragraph">Paragraph</option>
+            <option value="image">Image</option>
+            <option value="html">Custom HTML</option>
+          </select>
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Heading (optional)</div>
+          <input type="text" name="heading" autocomplete="off"
+                 style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Paragraph text</div>
+          <textarea name="body" rows="4"
+                    style="width:100%; padding:10px 12px; border-radius:10px;"></textarea>
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Custom HTML</div>
+          <textarea name="custom_html" rows="6"
+                    style="width:100%; padding:10px 12px; border-radius:10px;"></textarea>
+        </label>
+
+        <hr style="opacity:.25;">
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Upload image</div>
+          <input type="file" name="media_file" accept="image/*">
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Alt text</div>
+          <input name="media_alt" autocomplete="off"
+                 style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Caption</div>
+          <input name="media_caption" autocomplete="off"
+                 style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+          <button class="btn" type="submit"
+                  onclick="document.getElementById('submit_kind').value='section'">
+            Save / Apply Section
+          </button>
+
+          <button class="btn" type="submit"
+                  onclick="document.getElementById('submit_kind').value='image_only'">
+            Save / Apply Photo
+          </button>
+        </div>
+      </form>
+
+      <!-- Existing sections -->
+      <div style="margin-top:14px; display:grid; gap:12px;">
+        {% for s in sections %}
+          <div class="divide" style="padding:14px;">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+              <div style="font-weight:700;">
+                Section #{{ loop.index }} <span style="opacity:.7;">({{ s.section_type }})</span>
+              </div>
+
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <form method="post" action="/admin/pages/{{ page.id }}/sections/{{ s.id }}/move">
+                  <input autocomplete="off" type="hidden" name="direction" value="up">
+                  <button class="btn" type="submit">↑</button>
+                </form>
+
+                <form method="post" action="/admin/pages/{{ page.id }}/sections/{{ s.id }}/move">
+                  <input autocomplete="off" type="hidden" name="direction" value="down">
+                  <button class="btn" type="submit">↓</button>
+                </form>
+
+                <form method="post" action="/admin/pages/{{ page.id }}/sections/{{ s.id }}/delete"
+                      onsubmit="return confirm('Delete this section?');">
+                  <button class="btn" type="submit">Delete</button>
+                </form>
+              </div>
+            </div>
+
+            <form method="post" action="/admin/pages/{{ page.id }}/sections/{{ s.id }}/update"
+                  style="margin-top:10px; display:grid; gap:10px;">
+              <input autocomplete="off" type="hidden" name="section_type" value="{{ s.section_type }}">
+
+              <label>
+                <div style="opacity:.85; margin-bottom:6px;">Heading</div>
+                <input autocomplete="off" name="heading" value="{{ s.heading or '' }}"
+                       style="width:100%; padding:10px 12px; border-radius:10px;">
+              </label>
+
+              <label>
+                <div style="opacity:.85; margin-bottom:6px;">Body</div>
+                <textarea name="body" rows="4" required
+                          style="width:100%; padding:10px 12px; border-radius:10px;">{{ s.body }}</textarea>
+              </label>
+
+              <div style="display:flex; justify-content:flex-end;">
+                <button class="btn" type="submit">Save / Apply (adds section)</button>
+              </div>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+
+    {% else %}
+
+      <hr style="margin:24px 0; opacity:.25;">
+
+      <div class="divide" style="padding:14px; opacity:.85;">
+        Save this page first. After saving, you can:
+        <ul>
+          <li>Add sections</li>
+          <li>Update hero header</li>
+          <li>Generate content with AI</li>
+        </ul>
+      </div>
+
+    {% endif %}
+  </div>
+
+  {% if page %}
+  <script>
+    window.PAGE_ID = {{ page.id|tojson }};
+  </script>
+  {% endif %}
+
+  <script>
+    async function uploadImage() {
+      const fileInput = document.getElementById("imageUpload");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Select an image first");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("/admin/upload-image", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        document.getElementById("card_image_url").value = data.url;
+        alert("Image uploaded successfully. Now click Save.");
+      } else {
+        alert("Upload failed");
+        console.log(data);
+      }
+    }
+  </script>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

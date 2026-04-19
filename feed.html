@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Feed</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="app-body page-feed">
+  <main style="max-width: 720px; margin: 0 auto; padding: 24px;">
+    <h1>Community Feed</h1>
+
+    {% if posts %}
+      <div style="display:grid; gap:16px; margin-top:20px;">
+        {% for post in posts %}
+          <article style="padding:16px; border:1px solid #ddd; border-radius:16px;">
+            <div style="font-weight:700; margin-bottom:8px;">
+              {{ post.user_name }}
+            </div>
+
+            {% if post.body %}
+              <p style="margin:0 0 12px;">
+                {{ post.body }}
+              </p>
+            {% endif %}
+
+            {% if post.image_url %}
+              <img
+                src="{{ post.image_url }}"
+                alt="Post image"
+                style="width:100%; border-radius:12px; margin-bottom:12px;"
+              >
+            {% endif %}
+
+            {% if post.listing_name %}
+              <div style="font-size:0.95rem; opacity:0.8; margin-bottom:10px;">
+                Shared place: {{ post.listing_name }}
+              </div>
+            {% endif %}
+
+            <div style="font-size:0.9rem; opacity:0.7;">
+              ❤️ {{ post.like_count }} · 💬 {{ post.comment_count }}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="margin-top:20px;">No posts yet.</p>
+    {% endif %}
+  </main>
+</body>
+</html>

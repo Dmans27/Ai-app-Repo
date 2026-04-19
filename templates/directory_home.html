@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Local AI</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#111111">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Local AI">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+</head>
+
+<body class="app-body">
+  <div id="default-saved-list-id" data-list-id="{{ default_saved_list_id or '' }}" hidden></div>
+
+  <div class="mobile-app-shell">
+    <!-- Drawer -->
+    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+      <div class="mobile-drawer__header">
+        <div class="mobile-drawer__title">Local AI</div>
+        <button
+          class="mobile-drawer__close"
+          id="app-sidebar-close"
+          type="button"
+          aria-label="Close menu"
+        >✕</button>
+      </div>
+
+      <button
+        class="mobile-drawer__new-search"
+        type="button"
+        onclick="window.location.href='/'"
+      >
+        + New search
+      </button>
+
+      <nav class="mobile-drawer__nav">
+        <a href="/" class="mobile-drawer__link is-active">AI Search</a>
+        <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
+        <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
+        <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
+        <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
+        <a href="/discover" class="mobile-drawer__link">Discover</a>
+        <a href="/admin" class="mobile-drawer__link">Admin</a>
+      </nav>
+
+      <div class="mobile-drawer__section-label">Recent searches</div>
+
+      <div class="mobile-drawer__footer">
+        <a href="/" class="mobile-drawer__footer-link">Home</a>
+        <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
+
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link">Account</a>
+          <form method="post" action="{{ url_for('logout') }}">
+            <button type="submit" class="mobile-drawer__footer-button">Log out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
+          <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+
+    <!-- Main screen -->
+    <main class="mobile-screen">
+      <!-- Header -->
+      <header class="mobile-app-header">
+        <button
+          class="mobile-app-header__icon"
+          id="app-sidebar-toggle"
+          type="button"
+          aria-label="Open menu"
+        >☰</button>
+
+        <div class="mobile-app-header__center">
+          <div class="mobile-app-header__title">Local AI</div>
+          <div class="mobile-app-header__subtitle">Recommendations near you</div>
+        </div>
+
+        {% if current_user.is_authenticated %}
+          <a
+            href="{{ url_for('account') }}"
+            class="mobile-app-header__icon mobile-app-header__icon--link"
+            aria-label="Account"
+          >👤</a>
+        {% else %}
+          <a
+            href="{{ url_for('login') }}"
+            class="mobile-app-header__icon mobile-app-header__icon--link"
+            aria-label="Log in"
+          >👤</a>
+        {% endif %}
+      </header>
+
+      <!-- Content -->
+      <section class="mobile-content">
+        <div class="chat-page is-empty" id="chat-page">
+          <section class="chat-welcome" id="chat-welcome">
+            <div class="chat-welcome__inner">
+              <p class="chat-welcome__eyebrow">Good afternoon 👋</p>
+              <h1 class="chat-welcome__title">Where should we go today?</h1>
+              <p class="chat-welcome__subtitle">
+                Find coffee, bars, dinner, shopping, and more.
+              </p>
+
+              <div class="chat-suggestion-chips">
+                <button type="button" class="chat-suggestion-chip" data-suggestion="Best coffee nearby">
+                  ☕ Best coffee nearby
+                </button>
+                <button type="button" class="chat-suggestion-chip" data-suggestion="Rooftop bars tonight">
+                  🍸 Rooftop bars tonight
+                </button>
+                <button type="button" class="chat-suggestion-chip" data-suggestion="Casual dinner near me">
+                  🍔 Casual dinner
+                </button>
+                <button type="button" class="chat-suggestion-chip" data-suggestion="Quiet cafe to work from">
+                  💻 Work-friendly cafe
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="chat-thread" id="chat-thread">
+            <div class="chat-thread__inner" id="chat-thread-inner">
+              <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="ai-chat-message ai-chat-message--assistant">
+
+                </div>
+              </div>
+
+              <div id="ai-results" class="ai-results-thread"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Composer -->
+      <section class="mobile-composer-wrap">
+        <div class="chat-composer is-collapsed">
+          <div class="chat-composer__inner">
+            <div class="ai-input-bar">
+              <textarea
+                id="ai-chat-input"
+                class="ai-input-bar__input"
+                placeholder="Where should I go?"
+                rows="1"
+              ></textarea>
+
+              <button
+                id="ai-chat-submit"
+                class="ai-input-bar__send"
+                type="button"
+                aria-label="Send"
+              >➤</button>
+            </div>
+
+            <div id="ai-chat-status" class="ai-chat-status"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom nav -->
+      <nav class="mobile-tabbar">
+        <a href="/" class="mobile-tabbar__item is-active">
+          <span class="mobile-tabbar__icon">🏠</span>
+          <span class="mobile-tabbar__label">Home</span>
+        </a>
+
+        <a href="/discover" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🗺️</span>
+          <span class="mobile-tabbar__label">Discover</span>
+        </a>
+
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🔎</span>
+          <span class="mobile-tabbar__label">Search</span>
+        </a>
+
+        <a href="{{ url_for('feed') }}" class="mobile-tabbar__item">
+  <span class="mobile-tabbar__icon">📰</span>
+  <span class="mobile-tabbar__label">Feed</span>
+</a>
+
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">👤</span>
+          <span class="mobile-tabbar__label">Account</span>
+        </a>
+      </nav>
+    </main>
+  </div>
+
+  <!-- Fullscreen map modal -->
+  <div id="fullscreen-map-modal" class="fullscreen-map-modal" hidden>
+    <div class="fullscreen-map-modal__header">
+      <button
+        type="button"
+        id="fullscreen-map-close"
+        class="fullscreen-map-modal__close"
+        aria-label="Close map"
+      >✕</button>
+    </div>
+
+    <div id="fullscreen-map-canvas" class="fullscreen-map-modal__canvas"></div>
+  </div>
+
+
+
+  <script>
+    function setComposerExpanded(expanded) {
+      const composer = document.querySelector(".chat-composer");
+      if (!composer) return;
+      composer.classList.toggle("is-expanded", expanded);
+      composer.classList.toggle("is-collapsed", !expanded);
+    }
+
+    function autoResizeTextarea(textarea) {
+      if (!textarea) return;
+      textarea.style.height = "auto";
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+    }
+
+    async function getCurrentPositionForAi() {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve({ lat: null, lng: null });
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          () => resolve({ lat: null, lng: null }),
+          {
+            enableHighAccuracy: true,
+            timeout: 8000
+          }
+        );
+      });
+    }
+
+    function createLoadingBubble() {
+      return `
+        <div class="ai-chat-message ai-chat-message--assistant ai-chat-message--loading" id="ai-loading-message">
+          <div class="ai-chat-bubble ai-chat-bubble--loading">
+            <span class="ai-loading-text">Searching nearby places...</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function removeLoadingBubble() {
+      const loadingEl = document.getElementById("ai-loading-message");
+      if (loadingEl) loadingEl.remove();
+    }
+
+    function typeText(element, text, baseSpeed = 18) {
+      return new Promise((resolve) => {
+        if (!element) {
+          resolve();
+          return;
+        }
+
+        element.textContent = "";
+        let index = 0;
+
+        function getDelay(char) {
+          if (char === "." || char === "!" || char === "?") return 120;
+          if (char === ",") return 60;
+          return baseSpeed;
+        }
+
+        function typeNext() {
+          if (index < text.length) {
+            const char = text.charAt(index);
+            element.textContent += char;
+            index += 1;
+            setTimeout(typeNext, getDelay(char));
+          } else {
+            resolve();
+          }
+        }
+
+        typeNext();
+      });
+    }
+
+function buildQuickPickList(items) {
+  if (!items.length) return "";
+
+  return `
+    <section class="search-quick-picks search-quick-picks--editorial">
+      <h2 class="search-quick-picks__title">Top recommendations</h2>
+
+      <div class="search-quick-picks__editorial-list">
+        ${items.slice(0, 5).map((item, index) => {
+          const name = item.name || "Untitled";
+          const category = item.category ? String(item.category).replaceAll("_", " ") : "";
+          const address = item.address || "";
+          const website = item.website || "";
+          const photo =
+            item.photo_url ||
+            (item.photo_urls && item.photo_urls[0]) ||
+            item.image_url ||
+            "/static/img/default-business.jpg";
+
+          const ratingHtml = item.rating
+            ? `<span class="search-quick-picks__rating">⭐ ${Number(item.rating).toFixed(1)}</span>`
+            : "";
+
+          const websiteIcon = website
+            ? `<a
+                 href="${website}"
+                 target="_blank"
+                 rel="noopener"
+                 class="search-quick-picks__icon-btn"
+                 aria-label="Visit website"
+                 title="Visit website"
+               >🌐</a>`
+            : "";
+
+          const directionsIcon =
+            item.latitude != null && item.longitude != null
+              ? `<a
+                   href="https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}"
+                   target="_blank"
+                   rel="noopener"
+                   class="search-quick-picks__icon-btn"
+                   aria-label="Directions"
+                   title="Directions"
+                 >📍</a>`
+              : address
+                ? `<a
+                     href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}"
+                     target="_blank"
+                     rel="noopener"
+                     class="search-quick-picks__icon-btn"
+                     aria-label="Directions"
+                     title="Directions"
+                   >📍</a>`
+                : "";
+
+          const saveIcon = `
+            <button
+              type="button"
+              class="search-quick-picks__icon-btn save-place-btn"
+              aria-label="Save place"
+              title="Save place"
+              data-place-name="${name}"
+              data-place-address="${address}"
+              data-place-category="${category}"
+              data-place-website="${website}"
+              data-place-photo="${photo}"
+              data-place-lat="${item.latitude || ""}"
+              data-place-lng="${item.longitude || ""}"
+              data-place-rating="${item.rating || ""}"
+            >📌</button>
+          `;
+
+          return `
+            <article class="search-quick-picks__entry search-quick-picks__entry--with-photo">
+              <div class="search-quick-picks__entry-main">
+                <h3 class="search-quick-picks__entry-title">${index + 1}. ${name}</h3>
+
+                <div class="search-quick-picks__entry-meta">
+                  ${ratingHtml}
+                  ${websiteIcon}
+                  ${directionsIcon}
+                  ${saveIcon}
+                </div>
+
+                <p class="search-quick-picks__entry-text">
+                  ${category}${category && address ? ", " : ""}${address}
+                </p>
+              </div>
+
+              <div class="search-quick-picks__entry-photo-wrap">
+                <img
+                  src="${photo}"
+                  alt="${name}"
+                  class="search-quick-picks__entry-photo"
+                  loading="lazy"
+                >
+              </div>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `;
+}
+
+
+function buildResultRow(item, isInternal) {
+  const title = item.name || "Untitled";
+  const category = item.category ? item.category.replaceAll("_", " ") : "";
+  const address = item.address || "";
+  const website = item.website || "";
+  const rating = item.rating ? `⭐ ${Number(item.rating).toFixed(1)}` : "";
+
+  const photo =
+    item.photo_url ||
+    item.image_url ||
+    item.thumbnail ||
+    "/static/img/placeholder-business.jpg";
+
+  const directionsLink =
+    item.latitude && item.longitude
+      ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
+      : "";
+
+  return `
+    <article class="chat-result-card">
+      <div class="chat-result-left">
+
+        <h3 class="chat-result-title">${title}</h3>
+
+        <div class="chat-result-meta">
+          ${rating ? `<span>${rating}</span>` : ""}
+          ${website ? `<a href="${website}" target="_blank">🌐</a>` : ""}
+          ${directionsLink ? `<a href="${directionsLink}" target="_blank">📍</a>` : ""}
+          <button class="save-place-btn">📌</button>
+        </div>
+
+        <p class="chat-result-text">
+          ${category}${category && address ? ", " : ""}${address}
+        </p>
+
+      </div>
+
+      <div class="chat-result-right">
+        <img src="${photo}" alt="${title}" loading="lazy">
+      </div>
+    </article>
+  `;
+}
+
+  function buildSearchMapData(items) {
+  return items
+    .filter((item) => item.latitude != null && item.longitude != null)
+    .map((item) => ({
+      name: item.name || "",
+      category: item.category || "",
+      address: item.address || "",
+      website: item.website || "",
+      lat: Number(item.latitude),
+      lng: Number(item.longitude),
+      source: item.slug ? "internal" : "external"
+    }));
+}
+
+function wireSearchViewToggle() {
+  const buttons = document.querySelectorAll("[data-search-view]");
+  const listView = document.getElementById("search-list-view");
+  const mapView = document.getElementById("search-map-view");
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", function () {
+      const view = button.getAttribute("data-search-view");
+
+      console.log("[MAP_TOGGLE_CLICK]", view);
+
+      buttons.forEach((btn) => btn.classList.remove("is-active"));
+      button.classList.add("is-active");
+
+      if (view === "list") {
+        listView?.classList.add("is-active");
+        mapView?.classList.remove("is-active");
+      } else {
+        if (window.innerWidth <= 768) {
+          openFullscreenMap();
+          return;
+        }
+
+        listView?.classList.remove("is-active");
+        mapView?.classList.add("is-active");
+
+        if (window.searchResultsMap && typeof google !== "undefined" && google.maps) {
+          google.maps.event.trigger(window.searchResultsMap, "resize");
+        }
+      }
+    });
+  });
+}
+
+function initSearchResultsMap() {
+  const mapEl = document.getElementById("search-results-map");
+
+  if (!mapEl || typeof google === "undefined" || !google.maps) return;
+
+  const places = window._searchResultsMapData || [];
+
+  const defaultCenter = places.length
+    ? { lat: places[0].lat, lng: places[0].lng }
+    : { lat: 37.7749, lng: -122.4194 };
+
+  const map = new google.maps.Map(mapEl, {
+    zoom: 12,
+    center: defaultCenter,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false
+  });
+
+  window.searchResultsMap = map;
+
+  const bounds = new google.maps.LatLngBounds();
+  let markerCount = 0;
+
+  places.forEach((place) => {
+    if (place.lat == null || place.lng == null) return;
+
+const marker = new google.maps.Marker({
+  position: { lat: Number(place.lat), lng: Number(place.lng) },
+  map,
+  title: place.name || "",
+  icon: getMarkerIcon(place)
+});
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="max-width:220px;">
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
+            ${place.name || ""}
+          </div>
+          <div style="font-size:13px;color:#666;margin-bottom:8px;">
+            ${place.category || ""}
+          </div>
+          <div style="font-size:13px;color:#444;margin-bottom:8px;">
+            ${place.address || ""}
+          </div>
+          ${place.website ? `<a href="${place.website}" target="_blank" rel="noopener">Visit website</a>` : ""}
+        </div>
+      `
+    });
+
+    marker.addListener("click", () => {
+      infoWindow.open(map, marker);
+    });
+
+    bounds.extend(marker.getPosition());
+    markerCount += 1;
+  });
+
+  if (markerCount > 0) {
+    map.fitBounds(bounds);
+
+    google.maps.event.addListenerOnce(map, "bounds_changed", function () {
+      if (this.getZoom() > 14) {
+        this.setZoom(14);
+      }
+    });
+  }
+}
+    async function savePlaceFromButton(button) {
+      const listIdEl = document.getElementById("default-saved-list-id");
+      const listId = listIdEl ? listIdEl.dataset.listId : "";
+
+      if (!listId) {
+        alert("Create a saved list in your account first.");
+        return;
+      }
+
+      const payload = new URLSearchParams();
+      payload.append("name", button.dataset.placeName || "");
+      payload.append("address", button.dataset.placeAddress || "");
+      payload.append("website", button.dataset.placeWebsite || "");
+      payload.append("category", button.dataset.placeCategory || "");
+      payload.append("latitude", button.dataset.placeLat || "");
+      payload.append("longitude", button.dataset.placeLng || "");
+      payload.append("notes", "");
+      payload.append("photo_url", button.dataset.placePhoto || "");
+      payload.append("place_id", "");
+      payload.append("listing_id", "");
+
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "✓";
+
+      try {
+        const response = await fetch(`/lists/${listId}/save-place`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+          },
+          body: payload.toString()
+        });
+
+        if (!response.ok) {
+          throw new Error("Save failed");
+        }
+
+        button.classList.add("is-saved");
+      } catch (error) {
+        console.error("Save place error:", error);
+        button.disabled = false;
+        button.textContent = originalText;
+        alert("Could not save this place.");
+      }
+    }
+
+    function wireSavePlaceButtons() {
+      document.querySelectorAll(".save-place-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+          savePlaceFromButton(button);
+        });
+      });
+    }
+
+
+
+
+function openFullscreenMap() {
+  const modal = document.getElementById("fullscreen-map-modal");
+  const canvas = document.getElementById("fullscreen-map-canvas");
+
+  console.log("[OPEN_FULLSCREEN_MAP]");
+  console.log("[MAP_DATA]", window._searchResultsMapData);
+
+  if (!modal || !canvas) {
+    console.log("[MAP_FAIL] modal or canvas missing");
+    return;
+  }
+
+  if (typeof google === "undefined" || !google.maps) {
+    console.log("[MAP_FAIL] google maps not loaded");
+    return;
+  }
+
+  const places = window._searchResultsMapData || [];
+
+  if (!places.length) {
+    console.log("[MAP_FAIL] no places in _searchResultsMapData");
+    return;
+  }
+
+  modal.hidden = false;
+  document.body.classList.add("map-modal-open");
+
+  const defaultCenter = {
+    lat: Number(places[0].lat),
+    lng: Number(places[0].lng)
+  };
+
+  const map = new google.maps.Map(canvas, {
+    zoom: 12,
+    center: defaultCenter,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false
+  });
+
+  window.fullscreenResultsMap = map;
+
+  const bounds = new google.maps.LatLngBounds();
+  let markerCount = 0;
+
+  places.forEach((place) => {
+    if (place.lat == null || place.lng == null) return;
+
+const marker = new google.maps.Marker({
+  position: {
+    lat: Number(place.lat),
+    lng: Number(place.lng)
+  },
+  map,
+  title: place.name || "",
+  icon: getMarkerIcon(place)
+});
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="max-width:220px;">
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
+            ${place.name || ""}
+          </div>
+          <div style="font-size:13px;color:#666;margin-bottom:8px;">
+            ${place.category || ""}
+          </div>
+          <div style="font-size:13px;color:#444;margin-bottom:8px;">
+            ${place.address || ""}
+          </div>
+          ${place.website ? `<a href="${place.website}" target="_blank" rel="noopener">Visit website</a>` : ""}
+        </div>
+      `
+    });
+
+    marker.addListener("click", () => {
+      infoWindow.open(map, marker);
+    });
+
+    bounds.extend(marker.getPosition());
+    markerCount += 1;
+  });
+
+  setTimeout(() => {
+    google.maps.event.trigger(map, "resize");
+
+    if (markerCount > 0) {
+      map.fitBounds(bounds);
+
+      google.maps.event.addListenerOnce(map, "bounds_changed", function () {
+        if (this.getZoom() > 14) {
+          this.setZoom(14);
+        }
+      });
+    }
+  }, 100);
+}
+
+function closeFullscreenMap() {
+  const modal = document.getElementById("fullscreen-map-modal");
+  const canvas = document.getElementById("fullscreen-map-canvas");
+
+  if (modal) modal.hidden = true;
+  if (canvas) canvas.innerHTML = "";
+
+  document.body.classList.remove("map-modal-open");
+  window.fullscreenResultsMap = null;
+}
+
+
+
+ function renderAiResults(data) {
+  const resultsEl = document.getElementById("ai-results");
+  if (!resultsEl) return;
+
+  const featured = data.featured_internal || [];
+  const regular = data.regular_internal || [];
+  const external = data.external_results || [];
+  const allResults = [...featured, ...regular, ...external];
+
+  console.log("[AI_RESULTS_DATA]", data);
+  console.log("[ALL_RESULTS_COUNT]", allResults.length);
+
+  resultsEl.style.display = "block";
+  resultsEl.hidden = false;
+
+  if (!allResults.length) {
+    resultsEl.innerHTML = `<p>No matching results found.</p>`;
+    return;
+  }
+
+  const mapData = buildSearchMapData(allResults);
+
+  const listRowsHtml = `
+    ${featured.length ? `
+      <section class="results-section">
+        <h2>Featured from our directory</h2>
+        <div class="search-results-stack">
+          ${featured.map((item) => buildResultRow(item, true)).join("")}
+        </div>
+      </section>
+    ` : ""}
+
+    ${regular.length ? `
+      <section class="results-section">
+        <h2>More from our directory</h2>
+        <div class="search-results-stack">
+          ${regular.map((item) => buildResultRow(item, true)).join("")}
+        </div>
+      </section>
+    ` : ""}
+
+    ${external.length ? `
+      <section class="results-section">
+        <h2>More places nearby</h2>
+        <div class="search-results-stack">
+          ${external.map((item) => buildResultRow(item, false)).join("")}
+        </div>
+      </section>
+    ` : ""}
+  `;
+
+  resultsEl.innerHTML = `
+    <div class="ai-results-inner">
+      ${buildQuickPickList(allResults)}
+
+      <div class="search-view-toggle">
+        <button
+          type="button"
+          class="search-view-toggle__btn is-active"
+          data-search-view="list"
+        >
+          List view
+        </button>
+
+        <button
+          type="button"
+          class="search-view-toggle__btn"
+          data-search-view="map"
+        >
+          Map view
+        </button>
+      </div>
+
+      <div id="search-list-view" class="search-view-section is-active">
+        ${listRowsHtml}
+      </div>
+
+      <div id="search-map-view" class="search-view-section">
+        <div class="search-map-panel">
+          <div id="search-results-map" class="search-map-frame"></div>
+        </div>
+      </div>
+
+      <div
+        id="search-results-map-data"
+        data-map-json='${JSON.stringify(mapData).replace(/'/g, "&apos;")}'
+        hidden
+      ></div>
+    </div>
+  `;
+
+  wireSearchViewToggle();
+  wireSavePlaceButtons();
+
+  const mapDataEl = document.getElementById("search-results-map-data");
+  if (mapDataEl) {
+    window._searchResultsMapData = JSON.parse(
+      mapDataEl.getAttribute("data-map-json") || "[]"
+    );
+  }
+
+  if (typeof google !== "undefined" && google.maps) {
+    initSearchResultsMap();
+  }
+
+  setTimeout(() => {
+    resultsEl.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }, 100);
+}
+
+
+
+function getMarkerIcon(place) {
+  const isInternal = place.source === "internal";
+  const fillColor = isInternal ? "#111111" : "#E2574C";
+
+  return {
+    url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">
+        <path d="M20 2C10 2 2 10 2 20c0 14 18 30 18 30s18-16 18-30C38 10 30 2 20 2z" fill="${fillColor}"/>
+        <circle cx="20" cy="20" r="8" fill="#ffffff"/>
+      </svg>
+    `),
+    scaledSize: new google.maps.Size(40, 52),
+    anchor: new google.maps.Point(20, 52)
+  };
+}
+
+
+
+
+async function runAiSearch() {
+  const page = document.getElementById("chat-page");
+  const input = document.getElementById("ai-chat-input");
+  const status = document.getElementById("ai-chat-status");
+  const messages = document.getElementById("ai-chat-messages");
+  const resultsEl = document.getElementById("ai-results");
+  const button = document.getElementById("ai-chat-submit");
+  const composer = document.querySelector(".chat-composer");
+  const emptyState = document.getElementById("chat-empty-state");
+  
+
+  if (!page || !input || !status || !messages || !button || !resultsEl) return;
+
+  const message = input.value.trim();
+  if (!message) {
+    status.textContent = "Type a question first.";
+    return;
+  }
+
+
+
+
+  page.classList.remove("is-empty");
+  page.classList.add("is-active");
+
+
+  const ResultsEl = document.getElementById("ai-results");
+if (resultsEl) {
+  resultsEl.style.display = "block";
+}
+
+
+const Page = document.getElementById("chat-page");
+
+if (page?.classList.contains("is-empty") && resultsEl) {
+  resultsEl.style.display = "none";
+}
+  
+
+  if (emptyState) {
+    emptyState.style.display = "none";
+  }
+
+  messages.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div class="ai-chat-message ai-chat-message--user">
+        <div class="ai-chat-bubble"></div>
+      </div>
+    `
+  );
+
+  const userBubble = messages.querySelector(".ai-chat-message--user:last-child .ai-chat-bubble");
+  if (userBubble) {
+    userBubble.textContent = message;
+  }
+
+
+
+  input.value = "";
+  autoResizeTextarea(input);
+  input.disabled = true;
+  button.disabled = true;
+  composer?.classList.add("is-loading");
+  status.textContent = "Getting your location...";
+
+  resultsEl.innerHTML = "";
+  messages.insertAdjacentHTML("beforeend", createLoadingBubble());
+
+  try {
+    const coords = await getCurrentPositionForAi();
+    status.textContent = "Thinking...";
+
+    const response = await fetch("/ai-chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: message,
+        lat: coords.lat,
+        lng: coords.lng
+      })
+    });
+
+const data = await response.json();
+
+removeLoadingBubble();
+
+messages.insertAdjacentHTML(
+  "beforeend",
+  `
+    <div class="ai-chat-message ai-chat-message--assistant">
+      <div class="ai-chat-bubble"></div>
+    </div>
+  `
+);
+
+const assistantBubble = messages.querySelector(".ai-chat-message--assistant:last-child .ai-chat-bubble");
+
+if (!response.ok) {
+  status.textContent = data.error || "AI chat failed.";
+  if (assistantBubble) {
+    assistantBubble.textContent = data.error || "I couldn’t complete that request.";
+  }
+  return;
+}
+
+status.textContent = "Done.";
+
+if (assistantBubble) {
+  await typeText(
+    assistantBubble,
+    data.reply || data.summary || "Here are some suggestions.",
+    18
+  );
+}
+
+if (!data.needs_clarification) {
+  renderAiResults({
+    featured_internal: data.featured_internal || [],
+    regular_internal: data.regular_internal || [],
+    external_results: data.external_results || []
+  });
+}
+
+    renderAiResults(data);
+
+    setTimeout(() => {
+      resultsEl.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 100);
+
+    setComposerExpanded(false);
+  } catch (error) {
+    removeLoadingBubble();
+    status.textContent = "There was a problem running the AI search.";
+    console.error("AI search error:", error);
+  } finally {
+    input.disabled = false;
+    button.disabled = false;
+    composer?.classList.remove("is-loading");
+    input.focus();
+  }
+}
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const sidebar = document.getElementById("app-sidebar");
+      const toggle = document.getElementById("app-sidebar-toggle");
+      const closeBtn = document.getElementById("app-sidebar-close");
+      const backdrop = document.getElementById("app-sidebar-backdrop");
+      const button = document.getElementById("ai-chat-submit");
+      const input = document.getElementById("ai-chat-input");
+      const fullscreenMapClose = document.getElementById("fullscreen-map-close");
+
+fullscreenMapClose?.addEventListener("click", function () {
+  closeFullscreenMap();
+});
+
+      function openDrawer() {
+        sidebar?.classList.add("is-open");
+        backdrop?.classList.add("is-open");
+      }
+
+      function closeDrawer() {
+        sidebar?.classList.remove("is-open");
+        backdrop?.classList.remove("is-open");
+      }
+
+      toggle?.addEventListener("click", openDrawer);
+      closeBtn?.addEventListener("click", closeDrawer);
+      backdrop?.addEventListener("click", closeDrawer);
+
+      setComposerExpanded(false);
+
+      if (input) {
+        autoResizeTextarea(input);
+
+        input.addEventListener("focus", function () {
+          setComposerExpanded(true);
+        });
+
+        input.addEventListener("blur", function () {
+          if (!input.value.trim()) {
+            setComposerExpanded(false);
+          }
+        });
+
+        input.addEventListener("input", function () {
+          const bar = document.querySelector(".ai-input-bar");
+          bar?.classList.toggle("has-text", input.value.trim().length > 0);
+          autoResizeTextarea(input);
+        });
+
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            runAiSearch();
+          }
+        });
+      }
+
+      button?.addEventListener("click", function (event) {
+        event.preventDefault();
+        runAiSearch();
+      });
+    });
+
+
+document.querySelectorAll(".chat-suggestion-chip").forEach((chip) => {
+  chip.addEventListener("click", function () {
+    const input = document.getElementById("ai-chat-input");
+    if (!input) return;
+    input.value = chip.getAttribute("data-suggestion") || "";
+    input.focus();
+  });
+});
+
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker
+          .register("/static/sw.js")
+          .then(function (registration) {
+            console.log("Service worker registered:", registration.scope);
+          })
+          .catch(function (error) {
+            console.error("Service worker registration failed:", error);
+          });
+      });
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <script
+    async
+    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}">
+  </script>
+</body>
+</html>

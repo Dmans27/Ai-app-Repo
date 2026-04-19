@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en" style="overflow-y: hidden;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Search Results</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="search-page-body">
+
+
+
+
+
+<div class="app-shell">
+
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="app-sidebar__top">
+      <button class="app-sidebar__new-chat">+ New search</button>
+    </div>
+
+    <nav class="app-sidebar__nav">
+      <a href="/" class="app-sidebar__link app-sidebar__link--active">AI Search</a>
+      <a href="/search?q=coffee" class="app-sidebar__link">Coffee</a>
+      <a href="/search?q=restaurant" class="app-sidebar__link">Restaurants</a>
+      <a href="/search?q=bars" class="app-sidebar__link">Bars</a>
+      <a href="/search?q=shopping" class="app-sidebar__link">Shopping</a>
+      <a href="/admin" class="app-sidebar__link">Admin</a>
+    </nav>
+
+    <div class="app-sidebar__section-title">Recent searches</div>
+
+    <div class="app-sidebar__history">
+      <button class="app-sidebar__history-item">Best coffee in Nashville</button>
+      <button class="app-sidebar__history-item">Bars near me</button>
+      <button class="app-sidebar__history-item">Best burgers in Miami</button>
+    </div>
+
+<div class="app-sidebar__bottom">
+  <a href="/" class="app-sidebar__footer-link">Home</a>
+  <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
+
+  {% if current_user.is_authenticated %}
+    <a href="{{ url_for('account') }}" class="app-sidebar__footer-link">Account</a>
+    <form method="post" action="{{ url_for('logout') }}">
+      <button type="submit" class="app-sidebar__footer-link app-sidebar__footer-button">
+        Log out
+      </button>
+    </form>
+  {% else %}
+    <a href="{{ url_for('login') }}" class="app-sidebar__footer-link">Log in</a>
+    <a href="{{ url_for('signup') }}" class="app-sidebar__footer-link">Sign up</a>
+  {% endif %}
+</div>
+  </aside>
+
+  <div class="app-main">
+
+    <button class="app-sidebar-toggle" id="app-sidebar-toggle" type="button">
+      ☰
+    </button>
+
+
+
+        <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebar = document.getElementById("app-sidebar");
+  const sidebarToggle = document.getElementById("app-sidebar-toggle");
+
+  const hamburger = document.getElementById("hamburger");
+  const menu = document.getElementById("menu");
+
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener("click", function () {
+      sidebar.classList.toggle("is-open");
+    });
+  }
+
+  if (hamburger && menu) {
+    hamburger.addEventListener("click", function () {
+      const isCollapsed = menu.classList.contains("collapsed");
+      menu.classList.toggle("collapsed");
+      hamburger.setAttribute("aria-expanded", String(isCollapsed));
+    });
+
+    hamburger.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        hamburger.click();
+      }
+    });
+  }
+});
+</script>
+
+  
+        <!-- Navbar with hamburger -->
+    <nav class="navbar">
+
+
+            <div id="scroll-profile" class="scroll-profile">
+        <img
+          src="{{ url_for('static', filename='img/headshot.png') }}"
+          class="scroll-profile__img"
+          alt="Profile"
+        />
+        <div class="scroll-profile__text">
+          <div class="scroll-profile__name">Daniel J Mansfield</div>
+          <div class="scroll-profile__title">Help Desk Analytics</div>
+        </div>
+      </div>
+
+
+
+      <div id="hamburger" class="hamburger" role="button" aria-label="Toggle menu" aria-expanded="false" tabindex="0">☰</div>
+<ul id="menu" class="menu collapsed">
+  <li><a href="/">Home</a></li>
+
+  {% if current_user.is_authenticated %}
+    <li><a href="{{ url_for('account') }}">Account</a></li>
+    <li>
+      <form method="post" action="{{ url_for('logout') }}" style="display:inline;">
+        <button type="submit" class="menu-link-button">Log out</button>
+      </form>
+    </li>
+  {% else %}
+    <li><a href="{{ url_for('login') }}">Log in</a></li>
+    <li><a href="{{ url_for('signup') }}">Sign up</a></li>
+  {% endif %}
+</ul>
+    </nav>
+
+  <div class="search-page-shell">
+
+    <div class="search-header">
+      
+
+      <form action="/search" method="get" class="search-form">
+        <input
+          type="text"
+          name="q"
+          value="{{ query or '' }}"
+          placeholder="Search local businesses near me"
+        >
+        {% if user_lat is not none %}
+          <input type="hidden" name="lat" value="{{ user_lat }}">
+        {% endif %}
+        {% if user_lng is not none %}
+          <input type="hidden" name="lng" value="{{ user_lng }}">
+        {% endif %}
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <div class="search-layout">
+
+      <div class="search-results-column">
+
+        {% if internal_results %}
+          <div class="results-section">
+            <h2>Featured from our directory</h2>
+            <p>Priority listings from your local directory.</p>
+
+            {% for l in internal_results %}
+              <div class="search-result-card search-result-card--featured">
+
+                <div class="search-result-card__image-wrap">
+                  {% if l.photo_url %}
+                    <img src="{{ l.photo_url }}" alt="{{ l.name }}" class="search-result-card__image">
+                  {% elif l.card_image_url %}
+                    <img src="{{ l.card_image_url }}" alt="{{ l.name }}" class="search-result-card__image">
+                  {% else %}
+                    <img src="/static/img/default-business.jpg" alt="{{ l.name }}" class="search-result-card__image">
+                  {% endif %}
+                </div>
+
+                <div class="search-result-card__body">
+                  <div class="search-result-card__top">
+                    <div>
+                      <a href="/listing/{{ l.slug }}" class="search-result-card__title">
+                        {{ l.name }}
+                      </a>
+
+                      <div class="search-result-card__meta">
+                        {{ category_icon(l.category) }}
+                        {{ l.category|replace('_', ' ')|title }}
+                        {% if l.city %} · {{ l.city }}, {{ l.state }}{% endif %}
+                      </div>
+                    </div>
+
+                    <div class="search-result-card__badges">
+                      {% if l.featured %}
+                        <span class="result-badge result-badge--featured">Featured</span>
+                      {% endif %}
+                      {% if l.distance_miles is not none %}
+                        <span class="result-badge">{{ l.distance_miles }} mi</span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  {% if l.address %}
+                    <div class="search-result-card__address">{{ l.address }}</div>
+                  {% endif %}
+
+                  {% if l.description %}
+                    <div class="search-result-card__description">{{ l.description }}</div>
+                  {% endif %}
+
+<div class="search-result-card__actions">
+  {% if l.website %}
+    <a
+      href="{{ l.website }}"
+      target="_blank"
+      rel="noopener"
+      class="btn-primary"
+    >
+      Visit website
+    </a>
+  {% endif %}
+
+  {% if current_user.is_authenticated %}
+    {% if current_user.saved_lists %}
+<form method="post" action="{{ url_for('save_place_to_list', list_id=current_user.saved_lists[0].id) }}">
+  <input type="hidden" name="place_id" value="{{ l.place_id or '' }}">
+  <input type="hidden" name="name" value="{{ l.name }}">
+  <input type="hidden" name="address" value="{{ l.address or '' }}">
+  <input type="hidden" name="website" value="{{ l.website or '' }}">
+  <input type="hidden" name="category" value="{{ l.category or '' }}">
+  <input type="hidden" name="photo_url" value="{{ l.photo_url or '' }}">
+
+  <!-- 🔥 THIS IS THE FIX -->
+  <input type="hidden" name="latitude" value="{{ l.latitude or '' }}">
+  <input type="hidden" name="longitude" value="{{ l.longitude or '' }}">
+  <input type="hidden" name="city" value="{{ l.city or '' }}">
+  <input type="hidden" name="cuisine" value="{{ l.category or '' }}">
+
+  <button type="submit" class="btn-secondary">Save to list</button>
+</form>
+    {% else %}
+      <a href="{{ url_for('create_list') }}" class="btn-secondary">Create a list first</a>
+    {% endif %}
+  {% else %}
+    <a href="{{ url_for('login', next=request.path) }}" class="btn-secondary">Log in to save</a>
+  {% endif %}
+
+  {% if l.place_id %}
+    {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('claim_business') }}" class="card-action-form">
+        <input type="hidden" name="place_id" value="{{ l.place_id }}">
+        <input type="hidden" name="name" value="{{ l.name }}">
+        <input type="hidden" name="address" value="{{ l.address or '' }}">
+        <input type="hidden" name="website" value="{{ l.website or '' }}">
+        <input type="hidden" name="category" value="{{ l.category or '' }}">
+        <input type="hidden" name="city" value="{{ l.city or '' }}">
+        <input type="hidden" name="cuisine" value="{{ l.category or '' }}">
+        <button type="submit" class="btn-secondary">
+          Claim this business
+        </button>
+      </form>
+    {% else %}
+      <a
+        href="{{ url_for('login', next=request.path) }}"
+        class="btn-secondary"
+      >
+        Log in to claim
+      </a>
+    {% endif %}
+  {% endif %}
+</div>
+                </div>
+
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if external_results %}
+          <div class="results-section">
+            <h2>More places nearby</h2>
+            <p>Additional businesses discovered nearby.</p>
+
+
+{% for l in external_results %}
+  <article class="search-result-card search-result-card--compact">
+    <div class="search-result-card__image-wrap search-result-card__image-wrap--compact">
+      {% if l.photo_urls and l.photo_urls|length > 0 %}
+        <img
+          src="{{ l.photo_urls[0] }}"
+          alt="{{ l.name }}"
+          class="search-result-card__image"
+        >
+      {% elif l.photo_url %}
+        <img
+          src="{{ l.photo_url }}"
+          alt="{{ l.name }}"
+          class="search-result-card__image"
+        >
+      {% else %}
+        <img
+          src="/static/img/default-business.jpg"
+          alt="{{ l.name }}"
+          class="search-result-card__image"
+        >
+      {% endif %}
+    </div>
+
+    <div class="search-result-card__body search-result-card__body--compact">
+      <div class="search-result-card__top search-result-card__top--compact">
+        <div class="search-result-card__heading-group">
+          {% if l.website %}
+            <a
+              href="{{ l.website }}"
+              target="_blank"
+              rel="noopener"
+              class="search-result-card__title"
+            >
+              {{ l.name }}
+            </a>
+          {% else %}
+            <div class="search-result-card__title">
+              {{ l.name }}
+            </div>
+          {% endif %}
+
+          <div class="search-result-card__meta">
+            {{ category_icon(l.category) }}
+            {{ (l.category or "Local business")|replace('_', ' ')|title }}
+          </div>
+        </div>
+
+        <div class="search-result-card__badges">
+          {% if l.rating %}
+            <span class="result-badge">★ {{ l.rating }}</span>
+          {% endif %}
+
+          {% if l.distance_miles is not none %}
+            <span class="result-badge">{{ l.distance_miles }} mi</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if l.address %}
+        <div class="search-result-card__address">
+          {{ l.address }}
+        </div>
+      {% endif %}
+
+      <div class="search-result-card__actions search-result-card__actions--compact">
+        {% if l.website %}
+          <a
+            href="{{ l.website }}"
+            target="_blank"
+            rel="noopener"
+            class="btn-primary"
+          >
+            Visit website
+          </a>
+        {% endif %}
+
+        {% if current_user.is_authenticated %}
+          {% if current_user.saved_lists %}
+<form method="post" action="{{ url_for('save_place_to_list', list_id=current_user.saved_lists[0].id) }}">
+  <input type="hidden" name="place_id" value="{{ l.place_id or '' }}">
+  <input type="hidden" name="name" value="{{ l.name }}">
+  <input type="hidden" name="address" value="{{ l.address or '' }}">
+  <input type="hidden" name="website" value="{{ l.website or '' }}">
+  <input type="hidden" name="category" value="{{ l.category or '' }}">
+  <input type="hidden" name="photo_url" value="{{ l.photo_url or '' }}">
+  <input type="hidden" name="latitude" value="{{ l.latitude or '' }}">
+  <input type="hidden" name="longitude" value="{{ l.longitude or '' }}">
+  <input type="hidden" name="city" value="{{ l.city or '' }}">
+  <input type="hidden" name="cuisine" value="{{ l.category or '' }}">
+  <button type="submit" class="btn-secondary">Save to list</button>
+</form>
+          {% else %}
+            <a href="{{ url_for('create_list') }}" class="btn-secondary">Create a list first</a>
+          {% endif %}
+        {% else %}
+          <a href="{{ url_for('login', next=request.path) }}" class="btn-secondary">Log in to save</a>
+        {% endif %}
+
+        {% if l.place_id %}
+          <a
+            href="/admin/import-google-place?place_id={{ l.place_id }}"
+            class="btn-secondary"
+          >
+            Import into directory
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </article>
+
+  {% if loop.index == 2 and search_ads %}
+    {% set ad = search_ads[0] %}
+    <div class="ad-card">
+      {% if ad.image_url %}
+        <img src="{{ ad.image_url }}" alt="{{ ad.name }}" class="ad-card__image">
+      {% endif %}
+
+      <div class="ad-card__body">
+        <div class="ad-card__label">Sponsored</div>
+
+        <h3 class="ad-card__title">
+          {{ ad.headline or ad.name }}
+        </h3>
+
+        {% if ad.body %}
+          <p class="ad-card__text">
+            {{ ad.body }}
+          </p>
+        {% endif %}
+
+        {% if ad.target_url %}
+          <a
+            href="{{ ad.target_url }}"
+            target="_blank"
+            rel="noopener"
+            class="btn-primary"
+          >
+            {{ ad.button_text or "Learn more" }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}
+
+
+
+          </div>
+        {% endif %}
+
+        {% if not internal_results and not external_results %}
+          <div class="empty-results">
+            No results found. Try a different search.
+          </div>
+        {% endif %}
+
+      </div>
+
+      <aside class="search-map-column">
+        <div class="search-map-panel">
+          <div class="search-map-wrap">
+            <div id="results-map" class="search-map-frame"></div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+  </div>
+
+
+
+  </div>
+</div>
+
+  <script id="map-data" type="application/json">
+    {{ map_context(map_lat, map_lng, map_results)|tojson }}
+  </script>
+
+  <script>
+    const MAP_DATA = JSON.parse(
+      document.getElementById("map-data").textContent
+    );
+
+    window.MAP_CENTER = MAP_DATA.center;
+    window.MAP_RESULTS = MAP_DATA.results;
+  </script>
+
+  <script>
+    function initResultsMap() {
+      const center = window.MAP_CENTER || {
+        lat: 41.7508,
+        lng: -88.1535
+      };
+
+      const results = window.MAP_RESULTS || [];
+      const mapEl = document.getElementById("results-map");
+
+      if (!mapEl) return;
+
+      const map = new google.maps.Map(mapEl, {
+        zoom: 12,
+        center: center,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false
+      });
+
+      const bounds = new google.maps.LatLngBounds();
+
+      if (center && center.lat != null && center.lng != null) {
+        bounds.extend(center);
+      }
+
+      results.forEach((item) => {
+        if (item.lat == null || item.lng == null) return;
+
+        const position = {
+          lat: Number(item.lat),
+          lng: Number(item.lng)
+        };
+
+        const marker = new google.maps.Marker({
+          position: position,
+          map: map,
+          title: item.name || ""
+        });
+
+        let linkHtml = "";
+
+        if (item.source === "internal" && item.slug) {
+          linkHtml = `
+            <a href="/listing/${item.slug}" style="color:#111;font-weight:600;">
+              View listing
+            </a>
+          `;
+        } else if (item.website) {
+          linkHtml = `
+            <a href="${item.website}" target="_blank" rel="noopener" style="color:#111;font-weight:600;">
+              Visit website
+            </a>
+          `;
+        }
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: `
+            <div style="max-width:220px;">
+              <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
+                ${item.name || ""}
+              </div>
+              <div style="font-size:13px;color:#666;margin-bottom:8px;">
+                ${item.category || ""}
+              </div>
+              ${linkHtml}
+            </div>
+          `
+        });
+
+        marker.addListener("click", () => {
+          infoWindow.open(map, marker);
+        });
+
+        bounds.extend(position);
+      });
+
+      if (results.length > 0) {
+        map.fitBounds(bounds);
+
+        google.maps.event.addListenerOnce(map, "bounds_changed", function () {
+          if (this.getZoom() > 14) {
+            this.setZoom(14);
+          }
+        });
+      }
+    }
+  </script>
+
+  <script
+    async
+    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initResultsMap">
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+(function () {
+  if (window.location.pathname !== "/search") return;
+  if (!navigator.geolocation) return;
+
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+  const q = (params.get("q") || "").trim();
+
+  if (!q) return;
+  if (params.get("lat") && params.get("lng")) return;
+
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      const lat = position.coords.latitude.toFixed(6);
+      const lng = position.coords.longitude.toFixed(6);
+
+      localStorage.setItem("user_lat", lat);
+      localStorage.setItem("user_lng", lng);
+
+      params.set("lat", lat);
+      params.set("lng", lng);
+
+      window.location.replace(url.toString());
+    },
+    function (error) {
+      console.warn("Geolocation error:", error.message);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10000
+    }
+  );
+})();
+</script>
+
+
+</body>
+</html>

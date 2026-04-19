@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ page.title if page and page.title else "Major World Cities Map with Multiple Routes" }}</title>
+
+  <!-- Use url_for so Flask always finds your static files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+
+{% if page.tag_title %}
+  <div class="title-tag">
+    <h3 style="text-align:center;">{{ page.tag_title }}</h3>
+  </div>
+{% endif %}
+
+{% if page.hero_title %}
+  <div class="title-container">
+    <h1 style="text-align:center;">{{ page.hero_title }}</h1>
+  </div>
+{% endif %}
+
+
+<body>
+  <div class="container">
+
+    <!-- Navbar with hamburger -->
+    <nav class="navbar">
+      <div id="hamburger" class="hamburger" role="button" aria-label="Toggle menu" aria-expanded="false" tabindex="0">☰</div>
+      <ul id="menu" class="menu collapsed">
+        <li><a href="/">Home</a></li>
+      </ul>
+    </nav>
+
+    <!-- Titles -->
+    <div class="title-tag">
+      <h3 style="text-align:center;">Romance</h3>
+    </div>
+
+    {% if page.tag_title %}
+  <div class="title-tag">
+    <h3 style="text-align:center;">{{ page.tag_title }}</h3>
+  </div>
+{% endif %}
+
+<div class="title-container">
+  <h1 style="text-align:center;">
+    {{ page.hero_title or page.title }}
+  </h1>
+</div>
+
+
+
+    <!-- Map container (Dash dcc.Graph replacement) -->
+    <!-- You had display:none in Dash, so we keep that -->
+    <div class="figure-container">
+      <div id="world-map" style="height:400px; width:100%; overflow:hidden; display:none;"></div>
+    </div>
+
+    <!-- Scroll profile -->
+    <div id="scroll-profile" class="scroll-profile">
+      <img
+        src="{{ url_for('static', filename='img/headshot.png') }}"
+        class="scroll-profile__img"
+        alt="Profile"
+      />
+      <div class="scroll-profile__text">
+        <div class="scroll-profile__name">Daniel J Mansfield</div>
+        <div class="scroll-profile__title">Help Desk Analytics</div>
+      </div>
+    </div>
+
+    <!-- Static profile -->
+    <div id="profile-img" class="profile-img static-profile">
+      <img
+        src="{{ url_for('static', filename='img/headshot.png') }}"
+        class="profile__img_name"
+        alt="Profile_img_name"
+      />
+      <div class="profile__text">
+        <div class="profile__name">Daniel J Mansfield</div>
+        <div class="profile__title">Help Desk Analytics</div>
+      </div>
+    </div>
+
+    <h1 class="author-name"></h1>
+
+
+<!-- CMS Sections -->
+{% if sections %}
+  <section class="sections">
+    {% for s in sections %}
+
+      {% if s.section_type == "image" and s.media_path %}
+        <div class="divide">
+          <figure class="image-section">
+            <img
+              src="{{ s.media_path }}"
+              alt="{{ s.media_alt or '' }}"
+              loading="lazy"
+              style="max-width:100%; height:auto; border-radius:14px;"
+            />
+            {% if s.media_caption %}
+              <figcaption style="margin-top:8px; opacity:.8;">
+                {{ s.media_caption }}
+              </figcaption>
+            {% endif %}
+          </figure>
+        </div>
+
+      {% else %}
+        <div class="divide">
+          {% if s.heading %}
+            <h3 style="margin:0 0 10px 0;">{{ s.heading }}</h3>
+          {% endif %}
+          {% if s.body %}
+            <p style="margin:0; line-height:1.65;">{{ s.body }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+    {% endfor %}
+  </section>
+{% endif %}
+
+
+
+
+
+
+
+
+    <!-- Content -->
+
+
+  <!-- Plotly.js (required if you want the map rendered like Dash) -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+  <!-- Your JS -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

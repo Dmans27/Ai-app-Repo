@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Listing</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+  <div class="container" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <h1 style="margin:0;">New Listing</h1>
+      <a class="btn" href="/admin/listings">← Back</a>
+    </div>
+
+    {% if error %}
+      <div class="divide" style="margin-top:14px; padding:14px; border:1px solid rgba(239,68,68,.4);">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="post" class="divide" style="margin-top:14px; padding:14px; display:grid; gap:12px;">
+      <label>
+        <div>Name</div>
+        <input name="name" required style="width:100%; padding:10px 12px; border-radius:10px;">
+      </label>
+
+      <label>
+        <div>Slug</div>
+        <input name="slug" placeholder="leave blank to auto-use name" style="width:100%; padding:10px 12px; border-radius:10px;">
+      </label>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <label>
+          <div>Category</div>
+          <input name="category" style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div>Status</div>
+          <select name="status" style="width:100%; padding:10px 12px; border-radius:10px;">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
+        </label>
+      </div>
+
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+  <label>
+    <div>Latitude</div>
+    <input name="latitude" style="width:100%; padding:10px 12px; border-radius:10px;">
+  </label>
+
+  <label>
+    <div>Longitude</div>
+    <input name="longitude" style="width:100%; padding:10px 12px; border-radius:10px;">
+  </label>
+</div>
+
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <label>
+          <div>City</div>
+          <input name="city" style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div>State</div>
+          <input name="state" style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+      </div>
+
+      <label>
+        <div>Address</div>
+        <input name="address" style="width:100%; padding:10px 12px; border-radius:10px;">
+      </label>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <label>
+          <div>Phone</div>
+          <input name="phone" style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div>Website</div>
+          <input name="website" style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+      </div>
+
+      <label>
+        <div>Description</div>
+        <textarea name="description" rows="4" style="width:100%; padding:10px 12px; border-radius:10px;"></textarea>
+      </label>
+
+      <label style="display:flex; gap:8px; align-items:center;">
+        <input type="checkbox" name="featured" value="1">
+        <span>Featured listing</span>
+      </label>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn" type="submit">Save Listing</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

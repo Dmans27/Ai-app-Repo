@@ -1,0 +1,15 @@
+/* admin.css */
+.btn {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.25);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  background: rgba(255,255,255,.08);
+}
+
+.btn:hover {
+  background: rgba(255,255,255,.14);
+}

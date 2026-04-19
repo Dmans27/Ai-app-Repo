@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    body.signup-page-body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 30%),
+        linear-gradient(180deg, #161616 0%, #0f0f10 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .auth-shell {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .auth-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 32px;
+      padding: 40px 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    .auth-eyebrow {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.72);
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .auth-title {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.02;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .auth-subtitle {
+      margin: 0 0 28px;
+      color: rgba(255,255,255,0.72);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .flash-messages {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .flash-message {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #fff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .auth-field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .auth-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.86);
+    }
+
+    .auth-input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.08);
+      color: #ffffff;
+      border-radius: 999px;
+      min-height: 58px;
+      padding: 0 20px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    }
+
+    .auth-input::placeholder {
+      color: rgba(255,255,255,0.48);
+    }
+
+    .auth-input:focus {
+      border-color: rgba(255,255,255,0.24);
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-1px);
+    }
+
+    .auth-submit {
+      width: 100%;
+      min-height: 58px;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #111111;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      margin-top: 6px;
+    }
+
+    .auth-submit:hover {
+      transform: translateY(-1px);
+      opacity: 0.96;
+    }
+
+    .auth-footer {
+      margin-top: 22px;
+      text-align: center;
+      color: rgba(255,255,255,0.72);
+      font-size: 0.98rem;
+    }
+
+    .auth-footer a {
+      color: #ffffff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .auth-card {
+        padding: 28px 20px;
+        border-radius: 24px;
+      }
+
+      .auth-input,
+      .auth-submit {
+        min-height: 54px;
+      }
+    }
+  </style>
+</head>
+<body class="signup-page-body">
+  <main class="auth-shell">
+    <section class="auth-card">
+      <div class="auth-eyebrow">Join now</div>
+      <h1 class="auth-title">Create account</h1>
+      <p class="auth-subtitle">
+        Save favorite places, build your own local lists, and share them with friends and family.
+      </p>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for message in messages %}
+              <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" action="{{ url_for('signup') }}" class="auth-form">
+        <div class="auth-field">
+          <label for="name" class="auth-label">Name</label>
+          <input
+            id="name"
+            type="text"
+            name="name"
+            class="auth-input"
+            placeholder="Enter your name"
+          >
+        </div>
+
+        <div class="auth-field">
+          <label for="email" class="auth-label">Email</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            class="auth-input"
+            placeholder="Enter your email"
+            required
+          >
+        </div>
+
+        <div class="auth-field">
+          <label for="password" class="auth-label">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            class="auth-input"
+            placeholder="Create a password"
+            required
+          >
+        </div>
+
+        <button type="submit" class="auth-submit">Create account</button>
+      </form>
+
+      <p class="auth-footer">
+        Already have an account?
+        <a href="{{ url_for('login') }}">Log in</a>
+      </p>
+    </section>
+  </main>
+</body>
+</html>

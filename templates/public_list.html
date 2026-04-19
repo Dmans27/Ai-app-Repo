@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ saved_list.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+
+
+
+
+
+<body class="search-page-body">
+
+
+  
+
+  <div class="search-page-shell">
+
+
+
+    
+    
+    <div class="results-section">
+      <h1>{{ saved_list.title }}</h1>
+
+      {% if saved_list.description %}
+        <p>{{ saved_list.description }}</p>
+      {% endif %}
+
+      {% if saved_list.places %}
+        <div class="saved-list-grid">
+          {% for place in saved_list.places %}
+            <div class="search-result-card">
+
+              <div class="search-result-card__image-wrap">
+                {% if place.photo_url %}
+                  <img
+                    src="{{ place.photo_url }}"
+                    alt="{{ place.name }}"
+                    class="search-result-card__image"
+                  >
+                {% else %}
+                  <img
+                    src="/static/img/default-business.jpg"
+                    alt="{{ place.name }}"
+                    class="search-result-card__image"
+                  >
+                {% endif %}
+              </div>
+
+              <div class="search-result-card__body">
+                <div class="search-result-card__top">
+                  <div>
+                    <div class="search-result-card__title">
+                      {{ place.name }}
+                    </div>
+
+                    <div class="search-result-card__meta">
+                      {{ category_icon(place.category) }}
+                      {{ (place.category or "Local business")|replace('_', ' ')|title }}
+                    </div>
+                  </div>
+                </div>
+
+                {% if place.address %}
+                  <div class="search-result-card__address">
+                    {{ place.address }}
+                  </div>
+                {% endif %}
+
+                {% if place.notes %}
+                  <div class="search-result-card__description">
+                    {{ place.notes }}
+                  </div>
+                {% endif %}
+
+                <div class="search-result-card__actions">
+                  {% if place.website %}
+                    <a
+                      href="{{ place.website }}"
+                      target="_blank"
+                      rel="noopener"
+                      class="btn-primary"
+                    >
+                      Visit website
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>This list does not have any places yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+</html>

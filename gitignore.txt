@@ -1,0 +1,33 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# Database
+cms.db
+*.db
+*.sqlite3
+
+# Uploads
+static/uploads/
+
+# Editors
+.vscode/
+.idea/
+.DS_Store
+
+# JS
+node_modules/
+
+# Temp
+.codex/
+tmp/
+dist/
+build/

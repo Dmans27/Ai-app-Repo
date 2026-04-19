@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <title>Users</title>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Users</h1>
+
+<a href="/admin/users/new" class="btn">
+  + Create User
+</a>
+
+<br><br>
+
+{% for user in users %}
+  <div class="divide">
+    {{ user.email }}
+    {% if user.is_admin %}
+      (Admin)
+    {% endif %}
+  </div>
+{% endfor %}
+
+</div>
+
+</body>
+</html>

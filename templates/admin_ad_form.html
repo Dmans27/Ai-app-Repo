@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if ad %}Edit{% else %}New{% endif %} Ad</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+  <div class="container" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <h1 style="margin:0;">{% if ad %}Edit{% else %}New{% endif %} Ad</h1>
+      <a class="btn" href="/admin/ads">← Back to Ads</a>
+    </div>
+
+    {% if error %}
+      <div class="divide" style="margin-top:14px; padding:14px; border:1px solid rgba(239,68,68,.4);">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="post" class="divide" style="margin-top:14px; padding:14px; display:grid; gap:12px;">
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Ad Name</div>
+        <input name="name"
+               value="{{ ad.name if ad else '' }}"
+               required
+               style="width:100%; padding:10px 12px; border-radius:10px;">
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Placement</div>
+        <select name="placement" style="width:100%; padding:10px 12px; border-radius:10px;">
+          <option value="homepage_inline" {% if ad and ad.placement=='homepage_inline' %}selected{% endif %}>homepage_inline</option>
+          <option value="search_inline" {% if ad and ad.placement=='search_inline' %}selected{% endif %}>search_inline</option>
+          <option value="article_inline" {% if ad and ad.placement=='article_inline' %}selected{% endif %}>article_inline</option>
+          <option value="listing_sidebar" {% if ad and ad.placement=='listing_sidebar' %}selected{% endif %}>listing_sidebar</option>
+        </select>
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Image URL</div>
+        <input name="image_url"
+               value="{{ ad.image_url if ad else '' }}"
+               placeholder="/static/uploads/example-ad.jpg"
+               style="width:100%; padding:10px 12px; border-radius:10px;">
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Headline</div>
+        <input name="headline"
+               value="{{ ad.headline if ad else '' }}"
+               style="width:100%; padding:10px 12px; border-radius:10px;">
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Body</div>
+        <textarea name="body" rows="4"
+                  style="width:100%; padding:10px 12px; border-radius:10px;">{{ ad.body if ad else '' }}</textarea>
+      </label>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Button Text</div>
+          <input name="button_text"
+                 value="{{ ad.button_text if ad else '' }}"
+                 placeholder="Learn more"
+                 style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Target URL</div>
+          <input name="target_url"
+                 value="{{ ad.target_url if ad else '' }}"
+                 placeholder="https://example.com"
+                 style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Sort Order</div>
+          <input name="sort_order"
+                 value="{{ ad.sort_order if ad else 0 }}"
+                 style="width:100%; padding:10px 12px; border-radius:10px;">
+        </label>
+
+        <label>
+          <div style="opacity:.85; margin-bottom:6px;">Status</div>
+          <select name="is_active" style="width:100%; padding:10px 12px; border-radius:10px;">
+            <option value="1" {% if not ad or ad.is_active %}selected{% endif %}>Active</option>
+            <option value="0" {% if ad and not ad.is_active %}selected{% endif %}>Inactive</option>
+          </select>
+        </label>
+      </div>
+
+      {% if ad and ad.image_url %}
+        <div>
+          <div style="opacity:.85; margin-bottom:8px;">Preview</div>
+          <img src="{{ ad.image_url }}" alt="{{ ad.name }}" style="max-width:240px; border-radius:12px;">
+        </div>
+      {% endif %}
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="btn" type="submit">Save Ad</button>
+      </div>
+    </form>
+
+  </div>
+</body>
+</html>

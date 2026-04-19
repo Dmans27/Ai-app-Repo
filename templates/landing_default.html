@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ page.title if page and page.title else "Major World Cities Map with Multiple Routes" }}</title>
+
+  <!-- Use url_for so Flask always finds your static files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+  <!-- NYT-ish fonts (legal substitutes) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container">
+
+
+
+
+    <div class="app-shell">
+
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="app-sidebar__top">
+      <button class="app-sidebar__new-chat">+ New search</button>
+    </div>
+
+    <nav class="app-sidebar__nav">
+      <a href="/" class="app-sidebar__link app-sidebar__link--active">AI Search</a>
+      <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
+      <a href="/search?q=restaurant coffee near me" class="app-sidebar__link">Restaurants</a>
+      <a href="/search?q=bars" class="app-sidebar__link">Bars</a>
+      <a href="/search?q=plumbers" class="app-sidebar__link">Plumbers</a>
+      <a href="/admin" class="app-sidebar__link">Admin</a>
+      <a href="https://buy.stripe.com/test_5kQ3cxfEe6Bg2qifsn0VO00" class="app-sidebar__link">Promote Your Business</a>
+    </nav>
+
+    <div class="app-sidebar__section-title">Recent searches</div>
+
+    <div class="app-sidebar__history">
+      <button class="app-sidebar__history-item">Best coffee in Nashville</button>
+      <button class="app-sidebar__history-item">Bars near me</button>
+      <button class="app-sidebar__history-item">Best burgers in Miami</button>
+    </div>
+
+    <div class="app-sidebar__bottom">
+      <a href="/" class="app-sidebar__footer-link">Home</a>
+      <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
+    </div>
+  </aside>
+
+  <div class="app-main">
+
+    <button class="app-sidebar-toggle" id="app-sidebar-toggle" type="button">
+      ☰
+    </button>
+
+    <!-- Navbar with hamburger -->
+<nav class="mobile-tabbar">
+  <a href="/" class="mobile-tabbar__item">
+    <span class="mobile-tabbar__icon">🏠</span>
+    <span class="mobile-tabbar__label">Home</span>
+  </a>
+
+  <a href="/discover" class="mobile-tabbar__item">
+    <span class="mobile-tabbar__icon">🗺️</span>
+    <span class="mobile-tabbar__label">Discover</span>
+  </a>
+
+  <a href="/" class="mobile-tabbar__item">
+    <span class="mobile-tabbar__icon">🔎</span>
+    <span class="mobile-tabbar__label">Search</span>
+  </a>
+
+  <a href="{{ url_for('account') }}" class="mobile-tabbar__item">
+    <span class="mobile-tabbar__icon">📌</span>
+    <span class="mobile-tabbar__label">Saved</span>
+  </a>
+
+  <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+    <span class="mobile-tabbar__icon">👤</span>
+    <span class="mobile-tabbar__label">Account</span>
+  </a>
+</nav>
+
+    <!-- NYT-ish article wrapper (does NOT break your existing hooks) -->
+    <main class="nyt-article">
+
+      <!-- Titles -->
+      {% if page.tag_title %}
+        <div class="title-tag nyt-kicker">
+          <h3 style="text-align:center;">{{ page.tag_title }}</h3>
+        </div>
+      {% endif %}
+
+      {% if page.hero_title %}
+        <div class="title-container nyt-headline">
+          <h1 style="text-align:center;">{{ page.hero_title }}</h1>
+        </div>
+      {% endif %}
+
+      <!-- Map container (Dash dcc.Graph replacement) -->
+      <div class="figure-container">
+        <div id="world-map" style="height:400px; width:100%; overflow:hidden; display:none;"></div>
+      </div>
+
+      <!-- Scroll profile -->
+      <div id="scroll-profile" class="scroll-profile">
+        <img
+          src="{{ url_for('static', filename='img/headshot.png') }}"
+          class="scroll-profile__img"
+          alt="Profile"
+        />
+        <div class="scroll-profile__text">
+          <div class="scroll-profile__name">Daniel J Mansfield</div>
+          <div class="scroll-profile__title">Help Desk Analytics</div>
+        </div>
+      </div>
+
+      <!-- Static profile -->
+      <div id="profile-img" class="profile-img static-profile">
+        <img
+          src="{{ url_for('static', filename='img/headshot.png') }}"
+          class="profile__img_name"
+          alt="Profile_img_name"
+        />
+        <div class="profile__text">
+          <div class="profile__name">Daniel J Mansfield</div>
+          <div class="profile__title">Help Desk Analytics</div>
+        </div>
+      </div>
+
+      <h1 class="author-name"></h1>
+
+      <!-- CMS Sections (single loop, supports image + html + markdown) -->
+      {% if sections %}
+        <section class="sections nyt-body">
+          {% for s in sections %}
+
+            {# 1) Custom HTML section #}
+            {% if s.section_type == "html" %}
+              <div class="divide nyt-block">
+                {{ s.body | safe }}
+              </div>
+
+            {# 2) Image section #}
+            {% elif s.section_type == "image" and s.media_path %}
+              <div class="divide nyt-block">
+                <figure class="image-section nyt-figure">
+                  <img
+                    src="{{ s.media_path }}"
+                    alt="{{ s.media_alt or '' }}"
+                    loading="lazy"
+                    style="max-width:100%; height:auto; border-radius:14px;"
+                  />
+                  {% if s.media_caption %}
+                    <figcaption class="nyt-caption" style="margin-top:8px; opacity:.8;">
+                      {{ s.media_caption }}
+                    </figcaption>
+                  {% endif %}
+                </figure>
+              </div>
+
+            {# 3) Text/markdown section #}
+            {% else %}
+              <div class="divide nyt-block">
+                {% if s.heading %}
+                  <h3 class="nyt-subhead" style="margin:0 0 10px 0;">{{ s.heading }}</h3>
+                  <div class="content content-left nyt-content">
+                    {{ s.body | md | safe }}
+                  </div>
+                {% else %}
+                  <div class="content content-centered nyt-content">
+                    {{ s.body | md | safe }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endif %}
+
+          {% endfor %}
+        </section>
+      {% endif %}
+
+    </main>
+    <!-- end nyt-article -->
+
+    <!-- Footer (full-bleed even if .container is max-width) -->
+    <footer class="nyt-footer nyt-fullbleed" style="background: #fff; border-top: 1px solid #000f;">
+      <div class="nyt-footer-inner">
+
+        <div class="nyt-footer-divider"></div>
+
+        <div class="nyt-footer-grid">
+          <div class="nyt-footer-col">
+            <div class="nyt-footer-heading">Daniel John Consulting</div>
+            <a href="/">Home</a>
+            <a href="/p/helpdesk-dashboard">Dashboards</a>
+            <a href="/p/projects">Projects</a>
+            <a href="/p/contact">Contact</a>
+          </div>
+
+          <div class="nyt-footer-col">
+            <div class="nyt-footer-heading">Services</div>
+            <a href="#">Help Desk Analytics</a>
+            <a href="#">Healthcare Analytics</a>
+            <a href="#">Dashboard Development</a>
+            <a href="#">Data Automation</a>
+          </div>
+
+          <div class="nyt-footer-col">
+            <div class="nyt-footer-heading">Technology</div>
+            <a href="#">Python</a>
+            <a href="#">Flask</a>
+            <a href="#">SQLite</a>
+            <a href="#">Plotly Dash</a>
+          </div>
+
+          <div class="nyt-footer-col">
+            <div class="nyt-footer-heading">Account</div>
+            <a href="/login">Login</a>
+            <a href="/admin">Admin Panel</a>
+          </div>
+        </div>
+
+        <div class="nyt-footer-divider"></div>
+
+        <div class="nyt-footer-bottom">
+          <div></div>
+          <div class="nyt-footer-bottom-links"></div>
+        </div>
+
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/scroll-profile.js') }}" defer></script>
+
+</body>
+</html>
+
+

@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Saved Places</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body class="app-body page-account">
+  <div class="mobile-app-shell">
+    <!-- Drawer -->
+    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+      <div class="mobile-drawer__header">
+        <div class="mobile-drawer__title">Local AI</div>
+        <button
+          class="mobile-drawer__close"
+          id="app-sidebar-close"
+          type="button"
+          aria-label="Close menu"
+        >✕</button>
+      </div>
+
+      <button
+        class="mobile-drawer__new-search"
+        type="button"
+        onclick="window.location.href='/'"
+      >
+        + New search
+      </button>
+
+      <nav class="mobile-drawer__nav">
+        <a href="/" class="mobile-drawer__link">AI Search</a>
+        <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
+        <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
+        <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
+        <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
+        <a href="/discover" class="mobile-drawer__link">Discover</a>
+        <a href="/admin" class="mobile-drawer__link">Admin</a>
+      </nav>
+
+      <div class="mobile-drawer__section-label">Recent searches</div>
+
+      <div class="mobile-drawer__footer">
+        <a href="/" class="mobile-drawer__footer-link">Home</a>
+        <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
+
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link is-active">Account</a>
+          <form method="post" action="{{ url_for('logout') }}">
+            <button type="submit" class="mobile-drawer__footer-button">Log out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
+          <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+
+    <!-- Main screen -->
+    <main class="mobile-screen">
+      <header class="mobile-app-header">
+        <button
+          class="mobile-app-header__icon"
+          id="app-sidebar-toggle"
+          type="button"
+          aria-label="Open menu"
+        >☰</button>
+
+        <div class="mobile-app-header__center">
+          <div class="mobile-app-header__title">Saved Places</div>
+          <div class="mobile-app-header__subtitle">Your personal guides and lists</div>
+        </div>
+
+        {% if current_user.is_authenticated %}
+          <a
+            href="{{ url_for('account') }}"
+            class="mobile-app-header__icon mobile-app-header__icon--link"
+            aria-label="Account"
+          >
+            {{ (user.name or user.email or "U")[0]|upper }}
+          </a>
+        {% else %}
+          <a
+            href="{{ url_for('login') }}"
+            class="mobile-app-header__icon mobile-app-header__icon--link"
+            aria-label="Log in"
+          >👤</a>
+        {% endif %}
+      </header>
+
+      <section class="mobile-content account-page-content">
+        <div class="account-ios-shell">
+          <section class="account-ios-hero">
+            <div class="account-ios-hero__avatar">
+              {{ (user.name or user.email or "U")[0]|upper }}
+            </div>
+
+            <div class="account-ios-hero__content">
+              <h1 class="account-ios-hero__title">Saved Places</h1>
+              <p class="account-ios-hero__subtitle">
+                Build personal guides for your favorite spots.
+              </p>
+            </div>
+          </section>
+
+          <section class="account-ios-stats">
+            <div class="account-ios-stat">
+              <strong>{{ lists|length }}</strong>
+              <span>Lists</span>
+            </div>
+
+            <div class="account-ios-stat">
+              <strong>{{ lists | map(attribute='places') | map('length') | sum }}</strong>
+              <span>Places</span>
+            </div>
+
+            <div class="account-ios-stat">
+              <strong>{{ lists | selectattr('is_public') | list | length }}</strong>
+              <span>Public</span>
+            </div>
+          </section>
+
+          <section class="account-ios-toolbar">
+            <a href="{{ url_for('create_list') }}" class="btn-primary account-ios-toolbar__cta">
+              + New List
+            </a>
+          </section>
+
+          {% if lists %}
+            <section class="account-ios-lists">
+              {% for saved_list in lists %}
+                <article class="account-ios-list-card">
+                  <div class="account-ios-list-card__top">
+                    <div>
+                      <h2 class="account-ios-list-card__title">{{ saved_list.title }}</h2>
+                      <div class="account-ios-list-card__meta">
+                        {{ saved_list.places|length }} places ·
+                        {{ "Public" if saved_list.is_public else "Private" }}
+                      </div>
+                    </div>
+
+                    <div class="account-ios-list-card__status">
+                      {{ "Public" if saved_list.is_public else "Private" }}
+                    </div>
+                  </div>
+
+                  {% if saved_list.description %}
+                    <p class="account-ios-list-card__description">
+                      {{ saved_list.description }}
+                    </p>
+                  {% endif %}
+
+                  {% if saved_list.places %}
+                    <div class="account-ios-preview-grid">
+                      {% for place in saved_list.places[:4] %}
+                        <div class="account-ios-preview-grid__item">
+                          {% if place.photo_url %}
+                            <img src="{{ place.photo_url }}" alt="{{ place.name }}">
+                          {% else %}
+                            <img src="{{ url_for('static', filename='img/default-business.jpg') }}" alt="{{ place.name }}">
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+
+                  {% if saved_list.is_public %}
+                    <div class="account-ios-list-card__share">
+                      <span>Share:</span>
+                      <a href="{{ url_for('view_public_list', slug=saved_list.slug) }}">
+                        {{ request.host_url.rstrip('/') }}{{ url_for('view_public_list', slug=saved_list.slug) }}
+                      </a>
+                    </div>
+                  {% endif %}
+
+                  <div class="account-list-filters" id="filters-{{ saved_list.id }}">
+                    <select class="account-list-filter-select" data-filter-city="{{ saved_list.id }}">
+                      <option value="">All cities</option>
+                      {% for city in (filter_options_by_list.get(saved_list.id, {}).get("cities", [])) %}
+                        <option value="{{ city }}">{{ city }}</option>
+                      {% endfor %}
+                    </select>
+
+                    <select class="account-list-filter-select" data-filter-cuisine="{{ saved_list.id }}">
+                      <option value="">All cuisines</option>
+                      {% for cuisine in (filter_options_by_list.get(saved_list.id, {}).get("cuisines", [])) %}
+                        <option value="{{ cuisine }}">{{ cuisine }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="account-list-view-toggle">
+                    <button
+                      type="button"
+                      class="account-list-view-toggle__btn is-active"
+                      data-list-view-btn="{{ saved_list.id }}"
+                      data-view="cards"
+                    >
+                      List view
+                    </button>
+
+                    <button
+                      type="button"
+                      class="account-list-view-toggle__btn"
+                      data-list-view-btn="{{ saved_list.id }}"
+                      data-view="map"
+                    >
+                      Map view
+                    </button>
+                  </div>
+
+                  {% if saved_list.places %}
+                    <div class="account-list-view-section is-active" id="cards-view-{{ saved_list.id }}">
+                      <div class="saved-places-grid">
+                        {% for place in saved_list.places %}
+                          <article
+                            class="saved-place-card"
+                            data-list-place="{{ saved_list.id }}"
+                            data-city="{{ (place.city or '')|trim }}"
+                            data-cuisine="{{ (place.cuisine or place.category or '')|trim }}"
+                          >
+                            <div class="saved-place-card__image-wrap">
+                              {% if place.photo_url %}
+                                <img src="{{ place.photo_url }}" alt="{{ place.name }}" class="saved-place-card__image">
+                              {% else %}
+                                <img src="{{ url_for('static', filename='img/default-business.jpg') }}" alt="{{ place.name }}" class="saved-place-card__image">
+                              {% endif %}
+                            </div>
+
+                            <div class="saved-place-card__body">
+                              <h4 class="saved-place-card__title">{{ place.name }}</h4>
+
+                              <div class="saved-place-card__meta">
+                                {{ category_icon(place.category) }}
+                                {{ (place.category or "Local business")|replace('_', ' ')|title }}
+                              </div>
+
+                              {% if place.address %}
+                                <div class="saved-place-card__address">
+                                  {{ place.address }}
+                                </div>
+                              {% endif %}
+
+                              {% if place.website %}
+                                <div class="saved-place-card__actions">
+                                  <a
+                                    href="{{ place.website }}"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="btn-primary"
+                                  >
+                                    Visit website
+                                  </a>
+                                </div>
+                              {% endif %}
+                            </div>
+                          </article>
+                        {% endfor %}
+                      </div>
+                    </div>
+
+                    <div class="account-list-view-section" id="map-view-{{ saved_list.id }}">
+                      <div class="account-list-map-panel">
+                        <div id="saved-list-map-{{ saved_list.id }}" class="account-list-map-frame"></div>
+                      </div>
+                    </div>
+
+                    <script id="saved-list-map-data-{{ saved_list.id }}" type="application/json">
+                      {{ (map_data_by_list.get(saved_list.id) or []) | tojson }}
+                    </script>
+                  {% else %}
+                    <p class="account-list-card__empty">No saved places yet.</p>
+                  {% endif %}
+                </article>
+              {% endfor %}
+            </section>
+          {% else %}
+            <section class="account-ios-empty">
+              <h2>No lists yet</h2>
+              <p>Create your first list to start saving favorite places.</p>
+              <a href="{{ url_for('create_list') }}" class="btn-primary">Create your first list</a>
+            </section>
+          {% endif %}
+
+          <section class="account-ios-account-panel">
+            <h2>Your account</h2>
+            <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+
+            <form method="post" action="{{ url_for('logout') }}" class="account-logout-form">
+              <button type="submit" class="btn-secondary">Log out</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <nav class="mobile-tabbar">
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🏠</span>
+          <span class="mobile-tabbar__label">Home</span>
+        </a>
+
+        <a href="/discover" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🗺️</span>
+          <span class="mobile-tabbar__label">Discover</span>
+        </a>
+
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🔎</span>
+          <span class="mobile-tabbar__label">Search</span>
+        </a>
+
+        <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active">
+          <span class="mobile-tabbar__icon">📌</span>
+          <span class="mobile-tabbar__label">Saved</span>
+        </a>
+
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">👤</span>
+          <span class="mobile-tabbar__label">Account</span>
+        </a>
+      </nav>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const sidebar = document.getElementById("app-sidebar");
+      const sidebarToggle = document.getElementById("app-sidebar-toggle");
+      const closeBtn = document.getElementById("app-sidebar-close");
+      const backdrop = document.getElementById("app-sidebar-backdrop");
+
+      function openDrawer() {
+        sidebar?.classList.add("is-open");
+        backdrop?.classList.add("is-open");
+      }
+
+      function closeDrawer() {
+        sidebar?.classList.remove("is-open");
+        backdrop?.classList.remove("is-open");
+      }
+
+      sidebarToggle?.addEventListener("click", openDrawer);
+      closeBtn?.addEventListener("click", closeDrawer);
+      backdrop?.addEventListener("click", closeDrawer);
+
+      const buttons = document.querySelectorAll("[data-list-view-btn]");
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", function () {
+          const listId = button.getAttribute("data-list-view-btn");
+          const view = button.getAttribute("data-view");
+
+          const groupButtons = document.querySelectorAll(
+            `[data-list-view-btn="${listId}"]`
+          );
+
+          const cardsView = document.getElementById(`cards-view-${listId}`);
+          const mapView = document.getElementById(`map-view-${listId}`);
+          const listCard = button.closest(".account-ios-list-card");
+
+          groupButtons.forEach((btn) => btn.classList.remove("is-active"));
+          button.classList.add("is-active");
+
+          if (view === "cards") {
+            if (cardsView) cardsView.classList.add("is-active");
+            if (mapView) mapView.classList.remove("is-active");
+            if (listCard) listCard.classList.remove("is-map-mode");
+          } else {
+            if (cardsView) cardsView.classList.remove("is-active");
+            if (mapView) mapView.classList.add("is-active");
+            if (listCard) listCard.classList.add("is-map-mode");
+
+            if (window.savedListMaps && window.savedListMaps[listId]) {
+              setTimeout(() => {
+                google.maps.event.trigger(window.savedListMaps[listId].map, "resize");
+                applyListFilters(listId);
+              }, 150);
+            }
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-filter-city]").forEach((select) => {
+        select.addEventListener("change", function () {
+          applyListFilters(this.getAttribute("data-filter-city"));
+        });
+      });
+
+      document.querySelectorAll("[data-filter-cuisine]").forEach((select) => {
+        select.addEventListener("change", function () {
+          applyListFilters(this.getAttribute("data-filter-cuisine"));
+        });
+      });
+    });
+
+    function initSavedListMaps() {
+      window.savedListMaps = {};
+
+      const mapFrames = document.querySelectorAll(".account-list-map-frame");
+
+      mapFrames.forEach((frame) => {
+        const listId = frame.id.replace("saved-list-map-", "");
+        const dataEl = document.getElementById(`saved-list-map-data-${listId}`);
+        if (!dataEl) return;
+
+        const places = JSON.parse(dataEl.textContent || "[]");
+
+        const map = new google.maps.Map(frame, {
+          zoom: 11,
+          center: { lat: 41.8781, lng: -87.6298 },
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false
+        });
+
+        const infoWindow = new google.maps.InfoWindow();
+        const markers = [];
+
+        places.forEach((place) => {
+          if (place.lat == null || place.lng == null) return;
+
+          const marker = new google.maps.Marker({
+            position: {
+              lat: Number(place.lat),
+              lng: Number(place.lng)
+            },
+            map,
+            title: place.name || ""
+          });
+
+          marker.__placeData = place;
+
+          marker.addListener("click", () => {
+            infoWindow.setContent(`
+              <div style="max-width:220px;">
+                <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
+                  ${place.name || ""}
+                </div>
+                <div style="font-size:13px;color:#666;margin-bottom:8px;">
+                  ${place.cuisine || place.category || ""}
+                </div>
+                <div style="font-size:13px;color:#444;margin-bottom:8px;">
+                  ${place.address || ""}
+                </div>
+                ${
+                  place.website
+                    ? `<a href="${place.website}" target="_blank" rel="noopener" style="color:#111;font-weight:600;">Visit website</a>`
+                    : ""
+                }
+              </div>
+            `);
+            infoWindow.open(map, marker);
+          });
+
+          markers.push(marker);
+        });
+
+        window.savedListMaps[listId] = {
+          map,
+          markers,
+          places
+        };
+
+        applyListFilters(listId);
+      });
+    }
+
+    function applyListFilters(listId) {
+      if (!window.savedListMaps || !window.savedListMaps[listId]) return;
+
+      const state = window.savedListMaps[listId];
+      const map = state.map;
+      const markers = state.markers;
+
+      const citySelect = document.querySelector(`[data-filter-city="${listId}"]`);
+      const cuisineSelect = document.querySelector(`[data-filter-cuisine="${listId}"]`);
+
+      const selectedCity = citySelect ? citySelect.value.trim() : "";
+      const selectedCuisine = cuisineSelect ? cuisineSelect.value.trim() : "";
+
+      const bounds = new google.maps.LatLngBounds();
+      let visibleCount = 0;
+
+      markers.forEach((marker) => {
+        const place = marker.__placeData || {};
+        const cityMatch = !selectedCity || (place.city || "") === selectedCity;
+        const cuisineMatch = !selectedCuisine || (place.cuisine || "") === selectedCuisine;
+
+        const isVisible = cityMatch && cuisineMatch;
+        marker.setVisible(isVisible);
+
+        if (isVisible) {
+          bounds.extend(marker.getPosition());
+          visibleCount += 1;
+        }
+      });
+
+      const cards = document.querySelectorAll(`[data-list-place="${listId}"]`);
+
+      cards.forEach((card) => {
+        const cardCity = (card.getAttribute("data-city") || "").trim();
+        const cardCuisine = (card.getAttribute("data-cuisine") || "").trim();
+
+        const cityMatch = !selectedCity || cardCity === selectedCity;
+        const cuisineMatch = !selectedCuisine || cardCuisine === selectedCuisine;
+
+        const isVisible = cityMatch && cuisineMatch;
+        card.style.display = isVisible ? "" : "none";
+      });
+
+      if (visibleCount > 0) {
+        map.fitBounds(bounds);
+
+        google.maps.event.addListenerOnce(map, "bounds_changed", function () {
+          if (this.getZoom() > 14) {
+            this.setZoom(14);
+          }
+        });
+      }
+    }
+  </script>
+
+  <script
+    async
+    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initSavedListMaps">
+  </script>
+</body>
+</html>
