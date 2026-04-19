@@ -151,17 +151,23 @@ def get_db_connection():
 
 
 
-with sqlite3.connect(DB_PATH) as conn:
-    cur = conn.cursor()
+def ensure_listing_columns():
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
 
-    cur.execute("PRAGMA table_info(listings)")
-    cols = [row[1] for row in cur.fetchall()]
+        tables = [row[0] for row in cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='listings'"
+        ).fetchall()]
 
-    if "card_image_url" not in cols:
-        cur.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
-        print("[MIGRATION] Added card_image_url", flush=True)
-    else:
-        print("[MIGRATION] card_image_url already exists", flush=True)
+        if "listings" not in tables:
+            print("listings table does not exist yet; skipping column migration", flush=True)
+            return
+
+        columns = [row[1] for row in cur.execute("PRAGMA table_info(listings)").fetchall()]
+
+        if "card_image_url" not in columns:
+            cur.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
+            print("Added card_image_url to listings", flush=True)
 
     conn.commit()
     
