@@ -64,35 +64,41 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-
 import os
+import sqlite3
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "cms.db")
 
-conn = sqlite3.connect(DB_PATH)
-cursor = conn.cursor()
+def init_db():
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS listings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    address TEXT,
-    website TEXT,
-    category TEXT,
-    photo_url TEXT,
-    card_image_url TEXT,
-    notes TEXT,
-    latitude REAL,
-    longitude REAL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-""")
+    print("Initializing DB at:", DB_PATH, flush=True)
 
-conn.commit()
-conn.close()
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys=ON;")
 
-print("✅ listings table created")
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS pages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            template TEXT NOT NULL DEFAULT 'landing_default',
+            status TEXT NOT NULL DEFAULT 'draft',
+            tag_title TEXT,
+            hero_title TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+        # ... rest of your tables ...
+
+print("DB_PATH =", DB_PATH, flush=True)
+init_db()
+print("init_db() finished", flush=True)
 
 
 
