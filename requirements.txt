@@ -34,7 +34,7 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 jiter==0.14.0
 json_repair==0.59.2
-Markdown==3.10.2
+Markdown==3.7
 MarkupSafe==3.0.3
 narwhals==2.19.0
 numpy==2.4.4
