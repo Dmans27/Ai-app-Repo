@@ -88,9 +88,7 @@ def init_db():
         # etc.
 
         # ---- migrations ----
-        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages);").fetchall()]
-        if "card_image_url" not in page_cols:
-            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT;")
+
 
         listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
         if "photo_url" not in listing_cols:
