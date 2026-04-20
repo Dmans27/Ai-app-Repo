@@ -309,6 +309,9 @@ def bootstrap_app():
         print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
 
 
+bootstrap_app()
+
+
 
 
 
@@ -356,59 +359,7 @@ client = OpenAI(
         
  
 
-def init_conversation_tables():
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            session_id TEXT,
-            state_json TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS conversation_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            conversation_id INTEGER NOT NULL,
-            role TEXT NOT NULL,
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (conversation_id) REFERENCES conversations(id)
-        )
-    """)
-
-    conn.commit()
-    conn.close()
-        
-        
-        # migration: ensure listings.photo_url exists
-    listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
-    if "photo_url" not in listing_cols:
-        conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
-        
-    # migration: ensure listings.photo_url exists
-    listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
-    if "photo_url" not in listing_cols:
-        conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
-        
-        
-    # migration: ensure listings.photo_urls_json exists
-    listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
-    if "photo_urls_json" not in listing_cols:
-        conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
-        
-    
-    
-    
-        # migration: ensure listing_comments.rating exists
-        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
-        if "rating" not in comment_cols:
-            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
             
             
     
@@ -700,6 +651,8 @@ def get_or_create_session_id():
     return session["chat_session_id"]
 
 def load_or_create_conversation(user_id=None):
+    init_db()  # safety net for Render cold starts
+
     session_id = get_or_create_session_id()
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -2263,6 +2216,11 @@ def ai_chat():
             "state": state
         })
 
+    except sqlite3.OperationalError as e:
+        print("[AI_CHAT_SQLITE_ERROR]", str(e), flush=True)
+        return jsonify({
+            "error": "Chat is still initializing. Please try again in a moment."
+        }), 500
     except Exception as e:
         print("[AI_CHAT_ERROR]", str(e), flush=True)
         return jsonify({"error": str(e)}), 500
