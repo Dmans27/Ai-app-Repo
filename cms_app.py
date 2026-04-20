@@ -55,20 +55,16 @@ AI_JOBS = {}  # job_id -> dict(status, result, error, created_at)
 
 
 
-
 app = Flask(__name__)
-
-
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-import os
-import sqlite3
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "cms.db")
+
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
 
 def init_db():
     db_dir = os.path.dirname(DB_PATH)
@@ -80,25 +76,63 @@ def init_db():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys=ON;")
 
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS pages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            slug TEXT UNIQUE NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT,
-            template TEXT NOT NULL DEFAULT 'landing_default',
-            status TEXT NOT NULL DEFAULT 'draft',
-            tag_title TEXT,
-            hero_title TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
-        # ... rest of your tables ...
+        # keep your full CREATE TABLE IF NOT EXISTS blocks here
+        # listings
+        # pages
+        # sections
+        # users
+        # ads
+        # feed_posts
+        # feed_post_comments
+        # conversation tables
+        # etc.
 
-print("DB_PATH =", DB_PATH, flush=True)
-init_db()
-print("init_db() finished", flush=True)
+        # ---- migrations ----
+        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages);").fetchall()]
+        if "card_image_url" not in page_cols:
+            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT;")
+
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+        if "photo_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
+        if "photo_urls_json" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
+
+        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
+        if "rating" not in comment_cols:
+            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
+
+        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
+        if "name" not in user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN name TEXT;")
+            
+            
+        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
+        if "card_image_url" not in page_cols:
+            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
+
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
+        if "card_image_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
+            
+            
+        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
+        if "card_image_url" not in page_cols:
+            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
+
+        conn.commit()
+
+
+def bootstrap_app():
+    print("DB_PATH =", DB_PATH, flush=True)
+    init_db()
+    print("init_db() finished", flush=True)
+
+    with app.app_context():
+        db.create_all()
+        print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
+
+bootstrap_app()
 
 
 
@@ -113,10 +147,10 @@ print("init_db() finished", flush=True)
 app.config["SECRET_KEY"] = "change-this-in-production"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
-print("[SQLALCHEMY DB PATH]", app.config["SQLALCHEMY_DATABASE_URI"], flush=True)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 
-db.init_app(app)
+
 
 
 with app.app_context():
@@ -484,6 +518,22 @@ def init_db():
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        
+        
+        
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
+
+    if "card_image_url" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
+
+    if "photo_url" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT")
+
+    if "photo_urls_json" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT")
+        
+        
+        
         
         
  
@@ -3033,6 +3083,10 @@ def home():
         first_list = SavedList.query.filter_by(
             user_id=current_user.id
         ).order_by(SavedList.id.asc()).first()
+        
+        
+        
+    
 
         default_saved_list_id = first_list.id if first_list else None
 
