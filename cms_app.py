@@ -3462,15 +3462,18 @@ def listing_page(slug):
     
 @app.get("/discover")
 def discover_page():
-    articles = query_all("""
-        SELECT id, slug, title, description, template, tag_title, updated_at, card_image_url
-        FROM pages
-        WHERE status='published'
-        ORDER BY datetime(updated_at) DESC, id DESC
-        LIMIT 16
-    """)
-
-    articles = [dict(a) for a in articles]
+    try:
+        articles = query_all("""
+            SELECT id, slug, title, description, template, tag_title, updated_at, card_image_url
+            FROM pages
+            WHERE status='published'
+            ORDER BY datetime(updated_at) DESC, id DESC
+            LIMIT 16
+        """)
+        articles = [dict(a) for a in articles]
+    except sqlite3.OperationalError as e:
+        print("[DISCOVER_QUERY_ERROR]", str(e), flush=True)
+        articles = []
 
     featured_article = articles[0] if len(articles) > 0 else None
     top_cards = articles[1:4] if len(articles) > 1 else []
