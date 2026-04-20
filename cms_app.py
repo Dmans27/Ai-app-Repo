@@ -54,17 +54,20 @@ AI_JOBS = {}  # job_id -> dict(status, result, error, created_at)
 
 
 
-
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "cms.db")
 
-app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
+app.config["SECRET_KEY"] = os.environ.get(
+    "FLASK_SECRET_KEY",
+    "dev-change-me-please"
+)
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
+
 
 def init_db():
     db_dir = os.path.dirname(DB_PATH)
@@ -72,223 +75,6 @@ def init_db():
         os.makedirs(db_dir, exist_ok=True)
 
     print("Initializing DB at:", DB_PATH, flush=True)
-
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("PRAGMA foreign_keys=ON;")
-
-        # keep your full CREATE TABLE IF NOT EXISTS blocks here
-        # listings
-        # pages
-        # sections
-        # users
-        # ads
-        # feed_posts
-        # feed_post_comments
-        # conversation tables
-        # etc.
-
-
-
-
-def bootstrap_app():
-    print("DB_PATH =", DB_PATH, flush=True)
-    init_db()
-    print("init_db() finished", flush=True)
-
-    with app.app_context():
-        db.create_all()
-        print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
-
-bootstrap_app()
-
-
-
-
-
-
-
-
-
-
-
-app.config["SECRET_KEY"] = "change-this-in-production"
-
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-
-
-
-
-with app.app_context():
-    db.create_all()
-    
-    
-    
-with app.app_context():
-    print("[SQLALCHEMY_DB_URL]", db.engine.url, flush=True)
-
-    cols = db.session.execute(db.text("PRAGMA table_info(user)")).fetchall()
-    print("[BEFORE USER COLUMNS]", cols, flush=True)
-
-    col_names = [col[1] for col in cols]
-    if "role" not in col_names:
-        db.session.execute(
-            db.text("ALTER TABLE user ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'user'")
-        )
-        db.session.commit()
-        print("[MIGRATION] Added user.role column", flush=True)
-
-    cols = db.session.execute(db.text("PRAGMA table_info(user)")).fetchall()
-    print("[AFTER USER COLUMNS]", cols, flush=True)
-    
-    
-    
-def get_db_connection():
-    print("[RAW SQLITE DB PATH]", DB_PATH, flush=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-
-def ensure_listing_columns():
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-
-        tables = [row[0] for row in cur.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='listings'"
-        ).fetchall()]
-
-        if "listings" not in tables:
-            print("listings table does not exist yet; skipping column migration", flush=True)
-            return
-
-        columns = [row[1] for row in cur.execute("PRAGMA table_info(listings)").fetchall()]
-
-        if "card_image_url" not in columns:
-            cur.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
-            print("Added card_image_url to listings", flush=True)
-
-    conn.commit()
-    
-    
-    
-with sqlite3.connect(DB_PATH) as conn:
-    cur = conn.cursor()
-
-    cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-    print("[TABLES]", cur.fetchall(), flush=True)
-
-    cur.execute("PRAGMA table_info(listings)")
-    print("[LISTINGS COLUMNS]", cur.fetchall(), flush=True)
-    
-    
-    
-with app.app_context():
-    with db.engine.connect() as conn:
-        cols = conn.exec_driver_sql("PRAGMA table_info(saved_place);").fetchall()
-        col_names = [c[1] for c in cols]
-
-        if "city" not in col_names:
-            conn.exec_driver_sql("ALTER TABLE saved_place ADD COLUMN city VARCHAR(120);")
-
-        if "state" not in col_names:
-            conn.exec_driver_sql("ALTER TABLE saved_place ADD COLUMN state VARCHAR(120);")
-
-        if "cuisine" not in col_names:
-            conn.exec_driver_sql("ALTER TABLE saved_place ADD COLUMN cuisine VARCHAR(120);")
-
-        conn.commit()
-        
-        
-with app.app_context():
-    conn = sqlite3.connect(DB_PATH)  # or your actual DB path
-    cursor = conn.cursor()
-
-    cursor.execute("PRAGMA table_info(articles)")
-    cols = [row[1] for row in cursor.fetchall()]
-
-  
-
-    conn.commit()
-    conn.close()
-    
-
-
-from flask_login import LoginManager
-from models import User  # or wherever your User model lives
-
-login_manager = LoginManager()
-login_manager.login_view = "login"
-login_manager.init_app(app)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-
-
-
-app.register_blueprint(auth)
-
-
-
-
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-load_dotenv()
-print("CWD:", os.getcwd())
-print("SERPER_API_KEY exists:", bool(os.environ.get("SERPER_API_KEY")))
-
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(BASE_DIR, "keys.env"))
-DB = os.path.join(BASE_DIR, "cms.db")
-
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-
-print("OPENAI_API_KEY exists:", bool(os.environ.get("OPENAI_API_KEY")))
-
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
-    timeout=240,      # per-request timeout
-    max_retries=0     # we do our own retry loop
-)
-
-
-
-
-
-
-
-
-# -----------------------
-# DB init
-# -----------------------
-
-
-
-
-import os
-import sqlite3
-import json
-import uuid
-
-
-def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("PRAGMA foreign_keys=ON;")
@@ -398,6 +184,7 @@ def init_db():
             FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
         );
         """)
+
         conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_sections_page_order
         ON sections(page_id, sort_order);
@@ -445,98 +232,46 @@ def init_db():
             FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
         );
         """)
-        
-        
-        
-        
+
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS feed_posts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                post_type TEXT NOT NULL DEFAULT 'text',
-                title TEXT,
-                body TEXT,
-                image_url TEXT,
-                listing_id INTEGER,
-                saved_list_id INTEGER,
-                city TEXT,
-                is_public INTEGER NOT NULL DEFAULT 1,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
+        CREATE TABLE IF NOT EXISTS feed_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            post_type TEXT NOT NULL DEFAULT 'text',
+            title TEXT,
+            body TEXT,
+            image_url TEXT,
+            listing_id INTEGER,
+            saved_list_id INTEGER,
+            city TEXT,
+            is_public INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
         """)
 
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS feed_post_likes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                post_id INTEGER NOT NULL,
-                user_id INTEGER NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(post_id, user_id)
-            );
+        CREATE TABLE IF NOT EXISTS feed_post_likes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(post_id, user_id)
+        );
         """)
 
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS feed_post_comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                post_id INTEGER NOT NULL,
-                user_id INTEGER NOT NULL,
-                body TEXT NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
+        CREATE TABLE IF NOT EXISTS feed_post_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            body TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
         """)
-        
-        
-        
-        
-            # ---- migrations ----
-        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages);").fetchall()]
-        if "card_image_url" not in page_cols:
-            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT;")
 
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
-        if "photo_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
-        if "photo_urls_json" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
+        # ---- CLEAN MIGRATIONS ----
 
-        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
-        if "rating" not in comment_cols:
-            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
-
-        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
-        if "name" not in user_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN name TEXT;")
-            
-            
-        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
-        if "card_image_url" not in page_cols:
-            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
-
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
-        if "card_image_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
-            
-        
-
-        conn.commit()
-        
-        
-        
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
-
-    if "card_image_url" not in listing_cols:
-        conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
-
-    if "photo_url" not in listing_cols:
-        conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT")
-
-    if "photo_urls_json" not in listing_cols:
-        conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT")
-        
-        
-        
-             # --- migrations ---
         page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
         if "card_image_url" not in page_cols:
             conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
@@ -546,37 +281,74 @@ def init_db():
             conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT")
         if "photo_urls_json" not in listing_cols:
             conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT")
+        if "card_image_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
 
         comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments)").fetchall()]
         if "rating" not in comment_cols:
-            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5")
+            conn.execute(
+                "ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5"
+            )
 
-        conn.commit()   
-        
- 
-        
-    
-
-        # --- migrations ---
-
-        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
-        if "is_admin" not in user_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0;")
-
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
-        if "photo_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
-
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
-        if "photo_urls_json" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
-
-        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
-        if "rating" not in comment_cols:
-            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
 
         conn.commit()
-        
+
+        tables = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()
+        print("[INIT_DB_TABLES]", tables, flush=True)
+
+
+def bootstrap_app():
+    print("DB_PATH =", DB_PATH, flush=True)
+    init_db()
+    print("init_db() finished", flush=True)
+
+    with app.app_context():
+        db.create_all()
+        print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
+
+
+
+
+
+def get_db_connection():
+    print("[RAW SQLITE DB PATH]", DB_PATH, flush=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+login_manager = LoginManager()
+login_manager.login_view = "login"
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+app.register_blueprint(auth)
+
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+load_dotenv()
+load_dotenv(os.path.join(BASE_DIR, "keys.env"))
+
+print("CWD:", os.getcwd())
+print("SERPER_API_KEY exists:", bool(os.environ.get("SERPER_API_KEY")))
+print("OPENAI_API_KEY exists:", bool(os.environ.get("OPENAI_API_KEY")))
+
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    timeout=240,
+    max_retries=0
+)      
         
         
         
