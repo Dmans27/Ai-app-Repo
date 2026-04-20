@@ -424,6 +424,44 @@ def init_conversation_tables():
 
 
 
+
+def table_exists(table_name: str) -> bool:
+    try:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                (table_name,)
+            ).fetchone()
+            return row is not None
+    except Exception as e:
+        print("[TABLE_EXISTS_ERROR]", table_name, str(e), flush=True)
+        return False
+
+
+def safe_query_all(sql, params=(), fallback=None, label="SAFE_QUERY_ALL"):
+    try:
+        return query_all(sql, params)
+    except sqlite3.OperationalError as e:
+        print(f"[{label}]", str(e), flush=True)
+        return [] if fallback is None else fallback
+    except Exception as e:
+        print(f"[{label}_UNEXPECTED]", str(e), flush=True)
+        return [] if fallback is None else fallback
+
+
+def safe_query_one(sql, params=(), fallback=None, label="SAFE_QUERY_ONE"):
+    try:
+        return query_one(sql, params)
+    except sqlite3.OperationalError as e:
+        print(f"[{label}]", str(e), flush=True)
+        return fallback
+    except Exception as e:
+        print(f"[{label}_UNEXPECTED]", str(e), flush=True)
+        return fallback
+
+
+
+
 def is_broad_query(message: str) -> bool:
     text = (message or "").strip().lower()
 
@@ -2646,16 +2684,17 @@ def admin_seed_directory_pages():
 
 @app.get("/d/<slug>")
 def directory_page(slug):
-    page = query_one("""
-        SELECT *
-        FROM directory_pages
-        WHERE slug = ? AND status = 'published'
-    """, (slug,))
+    page = safe_query_one("""
+        SELECT p.*, d.city, d.state, d.category, d.intro_text
+        FROM pages p
+        JOIN directory_page_meta d ON d.page_id = p.id
+        WHERE p.slug = ? AND p.status = 'published'
+    """, (slug,), label="DIRECTORY_PAGE_ERROR")
 
     if not page:
         abort(404)
 
-    listings = query_all("""
+    listings = safe_query_all("""
         SELECT *
         FROM listings
         WHERE status = 'published'
@@ -2668,7 +2707,7 @@ def directory_page(slug):
         f"%{page['category']}%",
         page["city"],
         page["state"]
-    ))
+    ), label="DIRECTORY_PAGE_LISTINGS_ERROR")
 
     return render_template(
         "directory_city_category.html",
@@ -2682,60 +2721,68 @@ def directory_page(slug):
     
 @app.get("/feed")
 def feed():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
+    if not table_exists("feed_posts") or not table_exists("users"):
+        print("[FEED_TABLES_MISSING]", flush=True)
+        return render_template("feed.html", posts=[])
 
-    cur.execute("""
-        SELECT
-            p.*,
-            COALESCE(NULLIF(u.name, ''), u.email) AS user_name,
-            u.email AS user_email,
-            l.name AS listing_name,
-            l.slug AS listing_slug,
-            l.photo_url AS listing_photo_url,
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
 
-            (
-                SELECT COUNT(*)
-                FROM feed_post_likes fpl
-                WHERE fpl.post_id = p.id
-            ) AS like_count,
-
-            (
-                SELECT COUNT(*)
-                FROM feed_post_comments fpc
-                WHERE fpc.post_id = p.id
-            ) AS comment_count
-
-        FROM feed_posts p
-        JOIN users u
-            ON u.id = p.user_id
-        LEFT JOIN listings l
-            ON l.id = p.listing_id
-        WHERE p.is_public = 1
-        ORDER BY datetime(p.created_at) DESC, p.id DESC
-        LIMIT 50
-    """)
-
-    posts = [dict(row) for row in cur.fetchall()]
-
-    for post in posts:
-        comment_rows = conn.execute("""
+        cur.execute("""
             SELECT
-                c.*,
-                COALESCE(NULLIF(u.name, ''), u.email) AS user_name
-            FROM feed_post_comments c
+                p.*,
+                COALESCE(NULLIF(u.name, ''), u.email) AS user_name,
+                u.email AS user_email,
+                l.name AS listing_name,
+                l.slug AS listing_slug,
+                l.photo_url AS listing_photo_url,
+                (
+                    SELECT COUNT(*)
+                    FROM feed_post_likes fpl
+                    WHERE fpl.post_id = p.id
+                ) AS like_count,
+                (
+                    SELECT COUNT(*)
+                    FROM feed_post_comments fpc
+                    WHERE fpc.post_id = p.id
+                ) AS comment_count
+            FROM feed_posts p
             JOIN users u
-                ON u.id = c.user_id
-            WHERE c.post_id = ?
-            ORDER BY datetime(c.created_at) ASC, c.id ASC
-        """, (post["id"],)).fetchall()
+                ON u.id = p.user_id
+            LEFT JOIN listings l
+                ON l.id = p.listing_id
+            WHERE p.is_public = 1
+            ORDER BY datetime(p.created_at) DESC, p.id DESC
+            LIMIT 50
+        """)
 
-        post["comments"] = [dict(row) for row in comment_rows]
+        posts = [dict(row) for row in cur.fetchall()]
 
-    conn.close()
+        for post in posts:
+            comment_rows = conn.execute("""
+                SELECT
+                    c.*,
+                    COALESCE(NULLIF(u.name, ''), u.email) AS user_name
+                FROM feed_post_comments c
+                JOIN users u
+                    ON u.id = c.user_id
+                WHERE c.post_id = ?
+                ORDER BY datetime(c.created_at) ASC, c.id ASC
+            """, (post["id"],)).fetchall()
 
-    return render_template("feed.html", posts=posts)
+            post["comments"] = [dict(row) for row in comment_rows]
+
+        conn.close()
+        return render_template("feed.html", posts=posts)
+
+    except sqlite3.OperationalError as e:
+        print("[FEED_QUERY_ERROR]", str(e), flush=True)
+        return render_template("feed.html", posts=[])
+    except Exception as e:
+        print("[FEED_UNEXPECTED_ERROR]", str(e), flush=True)
+        return render_template("feed.html", posts=[])
 
 
 
@@ -2855,35 +2902,44 @@ def ai_job_status(job_id):
     
 @app.get("/")
 def home():
-    try:
-        articles = query_all("""
-            SELECT id, slug, title, description, updated_at
-            FROM pages
-            WHERE status='published'
-            ORDER BY datetime(updated_at) DESC, id DESC
-            LIMIT 8
-        """)
-    except sqlite3.OperationalError as e:
-        print("[HOME_QUERY_ERROR]", str(e), flush=True)
-        articles = []
+    articles = safe_query_all("""
+        SELECT id, slug, title, description, updated_at
+        FROM pages
+        WHERE status='published'
+        ORDER BY datetime(updated_at) DESC, id DESC
+        LIMIT 8
+    """, label="HOME_QUERY_ERROR")
 
     homepage_top_ads = []
     homepage_inline_ads = []
 
-    try:
-        homepage_top_ads = get_active_ads("homepage_top", limit=1)
-        homepage_inline_ads = get_active_ads("homepage_inline", limit=3)
-    except Exception as e:
-        print("[HOME_ADS_ERROR]", str(e), flush=True)
+    if table_exists("ads"):
+        homepage_top_ads = safe_query_all("""
+            SELECT *
+            FROM ads
+            WHERE is_active = 1 AND placement = ?
+            ORDER BY sort_order ASC, id DESC
+            LIMIT ?
+        """, ("homepage_top", 1), label="HOME_TOP_ADS_ERROR")
+
+        homepage_inline_ads = safe_query_all("""
+            SELECT *
+            FROM ads
+            WHERE is_active = 1 AND placement = ?
+            ORDER BY sort_order ASC, id DESC
+            LIMIT ?
+        """, ("homepage_inline", 3), label="HOME_INLINE_ADS_ERROR")
 
     default_saved_list_id = None
 
     if current_user.is_authenticated:
-        first_list = SavedList.query.filter_by(
-            user_id=current_user.id
-        ).order_by(SavedList.id.asc()).first()
-
-        default_saved_list_id = first_list.id if first_list else None
+        try:
+            first_list = SavedList.query.filter_by(
+                user_id=current_user.id
+            ).order_by(SavedList.id.asc()).first()
+            default_saved_list_id = first_list.id if first_list else None
+        except Exception as e:
+            print("[HOME_SAVED_LIST_ERROR]", str(e), flush=True)
 
     return render_template(
         "directory_home.html",
@@ -3308,7 +3364,15 @@ def search():
                 "distance_miles": l.get("distance_miles"),
             })
 
+    # inside search(), replace:
     search_ads = get_active_ads("search_inline", limit=3)
+
+    # with:
+    try:
+        search_ads = get_active_ads("search_inline", limit=3)
+    except Exception as e:
+        print("[SEARCH_ADS_ERROR]", str(e), flush=True)
+        search_ads = []
     
     
     
@@ -3382,56 +3446,43 @@ def haversine(lat1, lon1, lat2, lon2):
     
 @app.get("/listing/<slug>")
 def listing_page(slug):
-    listing = query_one("""
+    listing = safe_query_one("""
         SELECT *
         FROM listings
         WHERE slug=? AND status='published'
-    """, (slug,))
+    """, (slug,), label="LISTING_PAGE_QUERY_ERROR")
 
     if not listing:
         abort(404)
 
-    related = []
-    if listing["category"] and listing["city"]:
-        related = query_all("""
-            SELECT id, name, slug, category, city, state, featured, photo_url, description
-            FROM listings
-            WHERE status='published'
-              AND category=?
-              AND city=?
-              AND id != ?
-            ORDER BY featured DESC, name ASC
-            LIMIT 6
-        """, (listing["category"], listing["city"], listing["id"]))
+    related = safe_query_all("""
+        SELECT id, name, slug, category, city, state, featured, photo_url, description
+        FROM listings
+        WHERE status='published'
+          AND category=?
+          AND city=?
+          AND id != ?
+        ORDER BY featured DESC, name ASC
+        LIMIT 6
+    """, (listing["category"], listing["city"], listing["id"]), label="LISTING_RELATED_ERROR") if listing["category"] and listing["city"] else []
 
-    comments = query_all("""
-    SELECT id, author_name, body, rating, created_at
-    FROM listing_comments
-    WHERE listing_id = ?
-      AND is_approved = 1
-    ORDER BY datetime(created_at) DESC, id DESC
-    LIMIT 20
-""", (listing["id"],))
-    
-    
-    rating_summary = query_one("""
-    SELECT
-        COUNT(*) AS comment_count,
-        ROUND(AVG(rating), 1) AS avg_rating
-    FROM listing_comments
-    WHERE listing_id = ?
-      AND is_approved = 1
-""", (listing["id"],))
-    
-    
-    
+    comments = safe_query_all("""
+        SELECT id, author_name, body, rating, created_at
+        FROM listing_comments
+        WHERE listing_id = ?
+          AND is_approved = 1
+        ORDER BY datetime(created_at) DESC, id DESC
+        LIMIT 20
+    """, (listing["id"],), label="LISTING_COMMENTS_ERROR")
 
-    
-    
-    
-
-    
-
+    rating_summary = safe_query_one("""
+        SELECT
+            COUNT(*) AS comment_count,
+            ROUND(AVG(rating), 1) AS avg_rating
+        FROM listing_comments
+        WHERE listing_id = ?
+          AND is_approved = 1
+    """, (listing["id"],), fallback={"comment_count": 0, "avg_rating": None}, label="LISTING_RATING_ERROR")
 
     listing_photos = []
     try:
@@ -3444,13 +3495,13 @@ def listing_page(slug):
         listing_photos = [listing["photo_url"]]
 
     return render_template(
-    "listing_page.html",
-    listing=listing,
-    related=related,
-    comments=comments,
-    listing_photos=listing_photos,
-    rating_summary=rating_summary
-)
+        "listing_page.html",
+        listing=listing,
+        related=related,
+        comments=comments,
+        listing_photos=listing_photos,
+        rating_summary=rating_summary
+    )
     
     
     
@@ -3462,18 +3513,15 @@ def listing_page(slug):
     
 @app.get("/discover")
 def discover_page():
-    try:
-        articles = query_all("""
-            SELECT id, slug, title, description, template, tag_title, updated_at, card_image_url
-            FROM pages
-            WHERE status='published'
-            ORDER BY datetime(updated_at) DESC, id DESC
-            LIMIT 16
-        """)
-        articles = [dict(a) for a in articles]
-    except sqlite3.OperationalError as e:
-        print("[DISCOVER_QUERY_ERROR]", str(e), flush=True)
-        articles = []
+    articles = safe_query_all("""
+        SELECT id, slug, title, description, template, tag_title, updated_at, card_image_url
+        FROM pages
+        WHERE status='published'
+        ORDER BY datetime(updated_at) DESC, id DESC
+        LIMIT 16
+    """, label="DISCOVER_QUERY_ERROR")
+
+    articles = [dict(a) for a in articles]
 
     featured_article = articles[0] if len(articles) > 0 else None
     top_cards = articles[1:4] if len(articles) > 1 else []
@@ -3916,19 +3964,23 @@ def logout():
 
 @app.get("/admin")
 def admin_home():
-    counts = query_one("""
+    counts = safe_query_one("""
         SELECT
           SUM(CASE WHEN status='published' THEN 1 ELSE 0 END) AS published_count,
           SUM(CASE WHEN status='draft' THEN 1 ELSE 0 END) AS draft_count,
           COUNT(*) AS total_count
         FROM pages
-    """) or {"published_count": 0, "draft_count": 0, "total_count": 0}
+    """, fallback={
+        "published_count": 0,
+        "draft_count": 0,
+        "total_count": 0
+    }, label="ADMIN_HOME_COUNTS_ERROR")
 
-    pages = query_all("""
+    pages = safe_query_all("""
         SELECT id, slug, title, status, template, updated_at
         FROM pages
         ORDER BY datetime(updated_at) DESC, id DESC
-    """)
+    """, label="ADMIN_HOME_PAGES_ERROR")
 
     return render_template("admin_home.html", counts=counts, pages=pages)
 
@@ -3938,11 +3990,12 @@ def admin_home():
 
 @app.get("/admin/ads")
 def admin_ads():
-    ads = query_all("""
+    ads = safe_query_all("""
         SELECT *
         FROM ads
         ORDER BY placement ASC, sort_order ASC, id DESC
-    """)
+    """, label="ADMIN_ADS_ERROR")
+
     return render_template("admin_ads.html", ads=ads)
 
 
@@ -4630,27 +4683,27 @@ import urllib.parse
 
 @app.get("/p/<slug>")
 def public_page(slug):
-    page = query_one("""
+    page = safe_query_one("""
         SELECT *
         FROM pages
         WHERE slug = ? AND status = 'published'
-    """, (slug,))
+    """, (slug,), label="PUBLIC_PAGE_ERROR")
 
     if not page:
         abort(404)
 
-    sections = query_all("""
+    sections = safe_query_all("""
         SELECT *
         FROM sections
         WHERE page_id = ?
         ORDER BY sort_order ASC, id ASC
-    """, (page["id"],))
+    """, (page["id"],), label="PUBLIC_PAGE_SECTIONS_ERROR")
 
-    directory_meta = query_one("""
+    directory_meta = safe_query_one("""
         SELECT *
         FROM directory_page_meta
         WHERE page_id = ?
-    """, (page["id"],))
+    """, (page["id"],), label="PUBLIC_PAGE_META_ERROR")
 
     directory_listings = []
     directory_intro = None
@@ -4658,7 +4711,7 @@ def public_page(slug):
     if directory_meta:
         directory_intro = directory_meta["intro_text"]
 
-        directory_listings = query_all("""
+        directory_listings = safe_query_all("""
             SELECT *
             FROM listings
             WHERE status = 'published'
@@ -4671,21 +4724,20 @@ def public_page(slug):
             directory_meta["city"],
             directory_meta["state"],
             f"%{directory_meta['category']}%"
-        ))
+        ), label="PUBLIC_PAGE_LISTINGS_ERROR")
 
     template_name = page["template"] or "landing_default"
-
     if not template_name.endswith(".html"):
         template_name = f"{template_name}.html"
 
     return render_template(
-    template_name,
-    page=page,
-    sections=sections,
-    directory_meta=directory_meta,
-    directory_intro=directory_intro,
-    directory_listings=directory_listings
-)
+        template_name,
+        page=page,
+        sections=sections,
+        directory_meta=directory_meta,
+        directory_intro=directory_intro,
+        directory_listings=directory_listings
+    )
     
     
     
