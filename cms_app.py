@@ -66,6 +66,40 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
+def init_db():
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+
+    print("Initializing DB at:", DB_PATH, flush=True)
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys=ON;")
+
+        # keep your full CREATE TABLE IF NOT EXISTS blocks here
+        # listings
+        # pages
+        # sections
+        # users
+        # ads
+        # feed_posts
+        # feed_post_comments
+        # conversation tables
+        # etc.
+
+
+
+
+def bootstrap_app():
+    print("DB_PATH =", DB_PATH, flush=True)
+    init_db()
+    print("init_db() finished", flush=True)
+
+    with app.app_context():
+        db.create_all()
+        print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
+
+bootstrap_app()
 
 
 
@@ -77,11 +111,36 @@ db.init_app(app)
 
 
 
+app.config["SECRET_KEY"] = "change-this-in-production"
 
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+
+
+
+
+with app.app_context():
+    db.create_all()
     
     
     
+with app.app_context():
+    print("[SQLALCHEMY_DB_URL]", db.engine.url, flush=True)
 
+    cols = db.session.execute(db.text("PRAGMA table_info(user)")).fetchall()
+    print("[BEFORE USER COLUMNS]", cols, flush=True)
+
+    col_names = [col[1] for col in cols]
+    if "role" not in col_names:
+        db.session.execute(
+            db.text("ALTER TABLE user ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'user'")
+        )
+        db.session.commit()
+        print("[MIGRATION] Added user.role column", flush=True)
+
+    cols = db.session.execute(db.text("PRAGMA table_info(user)")).fetchall()
+    print("[AFTER USER COLUMNS]", cols, flush=True)
     
     
     
@@ -93,18 +152,67 @@ def get_db_connection():
 
 
 
+def ensure_listing_columns():
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
 
-    
-    
-    
+        tables = [row[0] for row in cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='listings'"
+        ).fetchall()]
 
-    
-    
-    
+        if "listings" not in tables:
+            print("listings table does not exist yet; skipping column migration", flush=True)
+            return
 
+        columns = [row[1] for row in cur.execute("PRAGMA table_info(listings)").fetchall()]
+
+        if "card_image_url" not in columns:
+            cur.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
+            print("Added card_image_url to listings", flush=True)
+
+    conn.commit()
+    
+    
+    
+with sqlite3.connect(DB_PATH) as conn:
+    cur = conn.cursor()
+
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+    print("[TABLES]", cur.fetchall(), flush=True)
+
+    cur.execute("PRAGMA table_info(listings)")
+    print("[LISTINGS COLUMNS]", cur.fetchall(), flush=True)
+    
+    
+    
+with app.app_context():
+    with db.engine.connect() as conn:
+        cols = conn.exec_driver_sql("PRAGMA table_info(saved_place);").fetchall()
+        col_names = [c[1] for c in cols]
+
+        if "city" not in col_names:
+            conn.exec_driver_sql("ALTER TABLE saved_place ADD COLUMN city VARCHAR(120);")
+
+        if "state" not in col_names:
+            conn.exec_driver_sql("ALTER TABLE saved_place ADD COLUMN state VARCHAR(120);")
+
+        if "cuisine" not in col_names:
+            conn.exec_driver_sql("ALTER TABLE saved_place ADD COLUMN cuisine VARCHAR(120);")
+
+        conn.commit()
         
         
+with app.app_context():
+    conn = sqlite3.connect(DB_PATH)  # or your actual DB path
+    cursor = conn.cursor()
 
+    cursor.execute("PRAGMA table_info(articles)")
+    cols = [row[1] for row in cursor.fetchall()]
+
+  
+
+    conn.commit()
+    conn.close()
     
 
 
@@ -142,7 +250,12 @@ print("SERPER_API_KEY exists:", bool(os.environ.get("SERPER_API_KEY")))
 
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, "keys.env"))
+DB = os.path.join(BASE_DIR, "cms.db")
 
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
@@ -375,64 +488,70 @@ def init_db():
         
         
         
-        # ---- CLEAN MIGRATIONS (put inside init_db()) ----
+        
+            # ---- migrations ----
+        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages);").fetchall()]
+        if "card_image_url" not in page_cols:
+            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT;")
 
-        # pages columns
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+        if "photo_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
+        if "photo_urls_json" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
+
+        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
+        if "rating" not in comment_cols:
+            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
+
+        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
+        if "name" not in user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN name TEXT;")
+            
+            
         page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
         if "card_image_url" not in page_cols:
             conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
 
-        # listings columns
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
+        if "card_image_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
+            
+        
+
+        conn.commit()
+        
+        
+        
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
+
+    if "card_image_url" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
+
+    if "photo_url" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT")
+
+    if "photo_urls_json" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT")
+        
+        
+        
+             # --- migrations ---
+        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
+        if "card_image_url" not in page_cols:
+            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
+
         listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
         if "photo_url" not in listing_cols:
             conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT")
-
         if "photo_urls_json" not in listing_cols:
             conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT")
 
-        if "card_image_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
-
-        # listing_comments columns
         comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments)").fetchall()]
         if "rating" not in comment_cols:
-            conn.execute(
-                "ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5"
-            )
+            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5")
 
-        # users columns
-        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
-        if "name" not in user_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN name TEXT")
-
-        if "is_admin" not in user_cols:
-            conn.execute(
-                "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
-            )
-
-        conn.commit()
-
-        tables = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-        ).fetchall()
-
-        
-        
-    def bootstrap_app():
-        print("DB_PATH =", DB_PATH, flush=True)
-        init_db()
-        print("init_db() finished", flush=True)
-
-        with app.app_context():
-            db.create_all()
-        print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
-
-    bootstrap_app() 
- 
-        
-        
-        
-
+        conn.commit()   
         
  
         
@@ -440,7 +559,23 @@ def init_db():
 
         # --- migrations ---
 
+        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
+        if "is_admin" not in user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0;")
 
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+        if "photo_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
+
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+        if "photo_urls_json" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
+
+        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
+        if "rating" not in comment_cols:
+            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
+
+        conn.commit()
         
         
         
@@ -449,7 +584,59 @@ def init_db():
         
  
 
+def init_conversation_tables():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            session_id TEXT,
+            state_json TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS conversation_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+        
+        
+        # migration: ensure listings.photo_url exists
+    listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+    if "photo_url" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
+        
+    # migration: ensure listings.photo_url exists
+    listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+    if "photo_url" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
+        
+        
+    # migration: ensure listings.photo_urls_json exists
+    listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+    if "photo_urls_json" not in listing_cols:
+        conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
+        
+    
+    
+    
+        # migration: ensure listing_comments.rating exists
+        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
+        if "rating" not in comment_cols:
+            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
             
             
     
