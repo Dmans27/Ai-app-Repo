@@ -87,35 +87,7 @@ def init_db():
         # conversation tables
         # etc.
 
-        # ---- migrations ----
 
-
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
-        if "photo_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
-        if "photo_urls_json" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
-
-        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
-        if "rating" not in comment_cols:
-            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
-
-        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
-        if "name" not in user_cols:
-            conn.execute("ALTER TABLE users ADD COLUMN name TEXT;")
-            
-            
-        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
-        if "card_image_url" not in page_cols:
-            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
-
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
-        if "card_image_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
-            
-        
-
-        conn.commit()
 
 
 def bootstrap_app():
@@ -513,6 +485,41 @@ def init_db():
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        
+        
+        
+        
+            # ---- migrations ----
+        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages);").fetchall()]
+        if "card_image_url" not in page_cols:
+            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT;")
+
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings);").fetchall()]
+        if "photo_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT;")
+        if "photo_urls_json" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT;")
+
+        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments);").fetchall()]
+        if "rating" not in comment_cols:
+            conn.execute("ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5;")
+
+        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
+        if "name" not in user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN name TEXT;")
+            
+            
+        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
+        if "card_image_url" not in page_cols:
+            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
+
+        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
+        if "card_image_url" not in listing_cols:
+            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
+            
+        
+
+        conn.commit()
         
         
         
