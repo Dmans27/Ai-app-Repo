@@ -2102,13 +2102,16 @@ def ai_chat():
             return jsonify({"error": "Message is required."}), 400
 
         user_id = current_user.id if current_user.is_authenticated else None
+
+        # Safety net for Render cold starts
+        init_db()
+
         conversation = load_or_create_conversation(user_id=user_id)
         conversation_id = conversation["id"]
 
         save_message(conversation_id, "user", message)
 
         state = load_state(conversation)
-
         state = maybe_reset_state_for_new_topic(state, message)
 
         if is_broad_query(message):
@@ -2122,7 +2125,6 @@ def ai_chat():
         ask_followup, followup_question, followup_key = should_ask_followup(state)
 
         if ask_followup:
-            # prevent repeating the exact same follow-up endlessly
             if state.get("last_followup") == followup_key:
                 if followup_key == "food_vibe":
                     followup_question = "Would you prefer something casual, quick, lively, or more date-night?"
@@ -2152,7 +2154,6 @@ def ai_chat():
         state["last_followup"] = None
         save_state(conversation_id, state)
 
-        query = build_query_from_state(state)
         searched_city = (state.get("city") or "").strip() or None
         user_lat, user_lng, location_source = resolve_search_location(state, lat=lat, lng=lng)
 
@@ -2171,26 +2172,81 @@ def ai_chat():
                 "state": state
             })
 
-        internal_results = search_internal_listings(
-            q=query,
-            lat=user_lat,
-            lng=user_lng,
-            limit=20
-        )
+        # Simpler queries for better matches
+        category = (state.get("category") or "").strip().lower()
+        vibe = (state.get("vibe") or "").strip().lower()
+        purpose = (state.get("purpose") or "").strip().lower()
 
+        internal_query = category
+        google_query = category
+
+        if category == "coffee":
+            internal_query = "coffee"
+            if purpose == "work" or vibe == "quiet":
+                google_query = "quiet coffee shop"
+            else:
+                google_query = "coffee shop"
+
+        elif category in ["restaurants", "restaurant"]:
+            internal_query = "restaurant"
+            if vibe == "date-night":
+                google_query = "date night restaurant"
+            elif purpose == "quick":
+                google_query = "quick restaurant"
+            else:
+                google_query = "restaurant"
+
+        elif category == "bars":
+            internal_query = "bar"
+            if vibe == "lively":
+                google_query = "lively bar"
+            else:
+                google_query = "bar"
+
+        elif category == "shopping":
+            internal_query = "shopping"
+            google_query = "shopping"
+
+        elif not category:
+            internal_query = build_query_from_state(state)
+            google_query = internal_query
+
+        internal_results = []
         external_results = []
-        if query:
-            external_results = google_places_text_search(
-                query=query,
+
+        try:
+            internal_results = search_internal_listings(
+                q=internal_query,
                 lat=user_lat,
                 lng=user_lng,
                 limit=20
             )
+        except Exception as e:
+            print("[AI_CHAT_INTERNAL_ERROR]", str(e), flush=True)
+            internal_results = []
+
+        try:
+            if google_query:
+                external_results = google_places_text_search(
+                    query=google_query,
+                    lat=user_lat,
+                    lng=user_lng,
+                    limit=20
+                )
+        except Exception as e:
+            print("[AI_CHAT_EXTERNAL_ERROR]", str(e), flush=True)
+            external_results = []
+
+        print("[AI_CHAT_CATEGORY]", category, flush=True)
+        print("[AI_CHAT_INTERNAL_QUERY]", internal_query, flush=True)
+        print("[AI_CHAT_GOOGLE_QUERY]", google_query, flush=True)
+        print("[AI_CHAT_INTERNAL_COUNT]", len(internal_results), flush=True)
+        print("[AI_CHAT_EXTERNAL_COUNT]", len(external_results), flush=True)
 
         featured_internal, regular_internal, external_results, results = bucket_results(
             internal_results=internal_results,
             external_results=external_results,
-            query=query,
+            query=internal_query or google_query,
             searched_city=searched_city
         )
 
@@ -2224,7 +2280,6 @@ def ai_chat():
     except Exception as e:
         print("[AI_CHAT_ERROR]", str(e), flush=True)
         return jsonify({"error": str(e)}), 500
-    
     
     
     
