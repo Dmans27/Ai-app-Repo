@@ -130,153 +130,86 @@
           </section>
 
           {% if lists %}
-            <section class="account-ios-lists">
-              {% for saved_list in lists %}
-                <article class="account-ios-list-card">
-                  <div class="account-ios-list-card__top">
-                    <div>
-                      <h2 class="account-ios-list-card__title">{{ saved_list.title }}</h2>
-                      <div class="account-ios-list-card__meta">
-                        {{ saved_list.places|length }} places ·
-                        {{ "Public" if saved_list.is_public else "Private" }}
-                      </div>
-                    </div>
+            <div class="saved-lists-wrap">
+  {% for saved_list in lists %}
+    <section class="saved-list-card">
+      <div class="saved-list-card__header">
+        <div>
+          <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
+          <div class="saved-list-card__meta">
+            {{ saved_list.places|length }} places •
+            {{ "Public" if saved_list.is_public else "Private" }}
+          </div>
+          {% if saved_list.description %}
+            <p class="saved-list-card__description">{{ saved_list.description }}</p>
+          {% endif %}
+        </div>
+      </div>
 
-                    <div class="account-ios-list-card__status">
-                      {{ "Public" if saved_list.is_public else "Private" }}
-                    </div>
-                  </div>
+      <div class="saved-list-map-shell">
+        {% set map_places = map_data_by_list.get(saved_list.id, []) %}
+        {% if map_places %}
+          <div
+            class="saved-list-map"
+            id="saved-list-map-{{ saved_list.id }}"
+            data-places='{{ map_places|tojson|safe }}'
+          ></div>
+        {% else %}
+          <div class="saved-list-map saved-list-map--empty">
+            No map locations yet.
+          </div>
+        {% endif %}
+      </div>
 
-                  {% if saved_list.description %}
-                    <p class="account-ios-list-card__description">
-                      {{ saved_list.description }}
-                    </p>
-                  {% endif %}
+      <div class="saved-list-places">
+        {% if saved_list.places %}
+          {% for place in saved_list.places %}
+            <article class="saved-place-row">
+              <div class="saved-place-row__image">
+                {% if place.photo_url %}
+                  <img src="{{ place.photo_url }}" alt="{{ place.name }}">
+                {% else %}
+                  <div class="saved-place-row__image-placeholder">📍</div>
+                {% endif %}
+              </div>
 
-                  {% if saved_list.places %}
-                    <div class="account-ios-preview-grid">
-                      {% for place in saved_list.places[:4] %}
-                        <div class="account-ios-preview-grid__item">
-                          {% if place.photo_url %}
-                            <img src="{{ place.photo_url }}" alt="{{ place.name }}">
-                          {% else %}
-                            <img src="{{ url_for('static', filename='img/default-business.jpg') }}" alt="{{ place.name }}">
-                          {% endif %}
-                        </div>
-                      {% endfor %}
-                    </div>
-                  {% endif %}
+              <div class="saved-place-row__content">
+                <h3 class="saved-place-row__name">{{ place.name }}</h3>
 
-                  {% if saved_list.is_public %}
-                    <div class="account-ios-list-card__share">
-                      <span>Share:</span>
-                      <a href="{{ url_for('view_public_list', slug=saved_list.slug) }}">
-                        {{ request.host_url.rstrip('/') }}{{ url_for('view_public_list', slug=saved_list.slug) }}
-                      </a>
-                    </div>
-                  {% endif %}
+                {% if place.category %}
+                  <div class="saved-place-row__category">{{ place.category }}</div>
+                {% endif %}
 
-                  <div class="account-list-filters" id="filters-{{ saved_list.id }}">
-                    <select class="account-list-filter-select" data-filter-city="{{ saved_list.id }}">
-                      <option value="">All cities</option>
-                      {% for city in (filter_options_by_list.get(saved_list.id, {}).get("cities", [])) %}
-                        <option value="{{ city }}">{{ city }}</option>
-                      {% endfor %}
-                    </select>
+                {% if place.address %}
+                  <div class="saved-place-row__address">{{ place.address }}</div>
+                {% endif %}
 
-                    <select class="account-list-filter-select" data-filter-cuisine="{{ saved_list.id }}">
-                      <option value="">All cuisines</option>
-                      {% for cuisine in (filter_options_by_list.get(saved_list.id, {}).get("cuisines", [])) %}
-                        <option value="{{ cuisine }}">{{ cuisine }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
+                {% if place.notes %}
+                  <div class="saved-place-row__notes">{{ place.notes }}</div>
+                {% endif %}
 
-                  <div class="account-list-view-toggle">
-                    <button
-                      type="button"
-                      class="account-list-view-toggle__btn is-active"
-                      data-list-view-btn="{{ saved_list.id }}"
-                      data-view="cards"
-                    >
-                      List view
-                    </button>
-
-                    <button
-                      type="button"
-                      class="account-list-view-toggle__btn"
-                      data-list-view-btn="{{ saved_list.id }}"
-                      data-view="map"
-                    >
-                      Map view
-                    </button>
-                  </div>
-
-                  {% if saved_list.places %}
-                    <div class="account-list-view-section is-active" id="cards-view-{{ saved_list.id }}">
-                      <div class="saved-places-grid">
-                        {% for place in saved_list.places %}
-                          <article
-                            class="saved-place-card"
-                            data-list-place="{{ saved_list.id }}"
-                            data-city="{{ (place.city or '')|trim }}"
-                            data-cuisine="{{ (place.cuisine or place.category or '')|trim }}"
-                          >
-                            <div class="saved-place-card__image-wrap">
-                              {% if place.photo_url %}
-                                <img src="{{ place.photo_url }}" alt="{{ place.name }}" class="saved-place-card__image">
-                              {% else %}
-                                <img src="{{ url_for('static', filename='img/default-business.jpg') }}" alt="{{ place.name }}" class="saved-place-card__image">
-                              {% endif %}
-                            </div>
-
-                            <div class="saved-place-card__body">
-                              <h4 class="saved-place-card__title">{{ place.name }}</h4>
-
-                              <div class="saved-place-card__meta">
-                                {{ category_icon(place.category) }}
-                                {{ (place.category or "Local business")|replace('_', ' ')|title }}
-                              </div>
-
-                              {% if place.address %}
-                                <div class="saved-place-card__address">
-                                  {{ place.address }}
-                                </div>
-                              {% endif %}
-
-                              {% if place.website %}
-                                <div class="saved-place-card__actions">
-                                  <a
-                                    href="{{ place.website }}"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="btn-primary"
-                                  >
-                                    Visit website
-                                  </a>
-                                </div>
-                              {% endif %}
-                            </div>
-                          </article>
-                        {% endfor %}
-                      </div>
-                    </div>
-
-                    <div class="account-list-view-section" id="map-view-{{ saved_list.id }}">
-                      <div class="account-list-map-panel">
-                        <div id="saved-list-map-{{ saved_list.id }}" class="account-list-map-frame"></div>
-                      </div>
-                    </div>
-
-                    <script id="saved-list-map-data-{{ saved_list.id }}" type="application/json">
-                      {{ (map_data_by_list.get(saved_list.id) or []) | tojson }}
-                    </script>
-                  {% else %}
-                    <p class="account-list-card__empty">No saved places yet.</p>
-                  {% endif %}
-                </article>
-              {% endfor %}
-            </section>
+                {% if place.website %}
+                  <a
+                    href="{{ place.website }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="saved-place-row__link"
+                  >
+                    Visit website
+                  </a>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <div class="saved-list-empty">
+            No saved places yet.
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  {% endfor %}
+</div>
           {% else %}
             <section class="account-ios-empty">
               <h2>No lists yet</h2>
@@ -523,6 +456,50 @@
       }
     }
   </script>
+
+
+
+
+<script>
+  function initSavedListMaps() {
+    document.querySelectorAll(".saved-list-map[data-places]").forEach((mapEl) => {
+      const places = JSON.parse(mapEl.dataset.places || "[]");
+      if (!places.length) return;
+
+      const first = places.find(p => p.lat && p.lng) || places[0];
+      if (!first || !first.lat || !first.lng) return;
+
+      const map = new google.maps.Map(mapEl, {
+        center: { lat: Number(first.lat), lng: Number(first.lng) },
+        zoom: 12,
+        styles: []
+      });
+
+      const bounds = new google.maps.LatLngBounds();
+
+      places.forEach((place) => {
+        if (!place.lat || !place.lng) return;
+
+        const position = {
+          lat: Number(place.lat),
+          lng: Number(place.lng)
+        };
+
+        new google.maps.Marker({
+          position,
+          map,
+          title: place.name || "Saved place"
+        });
+
+        bounds.extend(position);
+      });
+
+      if (places.length > 1) {
+        map.fitBounds(bounds);
+      }
+    });
+  }
+</script>
 
   <script
     async
