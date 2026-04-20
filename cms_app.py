@@ -522,6 +522,12 @@ def init_db():
         conn.commit()
         
         
+        tables = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()
+        print("[INIT_DB_TABLES]", tables, flush=True)  
+        
+        
         
         listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
 
@@ -3083,16 +3089,26 @@ def ai_job_status(job_id):
     
 @app.get("/")
 def home():
-    articles = query_all("""
-        SELECT id, slug, title, description, updated_at, card_image_url
-        FROM pages
-        WHERE status='published'
-        ORDER BY datetime(updated_at) DESC, id DESC
-        LIMIT 8
-    """)
+    try:
+        articles = query_all("""
+            SELECT id, slug, title, description, updated_at
+            FROM pages
+            WHERE status='published'
+            ORDER BY datetime(updated_at) DESC, id DESC
+            LIMIT 8
+        """)
+    except sqlite3.OperationalError as e:
+        print("[HOME_QUERY_ERROR]", str(e), flush=True)
+        articles = []
 
-    homepage_top_ads = get_active_ads("homepage_top", limit=1)
-    homepage_inline_ads = get_active_ads("homepage_inline", limit=3)
+    homepage_top_ads = []
+    homepage_inline_ads = []
+
+    try:
+        homepage_top_ads = get_active_ads("homepage_top", limit=1)
+        homepage_inline_ads = get_active_ads("homepage_inline", limit=3)
+    except Exception as e:
+        print("[HOME_ADS_ERROR]", str(e), flush=True)
 
     default_saved_list_id = None
 
@@ -3100,15 +3116,8 @@ def home():
         first_list = SavedList.query.filter_by(
             user_id=current_user.id
         ).order_by(SavedList.id.asc()).first()
-        
-        
-        
-    
 
         default_saved_list_id = first_list.id if first_list else None
-
-        print("[HOME_USER_ID]", current_user.id, flush=True)
-        print("[HOME_DEFAULT_SAVED_LIST_ID]", default_saved_list_id, flush=True)
 
     return render_template(
         "directory_home.html",
@@ -3117,15 +3126,6 @@ def home():
         homepage_top_ads=homepage_top_ads,
         homepage_inline_ads=homepage_inline_ads,
         default_saved_list_id=default_saved_list_id
-    )
-    
-    
-
-
-    return render_template(
-        "directory_home.html",
-        articles=articles,
-        article_style="spotlight"
     )
 
 
