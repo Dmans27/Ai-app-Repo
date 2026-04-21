@@ -1568,6 +1568,23 @@ select {
 
 
 
+.mapboxgl-ctrl-group {
+  background: rgba(20, 20, 20, 0.9) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important;
+  overflow: hidden;
+}
+
+.mapboxgl-ctrl button {
+  background: transparent !important;
+}
+
+.mapboxgl-ctrl button span {
+  filter: invert(1) opacity(0.85);
+}
+
+
+
 .mapboxgl-ctrl-group{
     background: rgba(20,20,20,.9)!important;
     border-radius: 14px!important;
