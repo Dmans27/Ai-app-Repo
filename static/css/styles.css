@@ -67,17 +67,7 @@ select {
 
 
 
-.search-quick-picks__entry--with-photo {
-  grid-template-columns: 84px minmax(0, 1fr);
-  gap: 14px;
-}
 
-.search-quick-picks__entry-photo-wrap {
-  order: -1;
-  width: 84px;
-  height: 84px;
-  border-radius: 16px;
-}
 
 
 
@@ -158,6 +148,18 @@ select {
     padding: 12px;
     border-radius: 18px;
   }
+
+  .search-quick-picks__entry--with-photo {
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.search-quick-picks__entry-photo-wrap {
+  order: -1;
+  width: 84px;
+  height: 84px;
+  border-radius: 16px;
+}
 
   .chat-result-card__image-wrap {
     width: 82px;
