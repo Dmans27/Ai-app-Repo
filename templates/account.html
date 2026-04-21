@@ -297,12 +297,16 @@
         ? [places[0].lng, places[0].lat]
         : [-87.6298, 41.8781];
 
-      const map = new mapboxgl.Map({
-        container: "account-map",
-        style: styleUrl,
-        center: defaultCenter,
-        zoom: places.length ? 11 : 9
-      });
+const map = new mapboxgl.Map({
+    container: "map",
+    style: styleUrl,
+    center: defaultCenter,
+    zoom: places.length ? 11 : 9,
+    projection: 'mercator',
+    pitch: 0,
+    bearing: 0,
+    antialias: true
+});
 
       map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
