@@ -130,9 +130,9 @@
           </section>
 
           {% if lists %}
-            <div class="saved-lists-wrap">
+ <section class="saved-lists-wrap">
   {% for saved_list in lists %}
-    <section class="saved-list-card">
+    <article class="saved-list-card">
       <div class="saved-list-card__header">
         <div>
           <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
@@ -146,23 +146,8 @@
         </div>
       </div>
 
-      <div class="saved-list-map-shell">
-        {% set map_places = map_data_by_list.get(saved_list.id, []) %}
-        {% if map_places %}
-          <div
-            class="saved-list-map"
-            id="saved-list-map-{{ saved_list.id }}"
-            data-places='{{ map_places|tojson|safe }}'
-          ></div>
-        {% else %}
-          <div class="saved-list-map saved-list-map--empty">
-            No map locations yet.
-          </div>
-        {% endif %}
-      </div>
-
-      <div class="saved-list-places">
-        {% if saved_list.places %}
+      {% if saved_list.places %}
+        <div class="saved-list-places">
           {% for place in saved_list.places %}
             <article class="saved-place-row">
               <div class="saved-place-row__image">
@@ -188,27 +173,39 @@
                   <div class="saved-place-row__notes">{{ place.notes }}</div>
                 {% endif %}
 
-                {% if place.website %}
-                  <a
-                    href="{{ place.website }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="saved-place-row__link"
-                  >
-                    Visit website
-                  </a>
-                {% endif %}
+                <div class="saved-place-row__actions">
+                  {% if place.website %}
+                    <a
+                      href="{{ place.website }}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="saved-place-row__button"
+                    >
+                      Website
+                    </a>
+                  {% endif %}
+
+                  {% if place.latitude and place.longitude %}
+                    <a
+                      href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="saved-place-row__button saved-place-row__button--secondary"
+                    >
+                      Directions
+                    </a>
+                  {% endif %}
+                </div>
               </div>
             </article>
           {% endfor %}
-        {% else %}
-          <div class="saved-list-empty">
-            No saved places yet.
-          </div>
-        {% endif %}
-      </div>
-    </section>
+        </div>
+      {% else %}
+        <div class="saved-list-empty">No saved places yet.</div>
+      {% endif %}
+    </article>
   {% endfor %}
+</section>
 </div>
           {% else %}
             <section class="account-ios-empty">
