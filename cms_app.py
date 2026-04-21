@@ -4149,6 +4149,10 @@ def account():
                 "cuisine": (getattr(place, "cuisine", None) or place.category or "").strip(),
             })
 
+    print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
+    print("[ACCOUNT_MAPBOX_STYLE_URL]", os.getenv("MAPBOX_STYLE_URL", ""), flush=True)
+    print("[ACCOUNT_MAP_PLACES_COUNT]", len(map_places), flush=True)
+
     return render_template(
         "account.html",
         user=current_user,

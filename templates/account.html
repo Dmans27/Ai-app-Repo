@@ -264,81 +264,104 @@
     </main>
   </div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const sidebar = document.getElementById("app-sidebar");
-      const sidebarToggle = document.getElementById("app-sidebar-toggle");
-      const closeBtn = document.getElementById("app-sidebar-close");
-      const backdrop = document.getElementById("app-sidebar-backdrop");
+<script id="map-data" type="application/json">
+{{ map_places|tojson|safe }}
+</script>
 
-      function openDrawer() {
-        sidebar?.classList.add("is-open");
-        backdrop?.classList.add("is-open");
-      }
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const sidebar = document.getElementById("app-sidebar");
+    const sidebarToggle = document.getElementById("app-sidebar-toggle");
+    const closeBtn = document.getElementById("app-sidebar-close");
+    const backdrop = document.getElementById("app-sidebar-backdrop");
 
-      function closeDrawer() {
-        sidebar?.classList.remove("is-open");
-        backdrop?.classList.remove("is-open");
-      }
+    function openDrawer() {
+      sidebar?.classList.add("is-open");
+      backdrop?.classList.add("is-open");
+    }
 
-      sidebarToggle?.addEventListener("click", openDrawer);
-      closeBtn?.addEventListener("click", closeDrawer);
-      backdrop?.addEventListener("click", closeDrawer);
+    function closeDrawer() {
+      sidebar?.classList.remove("is-open");
+      backdrop?.classList.remove("is-open");
+    }
 
-      mapboxgl.accessToken = "{{ mapbox_token }}";
+    sidebarToggle?.addEventListener("click", openDrawer);
+    closeBtn?.addEventListener("click", closeDrawer);
+    backdrop?.addEventListener("click", closeDrawer);
 
-      const places = JSON.parse('{{ map_places|tojson|safe }}');
-      const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
-      const mapEl = document.getElementById("account-map");
+    const mapEl = document.getElementById("account-map");
+    if (!mapEl || typeof mapboxgl === "undefined") {
+      console.log("[ACCOUNT_MAP] map element or mapboxgl missing");
+      return;
+    }
 
-      if (!mapEl || !styleUrl || !mapboxgl) return;
+    const token = "{{ mapbox_token }}";
+    const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
+    const places = JSON.parse(
+      document.getElementById("map-data").textContent || "[]"
+    );
 
-      const defaultCenter = places.length
-        ? [places[0].lng, places[0].lat]
-        : [-87.6298, 41.8781];
+    console.log("[ACCOUNT_MAP_TOKEN]", !!token);
+    console.log("[ACCOUNT_MAP_STYLE]", styleUrl);
+    console.log("[ACCOUNT_MAP_PLACES]", places);
 
-const map = new mapboxgl.Map({
-    container: "map",
-    style: styleUrl,
-    center: defaultCenter,
-    zoom: places.length ? 11 : 9,
-    projection: 'mercator',
-    pitch: 0,
-    bearing: 0,
-    antialias: true
-});
+    if (!token) {
+      console.log("[ACCOUNT_MAP] Missing MAPBOX_TOKEN");
+      return;
+    }
 
-      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    mapboxgl.accessToken = token;
 
-      const bounds = new mapboxgl.LngLatBounds();
+    const defaultCenter = places.length
+      ? [places[0].lng, places[0].lat]
+      : [-87.6298, 41.8781];
 
-      places.forEach((place) => {
-        if (place.lng == null || place.lat == null) return;
+    const map = new mapboxgl.Map({
+      container: "account-map",
+      style: styleUrl,
+      center: defaultCenter,
+      zoom: places.length ? 11 : 9,
+      projection: "mercator",
+      pitch: 0,
+      bearing: 0,
+      antialias: true
+    });
 
-        const popupHtml = `
-          <div style="max-width:220px;">
-            <strong>${place.name || ""}</strong>
-            ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
-            ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
-          </div>
-        `;
+    map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-        new mapboxgl.Marker()
-          .setLngLat([place.lng, place.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
-          .addTo(map);
+    const bounds = new mapboxgl.LngLatBounds();
 
-        bounds.extend([place.lng, place.lat]);
-      });
+    places.forEach((place) => {
+      if (place.lng == null || place.lat == null) return;
+
+      const popupHtml = `
+        <div style="max-width:220px;">
+          <strong>${place.name || ""}</strong>
+          ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
+          ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
+        </div>
+      `;
+
+      new mapboxgl.Marker()
+        .setLngLat([place.lng, place.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
+        .addTo(map);
+
+      bounds.extend([place.lng, place.lat]);
+    });
+
+    map.on("load", function () {
+      console.log("[ACCOUNT_MAP] loaded");
 
       if (places.length > 1) {
         map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
       }
     });
-  </script>
 
-<script id="map-data" type="application/json">
-{{ map_places|tojson|safe }}
+    map.on("error", function (e) {
+      console.log("[ACCOUNT_MAP_ERROR]", e);
+    });
+  });
 </script>
 
 
