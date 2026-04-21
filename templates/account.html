@@ -288,7 +288,7 @@
       mapboxgl.accessToken = "{{ mapbox_token }}";
 
       const places = JSON.parse('{{ map_places|tojson|safe }}');
-      const styleUrl = "{{ mapbox_style_url }}";
+      const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
       const mapEl = document.getElementById("account-map");
 
       if (!mapEl || !styleUrl || !mapboxgl) return;

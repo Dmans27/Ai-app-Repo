@@ -4119,32 +4119,35 @@ def admin_edit_ad(ad_id):
 @app.route("/account")
 @login_required
 def account():
-    lists = SavedList.query.filter_by(user_id=current_user.id).order_by(SavedList.id.desc()).all()
-    saved_places = SavedPlace.query.filter_by(user_id=current_user.id).all() if hasattr(SavedPlace, "user_id") else [
-        place for saved_list in lists for place in saved_list.places
-    ]
+    lists = SavedList.query.filter_by(user_id=current_user.id) \
+        .order_by(SavedList.created_at.desc()) \
+        .all()
 
     map_places = []
 
-    for place in saved_places:
-        if place.latitude is None or place.longitude is None:
-            continue
+    for saved_list in lists:
+        for place in saved_list.places:
+            if place.latitude is None or place.longitude is None:
+                continue
 
-        try:
-            lat = float(place.latitude)
-            lng = float(place.longitude)
-        except (TypeError, ValueError):
-            continue
+            try:
+                lat = float(place.latitude)
+                lng = float(place.longitude)
+            except (TypeError, ValueError):
+                continue
 
-        map_places.append({
-            "name": place.name or "",
-            "lat": lat,
-            "lng": lng,
-            "category": place.category or "",
-            "address": place.address or "",
-            "photo_url": place.photo_url or "",
-            "website": place.website or ""
-        })
+            map_places.append({
+                "id": place.id,
+                "name": place.name or "",
+                "lat": lat,
+                "lng": lng,
+                "address": place.address or "",
+                "website": place.website or "",
+                "category": place.category or "",
+                "photo_url": place.photo_url or "",
+                "city": (getattr(place, "city", None) or "").strip(),
+                "cuisine": (getattr(place, "cuisine", None) or place.category or "").strip(),
+            })
 
     return render_template(
         "account.html",
