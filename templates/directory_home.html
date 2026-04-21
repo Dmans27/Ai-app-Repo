@@ -465,10 +465,11 @@
 
 function buildResultRow(item, isInternal) {
   const title = item.name || "Untitled";
-  const category = item.category ? item.category.replaceAll("_", " ") : "";
+  const category = item.category ? item.category.replaceAll("_", " ") : "Place";
   const address = item.address || "";
   const website = item.website || "";
-  const rating = item.rating ? `⭐ ${Number(item.rating).toFixed(1)}` : "";
+  const ratingValue = item.rating ? Number(item.rating).toFixed(1) : "";
+  const rating = ratingValue ? `⭐ ${ratingValue}` : "";
 
   const photo =
     item.photo_url ||
@@ -479,29 +480,61 @@ function buildResultRow(item, isInternal) {
   const directionsLink =
     item.latitude && item.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
-      : "";
+      : address
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+        : "";
 
   return `
-    <article class="chat-result-card">
-      <div class="chat-result-card__image-wrap">
+    <article class="place-card">
+      <div class="place-card__image-wrap">
         <img
           src="${photo}"
           alt="${title}"
-          class="chat-result-card__image"
+          class="place-card__image"
           loading="lazy"
         >
       </div>
 
-      <div class="chat-result-card__body">
-        <h3 class="chat-result-card__title">${title}</h3>
+      <div class="place-card__body">
+        <div class="place-card__top">
+          <div class="place-card__text">
+            <h3 class="place-card__title">${title}</h3>
+            <p class="place-card__category">${category}</p>
+          </div>
+        </div>
 
-        <div class="chat-result-card__meta">
-          ${rating ? `<span class="chat-result-card__rating">${rating}</span>` : ""}
-          ${website ? `<a href="${website}" target="_blank" rel="noopener" class="chat-result-card__icon">🌐</a>` : ""}
-          ${directionsLink ? `<a href="${directionsLink}" target="_blank" rel="noopener" class="chat-result-card__icon">📍</a>` : ""}
+        <div class="place-card__meta">
+          ${rating ? `<span class="place-card__rating">${rating}</span>` : ""}
+          ${isInternal ? `<span class="place-card__source">Local AI</span>` : ""}
+        </div>
+
+        <p class="place-card__address">${address}</p>
+
+        <div class="place-card__actions">
+          ${website ? `
+            <a
+              href="${website}"
+              target="_blank"
+              rel="noopener"
+              class="place-card__action"
+              aria-label="Website"
+            >🌐</a>
+          ` : ""}
+
+          ${directionsLink ? `
+            <a
+              href="${directionsLink}"
+              target="_blank"
+              rel="noopener"
+              class="place-card__action"
+              aria-label="Directions"
+            >📍</a>
+          ` : ""}
+
           <button
             type="button"
-            class="chat-result-card__icon save-place-btn"
+            class="place-card__action save-place-btn"
+            aria-label="Save place"
             data-place-name="${title}"
             data-place-address="${address}"
             data-place-category="${category}"
@@ -512,10 +545,6 @@ function buildResultRow(item, isInternal) {
             data-place-rating="${item.rating || ""}"
           >📌</button>
         </div>
-
-        <p class="chat-result-card__text">
-          ${category}${category && address ? ", " : ""}${address}
-        </p>
       </div>
     </article>
   `;
