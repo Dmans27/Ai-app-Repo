@@ -96,144 +96,142 @@
       </header>
 
       <section class="mobile-content account-page-content">
-        <div class="account-ios-shell">
-          <section class="account-ios-hero">
-            <div class="account-ios-hero__avatar">
-              {{ (user.name or user.email or "U")[0]|upper }}
+  <div class="account-ios-shell">
+    <section class="saved-hero">
+      <div class="saved-hero__avatar">
+        {{ (user.name or user.email or "U")[0]|upper }}
+      </div>
+
+      <div class="saved-hero__content">
+        <h1 class="saved-hero__title">Saved Places</h1>
+        <p class="saved-hero__subtitle">
+          Build personal guides for your favorite spots.
+        </p>
+      </div>
+    </section>
+
+    <div class="saved-stats-row">
+      <div class="saved-pill">
+        <span class="saved-pill-number">{{ lists|length }}</span>
+        <span class="saved-pill-label">Lists</span>
+      </div>
+
+      <div class="saved-pill">
+        <span class="saved-pill-number">{{ lists | map(attribute='places') | map('length') | sum }}</span>
+        <span class="saved-pill-label">Places</span>
+      </div>
+
+      <div class="saved-pill">
+        <span class="saved-pill-number">{{ lists | selectattr('is_public') | list | length }}</span>
+        <span class="saved-pill-label">Public</span>
+      </div>
+
+      <a href="{{ url_for('create_list') }}" class="saved-pill add-pill">
+        + New List
+      </a>
+    </div>
+
+    <section class="account-map-card">
+      <div id="account-map" class="account-map"></div>
+    </section>
+
+    {% if lists %}
+      <section class="saved-lists-wrap">
+        {% for saved_list in lists %}
+          <article class="saved-list-card">
+            <div class="saved-list-card__header">
+              <div>
+                <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
+                <div class="saved-list-card__meta">
+                  {{ saved_list.places|length }} places •
+                  {{ "Public" if saved_list.is_public else "Private" }}
+                </div>
+
+                {% if saved_list.description %}
+                  <p class="saved-list-card__description">{{ saved_list.description }}</p>
+                {% endif %}
+              </div>
             </div>
 
-            <div class="account-ios-hero__content">
-              <h1 class="account-ios-hero__title">Saved Places</h1>
-              <p class="account-ios-hero__subtitle">
-                Build personal guides for your favorite spots.
-              </p>
-            </div>
-          </section>
-
-          <section class="account-ios-stats">
-            <div class="account-ios-stat">
-              <strong>{{ lists|length }}</strong>
-              <span>Lists</span>
-            </div>
-
-            <div class="account-ios-stat">
-              <strong>{{ lists | map(attribute='places') | map('length') | sum }}</strong>
-              <span>Places</span>
-            </div>
-
-            <div class="account-ios-stat">
-              <strong>{{ lists | selectattr('is_public') | list | length }}</strong>
-              <span>Public</span>
-            </div>
-          </section>
-
-          <section class="account-ios-toolbar">
-            <a href="{{ url_for('create_list') }}" class="btn-primary account-ios-toolbar__cta">
-              + New List
-            </a>
-          </section>
-
-          <section class="account-map-card">
-            <div id="account-map" class="account-map"></div>
-          </section>
-
-          {% if lists %}
-            <section class="saved-lists-wrap">
-              {% for saved_list in lists %}
-                <article class="saved-list-card">
-                  <div class="saved-list-card__header">
-                    <div>
-                      <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
-                      <div class="saved-list-card__meta">
-                        {{ saved_list.places|length }} places •
-                        {{ "Public" if saved_list.is_public else "Private" }}
-                      </div>
-
-                      {% if saved_list.description %}
-                        <p class="saved-list-card__description">{{ saved_list.description }}</p>
+            {% if saved_list.places %}
+              <div class="saved-list-places">
+                {% for place in saved_list.places %}
+                  <article class="saved-place-row">
+                    <div class="saved-place-row__image">
+                      {% if place.photo_url %}
+                        <img src="{{ place.photo_url }}" alt="{{ place.name }}">
+                      {% else %}
+                        <div class="saved-place-row__image-placeholder">📍</div>
                       {% endif %}
                     </div>
-                  </div>
 
-                  {% if saved_list.places %}
-                    <div class="saved-list-places">
-                      {% for place in saved_list.places %}
-                        <article class="saved-place-row">
-                          <div class="saved-place-row__image">
-                            {% if place.photo_url %}
-                              <img src="{{ place.photo_url }}" alt="{{ place.name }}">
-                            {% else %}
-                              <div class="saved-place-row__image-placeholder">📍</div>
-                            {% endif %}
-                          </div>
+                    <div class="saved-place-row__content">
+                      <h3 class="saved-place-row__name">{{ place.name }}</h3>
 
-                          <div class="saved-place-row__content">
-                            <h3 class="saved-place-row__name">{{ place.name }}</h3>
+                      {% if place.category %}
+                        <div class="saved-place-row__category">{{ place.category }}</div>
+                      {% endif %}
 
-                            {% if place.category %}
-                              <div class="saved-place-row__category">{{ place.category }}</div>
-                            {% endif %}
+                      {% if place.address %}
+                        <div class="saved-place-row__address">{{ place.address }}</div>
+                      {% endif %}
 
-                            {% if place.address %}
-                              <div class="saved-place-row__address">{{ place.address }}</div>
-                            {% endif %}
+                      {% if place.notes %}
+                        <div class="saved-place-row__notes">{{ place.notes }}</div>
+                      {% endif %}
 
-                            {% if place.notes %}
-                              <div class="saved-place-row__notes">{{ place.notes }}</div>
-                            {% endif %}
+                      <div class="saved-place-row__actions">
+                        {% if place.website %}
+                          <a
+                            href="{{ place.website }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="saved-place-row__button"
+                          >
+                            Website
+                          </a>
+                        {% endif %}
 
-                            <div class="saved-place-row__actions">
-                              {% if place.website %}
-                                <a
-                                  href="{{ place.website }}"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  class="saved-place-row__button"
-                                >
-                                  Website
-                                </a>
-                              {% endif %}
-
-                              {% if place.latitude and place.longitude %}
-                                <a
-                                  href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  class="saved-place-row__button saved-place-row__button--secondary"
-                                >
-                                  Directions
-                                </a>
-                              {% endif %}
-                            </div>
-                          </div>
-                        </article>
-                      {% endfor %}
+                        {% if place.latitude and place.longitude %}
+                          <a
+                            href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="saved-place-row__button saved-place-row__button--secondary"
+                          >
+                            Directions
+                          </a>
+                        {% endif %}
+                      </div>
                     </div>
-                  {% else %}
-                    <div class="saved-list-empty">No saved places yet.</div>
-                  {% endif %}
-                </article>
-              {% endfor %}
-            </section>
-          {% else %}
-            <section class="account-ios-empty">
-              <h2>No lists yet</h2>
-              <p>Create your first list to start saving favorite places.</p>
-              <a href="{{ url_for('create_list') }}" class="btn-primary">Create your first list</a>
-            </section>
-          {% endif %}
-
-          <section class="account-ios-account-panel">
-            <h2>Your account</h2>
-            <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
-            <p><strong>Email:</strong> {{ user.email }}</p>
-
-            <form method="post" action="{{ url_for('logout') }}" class="account-logout-form">
-              <button type="submit" class="btn-secondary">Log out</button>
-            </form>
-          </section>
-        </div>
+                  </article>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="saved-list-empty">No saved places yet.</div>
+            {% endif %}
+          </article>
+        {% endfor %}
       </section>
+    {% else %}
+      <section class="account-ios-empty">
+        <h2>No lists yet</h2>
+        <p>Create your first list to start saving favorite places.</p>
+        <a href="{{ url_for('create_list') }}" class="btn-primary">Create your first list</a>
+      </section>
+    {% endif %}
+
+    <section class="account-ios-account-panel">
+      <h2>Your account</h2>
+      <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+
+      <form method="post" action="{{ url_for('logout') }}" class="account-logout-form">
+        <button type="submit" class="btn-secondary">Log out</button>
+      </form>
+    </section>
+  </div>
+</section>
 
       <nav class="mobile-tabbar">
         <a href="/" class="mobile-tabbar__item">
