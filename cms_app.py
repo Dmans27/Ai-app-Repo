@@ -4119,56 +4119,40 @@ def admin_edit_ad(ad_id):
 @app.route("/account")
 @login_required
 def account():
-    lists = SavedList.query.filter_by(user_id=current_user.id) \
-        .order_by(SavedList.created_at.desc()) \
-        .all()
+    lists = SavedList.query.filter_by(user_id=current_user.id).order_by(SavedList.id.desc()).all()
+    saved_places = SavedPlace.query.filter_by(user_id=current_user.id).all() if hasattr(SavedPlace, "user_id") else [
+        place for saved_list in lists for place in saved_list.places
+    ]
 
-    map_data_by_list = {}
-    filter_options_by_list = {}
+    map_places = []
 
-    for saved_list in lists:
-        map_places = []
-        cities = set()
-        cuisines = set()
+    for place in saved_places:
+        if place.latitude is None or place.longitude is None:
+            continue
 
-        for place in saved_list.places:
-            city = (getattr(place, "city", None) or "").strip()
-            cuisine = (getattr(place, "cuisine", None) or place.category or "").strip()
+        try:
+            lat = float(place.latitude)
+            lng = float(place.longitude)
+        except (TypeError, ValueError):
+            continue
 
-            if city:
-                cities.add(city)
-
-            if cuisine:
-                cuisines.add(cuisine)
-
-            if place.latitude is not None and place.longitude is not None:
-                map_places.append({
-                    "id": place.id,
-                    "name": place.name,
-                    "lat": place.latitude,
-                    "lng": place.longitude,
-                    "address": place.address,
-                    "website": place.website,
-                    "category": place.category,
-                    "photo_url": place.photo_url,
-                    "city": city,
-                    "cuisine": cuisine,
-                })
-
-        filter_options_by_list[saved_list.id] = {
-            "cities": sorted(cities),
-            "cuisines": sorted(cuisines),
-        }
-
-        map_data_by_list[saved_list.id] = map_places
+        map_places.append({
+            "name": place.name or "",
+            "lat": lat,
+            "lng": lng,
+            "category": place.category or "",
+            "address": place.address or "",
+            "photo_url": place.photo_url or "",
+            "website": place.website or ""
+        })
 
     return render_template(
         "account.html",
         user=current_user,
         lists=lists,
-        map_data_by_list=map_data_by_list,
-        filter_options_by_list=filter_options_by_list,
-        google_maps_api_key=GOOGLE_MAPS_API_KEY
+        map_places=map_places,
+        mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
+        mapbox_style_url=os.getenv("MAPBOX_STYLE_URL", "")
     )
 
 
@@ -4522,25 +4506,39 @@ def remove_featured(id):
 @app.route("/my-lists/<int:list_id>")
 @login_required
 def my_list_detail(list_id):
-    saved_list = SavedList.query.filter_by(id=list_id, user_id=current_user.id).first_or_404()
+    saved_list = SavedList.query.filter_by(
+        id=list_id,
+        user_id=current_user.id
+    ).first_or_404()
 
     map_places = []
+
     for place in saved_list.places:
-        if place.latitude is not None and place.longitude is not None:
-            map_places.append({
-                "name": place.name,
-                "lat": place.latitude,
-                "lng": place.longitude,
-                "address": place.address,
-                "website": place.website,
-                "category": place.category,
-                "photo_url": place.photo_url,
-            })
+        if place.latitude is None or place.longitude is None:
+            continue
+
+        try:
+            lat = float(place.latitude)
+            lng = float(place.longitude)
+        except (TypeError, ValueError):
+            continue
+
+        map_places.append({
+            "name": place.name or "",
+            "lat": lat,
+            "lng": lng,
+            "address": place.address or "",
+            "website": place.website or "",
+            "category": place.category or "",
+            "photo_url": place.photo_url or ""
+        })
 
     return render_template(
         "my_list_detail.html",
         saved_list=saved_list,
-        map_places=map_places
+        map_places=map_places,
+        mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
+        mapbox_style_url=os.getenv("MAPBOX_STYLE_URL", "")
     )
 
 

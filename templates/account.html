@@ -4,7 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Saved Places</title>
+
   <link rel="stylesheet" href="/static/css/styles.css">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
 </head>
 
 <body class="app-body page-account">
@@ -36,10 +39,11 @@
         <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
         <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
         <a href="/discover" class="mobile-drawer__link">Discover</a>
+        <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
         <a href="/admin" class="mobile-drawer__link">Admin</a>
       </nav>
 
-      <div class="mobile-drawer__section-label">Recent searches</div>
+      <div class="mobile-drawer__section-label">Account</div>
 
       <div class="mobile-drawer__footer">
         <a href="/" class="mobile-drawer__footer-link">Home</a>
@@ -129,84 +133,88 @@
             </a>
           </section>
 
+          <section class="account-map-card">
+            <div id="account-map" class="account-map"></div>
+          </section>
+
           {% if lists %}
- <section class="saved-lists-wrap">
-  {% for saved_list in lists %}
-    <article class="saved-list-card">
-      <div class="saved-list-card__header">
-        <div>
-          <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
-          <div class="saved-list-card__meta">
-            {{ saved_list.places|length }} places •
-            {{ "Public" if saved_list.is_public else "Private" }}
-          </div>
-          {% if saved_list.description %}
-            <p class="saved-list-card__description">{{ saved_list.description }}</p>
-          {% endif %}
-        </div>
-      </div>
+            <section class="saved-lists-wrap">
+              {% for saved_list in lists %}
+                <article class="saved-list-card">
+                  <div class="saved-list-card__header">
+                    <div>
+                      <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
+                      <div class="saved-list-card__meta">
+                        {{ saved_list.places|length }} places •
+                        {{ "Public" if saved_list.is_public else "Private" }}
+                      </div>
 
-      {% if saved_list.places %}
-        <div class="saved-list-places">
-          {% for place in saved_list.places %}
-            <article class="saved-place-row">
-              <div class="saved-place-row__image">
-                {% if place.photo_url %}
-                  <img src="{{ place.photo_url }}" alt="{{ place.name }}">
-                {% else %}
-                  <div class="saved-place-row__image-placeholder">📍</div>
-                {% endif %}
-              </div>
+                      {% if saved_list.description %}
+                        <p class="saved-list-card__description">{{ saved_list.description }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
 
-              <div class="saved-place-row__content">
-                <h3 class="saved-place-row__name">{{ place.name }}</h3>
+                  {% if saved_list.places %}
+                    <div class="saved-list-places">
+                      {% for place in saved_list.places %}
+                        <article class="saved-place-row">
+                          <div class="saved-place-row__image">
+                            {% if place.photo_url %}
+                              <img src="{{ place.photo_url }}" alt="{{ place.name }}">
+                            {% else %}
+                              <div class="saved-place-row__image-placeholder">📍</div>
+                            {% endif %}
+                          </div>
 
-                {% if place.category %}
-                  <div class="saved-place-row__category">{{ place.category }}</div>
-                {% endif %}
+                          <div class="saved-place-row__content">
+                            <h3 class="saved-place-row__name">{{ place.name }}</h3>
 
-                {% if place.address %}
-                  <div class="saved-place-row__address">{{ place.address }}</div>
-                {% endif %}
+                            {% if place.category %}
+                              <div class="saved-place-row__category">{{ place.category }}</div>
+                            {% endif %}
 
-                {% if place.notes %}
-                  <div class="saved-place-row__notes">{{ place.notes }}</div>
-                {% endif %}
+                            {% if place.address %}
+                              <div class="saved-place-row__address">{{ place.address }}</div>
+                            {% endif %}
 
-                <div class="saved-place-row__actions">
-                  {% if place.website %}
-                    <a
-                      href="{{ place.website }}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="saved-place-row__button"
-                    >
-                      Website
-                    </a>
+                            {% if place.notes %}
+                              <div class="saved-place-row__notes">{{ place.notes }}</div>
+                            {% endif %}
+
+                            <div class="saved-place-row__actions">
+                              {% if place.website %}
+                                <a
+                                  href="{{ place.website }}"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="saved-place-row__button"
+                                >
+                                  Website
+                                </a>
+                              {% endif %}
+
+                              {% if place.latitude and place.longitude %}
+                                <a
+                                  href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="saved-place-row__button saved-place-row__button--secondary"
+                                >
+                                  Directions
+                                </a>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </article>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="saved-list-empty">No saved places yet.</div>
                   {% endif %}
-
-                  {% if place.latitude and place.longitude %}
-                    <a
-                      href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="saved-place-row__button saved-place-row__button--secondary"
-                    >
-                      Directions
-                    </a>
-                  {% endif %}
-                </div>
-              </div>
-            </article>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="saved-list-empty">No saved places yet.</div>
-      {% endif %}
-    </article>
-  {% endfor %}
-</section>
-</div>
+                </article>
+              {% endfor %}
+            </section>
           {% else %}
             <section class="account-ios-empty">
               <h2>No lists yet</h2>
@@ -277,230 +285,69 @@
       closeBtn?.addEventListener("click", closeDrawer);
       backdrop?.addEventListener("click", closeDrawer);
 
-      const buttons = document.querySelectorAll("[data-list-view-btn]");
+      mapboxgl.accessToken = "{{ mapbox_token }}";
 
-      buttons.forEach((button) => {
-        button.addEventListener("click", function () {
-          const listId = button.getAttribute("data-list-view-btn");
-          const view = button.getAttribute("data-view");
+      const places = JSON.parse('{{ map_places|tojson|safe }}');
+      const styleUrl = "{{ mapbox_style_url }}";
+      const mapEl = document.getElementById("account-map");
 
-          const groupButtons = document.querySelectorAll(
-            `[data-list-view-btn="${listId}"]`
-          );
+      if (!mapEl || !styleUrl || !mapboxgl) return;
 
-          const cardsView = document.getElementById(`cards-view-${listId}`);
-          const mapView = document.getElementById(`map-view-${listId}`);
-          const listCard = button.closest(".account-ios-list-card");
+      const defaultCenter = places.length
+        ? [places[0].lng, places[0].lat]
+        : [-87.6298, 41.8781];
 
-          groupButtons.forEach((btn) => btn.classList.remove("is-active"));
-          button.classList.add("is-active");
-
-          if (view === "cards") {
-            if (cardsView) cardsView.classList.add("is-active");
-            if (mapView) mapView.classList.remove("is-active");
-            if (listCard) listCard.classList.remove("is-map-mode");
-          } else {
-            if (cardsView) cardsView.classList.remove("is-active");
-            if (mapView) mapView.classList.add("is-active");
-            if (listCard) listCard.classList.add("is-map-mode");
-
-            if (window.savedListMaps && window.savedListMaps[listId]) {
-              setTimeout(() => {
-                google.maps.event.trigger(window.savedListMaps[listId].map, "resize");
-                applyListFilters(listId);
-              }, 150);
-            }
-          }
-        });
+      const map = new mapboxgl.Map({
+        container: "account-map",
+        style: styleUrl,
+        center: defaultCenter,
+        zoom: places.length ? 11 : 9
       });
 
-      document.querySelectorAll("[data-filter-city]").forEach((select) => {
-        select.addEventListener("change", function () {
-          applyListFilters(this.getAttribute("data-filter-city"));
-        });
-      });
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-      document.querySelectorAll("[data-filter-cuisine]").forEach((select) => {
-        select.addEventListener("change", function () {
-          applyListFilters(this.getAttribute("data-filter-cuisine"));
-        });
-      });
-    });
-
-    function initSavedListMaps() {
-      window.savedListMaps = {};
-
-      const mapFrames = document.querySelectorAll(".account-list-map-frame");
-
-      mapFrames.forEach((frame) => {
-        const listId = frame.id.replace("saved-list-map-", "");
-        const dataEl = document.getElementById(`saved-list-map-data-${listId}`);
-        if (!dataEl) return;
-
-        const places = JSON.parse(dataEl.textContent || "[]");
-
-        const map = new google.maps.Map(frame, {
-          zoom: 11,
-          center: { lat: 41.8781, lng: -87.6298 },
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: false
-        });
-
-        const infoWindow = new google.maps.InfoWindow();
-        const markers = [];
-
-        places.forEach((place) => {
-          if (place.lat == null || place.lng == null) return;
-
-          const marker = new google.maps.Marker({
-            position: {
-              lat: Number(place.lat),
-              lng: Number(place.lng)
-            },
-            map,
-            title: place.name || ""
-          });
-
-          marker.__placeData = place;
-
-          marker.addListener("click", () => {
-            infoWindow.setContent(`
-              <div style="max-width:220px;">
-                <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
-                  ${place.name || ""}
-                </div>
-                <div style="font-size:13px;color:#666;margin-bottom:8px;">
-                  ${place.cuisine || place.category || ""}
-                </div>
-                <div style="font-size:13px;color:#444;margin-bottom:8px;">
-                  ${place.address || ""}
-                </div>
-                ${
-                  place.website
-                    ? `<a href="${place.website}" target="_blank" rel="noopener" style="color:#111;font-weight:600;">Visit website</a>`
-                    : ""
-                }
-              </div>
-            `);
-            infoWindow.open(map, marker);
-          });
-
-          markers.push(marker);
-        });
-
-        window.savedListMaps[listId] = {
-          map,
-          markers,
-          places
-        };
-
-        applyListFilters(listId);
-      });
-    }
-
-    function applyListFilters(listId) {
-      if (!window.savedListMaps || !window.savedListMaps[listId]) return;
-
-      const state = window.savedListMaps[listId];
-      const map = state.map;
-      const markers = state.markers;
-
-      const citySelect = document.querySelector(`[data-filter-city="${listId}"]`);
-      const cuisineSelect = document.querySelector(`[data-filter-cuisine="${listId}"]`);
-
-      const selectedCity = citySelect ? citySelect.value.trim() : "";
-      const selectedCuisine = cuisineSelect ? cuisineSelect.value.trim() : "";
-
-      const bounds = new google.maps.LatLngBounds();
-      let visibleCount = 0;
-
-      markers.forEach((marker) => {
-        const place = marker.__placeData || {};
-        const cityMatch = !selectedCity || (place.city || "") === selectedCity;
-        const cuisineMatch = !selectedCuisine || (place.cuisine || "") === selectedCuisine;
-
-        const isVisible = cityMatch && cuisineMatch;
-        marker.setVisible(isVisible);
-
-        if (isVisible) {
-          bounds.extend(marker.getPosition());
-          visibleCount += 1;
-        }
-      });
-
-      const cards = document.querySelectorAll(`[data-list-place="${listId}"]`);
-
-      cards.forEach((card) => {
-        const cardCity = (card.getAttribute("data-city") || "").trim();
-        const cardCuisine = (card.getAttribute("data-cuisine") || "").trim();
-
-        const cityMatch = !selectedCity || cardCity === selectedCity;
-        const cuisineMatch = !selectedCuisine || cardCuisine === selectedCuisine;
-
-        const isVisible = cityMatch && cuisineMatch;
-        card.style.display = isVisible ? "" : "none";
-      });
-
-      if (visibleCount > 0) {
-        map.fitBounds(bounds);
-
-        google.maps.event.addListenerOnce(map, "bounds_changed", function () {
-          if (this.getZoom() > 14) {
-            this.setZoom(14);
-          }
-        });
-      }
-    }
-  </script>
-
-
-
-
-<script>
-  function initSavedListMaps() {
-    document.querySelectorAll(".saved-list-map[data-places]").forEach((mapEl) => {
-      const places = JSON.parse(mapEl.dataset.places || "[]");
-      if (!places.length) return;
-
-      const first = places.find(p => p.lat && p.lng) || places[0];
-      if (!first || !first.lat || !first.lng) return;
-
-      const map = new google.maps.Map(mapEl, {
-        center: { lat: Number(first.lat), lng: Number(first.lng) },
-        zoom: 12,
-        styles: []
-      });
-
-      const bounds = new google.maps.LatLngBounds();
+      const bounds = new mapboxgl.LngLatBounds();
 
       places.forEach((place) => {
-        if (!place.lat || !place.lng) return;
+        if (place.lng == null || place.lat == null) return;
 
-        const position = {
-          lat: Number(place.lat),
-          lng: Number(place.lng)
-        };
+        const popupHtml = `
+          <div style="max-width:220px;">
+            <strong>${place.name || ""}</strong>
+            ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
+            ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
+          </div>
+        `;
 
-        new google.maps.Marker({
-          position,
-          map,
-          title: place.name || "Saved place"
-        });
+        new mapboxgl.Marker()
+          .setLngLat([place.lng, place.lat])
+          .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
+          .addTo(map);
 
-        bounds.extend(position);
+        bounds.extend([place.lng, place.lat]);
       });
 
       if (places.length > 1) {
-        map.fitBounds(bounds);
+        map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
       }
     });
-  }
+  </script>
+
+<script id="map-data" type="application/json">
+{{ map_places|tojson|safe }}
 </script>
 
-  <script
-    async
-    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initSavedListMaps">
-  </script>
+
+<script>
+  mapboxgl.accessToken = "{{ mapbox_token }}";
+
+  const places = JSON.parse(
+    document.getElementById("map-data").textContent
+  );
+
+  const styleUrl = "{{ mapbox_style_url }}";
+</script>
+
+
 </body>
 </html>
