@@ -463,58 +463,63 @@
       `;
     }
 
-    function buildResultRow(item, isInternal) {
-      const title = item.name || "Untitled";
-      const category = item.category ? item.category.replaceAll("_", " ") : "";
-      const address = item.address || "";
-      const website = item.website || "";
-      const rating = item.rating ? `⭐ ${Number(item.rating).toFixed(1)}` : "";
+function buildResultRow(item, isInternal) {
+  const title = item.name || "Untitled";
+  const category = item.category ? item.category.replaceAll("_", " ") : "";
+  const address = item.address || "";
+  const website = item.website || "";
+  const rating = item.rating ? `⭐ ${Number(item.rating).toFixed(1)}` : "";
 
-      const photo =
-        item.photo_url ||
-        item.image_url ||
-        item.thumbnail ||
-        "/static/img/placeholder-business.jpg";
+  const photo =
+    item.photo_url ||
+    item.image_url ||
+    item.thumbnail ||
+    "/static/img/placeholder-business.jpg";
 
-      const directionsLink =
-        item.latitude && item.longitude
-          ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
-          : "";
+  const directionsLink =
+    item.latitude && item.longitude
+      ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
+      : "";
 
-      return `
-        <article class="chat-result-card">
-          <div class="chat-result-left">
-            <h3 class="chat-result-title">${title}</h3>
+  return `
+    <article class="chat-result-card">
+      <div class="chat-result-card__image-wrap">
+        <img
+          src="${photo}"
+          alt="${title}"
+          class="chat-result-card__image"
+          loading="lazy"
+        >
+      </div>
 
-            <div class="chat-result-meta">
-              ${rating ? `<span>${rating}</span>` : ""}
-              ${website ? `<a href="${website}" target="_blank" rel="noopener">🌐</a>` : ""}
-              ${directionsLink ? `<a href="${directionsLink}" target="_blank" rel="noopener">📍</a>` : ""}
-              <button
-                type="button"
-                class="save-place-btn"
-                data-place-name="${title}"
-                data-place-address="${address}"
-                data-place-category="${category}"
-                data-place-website="${website}"
-                data-place-photo="${photo}"
-                data-place-lat="${item.latitude || ""}"
-                data-place-lng="${item.longitude || ""}"
-                data-place-rating="${item.rating || ""}"
-              >📌</button>
-            </div>
+      <div class="chat-result-card__body">
+        <h3 class="chat-result-card__title">${title}</h3>
 
-            <p class="chat-result-text">
-              ${category}${category && address ? ", " : ""}${address}
-            </p>
-          </div>
+        <div class="chat-result-card__meta">
+          ${rating ? `<span class="chat-result-card__rating">${rating}</span>` : ""}
+          ${website ? `<a href="${website}" target="_blank" rel="noopener" class="chat-result-card__icon">🌐</a>` : ""}
+          ${directionsLink ? `<a href="${directionsLink}" target="_blank" rel="noopener" class="chat-result-card__icon">📍</a>` : ""}
+          <button
+            type="button"
+            class="chat-result-card__icon save-place-btn"
+            data-place-name="${title}"
+            data-place-address="${address}"
+            data-place-category="${category}"
+            data-place-website="${website}"
+            data-place-photo="${photo}"
+            data-place-lat="${item.latitude || ""}"
+            data-place-lng="${item.longitude || ""}"
+            data-place-rating="${item.rating || ""}"
+          >📌</button>
+        </div>
 
-          <div class="chat-result-right">
-            <img src="${photo}" alt="${title}" loading="lazy">
-          </div>
-        </article>
-      `;
-    }
+        <p class="chat-result-card__text">
+          ${category}${category && address ? ", " : ""}${address}
+        </p>
+      </div>
+    </article>
+  `;
+}
 
     function buildSearchMapData(items) {
       return items
