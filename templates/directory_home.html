@@ -56,16 +56,14 @@
         + New search
       </button>
 
-      <nav class="app-sidebar__nav">
-        <a href="/" class="app-sidebar__link is-active">AI Search</a>
-        <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
-        <a href="/search?q=restaurant near me" class="app-sidebar__link">Restaurants</a>
-        <a href="/search?q=bars near me" class="app-sidebar__link">Bars</a>
-        <a href="/search?q=shopping near me" class="app-sidebar__link">Shopping</a>
-        <a href="/discover" class="app-sidebar__link">Discover</a>
-        <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
-        <a href="/admin" class="app-sidebar__link">Admin</a>
-      </nav>
+<nav class="app-sidebar__nav">
+  <a href="/" class="app-sidebar__link is-active">Home</a>
+  <a href="/discover" class="app-sidebar__link">Discover</a>
+  <a href="/" class="app-sidebar__link">Search</a>
+  <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
+  <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="app-sidebar__link">Account</a>
+  <a href="/admin" class="app-sidebar__link">Admin</a>
+</nav>
 
       <div class="app-sidebar__section-label">Account</div>
 
@@ -105,16 +103,14 @@
         + New search
       </button>
 
-      <nav class="mobile-drawer__nav">
-        <a href="/" class="mobile-drawer__link is-active">AI Search</a>
-        <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
-        <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
-        <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
-        <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
-        <a href="/discover" class="mobile-drawer__link">Discover</a>
-        <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
-        <a href="/admin" class="mobile-drawer__link">Admin</a>
-      </nav>
+<nav class="mobile-drawer__nav">
+  <a href="/" class="mobile-drawer__link is-active">Home</a>
+  <a href="/discover" class="mobile-drawer__link">Discover</a>
+  <a href="/" class="mobile-drawer__link">Search</a>
+  <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
+  <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-drawer__link">Account</a>
+  <a href="/admin" class="mobile-drawer__link">Admin</a>
+</nav>
 
       <div class="mobile-drawer__section-label">Account</div>
 
@@ -237,33 +233,6 @@
           </div>
         </div>
       </section>
-
-      <nav class="mobile-tabbar mobile-only">
-        <a href="/" class="mobile-tabbar__item is-active">
-          <span class="mobile-tabbar__icon">🏠</span>
-          <span class="mobile-tabbar__label">Home</span>
-        </a>
-
-        <a href="/discover" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🗺️</span>
-          <span class="mobile-tabbar__label">Discover</span>
-        </a>
-
-        <a href="/" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🔎</span>
-          <span class="mobile-tabbar__label">Search</span>
-        </a>
-
-        <a href="{{ url_for('feed') }}" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">📰</span>
-          <span class="mobile-tabbar__label">Feed</span>
-        </a>
-
-        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">👤</span>
-          <span class="mobile-tabbar__label">Account</span>
-        </a>
-      </nav>
     </main>
   </div>
 
