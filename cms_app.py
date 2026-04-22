@@ -2915,19 +2915,16 @@ def home():
     homepage_top_ads = get_active_ads("homepage_top", limit=1)
     homepage_inline_ads = get_active_ads("homepage_inline", limit=3)
 
-    default_saved_list_id = None
-    user_lists = []
-
     user_lists = []
     default_saved_list_id = None
 
     if current_user.is_authenticated:
         user_lists = SavedList.query.filter_by(
-        user_id=current_user.id
-    ).order_by(SavedList.title.asc()).all()
+            user_id=current_user.id
+        ).order_by(SavedList.title.asc()).all()
 
-    first_list = user_lists[0] if user_lists else None
-    default_saved_list_id = first_list.id if first_list else None
+        first_list = user_lists[0] if user_lists else None
+        default_saved_list_id = first_list.id if first_list else None
 
     return render_template(
         "directory_home.html",
@@ -2936,7 +2933,7 @@ def home():
         homepage_top_ads=homepage_top_ads,
         homepage_inline_ads=homepage_inline_ads,
         default_saved_list_id=default_saved_list_id,
-    user_lists=user_lists
+        user_lists=user_lists
     )
 
 
