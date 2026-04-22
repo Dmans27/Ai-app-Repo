@@ -5,601 +5,629 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Community Feed</title>
 
-
   <style>
-
-
-
-
-.mobile-drawer{
-  position:fixed;
-  top:0;
-  left:0;
-  bottom:0;
-  width:280px;
-  background:#17181a;
-  z-index:9999;
-  padding:22px;
-  transform:translateX(-100%);
-  transition:.25s ease;
-  border-right:1px solid #2a2b2f;
-}
-
-.mobile-drawer.is-open{
-  transform:translateX(0);
-}
-
-.mobile-drawer-backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  z-index:9998;
-  opacity:0;
-  pointer-events:none;
-  transition:.25s ease;
-}
-
-.mobile-drawer-backdrop.is-open{
-  opacity:1;
-  pointer-events:auto;
-}
-
-.mobile-drawer__header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:28px;
-}
-
-.mobile-drawer__title{
-  color:#fff;
-  font-size:22px;
-  font-weight:700;
-}
-
-.mobile-drawer__close{
-  background:none;
-  border:none;
-  color:#fff;
-  font-size:24px;
-}
-
-.mobile-drawer__nav{
-  display:grid;
-  gap:12px;
-}
-
-.mobile-drawer__link{
-  color:#fff;
-  text-decoration:none;
-  padding:14px 16px;
-  border-radius:14px;
-  background:#232428;
-}
-
-.mobile-drawer__link.is-active{
-  background:#10b981;
-}
-
-
-
-
-.mobile-app-header{
-  display:grid;
-  grid-template-columns:56px 1fr auto;
-  align-items:center;
-  gap:12px;
-}
-
-.mobile-app-header__actions{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.mobile-app-header__icon{
-  width:52px;
-  height:52px;
-  border:none;
-  border-radius:16px;
-  background:#1a1b1f;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:24px;
-  text-decoration:none;
-}
-
-.mobile-app-header__icon--primary{
-  background:#10b981;
-  color:#fff;
-  font-weight:700;
-}
-
-.mobile-app-header__center{
-  min-width:0;
-}
-
-.mobile-app-header__title{
-  font-size:1.35rem;
-  font-weight:800;
-}
-
-.mobile-app-header__subtitle{
-  font-size:.95rem;
-  opacity:.7;
-}
-
-@media (max-width:600px){
-
-  .mobile-app-header{
-    grid-template-columns:48px 1fr auto;
-    gap:10px;
-  }
-
-  .mobile-app-header__icon{
-    width:46px;
-    height:46px;
-    border-radius:14px;
-    font-size:20px;
-  }
-
-  .mobile-app-header__actions{
-    gap:8px;
-  }
-
-  .mobile-app-header__title{
-    font-size:1.2rem;
-  }
-
-  .mobile-app-header__subtitle{
-    font-size:.88rem;
-  }
-}
-
-
-
-
-body.page-feed .post-comment{
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-  padding:10px 12px;
-  border-radius:14px;
-  background:var(--feed-pill);
-  color:#2d2a26;
-  font-size:14px;
-  line-height:1.45;
-  word-break:break-word;
-  overflow-wrap:anywhere;
-}
-
-body.page-feed .post-comment__avatar{
-  width:28px;
-  height:28px;
-  border-radius:999px;
-  background:#111;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:700;
-  flex-shrink:0;
-}
-
-body.page-feed .post-comment__content{
-  flex:1;
-  min-width:0;
-}
-
-body.page-feed .post-comment__text{
-  display:block;
-}
-
-/* =========================================================
-   LOCAL AI — FEED PAGE STYLES (MERGED + FIXED VERTICAL STACK)
-   Add class="page-feed" on <body>
-   ========================================================= */
-
-body.page-feed{
-  --feed-bg:#0f0f10;
-  --feed-card:#17181a;
-  --feed-border:#2a2b2f;
-  --feed-text:#f5f5f7;
-  --feed-muted:#9a9ca3;
-  --feed-pill:#222327;
-  --feed-shadow:0 12px 30px rgba(0,0,0,.35);
-
-  background:var(--feed-bg);
-  color:var(--feed-text);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
-  overflow-x:hidden !important;
-}
-
-body.page-feed,
-body.page-feed *{
-  box-sizing:border-box;
-}
-
-html,
-body.page-feed{
-  max-width:100%;
-  overflow-x:hidden !important;
-}
-
-/* =========================
-   PAGE FRAME
-========================= */
-
-body.page-feed .feed-shell,
-body.page-feed .feed-page{
-  width:100%;
-  max-width:760px;
-  margin:0 auto;
-  padding:18px 16px 120px;
-  overflow-x:hidden !important;
-}
-
-body.page-feed .feed-list{
-  display:flex !important;
-  flex-direction:column !important;
-  gap:18px;
-  width:100%;
-  max-width:100%;
-}
-
-/* =========================
-   TOP BAR
-========================= */
-
-body.page-feed .feed-topbar{
-  position:sticky;
-  top:0;
-  z-index:50;
-  display:grid;
-  grid-template-columns:44px 1fr 44px;
-  align-items:center;
-  gap:12px;
-  padding:14px 16px;
-  background:rgba(15,15,16,.92);
-  border-bottom:1px solid var(--feed-border);
-  backdrop-filter:blur(16px);
-}
-
-body.page-feed .feed-topbar__center{
-  text-align:center;
-}
-
-body.page-feed .feed-topbar__title{
-  font-size:1.1rem;
-  font-weight:800;
-  color:var(--feed-text);
-}
-
-body.page-feed .feed-topbar__subtitle{
-  font-size:.82rem;
-  color:var(--feed-muted);
-}
-
-body.page-feed .feed-topbar__icon{
-  width:44px;
-  height:44px;
-  border:none;
-  border-radius:14px;
-  background:#232428;
-  color:var(--feed-text);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#111;
-}
-
-body.page-feed .feed-topbar__icon--primary{
-  background:#ffffff;
-  color:#111111;
-  font-size:1.4rem;
-}
-
-/* =========================
-   POST CARD
-========================= */
-
-body.page-feed .post{
-  display:block !important;
-  width:100% !important;
-  max-width:100% !important;
-  min-width:0 !important;
-  overflow:hidden !important;
-  padding:18px;
-  border-radius:28px;
-   background:var(--feed-card);
-  border:1px solid var(--feed-border);
-  box-shadow:var(--feed-shadow);
-}
-
-body.page-feed .post-top{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  width:100%;
-}
-
-body.page-feed .avatar{
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  background:#111;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  flex-shrink:0;
-}
-
-body.page-feed .post-meta{
-  flex:1;
-  min-width:0;
-}
-
-body.page-feed .post-name{
-  font-size:16px;
-  font-weight:700;
-  word-break:break-word;
-  color:var(--feed-muted);
-}
-
-body.page-feed .post-time{
-  font-size:13px;
-  color:var(--feed-text);
-  margin-top:3px;
-}
-
-body.page-feed .post-body{
-  margin-top:14px;
-  font-size:20px;
-  line-height:1.45;
-  word-break:break-word;
-}
-
-/* =========================
-   PHOTO FIX
-========================= */
-
-body.page-feed .post-image{
-  width:100% !important;
-  max-width:100% !important;
-  height:auto !important;
-  max-height:420px;
-  object-fit:cover;
-  display:block;
-  margin-top:14px;
-  border-radius:22px;
-}
-
-/* =========================
-   INLINE ACTIONS
-========================= */
-
-body.page-feed .post-actions-inline{
-  display:flex;
-  align-items:center;
-  gap:22px;
-  margin-top:14px;
-  margin-bottom:10px;
-  flex-wrap:wrap;
-}
-
-body.page-feed .post-action-btn{
-  border:none;
-  background:none;
-  padding:0;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  color:#6d675f;
-  font-size:16px;
-  color:var(--feed-muted);
-}
-
-
-body.page-feed .post-action-btn:hover{
-  color:var(--feed-text);
-}
-
-/* =========================
-   COMMENTS
-========================= */
-
-body.page-feed .post-comments{
-  display:grid;
-  gap:8px;
-  margin-top:12px;
-}
-
-body.page-feed .post-comment{
-  padding:10px 12px;
-  background:var(--feed-pill);
-  border-radius:14px;
-  font-size:14px;
-  line-height:1.45;
-  word-break:break-word;
-}
-
-body.page-feed .post-comment-form{
-  display:flex;
-  gap:10px;
-  margin-top:12px;
-}
-
-body.page-feed .compose-input{
-  flex:1;
-  min-width:0;
-  padding:14px 16px;
-  border:none;
-  border-radius:18px;
-    background:var(--feed-pill);
-  color:var(--feed-text);
-  border-color:var(--feed-border);
-}
-
-
-body.page-feed .compose-input::placeholder{
-  color:var(--feed-muted);
-}
-
-body.page-feed .post-comment-submit{
-  border:none;
-   background:#ffffff;
-  color:#111111;
-  border-radius:14px;
-  padding:0 16px;
-  min-height:44px;
-}
-
-/* =========================
-   EMPTY
-========================= */
-
-body.page-feed .empty{
-  padding:40px 20px;
-  border:1px solid var(--feed-border);
-  border-radius:24px;
-  background:var(--feed-card);
-  color:var(--feed-muted);
-  text-align:center;
-  color:var(--feed-muted);
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width:600px){
-
-  body.page-feed .feed-shell,
-  body.page-feed .feed-page{
-    padding:14px 12px 120px;
-  }
-
-  body.page-feed .post{
-    padding:16px;
-    border-radius:24px;
-  }
-
-  body.page-feed .post-body{
-    font-size:18px;
-  }
-
-  body.page-feed .post-comment-form{
-    flex-direction:column;
-  }
-
-  body.page-feed .post-comment-submit{
-    width:100%;
-  }
-
-}
-</style>
-
+    :root{
+      --bg:#0b0b0c;
+      --card:#151619;
+      --card-2:#1a1c20;
+      --line:#26282d;
+      --text:#f5f5f7;
+      --muted:#9a9ca3;
+      --pill:#202228;
+      --accent:#19c38a;
+      --accent-dark:#10392e;
+      --shadow:0 18px 40px rgba(0,0,0,.35);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:18px;
+      --radius-sm:14px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif; }
+    body.page-feed{ overflow-x:hidden; }
+
+    /* =========================
+       APP FRAME
+    ========================= */
+    .feed-shell{
+      width:100%;
+      min-height:100vh;
+      max-width:760px;
+      margin:0 auto;
+      padding:18px 16px 120px;
+    }
+
+    .feed-page{
+      width:100%;
+    }
+
+    .feed-list{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      width:100%;
+    }
+
+    /* =========================
+       DRAWER
+    ========================= */
+    .mobile-drawer{
+      position:fixed;
+      top:0;
+      left:0;
+      bottom:0;
+      width:min(84vw,320px);
+      background:#17181a;
+      z-index:9999;
+      padding:22px;
+      transform:translateX(-100%);
+      transition:.25s ease;
+      border-right:1px solid #2a2b2f;
+    }
+
+    .mobile-drawer.is-open{
+      transform:translateX(0);
+    }
+
+    .mobile-drawer-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.45);
+      z-index:9998;
+      opacity:0;
+      pointer-events:none;
+      transition:.25s ease;
+    }
+
+    .mobile-drawer-backdrop.is-open{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .mobile-drawer__header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:28px;
+    }
+
+    .mobile-drawer__title{
+      color:#fff;
+      font-size:22px;
+      font-weight:700;
+    }
+
+    .mobile-drawer__close{
+      background:none;
+      border:none;
+      color:#fff;
+      font-size:24px;
+      cursor:pointer;
+    }
+
+    .mobile-drawer__nav{
+      display:grid;
+      gap:12px;
+    }
+
+    .mobile-drawer__link{
+      color:#fff;
+      text-decoration:none;
+      padding:14px 16px;
+      border-radius:14px;
+      background:#232428;
+    }
+
+    .mobile-drawer__link.is-active{
+      background:var(--accent);
+      color:#08130f;
+      font-weight:700;
+    }
+
+    /* =========================
+       HEADER
+    ========================= */
+    .mobile-app-header{
+      position:sticky;
+      top:0;
+      z-index:50;
+      display:grid;
+      grid-template-columns:56px 1fr auto;
+      align-items:center;
+      gap:12px;
+      padding:10px 0 18px;
+      background:linear-gradient(to bottom, rgba(11,11,12,.98), rgba(11,11,12,.92) 78%, rgba(11,11,12,0));
+      backdrop-filter:blur(12px);
+    }
+
+    .mobile-app-header__actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .mobile-app-header__icon{
+      width:52px;
+      height:52px;
+      border:none;
+      border-radius:18px;
+      background:#17191e;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:24px;
+      text-decoration:none;
+      cursor:pointer;
+    }
+
+    .mobile-app-header__icon--primary{
+      background:var(--accent);
+      color:#fff;
+      font-weight:800;
+    }
+
+    .mobile-app-header__center{
+      min-width:0;
+    }
+
+    .mobile-app-header__title{
+      font-size:1.55rem;
+      font-weight:800;
+      line-height:1.05;
+    }
+
+    .mobile-app-header__subtitle{
+      font-size:.96rem;
+      opacity:.72;
+      margin-top:2px;
+    }
+
+    /* =========================
+       COMPOSER
+    ========================= */
+    .feed-compose-sheet[hidden]{
+      display:none !important;
+    }
+
+    .feed-compose-sheet{
+      position:fixed;
+      inset:0;
+      z-index:11000;
+    }
+
+    .feed-compose-sheet__backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,.56);
+      backdrop-filter:blur(4px);
+    }
+
+    .feed-compose-sheet__panel{
+      position:absolute;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      width:min(720px, calc(100vw - 24px));
+      background:linear-gradient(180deg,#1a1c20,#15171b);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:28px;
+      box-shadow:0 30px 80px rgba(0,0,0,.45);
+      padding:18px;
+    }
+
+    .feed-compose-sheet__header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:16px;
+    }
+
+    .feed-compose-sheet__header h2{
+      margin:0;
+      font-size:1.2rem;
+      font-weight:800;
+    }
+
+    .feed-compose-sheet__close{
+      width:40px;
+      height:40px;
+      border:none;
+      border-radius:14px;
+      background:#23252b;
+      color:#fff;
+      font-size:20px;
+      cursor:pointer;
+    }
+
+    .feed-compose-form{
+      display:grid;
+      gap:14px;
+    }
+
+    .compose-row{
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+    }
+
+    .compose-input{
+      flex:1;
+      min-width:0;
+      padding:14px 16px;
+      border:none;
+      border-radius:18px;
+      background:var(--pill);
+      color:var(--text);
+      outline:none;
+      font-size:15px;
+    }
+
+    .compose-input::placeholder{
+      color:var(--muted);
+    }
+
+    .compose-input--small{
+      min-height:46px;
+    }
+
+    .feed-compose__extras{
+      display:grid;
+      gap:12px;
+    }
+
+    .compose-file{
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#1d1f24;
+      color:var(--muted);
+    }
+
+    .compose-btn{
+      height:48px;
+      border:none;
+      border-radius:18px;
+      background:var(--accent);
+      color:#08130f;
+      font-size:15px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    /* =========================
+       AVATAR
+    ========================= */
+    .avatar{
+      width:44px;
+      height:44px;
+      border-radius:999px;
+      background:#111;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:15px;
+      flex-shrink:0;
+      border:1px solid rgba(255,255,255,.06);
+    }
+
+    /* =========================
+       POSTS
+    ========================= */
+    .post{
+      width:100%;
+      padding:18px;
+      border-radius:var(--radius-xl);
+      background:linear-gradient(180deg,var(--card),var(--card-2));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+
+    .post-top{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .post-meta{
+      flex:1;
+      min-width:0;
+    }
+
+    .post-name{
+      font-size:15px;
+      font-weight:700;
+      color:var(--text);
+      line-height:1.2;
+      word-break:break-word;
+    }
+
+    .post-time{
+      font-size:13px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+
+    .post-body{
+      margin-top:14px;
+      font-size:20px;
+      line-height:1.45;
+      color:var(--text);
+      word-break:break-word;
+    }
+
+    .post-image{
+      width:100%;
+      display:block;
+      margin-top:14px;
+      border-radius:22px;
+      max-height:460px;
+      object-fit:cover;
+      background:#0f1013;
+    }
+
+    .place-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      margin-top:14px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(25,195,138,.14);
+      color:#7ee2bf;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    /* =========================
+       ACTIONS
+    ========================= */
+    .post-actions-inline{
+      display:flex;
+      align-items:center;
+      gap:22px;
+      flex-wrap:wrap;
+      margin-top:16px;
+      margin-bottom:10px;
+      padding-top:2px;
+    }
+
+    .post-action-btn{
+      border:none;
+      background:none;
+      padding:0;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--muted);
+      font-size:15px;
+      cursor:pointer;
+    }
+
+    .post-action-btn:hover{
+      color:var(--text);
+    }
+
+    .post-action-btn__icon{
+      font-size:16px;
+    }
+
+    .post-action-btn__count{
+      font-weight:700;
+    }
+
+    /* =========================
+       COMMENTS
+    ========================= */
+    .post-comments{
+      display:grid;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .post-comment{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:16px;
+      background:var(--pill);
+      color:var(--text);
+      font-size:14px;
+      line-height:1.45;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+    }
+
+    .post-comment__avatar{
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      background:#111;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:700;
+      flex-shrink:0;
+    }
+
+    .post-comment__content{
+      flex:1;
+      min-width:0;
+    }
+
+    .post-comment__text{
+      display:block;
+    }
+
+    .post-comment-form{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .post-comment-submit{
+      border:none;
+      background:#ffffff;
+      color:#111111;
+      border-radius:14px;
+      padding:0 16px;
+      min-height:44px;
+      font-weight:700;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    /* =========================
+       EMPTY
+    ========================= */
+    .empty{
+      padding:46px 22px;
+      border:1px solid var(--line);
+      border-radius:28px;
+      background:linear-gradient(180deg,var(--card),var(--card-2));
+      color:var(--muted);
+      text-align:center;
+      font-size:1.05rem;
+      box-shadow:var(--shadow);
+    }
+
+    /* =========================
+       MOBILE
+    ========================= */
+    @media (max-width:600px){
+      .feed-shell,
+      .feed-page{
+        padding:14px 12px 120px;
+      }
+
+      .mobile-app-header{
+        grid-template-columns:48px 1fr auto;
+        gap:10px;
+      }
+
+      .mobile-app-header__icon{
+        width:46px;
+        height:46px;
+        border-radius:14px;
+        font-size:20px;
+      }
+
+      .mobile-app-header__actions{
+        gap:8px;
+      }
+
+      .mobile-app-header__title{
+        font-size:1.25rem;
+      }
+
+      .mobile-app-header__subtitle{
+        font-size:.88rem;
+      }
+
+      .post{
+        padding:16px;
+        border-radius:24px;
+      }
+
+      .post-body{
+        font-size:18px;
+      }
+
+      .post-comment-form{
+        flex-direction:column;
+      }
+
+      .post-comment-submit{
+        width:100%;
+      }
+
+      .feed-compose-sheet__panel{
+        bottom:12px;
+        width:calc(100vw - 16px);
+        border-radius:24px;
+      }
+    }
+  </style>
 </head>
-
-
-
-
-
-
 
 <body class="page-feed">
   <div class="feed-shell">
 
+    <!-- SIDEBAR DRAWER -->
+    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+      <div class="mobile-drawer__header">
+        <div class="mobile-drawer__title">Local AI</div>
 
-<!-- SIDEBAR DRAWER -->
-<aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+        <button
+          class="mobile-drawer__close"
+          id="app-sidebar-close"
+          type="button"
+          aria-label="Close menu"
+        >
+          ✕
+        </button>
+      </div>
 
-  <div class="mobile-drawer__header">
-    <div class="mobile-drawer__title">Local AI</div>
+      <nav class="mobile-drawer__nav">
+        <a href="/" class="mobile-drawer__link">Home</a>
+        <a href="{{ url_for('feed') }}" class="mobile-drawer__link is-active">Feed</a>
+        <a href="/discover" class="mobile-drawer__link">Discover</a>
+        <a href="{{ url_for('account') }}" class="mobile-drawer__link">Account</a>
+      </nav>
+    </aside>
 
-    <button
-      class="mobile-drawer__close"
-      id="app-sidebar-close"
-      type="button"
-      aria-label="Close menu"
-    >
-      ✕
-    </button>
-  </div>
+    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
 
-  <nav class="mobile-drawer__nav">
-    <a href="/" class="mobile-drawer__link">Home</a>
-    <a href="{{ url_for('feed') }}" class="mobile-drawer__link is-active">Feed</a>
-    <a href="/discover" class="mobile-drawer__link">Discover</a>
-    <a href="{{ url_for('account') }}" class="mobile-drawer__link">Account</a>
-  </nav>
-
-</aside>
-
-<div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
-
-
-
-<header class="mobile-app-header">
-  <!-- LEFT: menu -->
-  <button
-    class="mobile-app-header__icon"
-    id="app-sidebar-toggle"
-    type="button"
-    aria-label="Open menu"
-  >
-    ☰
-  </button>
-
-  <!-- CENTER: branding -->
-  <div class="mobile-app-header__center">
-    <div class="mobile-app-header__title">Local AI</div>
-    <div class="mobile-app-header__subtitle">Recommendations near you</div>
-  </div>
-
-  <!-- RIGHT SIDE ACTIONS -->
-  <div class="mobile-app-header__actions">
-
-    {% if current_user.is_authenticated %}
-      <!-- Post button -->
+    <header class="mobile-app-header">
       <button
-        class="mobile-app-header__icon mobile-app-header__icon--primary"
-        id="feed-compose-toggle"
+        class="mobile-app-header__icon"
+        id="app-sidebar-toggle"
         type="button"
-        aria-label="Create post"
+        aria-label="Open menu"
       >
-        +
+        ☰
       </button>
 
-      <!-- Account -->
-      <a
-        href="{{ url_for('account') }}"
-        class="mobile-app-header__icon mobile-app-header__icon--link"
-        aria-label="Account"
-      >
-        👤
-      </a>
+      <div class="mobile-app-header__center">
+        <div class="mobile-app-header__title">Local AI</div>
+        <div class="mobile-app-header__subtitle">Recommendations near you</div>
+      </div>
 
-    {% else %}
+      <div class="mobile-app-header__actions">
+        {% if current_user.is_authenticated %}
+          <button
+            class="mobile-app-header__icon mobile-app-header__icon--primary"
+            id="feed-compose-toggle"
+            type="button"
+            aria-label="Create post"
+          >
+            +
+          </button>
 
-      <!-- Login -->
-      <a
-        href="{{ url_for('login') }}"
-        class="mobile-app-header__icon mobile-app-header__icon--link"
-        aria-label="Log in"
-      >
-        👤
-      </a>
-
-    {% endif %}
-
-  </div>
-</header>
+          <a
+            href="{{ url_for('account') }}"
+            class="mobile-app-header__icon mobile-app-header__icon--link"
+            aria-label="Account"
+          >
+            👤
+          </a>
+        {% else %}
+          <a
+            href="{{ url_for('login') }}"
+            class="mobile-app-header__icon mobile-app-header__icon--link"
+            aria-label="Log in"
+          >
+            👤
+          </a>
+        {% endif %}
+      </div>
+    </header>
 
     {% if current_user.is_authenticated %}
       <div class="feed-compose-sheet" id="feed-compose-sheet" hidden>
@@ -626,8 +654,8 @@ body.page-feed .empty{
           >
             <div class="compose-row">
               <div class="avatar">
-  {{ (current_user.name or current_user.email or "U")[0]|upper }}
-</div>
+                {{ (current_user.name or current_user.email or "U")[0]|upper }}
+              </div>
 
               <input
                 class="compose-input"
@@ -712,14 +740,14 @@ body.page-feed .empty{
                 <div class="post-comments">
                   {% for comment in post.comments %}
                     <div class="post-comment">
-  <div class="post-comment__avatar">
-    {{ comment.user_name[0]|upper if comment.user_name else "U" }}
-  </div>
+                      <div class="post-comment__avatar">
+                        {{ comment.user_name[0]|upper if comment.user_name else "U" }}
+                      </div>
 
-  <div class="post-comment__content">
-    <span class="post-comment__text">{{ comment.body }}</span>
-  </div>
-</div>
+                      <div class="post-comment__content">
+                        <span class="post-comment__text">{{ comment.body }}</span>
+                      </div>
+                    </div>
                   {% endfor %}
                 </div>
               {% endif %}
@@ -749,56 +777,46 @@ body.page-feed .empty{
         </div>
       {% endif %}
     </main>
-
   </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const openBtn = document.getElementById("feed-compose-toggle");
+      const sheet = document.getElementById("feed-compose-sheet");
+      const closeBackdrop = document.getElementById("feed-compose-close");
+      const closeBtn = document.getElementById("feed-compose-close-btn");
 
-  /* ==========================
-     FEED COMPOSE MODAL
-  ========================== */
-  const openBtn = document.getElementById("feed-compose-toggle");
-  const sheet = document.getElementById("feed-compose-sheet");
-  const closeBackdrop = document.getElementById("feed-compose-close");
-  const closeBtn = document.getElementById("feed-compose-close-btn");
+      function openSheet() {
+        if (sheet) sheet.hidden = false;
+      }
 
-  function openSheet() {
-    if (sheet) sheet.hidden = false;
-  }
+      function closeSheet() {
+        if (sheet) sheet.hidden = true;
+      }
 
-  function closeSheet() {
-    if (sheet) sheet.hidden = true;
-  }
+      openBtn?.addEventListener("click", openSheet);
+      closeBackdrop?.addEventListener("click", closeSheet);
+      closeBtn?.addEventListener("click", closeSheet);
 
-  openBtn?.addEventListener("click", openSheet);
-  closeBackdrop?.addEventListener("click", closeSheet);
-  closeBtn?.addEventListener("click", closeSheet);
+      const drawer = document.getElementById("app-sidebar");
+      const drawerOpen = document.getElementById("app-sidebar-toggle");
+      const drawerClose = document.getElementById("app-sidebar-close");
+      const drawerBackdrop = document.getElementById("app-sidebar-backdrop");
 
+      function openDrawer() {
+        drawer?.classList.add("is-open");
+        drawerBackdrop?.classList.add("is-open");
+      }
 
-  /* ==========================
-     SIDEBAR DRAWER
-  ========================== */
-  const drawer = document.getElementById("app-sidebar");
-  const drawerOpen = document.getElementById("app-sidebar-toggle");
-  const drawerClose = document.getElementById("app-sidebar-close");
-  const drawerBackdrop = document.getElementById("app-sidebar-backdrop");
+      function closeDrawer() {
+        drawer?.classList.remove("is-open");
+        drawerBackdrop?.classList.remove("is-open");
+      }
 
-  function openDrawer() {
-    drawer?.classList.add("is-open");
-    drawerBackdrop?.classList.add("is-open");
-  }
-
-  function closeDrawer() {
-    drawer?.classList.remove("is-open");
-    drawerBackdrop?.classList.remove("is-open");
-  }
-
-  drawerOpen?.addEventListener("click", openDrawer);
-  drawerClose?.addEventListener("click", closeDrawer);
-  drawerBackdrop?.addEventListener("click", closeDrawer);
-
-});
-</script>
+      drawerOpen?.addEventListener("click", openDrawer);
+      drawerClose?.addEventListener("click", closeDrawer);
+      drawerBackdrop?.addEventListener("click", closeDrawer);
+    });
+  </script>
 </body>
 </html>
