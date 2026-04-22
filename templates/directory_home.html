@@ -164,7 +164,7 @@
       <!-- Desktop page header -->
       <header class="desktop-page-header desktop-only">
         <div>
-          <p class="desktop-page-header__eyebrow">Good afternoon 👋</p>
+          <p class="chat-welcome__eyebrow mobile-only" id="time-greeting-mobile">Good afternoon 👋</p>
           <h1 class="desktop-page-header__title">Where should we go today?</h1>
           <p class="desktop-page-header__subtitle">
             Find coffee, bars, dinner, shopping, and more.
@@ -1142,6 +1142,32 @@ function buildResultRow(item, isInternal) {
       });
     }
   </script>
+
+
+
+<script>
+  function getGreetingByTime() {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) return "Good morning 👋";
+    if (hour >= 12 && hour < 18) return "Good afternoon 👋";
+    if (hour >= 18 && hour < 22) return "Good evening 👋";
+    return "Up late? 👋";
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const greeting = getGreetingByTime();
+
+    const desktopGreeting = document.getElementById("time-greeting");
+    const mobileGreeting = document.getElementById("time-greeting-mobile");
+
+    if (desktopGreeting) desktopGreeting.textContent = greeting;
+    if (mobileGreeting) mobileGreeting.textContent = greeting;
+  });
+</script>
+
+
+
 
   <script
     async
