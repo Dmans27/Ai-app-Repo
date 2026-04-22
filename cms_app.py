@@ -3524,31 +3524,26 @@ def listing_page(slug):
     
     
     
-@app.get("/discover")
+@app.route("/discover")
 def discover_page():
-    articles = safe_query_all("""
-        SELECT id, slug, title, description, template, tag_title, updated_at, card_image_url
+    articles = query_all("""
+        SELECT
+            id,
+            slug,
+            title,
+            description,
+            tag_title,
+            updated_at,
+            card_image_url
         FROM pages
-        WHERE status='published'
+        WHERE status = 'published'
         ORDER BY datetime(updated_at) DESC, id DESC
-        LIMIT 16
-    """, label="DISCOVER_QUERY_ERROR")
-
-    articles = [dict(a) for a in articles]
-
-    featured_article = articles[0] if len(articles) > 0 else None
-    top_cards = articles[1:4] if len(articles) > 1 else []
-    feature_rows = articles[4:7] if len(articles) > 4 else []
-    side_stack = articles[7:11] if len(articles) > 7 else []
+    """)
 
     return render_template(
         "discover.html",
-        featured_article=featured_article,
-        top_cards=top_cards,
-        feature_rows=feature_rows,
-        side_stack=side_stack,
         page_title="Discover",
-        current_year=datetime.utcnow().year
+        articles=articles
     )
 
 
