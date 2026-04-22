@@ -16,12 +16,14 @@
 </head>
 
 <body class="app-body">
-  <div id="page-auth-state"
-     data-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}"
-     data-login-url="{{ url_for('login') }}"
-     data-create-list-url="{{ url_for('create_list') }}"
-     hidden>
-</div>
+<div
+  id="page-auth-state"
+  data-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}"
+  data-login-url="{{ url_for('login') }}"
+  data-create-list-url="{{ url_for('create_list') }}"
+  data-list-count="{{ user_lists|length if user_lists is defined else 0 }}"
+  hidden
+></div>
   <div class="app-shell">
     <!-- Desktop sidebar -->
     <aside class="app-sidebar desktop-sidebar">
@@ -505,15 +507,10 @@
 
   function wireSavePlaceButtons() {
     const authEl = document.getElementById("page-auth-state");
-
-    const isAuthenticated =
-      authEl?.dataset.authenticated === "true";
-
-    const loginUrl =
-      authEl?.dataset.loginUrl || "/login";
-
-    const createListUrl =
-      authEl?.dataset.createListUrl || "/create-list";
+    const isAuthenticated = authEl?.dataset.authenticated === "true";
+    const loginUrl = authEl?.dataset.loginUrl || "/login";
+    const createListUrl = authEl?.dataset.createListUrl || "/create-list";
+    const listCount = Number(authEl?.dataset.listCount || 0);
 
     document.querySelectorAll(".save-place-btn").forEach((button) => {
       button.onclick = function () {
@@ -533,19 +530,21 @@
           triggerButton: button
         };
 
-        const listButtons =
-          document.querySelectorAll(".save-to-list-btn");
+        pendingPlaceToSave = placeData;
 
-        if (listButtons.length === 0) {
+        if (listCount === 0) {
           window.location.href = createListUrl;
           return;
         }
 
-        if (listButtons.length === 1) {
-          savePlaceToList(
-            listButtons[0].dataset.listId,
-            button
-          );
+        if (listCount === 1) {
+          const onlyListButton = document.querySelector(".save-to-list-btn");
+          if (!onlyListButton) {
+            alert("Your list could not be loaded. Refresh the page and try again.");
+            return;
+          }
+
+          savePlaceToList(onlyListButton.dataset.listId, button);
           return;
         }
 
@@ -562,13 +561,8 @@
       };
     });
 
-    document
-      .getElementById("save-place-sheet-close")
-      ?.addEventListener("click", closeSavePlaceSheet);
-
-    document
-      .getElementById("save-place-sheet-backdrop")
-      ?.addEventListener("click", closeSavePlaceSheet);
+    document.getElementById("save-place-sheet-close")?.addEventListener("click", closeSavePlaceSheet);
+    document.getElementById("save-place-sheet-backdrop")?.addEventListener("click", closeSavePlaceSheet);
   }
 
 
