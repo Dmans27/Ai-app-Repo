@@ -16,8 +16,12 @@
 </head>
 
 <body class="app-body">
-  <div id="default-saved-list-id" data-list-id="{{ default_saved_list_id or '' }}" hidden></div>
-
+  <div id="page-auth-state"
+     data-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}"
+     data-login-url="{{ url_for('login') }}"
+     data-create-list-url="{{ url_for('create_list') }}"
+     hidden>
+</div>
   <div class="app-shell">
     <!-- Desktop sidebar -->
     <aside class="app-sidebar desktop-sidebar">
@@ -164,7 +168,7 @@
       <!-- Desktop page header -->
       <header class="desktop-page-header desktop-only">
         <div>
-          <p class="chat-welcome__eyebrow mobile-only" id="time-greeting-mobile">Good afternoon 👋</p>
+          <p class="desktop-page-header__eyebrow" id="time-greeting">Good afternoon 👋</p>
           <h1 class="desktop-page-header__title">Where should we go today?</h1>
           <p class="desktop-page-header__subtitle">
             Find coffee, bars, dinner, shopping, and more.
@@ -176,7 +180,7 @@
         <section class="chat-page is-empty" id="chat-page">
           <section class="chat-welcome" id="chat-welcome">
             <div class="chat-welcome__inner">
-              <p class="chat-welcome__eyebrow mobile-only">Good afternoon 👋</p>
+              <p class="chat-welcome__eyebrow mobile-only" id="time-greeting-mobile">Good afternoon 👋</p>
               <h1 class="chat-welcome__title mobile-only">Where should we go today?</h1>
               <p class="chat-welcome__subtitle mobile-only">
                 Find coffee, bars, dinner, shopping, and more.
@@ -261,6 +265,52 @@
     </main>
   </div>
 
+  <!-- Save to list sheet -->
+  {% if current_user.is_authenticated %}
+    <div id="save-place-sheet" class="save-place-sheet" hidden>
+      <div class="save-place-sheet__backdrop" id="save-place-sheet-backdrop"></div>
+
+      <div class="save-place-sheet__panel">
+        <div class="save-place-sheet__header">
+          <h3>Save place</h3>
+          <button
+            type="button"
+            id="save-place-sheet-close"
+            class="save-place-sheet__close"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {% if user_lists %}
+          <div class="save-place-sheet__lists">
+            {% for saved_list in user_lists %}
+              <button
+                type="button"
+                class="save-to-list-btn"
+                data-list-id="{{ saved_list.id }}"
+              >
+                {{ saved_list.title }}
+              </button>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="save-place-sheet__empty">
+            You don’t have any lists yet.
+          </div>
+        {% endif %}
+
+        <a
+          href="{{ url_for('create_list') }}"
+          class="save-place-sheet__new-list"
+        >
+          + Create New List
+        </a>
+      </div>
+    </div>
+  {% endif %}
+
   <!-- Fullscreen map modal -->
   <div id="fullscreen-map-modal" class="fullscreen-map-modal" hidden>
     <div class="fullscreen-map-modal__header">
@@ -276,6 +326,10 @@
   </div>
 
   <script>
+    /* ======================================================
+       GLOBAL HELPERS
+    ====================================================== */
+
     function setComposerExpanded(expanded) {
       const composer = document.querySelector(".chat-composer");
       if (!composer) return;
@@ -287,6 +341,15 @@
       if (!textarea) return;
       textarea.style.height = "auto";
       textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+    }
+
+    function getGreetingByTime() {
+      const hour = new Date().getHours();
+
+      if (hour >= 5 && hour < 12) return "Good morning 👋";
+      if (hour >= 12 && hour < 18) return "Good afternoon 👋";
+      if (hour >= 18 && hour < 22) return "Good evening 👋";
+      return "Up late? 👋";
     }
 
     async function getCurrentPositionForAi() {
@@ -358,6 +421,141 @@
       });
     }
 
+    /* ======================================================
+       MULTI-LIST SAVE FLOW
+    ====================================================== */
+
+
+  let pendingPlaceToSave = null;
+
+  function openSavePlaceSheet(placeData) {
+    const sheet = document.getElementById("save-place-sheet");
+    if (!sheet) return;
+
+    pendingPlaceToSave = placeData;
+    sheet.hidden = false;
+    document.body.classList.add("save-place-sheet-open");
+  }
+
+  function closeSavePlaceSheet() {
+    const sheet = document.getElementById("save-place-sheet");
+    if (!sheet) return;
+
+    sheet.hidden = true;
+    document.body.classList.remove("save-place-sheet-open");
+    pendingPlaceToSave = null;
+  }
+
+  async function savePlaceToList(listId, triggerButton = null) {
+    if (!pendingPlaceToSave || !listId) return;
+
+    const payload = new URLSearchParams();
+    payload.append("name", pendingPlaceToSave.name || "");
+    payload.append("address", pendingPlaceToSave.address || "");
+    payload.append("website", pendingPlaceToSave.website || "");
+    payload.append("category", pendingPlaceToSave.category || "");
+    payload.append("latitude", pendingPlaceToSave.latitude || "");
+    payload.append("longitude", pendingPlaceToSave.longitude || "");
+    payload.append("notes", "");
+    payload.append("photo_url", pendingPlaceToSave.photo_url || "");
+    payload.append("place_id", "");
+    payload.append("listing_id", "");
+
+    if (triggerButton) {
+      triggerButton.disabled = true;
+      triggerButton.textContent = "Saving...";
+    }
+
+    try {
+      const response = await fetch(`/lists/${listId}/save-place`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        },
+        body: payload.toString()
+      });
+
+      if (!response.ok) {
+        throw new Error("Save failed");
+      }
+
+      if (triggerButton) {
+        triggerButton.disabled = false;
+        triggerButton.textContent = "✓";
+        triggerButton.classList.add("is-saved");
+      }
+
+      closeSavePlaceSheet();
+    } catch (error) {
+      console.error("Save place error:", error);
+
+      if (triggerButton) {
+        triggerButton.disabled = false;
+        triggerButton.textContent = "📌";
+      }
+
+      alert("Could not save this place.");
+    }
+  }
+
+  function wireSavePlaceButtons() {
+    const authEl = document.getElementById("page-auth-state");
+    const isAuthenticated = authEl?.dataset.authenticated === "true";
+    const loginUrl = authEl?.dataset.loginUrl || "/login";
+    const createListUrl = authEl?.dataset.createListUrl || "/create-list";
+
+    document.querySelectorAll(".save-place-btn").forEach((button) => {
+      button.onclick = function () {
+        if (!isAuthenticated) {
+          window.location.href = loginUrl;
+          return;
+        }
+
+        const placeData = {
+          name: button.dataset.placeName || "",
+          address: button.dataset.placeAddress || "",
+          website: button.dataset.placeWebsite || "",
+          category: button.dataset.placeCategory || "",
+          photo_url: button.dataset.placePhoto || "",
+          latitude: button.dataset.placeLat || "",
+          longitude: button.dataset.placeLng || "",
+          triggerButton: button
+        };
+
+        const listButtons = document.querySelectorAll(".save-to-list-btn");
+
+        if (listButtons.length === 0) {
+          window.location.href = createListUrl;
+          return;
+        }
+
+        if (listButtons.length === 1) {
+          savePlaceToList(listButtons[0].dataset.listId, button);
+          return;
+        }
+
+        openSavePlaceSheet(placeData);
+      };
+    });
+
+    document.querySelectorAll(".save-to-list-btn").forEach((button) => {
+      button.onclick = function () {
+        savePlaceToList(
+          button.dataset.listId,
+          pendingPlaceToSave?.triggerButton || null
+        );
+      };
+    });
+
+    document.getElementById("save-place-sheet-close")?.addEventListener("click", closeSavePlaceSheet);
+    document.getElementById("save-place-sheet-backdrop")?.addEventListener("click", closeSavePlaceSheet);
+  }
+
+
+    /* ======================================================
+       RESULTS RENDERING
+    ====================================================== */
+
     function buildQuickPickList(items) {
       if (!items.length) return "";
 
@@ -382,35 +580,14 @@
                 : "";
 
               const websiteIcon = website
-                ? `<a
-                     href="${website}"
-                     target="_blank"
-                     rel="noopener"
-                     class="search-quick-picks__icon-btn"
-                     aria-label="Visit website"
-                     title="Visit website"
-                   >🌐</a>`
+                ? `<a href="${website}" target="_blank" rel="noopener" class="search-quick-picks__icon-btn" aria-label="Visit website" title="Visit website">🌐</a>`
                 : "";
 
               const directionsIcon =
                 item.latitude != null && item.longitude != null
-                  ? `<a
-                       href="https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}"
-                       target="_blank"
-                       rel="noopener"
-                       class="search-quick-picks__icon-btn"
-                       aria-label="Directions"
-                       title="Directions"
-                     >📍</a>`
+                  ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}" target="_blank" rel="noopener" class="search-quick-picks__icon-btn" aria-label="Directions" title="Directions">📍</a>`
                   : address
-                    ? `<a
-                         href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}"
-                         target="_blank"
-                         rel="noopener"
-                         class="search-quick-picks__icon-btn"
-                         aria-label="Directions"
-                         title="Directions"
-                       >📍</a>`
+                    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}" target="_blank" rel="noopener" class="search-quick-picks__icon-btn" aria-label="Directions" title="Directions">📍</a>`
                     : "";
 
               const saveIcon = `
@@ -463,92 +640,74 @@
       `;
     }
 
-function buildResultRow(item, isInternal) {
-  const title = item.name || "Untitled";
-  const category = item.category ? item.category.replaceAll("_", " ") : "Place";
-  const address = item.address || "";
-  const website = item.website || "";
-  const ratingValue = item.rating ? Number(item.rating).toFixed(1) : "";
-  const rating = ratingValue ? `⭐ ${ratingValue}` : "";
+    function buildResultRow(item, isInternal) {
+      const title = item.name || "Untitled";
+      const category = item.category ? item.category.replaceAll("_", " ") : "Place";
+      const address = item.address || "";
+      const website = item.website || "";
+      const ratingValue = item.rating ? Number(item.rating).toFixed(1) : "";
+      const rating = ratingValue ? `⭐ ${ratingValue}` : "";
 
-  const photo =
-    item.photo_url ||
-    item.image_url ||
-    item.thumbnail ||
-    "/static/img/placeholder-business.jpg";
+      const photo =
+        item.photo_url ||
+        item.image_url ||
+        item.thumbnail ||
+        "/static/img/placeholder-business.jpg";
 
-  const directionsLink =
-    item.latitude && item.longitude
-      ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
-      : address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
-        : "";
+      const directionsLink =
+        item.latitude && item.longitude
+          ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
+          : address
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+            : "";
 
-  return `
-    <article class="place-card">
-      <div class="place-card__image-wrap">
-        <img
-          src="${photo}"
-          alt="${title}"
-          class="place-card__image"
-          loading="lazy"
-        >
-      </div>
-
-      <div class="place-card__body">
-        <div class="place-card__top">
-          <div class="place-card__text">
-            <h3 class="place-card__title">${title}</h3>
-            <p class="place-card__category">${category}</p>
+      return `
+        <article class="place-card">
+          <div class="place-card__image-wrap">
+            <img
+              src="${photo}"
+              alt="${title}"
+              class="place-card__image"
+              loading="lazy"
+            >
           </div>
-        </div>
 
-        <div class="place-card__meta">
-          ${rating ? `<span class="place-card__rating">${rating}</span>` : ""}
-          ${isInternal ? `<span class="place-card__source">Local AI</span>` : ""}
-        </div>
+          <div class="place-card__body">
+            <div class="place-card__top">
+              <div class="place-card__text">
+                <h3 class="place-card__title">${title}</h3>
+                <p class="place-card__category">${category}</p>
+              </div>
+            </div>
 
-        <p class="place-card__address">${address}</p>
+            <div class="place-card__meta">
+              ${rating ? `<span class="place-card__rating">${rating}</span>` : ""}
+              ${isInternal ? `<span class="place-card__source">Local AI</span>` : ""}
+            </div>
 
-        <div class="place-card__actions">
-          ${website ? `
-            <a
-              href="${website}"
-              target="_blank"
-              rel="noopener"
-              class="place-card__action"
-              aria-label="Website"
-            >🌐</a>
-          ` : ""}
+            <p class="place-card__address">${address}</p>
 
-          ${directionsLink ? `
-            <a
-              href="${directionsLink}"
-              target="_blank"
-              rel="noopener"
-              class="place-card__action"
-              aria-label="Directions"
-            >📍</a>
-          ` : ""}
-
-          <button
-            type="button"
-            class="place-card__action save-place-btn"
-            aria-label="Save place"
-            data-place-name="${title}"
-            data-place-address="${address}"
-            data-place-category="${category}"
-            data-place-website="${website}"
-            data-place-photo="${photo}"
-            data-place-lat="${item.latitude || ""}"
-            data-place-lng="${item.longitude || ""}"
-            data-place-rating="${item.rating || ""}"
-          >📌</button>
-        </div>
-      </div>
-    </article>
-  `;
-}
+            <div class="place-card__actions">
+              ${website ? `<a href="${website}" target="_blank" rel="noopener" class="place-card__action" aria-label="Website">🌐</a>` : ""}
+              ${directionsLink ? `<a href="${directionsLink}" target="_blank" rel="noopener" class="place-card__action" aria-label="Directions">📍</a>` : ""}
+              <button
+                type="button"
+                class="place-card__action save-place-btn"
+                aria-label="Save place"
+                data-place-name="${title}"
+                data-place-address="${address}"
+                data-place-category="${category}"
+                data-place-website="${website}"
+                data-place-photo="${photo}"
+                data-place-lat="${item.latitude || ""}"
+                data-place-lng="${item.longitude || ""}"
+                data-place-rating="${item.rating || ""}"
+              >📌</button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
 
     function buildSearchMapData(items) {
       return items
@@ -595,6 +754,10 @@ function buildResultRow(item, isInternal) {
         });
       });
     }
+
+    /* ======================================================
+       GOOGLE MAPS RESULTS VIEW
+    ====================================================== */
 
     function getMarkerIcon(place) {
       const isInternal = place.source === "internal";
@@ -776,60 +939,9 @@ function buildResultRow(item, isInternal) {
       window.fullscreenResultsMap = null;
     }
 
-    async function savePlaceFromButton(button) {
-      const listIdEl = document.getElementById("default-saved-list-id");
-      const listId = listIdEl ? listIdEl.dataset.listId : "";
-
-      if (!listId) {
-        alert("Create a saved list in your account first.");
-        return;
-      }
-
-      const payload = new URLSearchParams();
-      payload.append("name", button.dataset.placeName || "");
-      payload.append("address", button.dataset.placeAddress || "");
-      payload.append("website", button.dataset.placeWebsite || "");
-      payload.append("category", button.dataset.placeCategory || "");
-      payload.append("latitude", button.dataset.placeLat || "");
-      payload.append("longitude", button.dataset.placeLng || "");
-      payload.append("notes", "");
-      payload.append("photo_url", button.dataset.placePhoto || "");
-      payload.append("place_id", "");
-      payload.append("listing_id", "");
-
-      const originalText = button.textContent;
-      button.disabled = true;
-      button.textContent = "✓";
-
-      try {
-        const response = await fetch(`/lists/${listId}/save-place`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-          },
-          body: payload.toString()
-        });
-
-        if (!response.ok) {
-          throw new Error("Save failed");
-        }
-
-        button.classList.add("is-saved");
-      } catch (error) {
-        console.error("Save place error:", error);
-        button.disabled = false;
-        button.textContent = originalText;
-        alert("Could not save this place.");
-      }
-    }
-
-    function wireSavePlaceButtons() {
-      document.querySelectorAll(".save-place-btn").forEach((button) => {
-        button.addEventListener("click", function () {
-          savePlaceFromButton(button);
-        });
-      });
-    }
+    /* ======================================================
+       AI RESULTS
+    ====================================================== */
 
     function renderAiResults(data) {
       const resultsEl = document.getElementById("ai-results");
@@ -940,6 +1052,10 @@ function buildResultRow(item, isInternal) {
         });
       }, 100);
     }
+
+    /* ======================================================
+       AI SEARCH
+    ====================================================== */
 
     async function runAiSearch() {
       const page = document.getElementById("chat-page");
@@ -1058,6 +1174,10 @@ function buildResultRow(item, isInternal) {
       }
     }
 
+    /* ======================================================
+       STARTUP
+    ====================================================== */
+
     document.addEventListener("DOMContentLoaded", function () {
       const sidebar = document.getElementById("app-sidebar");
       const toggle = document.getElementById("app-sidebar-toggle");
@@ -1067,9 +1187,12 @@ function buildResultRow(item, isInternal) {
       const input = document.getElementById("ai-chat-input");
       const fullscreenMapClose = document.getElementById("fullscreen-map-close");
 
-      fullscreenMapClose?.addEventListener("click", function () {
-        closeFullscreenMap();
-      });
+      const greeting = getGreetingByTime();
+      const desktopGreeting = document.getElementById("time-greeting");
+      const mobileGreeting = document.getElementById("time-greeting-mobile");
+
+      if (desktopGreeting) desktopGreeting.textContent = greeting;
+      if (mobileGreeting) mobileGreeting.textContent = greeting;
 
       function openDrawer() {
         sidebar?.classList.add("is-open");
@@ -1081,11 +1204,13 @@ function buildResultRow(item, isInternal) {
         backdrop?.classList.remove("is-open");
       }
 
+      fullscreenMapClose?.addEventListener("click", closeFullscreenMap);
       toggle?.addEventListener("click", openDrawer);
       closeBtn?.addEventListener("click", closeDrawer);
       backdrop?.addEventListener("click", closeDrawer);
 
       setComposerExpanded(false);
+      wireSavePlaceButtons();
 
       if (input) {
         autoResizeTextarea(input);
@@ -1129,6 +1254,10 @@ function buildResultRow(item, isInternal) {
       });
     });
 
+    /* ======================================================
+       SERVICE WORKER
+    ====================================================== */
+
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
         navigator.serviceWorker
@@ -1142,32 +1271,6 @@ function buildResultRow(item, isInternal) {
       });
     }
   </script>
-
-
-
-<script>
-  function getGreetingByTime() {
-    const hour = new Date().getHours();
-
-    if (hour >= 5 && hour < 12) return "Good morning 👋";
-    if (hour >= 12 && hour < 18) return "Good afternoon 👋";
-    if (hour >= 18 && hour < 22) return "Good evening 👋";
-    return "Up late? 👋";
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    const greeting = getGreetingByTime();
-
-    const desktopGreeting = document.getElementById("time-greeting");
-    const mobileGreeting = document.getElementById("time-greeting-mobile");
-
-    if (desktopGreeting) desktopGreeting.textContent = greeting;
-    if (mobileGreeting) mobileGreeting.textContent = greeting;
-  });
-</script>
-
-
-
 
   <script
     async
