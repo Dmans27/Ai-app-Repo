@@ -66,7 +66,56 @@ select {
 
 
 
+.page-account .app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #050505;
+}
 
+.page-account .desktop-sidebar {
+  display: flex;
+}
+
+.account-desktop-wrap {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-account .mobile-screen {
+  flex: 1;
+  min-width: 0;
+  background: #050505;
+}
+
+@media (min-width: 1025px) {
+  .page-account .mobile-app-header,
+  .page-account .mobile-tabbar {
+    display: none !important;
+  }
+
+  .page-account .mobile-content.account-page-content {
+    padding: 40px 32px 48px;
+  }
+
+  .page-account .account-ios-shell {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .page-account .desktop-sidebar {
+    display: none !important;
+  }
+
+  .page-account .app-shell {
+    display: block;
+  }
+
+  .account-desktop-wrap {
+    max-width: 100%;
+  }
+}
 
 
 

@@ -11,368 +11,393 @@
 </head>
 
 <body class="app-body page-account">
-  <div class="mobile-app-shell">
-    <!-- Drawer -->
-    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
-      <div class="mobile-drawer__header">
-        <div class="mobile-drawer__title">Local AI</div>
-        <button
-          class="mobile-drawer__close"
-          id="app-sidebar-close"
-          type="button"
-          aria-label="Close menu"
-        >✕</button>
+  <div class="app-shell">
+    <!-- Desktop sidebar -->
+    <aside class="app-sidebar desktop-sidebar">
+      <div class="app-sidebar__top">
+        <div class="app-brand">
+          <div class="app-brand__title">Local AI</div>
+          <div class="app-brand__subtitle">Recommendations near you</div>
+        </div>
+
+        <a
+          href="{{ url_for('account') }}"
+          class="app-sidebar__account"
+          aria-label="Account"
+        >
+          {{ (user.name or user.email or "U")[0]|upper }}
+        </a>
       </div>
 
       <button
-        class="mobile-drawer__new-search"
+        class="app-sidebar__new-search"
         type="button"
         onclick="window.location.href='/'"
       >
         + New search
       </button>
 
-      <nav class="mobile-drawer__nav">
-        <a href="/" class="mobile-drawer__link">AI Search</a>
-        <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
-        <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
-        <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
-        <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
-        <a href="/discover" class="mobile-drawer__link">Discover</a>
-        <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
-        <a href="/admin" class="mobile-drawer__link">Admin</a>
+      <nav class="app-sidebar__nav">
+        <a href="/" class="app-sidebar__link">AI Search</a>
+        <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
+        <a href="/search?q=restaurant near me" class="app-sidebar__link">Restaurants</a>
+        <a href="/search?q=bars near me" class="app-sidebar__link">Bars</a>
+        <a href="/search?q=shopping near me" class="app-sidebar__link">Shopping</a>
+        <a href="/discover" class="app-sidebar__link">Discover</a>
+        <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
+        <a href="{{ url_for('account') }}" class="app-sidebar__link is-active">Saved Places</a>
       </nav>
 
-      <div class="mobile-drawer__section-label">Account</div>
+      <div class="app-sidebar__section-label">Account</div>
 
-      <div class="mobile-drawer__footer">
-        <a href="/" class="mobile-drawer__footer-link">Home</a>
-        <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
+      <div class="app-sidebar__footer">
+        <a href="/" class="app-sidebar__footer-link">Home</a>
+        <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
+        <a href="{{ url_for('account') }}" class="app-sidebar__footer-link is-active">Account</a>
 
-        {% if current_user.is_authenticated %}
-          <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link is-active">Account</a>
-          <form method="post" action="{{ url_for('logout') }}">
-            <button type="submit" class="mobile-drawer__footer-button">Log out</button>
-          </form>
-        {% else %}
-          <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
-          <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
-        {% endif %}
+        <form method="post" action="{{ url_for('logout') }}">
+          <button type="submit" class="app-sidebar__footer-button">Log out</button>
+        </form>
       </div>
     </aside>
 
-    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
-
-    <!-- Main screen -->
-    <main class="mobile-screen">
-      <header class="mobile-app-header">
-        <button
-          class="mobile-app-header__icon"
-          id="app-sidebar-toggle"
-          type="button"
-          aria-label="Open menu"
-        >☰</button>
-
-        <div class="mobile-app-header__center">
-          <div class="mobile-app-header__title">Saved Places</div>
-          <div class="mobile-app-header__subtitle">Your personal guides and lists</div>
+    <!-- Mobile shell -->
+    <div class="mobile-app-shell">
+      <!-- Drawer -->
+      <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+        <div class="mobile-drawer__header">
+          <div class="mobile-drawer__title">Local AI</div>
+          <button
+            class="mobile-drawer__close"
+            id="app-sidebar-close"
+            type="button"
+            aria-label="Close menu"
+          >✕</button>
         </div>
 
-        {% if current_user.is_authenticated %}
-          <a
-            href="{{ url_for('account') }}"
-            class="mobile-app-header__icon mobile-app-header__icon--link"
-            aria-label="Account"
-          >
-            {{ (user.name or user.email or "U")[0]|upper }}
-          </a>
-        {% else %}
-          <a
-            href="{{ url_for('login') }}"
-            class="mobile-app-header__icon mobile-app-header__icon--link"
-            aria-label="Log in"
-          >👤</a>
-        {% endif %}
-      </header>
+        <button
+          class="mobile-drawer__new-search"
+          type="button"
+          onclick="window.location.href='/'"
+        >
+          + New search
+        </button>
 
-      <section class="mobile-content account-page-content">
-  <div class="account-ios-shell">
-    <section class="saved-hero">
-      <div class="saved-hero__avatar">
-        {{ (user.name or user.email or "U")[0]|upper }}
-      </div>
+        <nav class="mobile-drawer__nav">
+          <a href="/" class="mobile-drawer__link">AI Search</a>
+          <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
+          <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
+          <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
+          <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
+          <a href="/discover" class="mobile-drawer__link">Discover</a>
+          <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
+          <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active">Saved Places</a>
+        </nav>
 
-      <div class="saved-hero__content">
-        <h1 class="saved-hero__title">Saved Places</h1>
-        <p class="saved-hero__subtitle">
-          Build personal guides for your favorite spots.
-        </p>
-      </div>
-    </section>
+        <div class="mobile-drawer__section-label">Account</div>
 
-    <div class="saved-stats-row">
-      <div class="saved-pill">
-        <span class="saved-pill-number">{{ lists|length }}</span>
-        <span class="saved-pill-label">Lists</span>
-      </div>
+        <div class="mobile-drawer__footer">
+          <a href="/" class="mobile-drawer__footer-link">Home</a>
+          <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
 
-      <div class="saved-pill">
-        <span class="saved-pill-number">{{ lists | map(attribute='places') | map('length') | sum }}</span>
-        <span class="saved-pill-label">Places</span>
-      </div>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link is-active">Account</a>
+            <form method="post" action="{{ url_for('logout') }}">
+              <button type="submit" class="mobile-drawer__footer-button">Log out</button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
+            <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
+          {% endif %}
+        </div>
+      </aside>
 
-      <div class="saved-pill">
-        <span class="saved-pill-number">{{ lists | selectattr('is_public') | list | length }}</span>
-        <span class="saved-pill-label">Public</span>
-      </div>
+      <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
 
-      <a href="{{ url_for('create_list') }}" class="saved-pill add-pill">
-        + New List
-      </a>
-    </div>
+      <!-- Main screen -->
+      <main class="mobile-screen">
+        <header class="mobile-app-header">
+          <button
+            class="mobile-app-header__icon"
+            id="app-sidebar-toggle"
+            type="button"
+            aria-label="Open menu"
+          >☰</button>
 
-    <section class="account-map-card">
-      <div id="account-map" class="account-map"></div>
-    </section>
+          <div class="mobile-app-header__center">
+            <div class="mobile-app-header__title">Saved Places</div>
+            <div class="mobile-app-header__subtitle">Your personal guides and lists</div>
+          </div>
 
-    {% if lists %}
-      <section class="saved-lists-wrap">
-        {% for saved_list in lists %}
-          <article class="saved-list-card">
-            <div class="saved-list-card__header">
-              <div>
-                <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
-                <div class="saved-list-card__meta">
-                  {{ saved_list.places|length }} places •
-                  {{ "Public" if saved_list.is_public else "Private" }}
+          {% if current_user.is_authenticated %}
+            <a
+              href="{{ url_for('account') }}"
+              class="mobile-app-header__icon mobile-app-header__icon--link"
+              aria-label="Account"
+            >
+              {{ (user.name or user.email or "U")[0]|upper }}
+            </a>
+          {% else %}
+            <a
+              href="{{ url_for('login') }}"
+              class="mobile-app-header__icon mobile-app-header__icon--link"
+              aria-label="Log in"
+            >👤</a>
+          {% endif %}
+        </header>
+
+        <section class="mobile-content account-page-content">
+          <div class="account-desktop-wrap">
+            <div class="account-ios-shell">
+              <section class="saved-hero">
+                <div class="saved-hero__avatar">
+                  {{ (user.name or user.email or "U")[0]|upper }}
                 </div>
 
-                {% if saved_list.description %}
-                  <p class="saved-list-card__description">{{ saved_list.description }}</p>
-                {% endif %}
+                <div class="saved-hero__content">
+                  <h1 class="saved-hero__title">Saved Places</h1>
+                  <p class="saved-hero__subtitle">
+                    Build personal guides for your favorite spots.
+                  </p>
+                </div>
+              </section>
+
+              <div class="saved-stats-row">
+                <div class="saved-pill">
+                  <span class="saved-pill-number">{{ lists|length }}</span>
+                  <span class="saved-pill-label">Lists</span>
+                </div>
+
+                <div class="saved-pill">
+                  <span class="saved-pill-number">{{ lists | map(attribute='places') | map('length') | sum }}</span>
+                  <span class="saved-pill-label">Places</span>
+                </div>
+
+                <div class="saved-pill">
+                  <span class="saved-pill-number">{{ lists | selectattr('is_public') | list | length }}</span>
+                  <span class="saved-pill-label">Public</span>
+                </div>
+
+                <a href="{{ url_for('create_list') }}" class="saved-pill add-pill">
+                  + New List
+                </a>
               </div>
-            </div>
 
-            {% if saved_list.places %}
-              <div class="saved-list-places">
-                {% for place in saved_list.places %}
-                  <article class="saved-place-row">
-                    <div class="saved-place-row__image">
-                      {% if place.photo_url %}
-                        <img src="{{ place.photo_url }}" alt="{{ place.name }}">
-                      {% else %}
-                        <div class="saved-place-row__image-placeholder">📍</div>
-                      {% endif %}
-                    </div>
+              <section class="account-map-card">
+                <div id="account-map" class="account-map"></div>
+              </section>
 
-                    <div class="saved-place-row__content">
-                      <h3 class="saved-place-row__name">{{ place.name }}</h3>
+              {% if lists %}
+                <section class="saved-lists-wrap">
+                  {% for saved_list in lists %}
+                    <article class="saved-list-card">
+                      <div class="saved-list-card__header">
+                        <div>
+                          <h2 class="saved-list-card__title">{{ saved_list.title }}</h2>
+                          <div class="saved-list-card__meta">
+                            {{ saved_list.places|length }} places •
+                            {{ "Public" if saved_list.is_public else "Private" }}
+                          </div>
 
-                      {% if place.category %}
-                        <div class="saved-place-row__category">{{ place.category }}</div>
-                      {% endif %}
-
-                      {% if place.address %}
-                        <div class="saved-place-row__address">{{ place.address }}</div>
-                      {% endif %}
-
-                      {% if place.notes %}
-                        <div class="saved-place-row__notes">{{ place.notes }}</div>
-                      {% endif %}
-
-                      <div class="saved-place-row__actions">
-                        {% if place.website %}
-                          <a
-                            href="{{ place.website }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="saved-place-row__button"
-                          >
-                            Website
-                          </a>
-                        {% endif %}
-
-                        {% if place.latitude and place.longitude %}
-                          <a
-                            href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="saved-place-row__button saved-place-row__button--secondary"
-                          >
-                            Directions
-                          </a>
-                        {% endif %}
+                          {% if saved_list.description %}
+                            <p class="saved-list-card__description">{{ saved_list.description }}</p>
+                          {% endif %}
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                {% endfor %}
-              </div>
-            {% else %}
-              <div class="saved-list-empty">No saved places yet.</div>
-            {% endif %}
-          </article>
-        {% endfor %}
-      </section>
-    {% else %}
-      <section class="account-ios-empty">
-        <h2>No lists yet</h2>
-        <p>Create your first list to start saving favorite places.</p>
-        <a href="{{ url_for('create_list') }}" class="btn-primary">Create your first list</a>
-      </section>
-    {% endif %}
 
-    <section class="account-ios-account-panel">
-      <h2>Your account</h2>
-      <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
-      <p><strong>Email:</strong> {{ user.email }}</p>
+                      {% if saved_list.places %}
+                        <div class="saved-list-places">
+                          {% for place in saved_list.places %}
+                            <article class="saved-place-row">
+                              <div class="saved-place-row__image">
+                                {% if place.photo_url %}
+                                  <img src="{{ place.photo_url }}" alt="{{ place.name }}">
+                                {% else %}
+                                  <div class="saved-place-row__image-placeholder">📍</div>
+                                {% endif %}
+                              </div>
 
-      <form method="post" action="{{ url_for('logout') }}" class="account-logout-form">
-        <button type="submit" class="btn-secondary">Log out</button>
-      </form>
-    </section>
+                              <div class="saved-place-row__content">
+                                <h3 class="saved-place-row__name">{{ place.name }}</h3>
+
+                                {% if place.category %}
+                                  <div class="saved-place-row__category">{{ place.category }}</div>
+                                {% endif %}
+
+                                {% if place.address %}
+                                  <div class="saved-place-row__address">{{ place.address }}</div>
+                                {% endif %}
+
+                                {% if place.notes %}
+                                  <div class="saved-place-row__notes">{{ place.notes }}</div>
+                                {% endif %}
+
+                                <div class="saved-place-row__actions">
+                                  {% if place.website %}
+                                    <a
+                                      href="{{ place.website }}"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="saved-place-row__button"
+                                    >
+                                      Website
+                                    </a>
+                                  {% endif %}
+
+                                  {% if place.latitude and place.longitude %}
+                                    <a
+                                      href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="saved-place-row__button saved-place-row__button--secondary"
+                                    >
+                                      Directions
+                                    </a>
+                                  {% endif %}
+                                </div>
+                              </div>
+                            </article>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        <div class="saved-list-empty">No saved places yet.</div>
+                      {% endif %}
+                    </article>
+                  {% endfor %}
+                </section>
+              {% else %}
+                <section class="account-ios-empty">
+                  <h2>No lists yet</h2>
+                  <p>Create your first list to start saving favorite places.</p>
+                  <a href="{{ url_for('create_list') }}" class="btn-primary">Create your first list</a>
+                </section>
+              {% endif %}
+
+              <section class="account-ios-account-panel">
+                <h2>Your account</h2>
+                <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+
+                <form method="post" action="{{ url_for('logout') }}" class="account-logout-form">
+                  <button type="submit" class="btn-secondary">Log out</button>
+                </form>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <nav class="mobile-tabbar">
+          <a href="/" class="mobile-tabbar__item">
+            <span class="mobile-tabbar__icon">🏠</span>
+            <span class="mobile-tabbar__label">Home</span>
+          </a>
+
+          <a href="/discover" class="mobile-tabbar__item">
+            <span class="mobile-tabbar__icon">🗺️</span>
+            <span class="mobile-tabbar__label">Discover</span>
+          </a>
+
+          <a href="/" class="mobile-tabbar__item">
+            <span class="mobile-tabbar__icon">🔎</span>
+            <span class="mobile-tabbar__label">Search</span>
+          </a>
+
+          <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active">
+            <span class="mobile-tabbar__icon">📌</span>
+            <span class="mobile-tabbar__label">Saved</span>
+          </a>
+
+          <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+            <span class="mobile-tabbar__icon">👤</span>
+            <span class="mobile-tabbar__label">Account</span>
+          </a>
+        </nav>
+      </main>
+    </div>
   </div>
-</section>
 
-      <nav class="mobile-tabbar">
-        <a href="/" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🏠</span>
-          <span class="mobile-tabbar__label">Home</span>
-        </a>
-
-        <a href="/discover" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🗺️</span>
-          <span class="mobile-tabbar__label">Discover</span>
-        </a>
-
-        <a href="/" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🔎</span>
-          <span class="mobile-tabbar__label">Search</span>
-        </a>
-
-        <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active">
-          <span class="mobile-tabbar__icon">📌</span>
-          <span class="mobile-tabbar__label">Saved</span>
-        </a>
-
-        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">👤</span>
-          <span class="mobile-tabbar__label">Account</span>
-        </a>
-      </nav>
-    </main>
-  </div>
-
-<script id="map-data" type="application/json">
+  <script id="map-data" type="application/json">
 {{ map_places|tojson|safe }}
-</script>
+  </script>
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const sidebar = document.getElementById("app-sidebar");
-    const sidebarToggle = document.getElementById("app-sidebar-toggle");
-    const closeBtn = document.getElementById("app-sidebar-close");
-    const backdrop = document.getElementById("app-sidebar-backdrop");
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const sidebar = document.getElementById("app-sidebar");
+      const sidebarToggle = document.getElementById("app-sidebar-toggle");
+      const closeBtn = document.getElementById("app-sidebar-close");
+      const backdrop = document.getElementById("app-sidebar-backdrop");
 
-    function openDrawer() {
-      sidebar?.classList.add("is-open");
-      backdrop?.classList.add("is-open");
-    }
-
-    function closeDrawer() {
-      sidebar?.classList.remove("is-open");
-      backdrop?.classList.remove("is-open");
-    }
-
-    sidebarToggle?.addEventListener("click", openDrawer);
-    closeBtn?.addEventListener("click", closeDrawer);
-    backdrop?.addEventListener("click", closeDrawer);
-
-    const mapEl = document.getElementById("account-map");
-    if (!mapEl || typeof mapboxgl === "undefined") {
-      console.log("[ACCOUNT_MAP] map element or mapboxgl missing");
-      return;
-    }
-
-    const token = "{{ mapbox_token }}";
-    const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
-    const places = JSON.parse(
-      document.getElementById("map-data").textContent || "[]"
-    );
-
-    console.log("[ACCOUNT_MAP_TOKEN]", !!token);
-    console.log("[ACCOUNT_MAP_STYLE]", styleUrl);
-    console.log("[ACCOUNT_MAP_PLACES]", places);
-
-    if (!token) {
-      console.log("[ACCOUNT_MAP] Missing MAPBOX_TOKEN");
-      return;
-    }
-
-    mapboxgl.accessToken = token;
-
-    const defaultCenter = places.length
-      ? [places[0].lng, places[0].lat]
-      : [-87.6298, 41.8781];
-
-    const map = new mapboxgl.Map({
-      container: "account-map",
-      style: styleUrl,
-      center: defaultCenter,
-      zoom: places.length ? 11 : 9,
-      projection: "mercator",
-      pitch: 0,
-      bearing: 0,
-      antialias: true
-    });
-
-    map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-    const bounds = new mapboxgl.LngLatBounds();
-
-    places.forEach((place) => {
-      if (place.lng == null || place.lat == null) return;
-
-      const popupHtml = `
-        <div style="max-width:220px;">
-          <strong>${place.name || ""}</strong>
-          ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
-          ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
-        </div>
-      `;
-
-      new mapboxgl.Marker()
-        .setLngLat([place.lng, place.lat])
-        .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
-        .addTo(map);
-
-      bounds.extend([place.lng, place.lat]);
-    });
-
-    map.on("load", function () {
-      console.log("[ACCOUNT_MAP] loaded");
-
-      if (places.length > 1) {
-        map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
+      function openDrawer() {
+        sidebar?.classList.add("is-open");
+        backdrop?.classList.add("is-open");
       }
+
+      function closeDrawer() {
+        sidebar?.classList.remove("is-open");
+        backdrop?.classList.remove("is-open");
+      }
+
+      sidebarToggle?.addEventListener("click", openDrawer);
+      closeBtn?.addEventListener("click", closeDrawer);
+      backdrop?.addEventListener("click", closeDrawer);
+
+      const mapEl = document.getElementById("account-map");
+      if (!mapEl || typeof mapboxgl === "undefined") return;
+
+      const token = "{{ mapbox_token }}";
+      const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
+      const places = JSON.parse(
+        document.getElementById("map-data").textContent || "[]"
+      );
+
+      if (!token) return;
+
+      mapboxgl.accessToken = token;
+
+      const defaultCenter = places.length
+        ? [places[0].lng, places[0].lat]
+        : [-87.6298, 41.8781];
+
+      const map = new mapboxgl.Map({
+        container: "account-map",
+        style: styleUrl,
+        center: defaultCenter,
+        zoom: places.length ? 11 : 9,
+        projection: "mercator",
+        pitch: 0,
+        bearing: 0,
+        antialias: true
+      });
+
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+      const bounds = new mapboxgl.LngLatBounds();
+
+      places.forEach((place) => {
+        if (place.lng == null || place.lat == null) return;
+
+        const popupHtml = `
+          <div style="max-width:220px;">
+            <strong>${place.name || ""}</strong>
+            ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
+            ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
+          </div>
+        `;
+
+        new mapboxgl.Marker()
+          .setLngLat([place.lng, place.lat])
+          .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
+          .addTo(map);
+
+        bounds.extend([place.lng, place.lat]);
+      });
+
+      map.on("load", function () {
+        if (places.length > 1) {
+          map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
+        }
+      });
     });
-
-    map.on("error", function (e) {
-      console.log("[ACCOUNT_MAP_ERROR]", e);
-    });
-  });
-</script>
-
-
-<script>
-  mapboxgl.accessToken = "{{ mapbox_token }}";
-
-  const places = JSON.parse(
-    document.getElementById("map-data").textContent
-  );
-
-  const styleUrl = "{{ mapbox_style_url }}";
-</script>
-
-
+  </script>
 </body>
 </html>
