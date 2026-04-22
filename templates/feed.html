@@ -419,69 +419,153 @@
       font-weight:700;
     }
 
-    /* =========================
-       COMMENTS
-    ========================= */
-    .post-comments{
-      display:grid;
-      gap:10px;
-      margin-top:14px;
-    }
+/* =========================
+   COMMENTS — UPGRADED
+========================= */
 
-    .post-comment{
-      display:flex;
-      align-items:flex-start;
-      gap:10px;
-      padding:10px 12px;
-      border-radius:16px;
-      background:var(--pill);
-      color:var(--text);
-      font-size:14px;
-      line-height:1.45;
-      word-break:break-word;
-      overflow-wrap:anywhere;
-    }
+.post-comments{
+  display:grid;
+  gap:10px;
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
 
-    .post-comment__avatar{
-      width:28px;
-      height:28px;
-      border-radius:999px;
-      background:#111;
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:12px;
-      font-weight:700;
-      flex-shrink:0;
-    }
+.post-comments__header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:2px;
+}
 
-    .post-comment__content{
-      flex:1;
-      min-width:0;
-    }
+.post-comments__title{
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.52);
+}
 
-    .post-comment__text{
-      display:block;
-    }
+.post-comments__count{
+  min-width:24px;
+  height:24px;
+  padding:0 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,.06);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:700;
+  color:rgba(255,255,255,.72);
+}
 
-    .post-comment-form{
-      display:flex;
-      gap:10px;
-      margin-top:12px;
-    }
+.post-comment{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:12px;
+  border-radius:18px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.05);
+  color:var(--text);
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
 
-    .post-comment-submit{
-      border:none;
-      background:#ffffff;
-      color:#111111;
-      border-radius:14px;
-      padding:0 16px;
-      min-height:44px;
-      font-weight:700;
-      cursor:pointer;
-      white-space:nowrap;
-    }
+.post-comment__avatar{
+  width:30px;
+  height:30px;
+  border-radius:999px;
+  background:#0d0f12;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:700;
+  flex-shrink:0;
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.post-comment__content{
+  flex:1;
+  min-width:0;
+}
+
+.post-comment__topline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:4px;
+}
+
+.post-comment__name{
+  font-size:13px;
+  font-weight:700;
+  color:#fff;
+  line-height:1.2;
+}
+
+.post-comment__text{
+  display:block;
+  font-size:14px;
+  line-height:1.5;
+  color:rgba(255,255,255,.82);
+}
+
+.post-comment-form{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+.post-comment-form .compose-input{
+  flex:1;
+  min-width:0;
+  min-height:46px;
+}
+
+.post-comment-submit{
+  border:none;
+  background:#ffffff;
+  color:#111111;
+  border-radius:16px;
+  padding:0 18px;
+  min-height:46px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .15s ease, opacity .15s ease;
+}
+
+.post-comment-submit:hover{
+  transform:translateY(-1px);
+  opacity:.96;
+}
+
+@media (max-width:600px){
+  .post-comments{
+    gap:8px;
+  }
+
+  .post-comment{
+    padding:10px 11px;
+    border-radius:16px;
+  }
+
+  .post-comment__text{
+    font-size:13.5px;
+  }
+
+  .post-comment-form{
+    flex-direction:column;
+  }
+
+  .post-comment-submit{
+    width:100%;
+  }
+}
 
     /* =========================
        EMPTY
@@ -736,21 +820,32 @@
                 </button>
               </div>
 
-              {% if post.comments %}
-                <div class="post-comments">
-                  {% for comment in post.comments %}
-                    <div class="post-comment">
-                      <div class="post-comment__avatar">
-                        {{ comment.user_name[0]|upper if comment.user_name else "U" }}
-                      </div>
+{% if post.comments %}
+  <div class="post-comments">
+    <div class="post-comments__header">
+      <span class="post-comments__title">Comments</span>
+      <span class="post-comments__count">{{ post.comment_count }}</span>
+    </div>
 
-                      <div class="post-comment__content">
-                        <span class="post-comment__text">{{ comment.body }}</span>
-                      </div>
-                    </div>
-                  {% endfor %}
-                </div>
-              {% endif %}
+    {% for comment in post.comments %}
+      <div class="post-comment">
+        <div class="post-comment__avatar">
+          {{ comment.user_name[0]|upper if comment.user_name else "U" }}
+        </div>
+
+        <div class="post-comment__content">
+          <div class="post-comment__topline">
+            <span class="post-comment__name">
+              {{ comment.user_name.split(' ')[0] if comment.user_name else "User" }}
+            </span>
+          </div>
+
+          <span class="post-comment__text">{{ comment.body }}</span>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 
               {% if current_user.is_authenticated %}
                 <form
