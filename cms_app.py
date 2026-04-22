@@ -2734,68 +2734,58 @@ def directory_page(slug):
     
 @app.get("/feed")
 def feed():
-    if not table_exists("feed_posts") or not table_exists("users"):
-        print("[FEED_TABLES_MISSING]", flush=True)
-        return render_template("feed.html", posts=[])
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
 
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
+    cur.execute("""
+        SELECT
+            p.*,
 
-        cur.execute("""
-            SELECT
-                p.*,
-                COALESCE(NULLIF(u.name, ''), u.email) AS user_name,
-                u.email AS user_email,
-                l.name AS listing_name,
-                l.slug AS listing_slug,
-                l.photo_url AS listing_photo_url,
-                (
-                    SELECT COUNT(*)
-                    FROM feed_post_likes fpl
-                    WHERE fpl.post_id = p.id
-                ) AS like_count,
-                (
-                    SELECT COUNT(*)
-                    FROM feed_post_comments fpc
-                    WHERE fpc.post_id = p.id
-                ) AS comment_count
-            FROM feed_posts p
-            JOIN users u
-                ON u.id = p.user_id
-            LEFT JOIN listings l
-                ON l.id = p.listing_id
-            WHERE p.is_public = 1
-            ORDER BY datetime(p.created_at) DESC, p.id DESC
-            LIMIT 50
-        """)
+            COALESCE(
+                NULLIF(u.name, ''),
+                u.email,
+                'User'
+            ) AS user_name,
 
-        posts = [dict(row) for row in cur.fetchall()]
+            l.name AS listing_name,
 
-        for post in posts:
-            comment_rows = conn.execute("""
-                SELECT
-                    c.*,
-                    COALESCE(NULLIF(u.name, ''), u.email) AS user_name
-                FROM feed_post_comments c
-                JOIN users u
-                    ON u.id = c.user_id
-                WHERE c.post_id = ?
-                ORDER BY datetime(c.created_at) ASC, c.id ASC
-            """, (post["id"],)).fetchall()
+            (
+                SELECT COUNT(*)
+                FROM feed_post_likes
+                WHERE post_id = p.id
+            ) AS like_count,
 
-            post["comments"] = [dict(row) for row in comment_rows]
+            (
+                SELECT COUNT(*)
+                FROM feed_post_comments
+                WHERE post_id = p.id
+            ) AS comment_count
 
-        conn.close()
-        return render_template("feed.html", posts=posts)
+        FROM feed_posts p
 
-    except sqlite3.OperationalError as e:
-        print("[FEED_QUERY_ERROR]", str(e), flush=True)
-        return render_template("feed.html", posts=[])
-    except Exception as e:
-        print("[FEED_UNEXPECTED_ERROR]", str(e), flush=True)
-        return render_template("feed.html", posts=[])
+        LEFT JOIN user u
+            ON u.id = p.user_id
+
+        LEFT JOIN listings l
+            ON l.id = p.listing_id
+
+        WHERE p.is_public = 1
+
+        ORDER BY p.id DESC
+    """)
+
+    posts = [dict(row) for row in cur.fetchall()]
+
+    print("[FEED POSTS FOUND]", len(posts), flush=True)
+
+    conn.close()
+
+    return render_template(
+        "feed.html",
+        posts=posts
+    )
+
 
 
 
