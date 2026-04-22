@@ -66,6 +66,100 @@ select {
 
 
 
+.save-place-sheet[hidden] {
+  display: none !important;
+}
+
+.save-place-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+}
+
+.save-place-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.save-place-sheet__panel {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 20px));
+  background: #15171b;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45);
+}
+
+.save-place-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.save-place-sheet__header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.save-place-sheet__close {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 14px;
+  background: #23252b;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.save-place-sheet__lists {
+  display: grid;
+  gap: 10px;
+}
+
+.save-to-list-btn {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 16px;
+  background: #1d1f24;
+  color: #fff;
+  text-align: left;
+  padding: 0 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.save-to-list-btn:hover {
+  background: #23262c;
+}
+
+.save-place-sheet__empty {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.72);
+}
+
+.save-place-sheet__new-list {
+  display: inline-flex;
+  margin-top: 14px;
+  color: #7ee2bf;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+
+
 .page-account .app-shell {
   display: flex;
   min-height: 100vh;

@@ -2355,7 +2355,6 @@ def comment_feed_post(post_id):
     body = (request.form.get("body") or "").strip()
 
     if not body:
-        flash("Comment cannot be empty.")
         return redirect(url_for("feed"))
 
     conn = sqlite3.connect(DB_PATH)
@@ -2373,8 +2372,7 @@ def comment_feed_post(post_id):
     conn.commit()
     conn.close()
 
-    flash("Comment added.")
-    return redirect(url_for("feed"))   
+    return redirect(url_for("feed"))
     
     
     
@@ -2741,50 +2739,51 @@ def feed():
     cur.execute("""
         SELECT
             p.*,
-
-            COALESCE(
-                NULLIF(u.name, ''),
-                u.email,
-                'User'
-            ) AS user_name,
-
+            COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name,
             l.name AS listing_name,
-
             (
                 SELECT COUNT(*)
                 FROM feed_post_likes
                 WHERE post_id = p.id
             ) AS like_count,
-
             (
                 SELECT COUNT(*)
                 FROM feed_post_comments
                 WHERE post_id = p.id
             ) AS comment_count
-
         FROM feed_posts p
-
         LEFT JOIN user u
             ON u.id = p.user_id
-
         LEFT JOIN listings l
             ON l.id = p.listing_id
-
         WHERE p.is_public = 1
-
         ORDER BY p.id DESC
+        LIMIT 50
     """)
 
     posts = [dict(row) for row in cur.fetchall()]
 
+    for post in posts:
+        cur.execute("""
+            SELECT
+                c.*,
+                COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name
+            FROM feed_post_comments c
+            LEFT JOIN user u
+                ON u.id = c.user_id
+            WHERE c.post_id = ?
+            ORDER BY c.id ASC
+        """, (post["id"],))
+
+        post["comments"] = [dict(row) for row in cur.fetchall()]
+
     print("[FEED POSTS FOUND]", len(posts), flush=True)
+    if posts:
+        print("[FIRST POST COMMENTS]", len(posts[0].get("comments", [])), flush=True)
 
     conn.close()
 
-    return render_template(
-        "feed.html",
-        posts=posts
-    )
+    return render_template("feed.html", posts=posts)
 
 
 
@@ -2905,44 +2904,30 @@ def ai_job_status(job_id):
     
 @app.get("/")
 def home():
-    articles = safe_query_all("""
-        SELECT id, slug, title, description, updated_at
+    articles = query_all("""
+        SELECT id, slug, title, description, updated_at, card_image_url
         FROM pages
         WHERE status='published'
         ORDER BY datetime(updated_at) DESC, id DESC
         LIMIT 8
-    """, label="HOME_QUERY_ERROR")
+    """)
 
-    homepage_top_ads = []
-    homepage_inline_ads = []
+    homepage_top_ads = get_active_ads("homepage_top", limit=1)
+    homepage_inline_ads = get_active_ads("homepage_inline", limit=3)
 
-    if table_exists("ads"):
-        homepage_top_ads = safe_query_all("""
-            SELECT *
-            FROM ads
-            WHERE is_active = 1 AND placement = ?
-            ORDER BY sort_order ASC, id DESC
-            LIMIT ?
-        """, ("homepage_top", 1), label="HOME_TOP_ADS_ERROR")
+    default_saved_list_id = None
+    user_lists = []
 
-        homepage_inline_ads = safe_query_all("""
-            SELECT *
-            FROM ads
-            WHERE is_active = 1 AND placement = ?
-            ORDER BY sort_order ASC, id DESC
-            LIMIT ?
-        """, ("homepage_inline", 3), label="HOME_INLINE_ADS_ERROR")
-
+    user_lists = []
     default_saved_list_id = None
 
     if current_user.is_authenticated:
-        try:
-            first_list = SavedList.query.filter_by(
-                user_id=current_user.id
-            ).order_by(SavedList.id.asc()).first()
-            default_saved_list_id = first_list.id if first_list else None
-        except Exception as e:
-            print("[HOME_SAVED_LIST_ERROR]", str(e), flush=True)
+        user_lists = SavedList.query.filter_by(
+        user_id=current_user.id
+    ).order_by(SavedList.title.asc()).all()
+
+    first_list = user_lists[0] if user_lists else None
+    default_saved_list_id = first_list.id if first_list else None
 
     return render_template(
         "directory_home.html",
@@ -2950,7 +2935,8 @@ def home():
         article_style="spotlight",
         homepage_top_ads=homepage_top_ads,
         homepage_inline_ads=homepage_inline_ads,
-        default_saved_list_id=default_saved_list_id
+        default_saved_list_id=default_saved_list_id,
+    user_lists=user_lists
     )
 
 

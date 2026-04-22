@@ -266,50 +266,47 @@
   </div>
 
   <!-- Save to list sheet -->
-  {% if current_user.is_authenticated %}
-    <div id="save-place-sheet" class="save-place-sheet" hidden>
-      <div class="save-place-sheet__backdrop" id="save-place-sheet-backdrop"></div>
+{% if current_user.is_authenticated %}
+  <div id="save-place-sheet" class="save-place-sheet" hidden>
+    <div class="save-place-sheet__backdrop" id="save-place-sheet-backdrop"></div>
 
-      <div class="save-place-sheet__panel">
-        <div class="save-place-sheet__header">
-          <h3>Save place</h3>
-          <button
-            type="button"
-            id="save-place-sheet-close"
-            class="save-place-sheet__close"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-
-        {% if user_lists %}
-          <div class="save-place-sheet__lists">
-            {% for saved_list in user_lists %}
-              <button
-                type="button"
-                class="save-to-list-btn"
-                data-list-id="{{ saved_list.id }}"
-              >
-                {{ saved_list.title }}
-              </button>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="save-place-sheet__empty">
-            You don’t have any lists yet.
-          </div>
-        {% endif %}
-
-        <a
-          href="{{ url_for('create_list') }}"
-          class="save-place-sheet__new-list"
+    <div class="save-place-sheet__panel">
+      <div class="save-place-sheet__header">
+        <h3>Save place</h3>
+        <button
+          type="button"
+          id="save-place-sheet-close"
+          class="save-place-sheet__close"
+          aria-label="Close"
         >
-          + Create New List
-        </a>
+          ✕
+        </button>
       </div>
+
+      {% if user_lists %}
+        <div class="save-place-sheet__lists">
+          {% for saved_list in user_lists %}
+            <button
+              type="button"
+              class="save-to-list-btn"
+              data-list-id="{{ saved_list.id }}"
+            >
+              {{ saved_list.title }}
+            </button>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="save-place-sheet__empty">
+          You don’t have any lists yet.
+        </div>
+      {% endif %}
+
+      <a href="{{ url_for('create_list') }}" class="save-place-sheet__new-list">
+        + Create New List
+      </a>
     </div>
-  {% endif %}
+  </div>
+{% endif %}
 
   <!-- Fullscreen map modal -->
   <div id="fullscreen-map-modal" class="fullscreen-map-modal" hidden>
@@ -426,22 +423,27 @@
     ====================================================== */
 
 
+
   let pendingPlaceToSave = null;
 
   function openSavePlaceSheet(placeData) {
     const sheet = document.getElementById("save-place-sheet");
+
     if (!sheet) return;
 
     pendingPlaceToSave = placeData;
     sheet.hidden = false;
+
     document.body.classList.add("save-place-sheet-open");
   }
 
   function closeSavePlaceSheet() {
     const sheet = document.getElementById("save-place-sheet");
+
     if (!sheet) return;
 
     sheet.hidden = true;
+
     document.body.classList.remove("save-place-sheet-open");
     pendingPlaceToSave = null;
   }
@@ -450,6 +452,7 @@
     if (!pendingPlaceToSave || !listId) return;
 
     const payload = new URLSearchParams();
+
     payload.append("name", pendingPlaceToSave.name || "");
     payload.append("address", pendingPlaceToSave.address || "");
     payload.append("website", pendingPlaceToSave.website || "");
@@ -470,7 +473,8 @@
       const response = await fetch(`/lists/${listId}/save-place`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+          "Content-Type":
+            "application/x-www-form-urlencoded;charset=UTF-8"
         },
         body: payload.toString()
       });
@@ -486,6 +490,7 @@
       }
 
       closeSavePlaceSheet();
+
     } catch (error) {
       console.error("Save place error:", error);
 
@@ -500,9 +505,15 @@
 
   function wireSavePlaceButtons() {
     const authEl = document.getElementById("page-auth-state");
-    const isAuthenticated = authEl?.dataset.authenticated === "true";
-    const loginUrl = authEl?.dataset.loginUrl || "/login";
-    const createListUrl = authEl?.dataset.createListUrl || "/create-list";
+
+    const isAuthenticated =
+      authEl?.dataset.authenticated === "true";
+
+    const loginUrl =
+      authEl?.dataset.loginUrl || "/login";
+
+    const createListUrl =
+      authEl?.dataset.createListUrl || "/create-list";
 
     document.querySelectorAll(".save-place-btn").forEach((button) => {
       button.onclick = function () {
@@ -522,7 +533,8 @@
           triggerButton: button
         };
 
-        const listButtons = document.querySelectorAll(".save-to-list-btn");
+        const listButtons =
+          document.querySelectorAll(".save-to-list-btn");
 
         if (listButtons.length === 0) {
           window.location.href = createListUrl;
@@ -530,7 +542,10 @@
         }
 
         if (listButtons.length === 1) {
-          savePlaceToList(listButtons[0].dataset.listId, button);
+          savePlaceToList(
+            listButtons[0].dataset.listId,
+            button
+          );
           return;
         }
 
@@ -547,9 +562,15 @@
       };
     });
 
-    document.getElementById("save-place-sheet-close")?.addEventListener("click", closeSavePlaceSheet);
-    document.getElementById("save-place-sheet-backdrop")?.addEventListener("click", closeSavePlaceSheet);
+    document
+      .getElementById("save-place-sheet-close")
+      ?.addEventListener("click", closeSavePlaceSheet);
+
+    document
+      .getElementById("save-place-sheet-backdrop")
+      ?.addEventListener("click", closeSavePlaceSheet);
   }
+
 
 
     /* ======================================================
