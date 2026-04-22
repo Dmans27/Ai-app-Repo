@@ -119,6 +119,118 @@ select {
 
 
 
+
+/* =========================
+   ACCOUNT PAGE DESKTOP LAYOUT
+   ========================= */
+
+.page-account .app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #050505;
+}
+
+.page-account .desktop-sidebar {
+  display: flex;
+}
+
+.page-account .mobile-app-shell {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  display: flex;
+  justify-content: center;
+  background: #050505;
+}
+
+.page-account .mobile-screen {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  background: #050505;
+}
+
+.page-account .mobile-content.account-page-content {
+  width: 100%;
+  padding: 36px 40px 56px;
+}
+
+.account-desktop-wrap {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.page-account .account-ios-shell {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+/* Make the map and cards use the space better */
+.page-account .account-map-card,
+.page-account .saved-lists-wrap,
+.page-account .account-ios-empty,
+.page-account .account-ios-account-panel {
+  width: 100%;
+}
+
+.page-account .account-map {
+  width: 100%;
+  height: 420px;
+  min-height: 420px;
+}
+
+@media (min-width: 1025px) {
+  .page-account .mobile-app-header,
+  .page-account .mobile-tabbar {
+    display: none !important;
+  }
+
+  .page-account .mobile-drawer,
+  .page-account .mobile-drawer-backdrop {
+    display: none !important;
+  }
+
+  .page-account .saved-hero {
+    align-items: center;
+  }
+
+  .page-account .saved-stats-row {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1024px) {
+  .page-account .desktop-sidebar {
+    display: none !important;
+  }
+
+  .page-account .app-shell {
+    display: block;
+  }
+
+  .page-account .mobile-app-shell,
+  .page-account .mobile-screen,
+  .page-account .account-ios-shell,
+  .account-desktop-wrap {
+    max-width: 100%;
+  }
+
+  .page-account .mobile-content.account-page-content {
+    padding: 18px 16px 120px;
+  }
+
+  .page-account .account-map {
+    height: 280px;
+    min-height: 280px;
+  }
+}
+
+
+
 /* =========================
    SAVED PLACES REDESIGN
    ========================= */
