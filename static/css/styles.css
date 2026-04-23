@@ -1482,13 +1482,20 @@ select {
 .chat-composer__inner {
   max-width: 920px;
   margin: 0 auto;
-  padding: 8px;
+  padding: 0px;
   border-radius: 24px;
   background: rgba(28,28,30,0.92);
   border: 1px solid var(--line-subtle);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+}
+
+
+.chat-composer {
+
+margin: 10px 10px -86px 10px;
+
 }
 
 .ai-chat-status {
