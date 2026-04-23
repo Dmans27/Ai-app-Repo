@@ -57,14 +57,21 @@ AI_JOBS = {}  # job_id -> dict(status, result, error, created_at)
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "cms.db")
+SQLITE_PATH = os.path.join(BASE_DIR, "cms.db")
 
-app.config["SECRET_KEY"] = os.environ.get(
-    "FLASK_SECRET_KEY",
-    "dev-change-me-please"
-)
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+database_url = os.environ.get("DATABASE_URL")
+
+if database_url:
+    # Safety for providers that use postgres://
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{SQLITE_PATH}"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
 
 db.init_app(app)
 
@@ -642,8 +649,15 @@ import json
 import uuid
 from flask import session
 
-def get_db():
-    return sqlite3.connect(DB_PATH)
+from sqlalchemy import create_engine, text
+import os
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 def get_or_create_session_id():
     if "chat_session_id" not in session:
@@ -1694,9 +1708,10 @@ def slugify(s: str) -> str:
     return s
 
 
-def query_all(sql, params=()):
-    with get_conn() as conn:
-        return conn.execute(sql, params).fetchall()
+def query_all(sql, params={}):
+    with engine.connect() as conn:
+        result = conn.execute(text(sql), params)
+        return [dict(row._mapping) for row in result]
 
 
 def query_one(sql, params=()):
@@ -2280,6 +2295,26 @@ def ai_chat():
     except Exception as e:
         print("[AI_CHAT_ERROR]", str(e), flush=True)
         return jsonify({"error": str(e)}), 500
+    
+    
+    
+    
+import os
+
+database_url = os.environ.get("DATABASE_URL")
+
+if database_url:
+    # Some providers use postgres://, SQLAlchemy wants postgresql://
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DB_PATH = os.path.join(BASE_DIR, "cms.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
     
     
