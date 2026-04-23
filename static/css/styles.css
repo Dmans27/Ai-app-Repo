@@ -325,6 +325,56 @@ select {
 
 
 
+/* Horizontal chip rail above composer */
+
+.quick-scroll-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 110px;
+  z-index: 40;
+  padding: 0 14px;
+  pointer-events: none;
+}
+
+.quick-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  pointer-events: auto;
+}
+
+.quick-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-chip {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(18,22,28,.92);
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: .18s ease;
+}
+
+.quick-chip:hover,
+.quick-chip:active {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.16);
+  background: rgba(28,32,40,.98);
+}
+
+
+
 
 
 .page-discover .mobile-screen {
