@@ -377,6 +377,131 @@ select {
 
 
 
+/* =========================
+   MOBILE HOME HERO REDESIGN
+   ========================= */
+
+.mobile-home-hero {
+  padding: 28px 20px 22px;
+}
+
+.mobile-home-hero__content {
+  max-width: 320px;
+}
+
+.mobile-home-hero__eyebrow {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255,255,255,.72);
+}
+
+.mobile-home-hero__title {
+  margin: 0;
+  font-size: 2.45rem;
+  line-height: .95;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+  color: #fff;
+}
+
+.mobile-home-hero__subtitle {
+  margin: 14px 0 0;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,.68);
+  max-width: 290px;
+}
+
+/* horizontal chip rail */
+
+.quick-scroll-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 118px;
+  z-index: 40;
+  padding: 0 14px;
+  pointer-events: none;
+}
+
+.quick-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  pointer-events: auto;
+}
+
+.quick-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-chip {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(18,22,28,.92);
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: .18s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.quick-chip:hover,
+.quick-chip:active {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.16);
+  background: rgba(28,32,40,.98);
+}
+
+/* subtle fade edges */
+.quick-scroll-wrap::before,
+.quick-scroll-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.quick-scroll-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, #000 0%, rgba(0,0,0,0) 100%);
+}
+
+.quick-scroll-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, #000 0%, rgba(0,0,0,0) 100%);
+}
+
+/* give the page breathing room */
+.chat-page.is-empty {
+  min-height: calc(100vh - 220px);
+}
+
+/* mobile only */
+@media (min-width: 769px) {
+  .mobile-home-hero,
+  .quick-scroll-wrap {
+    display: none !important;
+  }
+}
+
+
+
+
+
 .page-discover .mobile-screen {
   flex: 1;
   min-width: 0;

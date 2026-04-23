@@ -176,41 +176,47 @@
 
       <div class="app-main__inner">
         <section class="chat-page is-empty" id="chat-page">
-          <section class="chat-welcome" id="chat-welcome">
-            <div class="chat-welcome__inner">
-              <p class="chat-welcome__eyebrow mobile-only" id="time-greeting-mobile">Good afternoon 👋</p>
-              <h1 class="chat-welcome__title mobile-only">Where should we go today?</h1>
-              <p class="chat-welcome__subtitle mobile-only">
-                Find coffee, bars, dinner, shopping, and more.
-              </p>
+    <section class="mobile-home-hero">
+  <div class="mobile-home-hero__content">
+    <p class="mobile-home-hero__eyebrow" id="time-greeting-mobile">
+      Good afternoon 👋
+    </p>
+
+    <h1 class="mobile-home-hero__title">
+      Where should we go today?
+    </h1>
+
+    <p class="mobile-home-hero__subtitle">
+      Find coffee, bars, dinner, shopping, and more.
+    </p>
+  </div>
+</section>
 
 <div class="quick-scroll-wrap">
   <div class="quick-scroll">
-
-    <button class="quick-chip" onclick="runQuickPrompt('Best coffee nearby')">
+    <button class="quick-chip" type="button" data-suggestion="Best coffee nearby">
       ☕ Coffee
     </button>
 
-    <button class="quick-chip" onclick="runQuickPrompt('Rooftop bars tonight')">
+    <button class="quick-chip" type="button" data-suggestion="Rooftop bars tonight">
       🍸 Rooftops
     </button>
 
-    <button class="quick-chip" onclick="runQuickPrompt('Casual dinner nearby')">
+    <button class="quick-chip" type="button" data-suggestion="Casual dinner nearby">
       🍔 Dinner
     </button>
 
-    <button class="quick-chip" onclick="runQuickPrompt('Quiet cafe to work from')">
+    <button class="quick-chip" type="button" data-suggestion="Quiet cafe to work from">
       💻 Work Cafe
     </button>
 
-    <button class="quick-chip" onclick="runQuickPrompt('Best date spots nearby')">
+    <button class="quick-chip" type="button" data-suggestion="Best date spots nearby">
       💘 Date Night
     </button>
 
-    <button class="quick-chip" onclick="runQuickPrompt('Best brunch this weekend')">
+    <button class="quick-chip" type="button" data-suggestion="Best brunch this weekend">
       🍳 Brunch
     </button>
-
   </div>
 </div>
           </section>
@@ -1171,6 +1177,19 @@
         input.focus();
       }
     }
+
+
+
+    document.querySelectorAll(".quick-chip").forEach((chip) => {
+  chip.addEventListener("click", function () {
+    const input = document.getElementById("ai-chat-input");
+    if (!input) return;
+
+    input.value = chip.dataset.suggestion || "";
+    input.dispatchEvent(new Event("input"));
+    runAiSearch();
+  });
+});
 
 
 
