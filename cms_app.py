@@ -2841,10 +2841,10 @@ def home():
     articles = query_all("""
         SELECT id, slug, title, description, updated_at, card_image_url
         FROM pages
-        WHERE status='published'
+        WHERE status = 'published'
         ORDER BY updated_at DESC, id DESC
         LIMIT 8
-    """)
+""")
 
     homepage_top_ads = get_active_ads("homepage_top", limit=1)
     homepage_inline_ads = get_active_ads("homepage_inline", limit=3)
