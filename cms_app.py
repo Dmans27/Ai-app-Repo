@@ -548,7 +548,7 @@ import json
 import uuid
 from flask import session
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text as sql_text
 import os
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
