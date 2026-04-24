@@ -564,49 +564,57 @@ def get_or_create_session_id():
     return session["chat_session_id"]
 
 def load_or_create_conversation(user_id=None):
-    init_db()  # safety net for Render cold starts
-
     session_id = get_or_create_session_id()
-    conn = SQLITE_PATH()
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
 
     if user_id:
-        cur.execute("""
-            SELECT * FROM conversations
-            WHERE user_id = ?
+        conversation = query_one(
+            """
+            SELECT *
+            FROM conversations
+            WHERE user_id = :user_id
             ORDER BY updated_at DESC, id DESC
             LIMIT 1
-        """, (user_id,))
+            """,
+            {"user_id": user_id}
+        )
     else:
-        cur.execute("""
-            SELECT * FROM conversations
-            WHERE session_id = ?
+        conversation = query_one(
+            """
+            SELECT *
+            FROM conversations
+            WHERE session_id = :session_id
             ORDER BY updated_at DESC, id DESC
             LIMIT 1
-        """, (session_id,))
+            """,
+            {"session_id": session_id}
+        )
 
-    convo = cur.fetchone()
+    if conversation:
+        return conversation
 
-    if convo:
-        conn.close()
-        return dict(convo)
+    with engine.begin() as conn:
+        row = conn.execute(
+            sql_text("""
+                INSERT INTO conversations (
+                    user_id,
+                    session_id,
+                    state_json
+                )
+                VALUES (
+                    :user_id,
+                    :session_id,
+                    :state_json
+                )
+                RETURNING *
+            """),
+            {
+                "user_id": user_id,
+                "session_id": session_id,
+                "state_json": json.dumps({})
+            }
+        ).first()
 
-    cur.execute("""
-        INSERT INTO conversations (user_id, session_id, state_json)
-        VALUES (?, ?, ?)
-    """, (
-        user_id,
-        session_id,
-        json.dumps({})
-    ))
-    convo_id = cur.lastrowid
-    conn.commit()
-
-    cur.execute("SELECT * FROM conversations WHERE id = ?", (convo_id,))
-    convo = cur.fetchone()
-    conn.close()
-    return dict(convo)
+    return dict(row._mapping)
 
 def save_message(conversation_id, role, content):
     conn = SQLITE_PATH()
