@@ -54,7 +54,7 @@ AI_JOBS = {}  # job_id -> dict(status, result, error, created_at)
 
 
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text as sql_text
 
 app = Flask(__name__)
 
@@ -81,7 +81,7 @@ engine = create_engine(
 
 def create_core_tables():
     with engine.begin() as conn:
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS pages (
                 id SERIAL PRIMARY KEY,
                 slug TEXT UNIQUE NOT NULL,
@@ -97,7 +97,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS sections (
                 id SERIAL PRIMARY KEY,
                 page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
@@ -113,7 +113,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS listings (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -137,7 +137,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS ads (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -154,7 +154,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS facts (
                 id SERIAL PRIMARY KEY,
                 topic TEXT NOT NULL,
@@ -165,7 +165,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS conversations (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER,
@@ -176,7 +176,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS conversation_messages (
                 id SERIAL PRIMARY KEY,
                 conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -186,7 +186,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS listing_comments (
                 id SERIAL PRIMARY KEY,
                 listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
@@ -199,7 +199,7 @@ def create_core_tables():
             );
         """))
 
-        conn.execute(text("""
+        conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS directory_page_meta (
                 id SERIAL PRIMARY KEY,
                 page_id INTEGER UNIQUE NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
@@ -1617,20 +1617,28 @@ def query_all(sql, params=None):
     params = params or {}
 
     with engine.connect() as conn:
-        result = conn.execute(text(sql), params)
+        result = conn.execute(sql_text(sql), params)
         return [dict(row._mapping) for row in result.fetchall()]
 
 
-def query_one(sql, params=()):
-    with get_conn() as conn:
-        return conn.execute(sql, params).fetchone()
+def query_one(sql, params=None):
+    params = params or {}
+
+    with engine.connect() as conn:
+        row = conn.execute(sql_text(sql), params).first()
+        return dict(row._mapping) if row else None
 
 
-def execute(sql, params=()):
-    with get_conn() as conn:
-        cur = conn.execute(sql, params)
-        conn.commit()
-        return cur.lastrowid
+def execute(sql, params=None):
+    params = params or {}
+
+    with engine.begin() as conn:
+        result = conn.execute(sql_text(sql), params)
+
+        try:
+            return result.scalar_one_or_none()
+        except Exception:
+            return None
 
 
 def next_sort_order(page_id: int) -> int:
@@ -2201,6 +2209,7 @@ def ai_chat():
         }), 500
     except Exception as e:
         print("[AI_CHAT_ERROR]", str(e), flush=True)
+        print(traceback.format_exc(), flush=True)
         return jsonify({"error": str(e)}), 500
     
     
