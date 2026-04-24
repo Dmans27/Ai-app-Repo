@@ -2360,28 +2360,28 @@ def create_feed_post():
 
     image_url = None
 
+    feed_upload_folder = os.path.join(app.config["UPLOAD_FOLDER"], "feed")
+    os.makedirs(feed_upload_folder, exist_ok=True)
+
     if photo and photo.filename:
         filename = secure_filename(photo.filename)
         ext = os.path.splitext(filename)[1].lower() or ".jpg"
         new_filename = f"{uuid.uuid4().hex}{ext}"
-        save_path = os.path.join(UPLOAD_FOLDER, new_filename)
 
+        save_path = os.path.join(feed_upload_folder, new_filename)
         photo.save(save_path)
 
-        image_url = url_for("static", filename=f"uploads/feed/{new_filename}")
-
-        print("PHOTO SAVED:", save_path, flush=True)
-        print("IMAGE URL:", image_url, flush=True)
-        print("FILE EXISTS:", os.path.exists(save_path), flush=True)
+        image_url = url_for(
+            "static",
+            filename=f"uploads/feed/{new_filename}"
+        )
 
     if not body and not image_url:
         flash("Write something or upload a photo.")
         return redirect(url_for("feed"))
 
-    conn = sqlite3.connect(SQLITE_PATH)
-    cur = conn.cursor()
-
-    cur.execute("""
+    execute(
+        """
         INSERT INTO feed_posts (
             user_id,
             post_type,
@@ -2390,19 +2390,24 @@ def create_feed_post():
             city,
             is_public
         )
-        VALUES (?, ?, ?, ?, ?, 1)
-    """, (
-        current_user.id,
-        "photo" if image_url else "text",
-        body or None,
-        image_url,
-        city or None
-    ))
+        VALUES (
+            :user_id,
+            :post_type,
+            :body,
+            :image_url,
+            :city,
+            1
+        )
+        """,
+        {
+            "user_id": current_user.id,
+            "post_type": "photo" if image_url else "text",
+            "body": body or None,
+            "image_url": image_url,
+            "city": city or None
+        }
+    )
 
-    conn.commit()
-    conn.close()
-
-    flash("Post shared.")
     return redirect(url_for("feed"))
     
     
