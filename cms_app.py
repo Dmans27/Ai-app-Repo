@@ -2825,32 +2825,30 @@ def directory_page(slug):
     
 @app.get("/feed")
 def feed():
-    posts = query_all(
-        """
-        SELECT
-            p.*,
-            COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name,
-            l.name AS listing_name,
-            (
-                SELECT COUNT(*)
-                FROM feed_post_likes
-                WHERE post_id = p.id
-            ) AS like_count,
-            (
-                SELECT COUNT(*)
-                FROM feed_post_comments
-                WHERE post_id = p.id
-            ) AS comment_count
-        FROM feed_posts p
-        LEFT JOIN users u
-            ON u.id = p.user_id
-        LEFT JOIN listings l
-            ON l.id = p.listing_id
-        WHERE p.is_public = 1
-        ORDER BY p.id DESC
-        LIMIT 50
-        """
-    )
+    posts = query_all("""
+    SELECT
+        p.*,
+        COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name,
+        l.name AS listing_name,
+        (
+            SELECT COUNT(*)
+            FROM feed_post_likes
+            WHERE post_id = p.id
+        ) AS like_count,
+        (
+            SELECT COUNT(*)
+            FROM feed_post_comments
+            WHERE post_id = p.id
+        ) AS comment_count
+    FROM feed_posts p
+    LEFT JOIN "user" u
+        ON u.id = p.user_id
+    LEFT JOIN listings l
+        ON l.id = p.listing_id
+    WHERE p.is_public = 1
+    ORDER BY p.id DESC
+    LIMIT 50
+""")
 
     for post in posts:
         post["comments"] = query_all(
@@ -2859,7 +2857,7 @@ def feed():
                 c.*,
                 COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name
             FROM feed_post_comments c
-            LEFT JOIN users u
+            LEFT JOIN "user" u
                 ON u.id = c.user_id
             WHERE c.post_id = :post_id
             ORDER BY c.id ASC
