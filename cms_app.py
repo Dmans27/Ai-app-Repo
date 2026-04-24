@@ -209,6 +209,44 @@ def create_core_tables():
                 intro_text TEXT
             );
         """))
+        
+        
+        conn.execute(sql_text("""
+        CREATE TABLE IF NOT EXISTS feed_posts (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            post_type TEXT NOT NULL DEFAULT 'text',
+            title TEXT,
+            body TEXT,
+            image_url TEXT,
+            listing_id INTEGER,
+            saved_list_id INTEGER,
+            city TEXT,
+            is_public INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """))
+
+    conn.execute(sql_text("""
+        CREATE TABLE IF NOT EXISTS feed_post_likes (
+            id SERIAL PRIMARY KEY,
+            post_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(post_id, user_id)
+        );
+    """))
+
+    conn.execute(sql_text("""
+        CREATE TABLE IF NOT EXISTS feed_post_comments (
+            id SERIAL PRIMARY KEY,
+            post_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            body TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """))
 
 
 
