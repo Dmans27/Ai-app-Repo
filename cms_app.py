@@ -81,6 +81,10 @@ engine = create_engine(
 
 def create_core_tables():
     with engine.begin() as conn:
+
+        # ---------------------------------------------------
+        # Pages
+        # ---------------------------------------------------
         conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS pages (
                 id SERIAL PRIMARY KEY,
@@ -97,8 +101,146 @@ def create_core_tables():
             );
         """))
 
-        # all other conn.execute(...) blocks stay here
+        # ---------------------------------------------------
+        # Sections
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS sections (
+                id SERIAL PRIMARY KEY,
+                page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                section_type TEXT NOT NULL DEFAULT 'paragraph',
+                heading TEXT,
+                body TEXT,
+                media_path TEXT,
+                media_alt TEXT,
+                media_caption TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
+        # ---------------------------------------------------
+        # Listings
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS listings (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                slug TEXT UNIQUE,
+                category TEXT,
+                city TEXT,
+                state TEXT,
+                address TEXT,
+                phone TEXT,
+                website TEXT,
+                description TEXT,
+                latitude DOUBLE PRECISION,
+                longitude DOUBLE PRECISION,
+                photo_url TEXT,
+                photo_urls_json TEXT,
+                card_image_url TEXT,
+                featured INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'published',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+
+        # ---------------------------------------------------
+        # Ads
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS ads (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                placement TEXT NOT NULL,
+                image_url TEXT,
+                headline TEXT,
+                body TEXT,
+                button_text TEXT,
+                target_url TEXT,
+                is_active INTEGER DEFAULT 1,
+                sort_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+
+        # ---------------------------------------------------
+        # Facts
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS facts (
+                id SERIAL PRIMARY KEY,
+                topic TEXT NOT NULL,
+                title TEXT NOT NULL,
+                url TEXT,
+                snippet TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+
+        # ---------------------------------------------------
+        # Conversations
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                session_id TEXT,
+                state_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+
+        # ---------------------------------------------------
+        # Conversation Messages
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS conversation_messages (
+                id SERIAL PRIMARY KEY,
+                conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+
+        # ---------------------------------------------------
+        # Listing Comments
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS listing_comments (
+                id SERIAL PRIMARY KEY,
+                listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+                author_name TEXT NOT NULL,
+                author_email TEXT,
+                body TEXT NOT NULL,
+                rating INTEGER NOT NULL DEFAULT 5,
+                is_approved INTEGER NOT NULL DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+
+        # ---------------------------------------------------
+        # Directory Meta
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS directory_page_meta (
+                id SERIAL PRIMARY KEY,
+                page_id INTEGER UNIQUE NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+                city TEXT NOT NULL,
+                state TEXT NOT NULL,
+                category TEXT NOT NULL,
+                intro_text TEXT
+            );
+        """))
+
+        # ---------------------------------------------------
+        # Feed Posts
+        # ---------------------------------------------------
         conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS feed_posts (
                 id SERIAL PRIMARY KEY,
@@ -116,6 +258,9 @@ def create_core_tables():
             );
         """))
 
+        # ---------------------------------------------------
+        # Feed Likes
+        # ---------------------------------------------------
         conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS feed_post_likes (
                 id SERIAL PRIMARY KEY,
@@ -126,6 +271,9 @@ def create_core_tables():
             );
         """))
 
+        # ---------------------------------------------------
+        # Feed Comments
+        # ---------------------------------------------------
         conn.execute(sql_text("""
             CREATE TABLE IF NOT EXISTS feed_post_comments (
                 id SERIAL PRIMARY KEY,
@@ -135,6 +283,8 @@ def create_core_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """))
+
+        print("create_core_tables() complete", flush=True)
 
 
 
