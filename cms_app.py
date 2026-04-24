@@ -306,14 +306,15 @@ def init_db():
         print("[INIT_DB_TABLES]", tables, flush=True)
 
 
-def bootstrap_app():
-    print("DB_PATH =", DB_PATH, flush=True)
-    init_db()
-    print("init_db() finished", flush=True)
-
+def init_db():
     with app.app_context():
         db.create_all()
         print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
+
+
+def bootstrap_app():
+    init_db()
+    print("init_db() finished", flush=True)
 
 
 bootstrap_app()
@@ -668,7 +669,7 @@ def load_or_create_conversation(user_id=None):
     init_db()  # safety net for Render cold starts
 
     session_id = get_or_create_session_id()
-    conn = get_db()
+    conn = SQLITE_PATH()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
@@ -710,7 +711,7 @@ def load_or_create_conversation(user_id=None):
     return dict(convo)
 
 def save_message(conversation_id, role, content):
-    conn = get_db()
+    conn = SQLITE_PATH()
     cur = conn.cursor()
 
     cur.execute("""
@@ -728,7 +729,7 @@ def save_message(conversation_id, role, content):
     conn.close()
 
 def load_messages(conversation_id, limit=12):
-    conn = get_db()
+    conn = SQLITE_PATH()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
@@ -752,7 +753,7 @@ def load_state(conversation):
         return {}
 
 def save_state(conversation_id, state):
-    conn = get_db()
+    conn = SQLITE_PATH()
     cur = conn.cursor()
 
     cur.execute("""
@@ -2418,7 +2419,7 @@ def reset_ai_chat():
     user_id = current_user.id if current_user.is_authenticated else None
     session_id = get_or_create_session_id()
 
-    conn = get_db()
+    conn = SQLITE_PATH()
     cur = conn.cursor()
 
     if user_id:
@@ -3228,7 +3229,7 @@ def get_google_cached_results(cache_key: str):
     
     
     
-def get_db_connection():
+def SQLITE_PATH_connection():
     return sqlite3.connect(DB_PATH)
 
 
@@ -4858,7 +4859,3 @@ if __name__ == "__main__":
     init_db()
     create_admin_if_missing("you@example.com", "ChangeMe123!")
     app.run(debug=True, use_reloader=False, port=8525)
-
-
-
-
