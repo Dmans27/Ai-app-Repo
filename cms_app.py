@@ -210,33 +210,7 @@ def create_core_tables():
             );
         """))
 
-        # ---- CLEAN MIGRATIONS ----
 
-        page_cols = [r[1] for r in conn.execute("PRAGMA table_info(pages)").fetchall()]
-        if "card_image_url" not in page_cols:
-            conn.execute("ALTER TABLE pages ADD COLUMN card_image_url TEXT")
-
-        listing_cols = [r[1] for r in conn.execute("PRAGMA table_info(listings)").fetchall()]
-        if "photo_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_url TEXT")
-        if "photo_urls_json" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN photo_urls_json TEXT")
-        if "card_image_url" not in listing_cols:
-            conn.execute("ALTER TABLE listings ADD COLUMN card_image_url TEXT")
-
-        comment_cols = [r[1] for r in conn.execute("PRAGMA table_info(listing_comments)").fetchall()]
-        if "rating" not in comment_cols:
-            conn.execute(
-                "ALTER TABLE listing_comments ADD COLUMN rating INTEGER NOT NULL DEFAULT 5"
-            )
-
-
-        conn.commit()
-
-        tables = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-        ).fetchall()
-        print("[INIT_DB_TABLES]", tables, flush=True)
 
 
 def init_db():
@@ -318,17 +292,7 @@ client = OpenAI(
 
 
 
-def table_exists(table_name: str) -> bool:
-    try:
-        with get_conn() as conn:
-            row = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-                (table_name,)
-            ).fetchone()
-            return row is not None
-    except Exception as e:
-        print("[TABLE_EXISTS_ERROR]", table_name, str(e), flush=True)
-        return False
+
 
 
 def safe_query_all(sql, params=(), fallback=None, label="SAFE_QUERY_ALL"):
