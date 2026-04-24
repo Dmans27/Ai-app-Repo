@@ -979,14 +979,20 @@ def summarize_ai_results(user_message, internal_results, external_results):
 
 
 def get_active_ads(placement: str, limit: int = 10):
-    return query_all("""
+    return query_all(
+        """
         SELECT *
         FROM ads
         WHERE is_active = 1
-          AND placement = ?
+          AND placement = :placement
         ORDER BY sort_order ASC, id DESC
-        LIMIT ?
-    """, (placement, limit))
+        LIMIT :limit
+        """,
+        {
+            "placement": placement,
+            "limit": limit
+        }
+    )
 
 
 def map_context(map_lat, map_lng, map_results):
@@ -1607,10 +1613,12 @@ def slugify(s: str) -> str:
     return s
 
 
-def query_all(sql, params={}):
+def query_all(sql, params=None):
+    params = params or {}
+
     with engine.connect() as conn:
         result = conn.execute(text(sql), params)
-        return [dict(row._mapping) for row in result]
+        return [dict(row._mapping) for row in result.fetchall()]
 
 
 def query_one(sql, params=()):
