@@ -2340,20 +2340,25 @@ def comment_feed_post(post_id):
     if not body:
         return redirect(url_for("feed"))
 
-    conn = sqlite3.connect(SQLITE_PATH)
-    cur = conn.cursor()
-
-    cur.execute("""
+    execute(
+        """
         INSERT INTO feed_post_comments (
             post_id,
             user_id,
             body
         )
-        VALUES (?, ?, ?)
-    """, (post_id, current_user.id, body))
-
-    conn.commit()
-    conn.close()
+        VALUES (
+            :post_id,
+            :user_id,
+            :body
+        )
+        """,
+        {
+            "post_id": post_id,
+            "user_id": current_user.id,
+            "body": body
+        }
+    )
 
     return redirect(url_for("feed"))
     
@@ -2744,11 +2749,8 @@ def directory_page(slug):
     
 @app.get("/feed")
 def feed():
-    conn = sqlite3.connect(SQLITE_PATH)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-
-    cur.execute("""
+    posts = query_all(
+        """
         SELECT
             p.*,
             COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name,
@@ -2764,36 +2766,32 @@ def feed():
                 WHERE post_id = p.id
             ) AS comment_count
         FROM feed_posts p
-        LEFT JOIN user u
+        LEFT JOIN users u
             ON u.id = p.user_id
         LEFT JOIN listings l
             ON l.id = p.listing_id
         WHERE p.is_public = 1
         ORDER BY p.id DESC
         LIMIT 50
-    """)
-
-    posts = [dict(row) for row in cur.fetchall()]
+        """
+    )
 
     for post in posts:
-        cur.execute("""
+        post["comments"] = query_all(
+            """
             SELECT
                 c.*,
                 COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name
             FROM feed_post_comments c
-            LEFT JOIN user u
+            LEFT JOIN users u
                 ON u.id = c.user_id
-            WHERE c.post_id = ?
+            WHERE c.post_id = :post_id
             ORDER BY c.id ASC
-        """, (post["id"],))
-
-        post["comments"] = [dict(row) for row in cur.fetchall()]
-
-    print("[FEED POSTS FOUND]", len(posts), flush=True)
-    if posts:
-        print("[FIRST POST COMMENTS]", len(posts[0].get("comments", [])), flush=True)
-
-    conn.close()
+            """,
+            {
+                "post_id": post["id"]
+            }
+        )
 
     return render_template("feed.html", posts=posts)
 
