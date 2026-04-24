@@ -617,39 +617,51 @@ def load_or_create_conversation(user_id=None):
     return dict(row._mapping)
 
 def save_message(conversation_id, role, content):
-    conn = SQLITE_PATH()
-    cur = conn.cursor()
+    execute(
+        """
+        INSERT INTO conversation_messages (
+            conversation_id,
+            role,
+            content
+        )
+        VALUES (
+            :conversation_id,
+            :role,
+            :content
+        )
+        """,
+        {
+            "conversation_id": conversation_id,
+            "role": role,
+            "content": content
+        }
+    )
 
-    cur.execute("""
-        INSERT INTO conversation_messages (conversation_id, role, content)
-        VALUES (?, ?, ?)
-    """, (conversation_id, role, content))
-
-    cur.execute("""
+    execute(
+        """
         UPDATE conversations
         SET updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """, (conversation_id,))
-
-    conn.commit()
-    conn.close()
+        WHERE id = :conversation_id
+        """,
+        {
+            "conversation_id": conversation_id
+        }
+    )
 
 def load_messages(conversation_id, limit=12):
-    conn = SQLITE_PATH()
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-
-    cur.execute("""
+    return query_all(
+        """
         SELECT role, content
         FROM conversation_messages
-        WHERE conversation_id = ?
+        WHERE conversation_id = :conversation_id
         ORDER BY id ASC
-        LIMIT ?
-    """, (conversation_id, limit))
-
-    rows = [dict(r) for r in cur.fetchall()]
-    conn.close()
-    return rows
+        LIMIT :limit
+        """,
+        {
+            "conversation_id": conversation_id,
+            "limit": limit
+        }
+    )
 
 def load_state(conversation):
     raw = conversation.get("state_json") or "{}"
@@ -659,17 +671,18 @@ def load_state(conversation):
         return {}
 
 def save_state(conversation_id, state):
-    conn = SQLITE_PATH()
-    cur = conn.cursor()
-
-    cur.execute("""
+    execute(
+        """
         UPDATE conversations
-        SET state_json = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """, (json.dumps(state), conversation_id))
-
-    conn.commit()
-    conn.close()
+        SET state_json = :state_json,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = :conversation_id
+        """,
+        {
+            "state_json": json.dumps(state),
+            "conversation_id": conversation_id
+        }
+    )
 
 
 
@@ -2353,18 +2366,47 @@ def reset_ai_chat():
     user_id = current_user.id if current_user.is_authenticated else None
     session_id = get_or_create_session_id()
 
-    conn = SQLITE_PATH()
-    cur = conn.cursor()
+    with engine.begin() as conn:
+        if user_id:
+            conn.execute(
+                sql_text("""
+                    DELETE FROM conversation_messages
+                    WHERE conversation_id IN (
+                        SELECT id
+                        FROM conversations
+                        WHERE user_id = :user_id
+                    )
+                """),
+                {"user_id": user_id}
+            )
 
-    if user_id:
-        cur.execute("DELETE FROM conversation_messages WHERE conversation_id IN (SELECT id FROM conversations WHERE user_id = ?)", (user_id,))
-        cur.execute("DELETE FROM conversations WHERE user_id = ?", (user_id,))
-    else:
-        cur.execute("DELETE FROM conversation_messages WHERE conversation_id IN (SELECT id FROM conversations WHERE session_id = ?)", (session_id,))
-        cur.execute("DELETE FROM conversations WHERE session_id = ?", (session_id,))
+            conn.execute(
+                sql_text("""
+                    DELETE FROM conversations
+                    WHERE user_id = :user_id
+                """),
+                {"user_id": user_id}
+            )
+        else:
+            conn.execute(
+                sql_text("""
+                    DELETE FROM conversation_messages
+                    WHERE conversation_id IN (
+                        SELECT id
+                        FROM conversations
+                        WHERE session_id = :session_id
+                    )
+                """),
+                {"session_id": session_id}
+            )
 
-    conn.commit()
-    conn.close()
+            conn.execute(
+                sql_text("""
+                    DELETE FROM conversations
+                    WHERE session_id = :session_id
+                """),
+                {"session_id": session_id}
+            )
 
     session.pop("chat_session_id", None)
 
