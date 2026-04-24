@@ -187,118 +187,49 @@
                 <div id="account-map" class="account-map"></div>
               </section>
 
-            {% if lists %}
-              <section class="saved-lists-wrap">
-                {% for saved_list in lists %}
-                  <section class="saved-list-section">
-                    <div class="saved-list-header">
-                      <div>
-                        <h2>{{ saved_list.title }}</h2>
+{% if lists %}
+  <section class="saved-lists-wrap">
+    {% for saved_list in lists %}
+      <section class="saved-list-section">
+        <div class="saved-list-header">
+          <div>
+            <h2>{{ saved_list.title }}</h2>
 
-                        <p>
-                          {{ saved_list.places|length }} places ·
-                          {{ "Public" if saved_list.is_public else "Private" }}
-                        </p>
+            <p>
+              {{ saved_list.places|length }} places ·
+              {{ "Public" if saved_list.is_public else "Private" }}
+            </p>
 
-                        {% if saved_list.description %}
-                          <p class="saved-list-card__description">
-                            {{ saved_list.description }}
-                          </p>
-                        {% endif %}
-                      </div>
-                    </div>
-
-                    {% if saved_list.places %}
-                      <div class="saved-place-carousel">
-                        {% for place in saved_list.places %}
-                          <article class="saved-place-slide">
-                            {% if place.photo_url %}
-                              <img
-                                src="{{ place.photo_url }}"
-                                alt="{{ place.name }}"
-                                class="saved-place-slide__image"
-                              >
-                            {% else %}
-                              <div class="saved-place-slide__image saved-place-slide__image-placeholder">
-                                📍
-                              </div>
-                            {% endif %}
-
-                            <div class="saved-place-slide__body">
-                              <h3>{{ place.name }}</h3>
-
-                              {% if place.category %}
-                                <p class="saved-place-slide__category">
-                                  {{ place.category }}
-                                </p>
-                              {% endif %}
-
-                              {% if place.address %}
-                                <p class="saved-place-slide__address">
-                                  {{ place.address }}
-                                </p>
-                              {% endif %}
-
-                              {% if place.notes %}
-                                <p class="saved-place-slide__notes">
-                                  {{ place.notes }}
-                                </p>
-                              {% endif %}
-
-                              <div class="saved-place-slide__actions">
-                                {% if place.website %}
-                                  <a
-                                    href="{{ place.website }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    Website
-                                  </a>
-                                {% endif %}
-
-                                {% if place.latitude and place.longitude %}
-                                  <a
-                                    href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="is-primary"
-                                  >
-                                    Directions
-                                  </a>
-                                {% elif place.address %}
-                                  <a
-                                    href="https://www.google.com/maps/search/?api=1&query={{ place.address|urlencode }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="is-primary"
-                                  >
-                                    Directions
-                                  </a>
-                                {% endif %}
-                              </div>
-                            </div>
-                          </article>
-                        {% endfor %}
-                      </div>
-                    {% else %}
-                      <div class="saved-list-empty">
-                        No saved places yet.
-                      </div>
-                    {% endif %}
-                  </section>
-                {% endfor %}
-              </section>
-            {% else %}
-              <section class="account-ios-empty">
-                <h2>No lists yet</h2>
-
-                <p>Create your first list to start saving favorite places.</p>
-
-                <a href="{{ url_for('create_list') }}" class="btn-primary">
-                  Create your first list
-                </a>
-              </section>
+            {% if saved_list.description %}
+              <p class="saved-list-card__description">
+                {{ saved_list.description }}
+              </p>
             {% endif %}
+          </div>
+        </div>
+
+        {% if saved_list.places %}
+          <div class="saved-place-carousel">
+            {% for place in saved_list.places %}
+              <article class="saved-place-slide">
+                <h3>{{ place.name }}</h3>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="saved-list-empty">
+            No saved places yet.
+          </div>
+        {% endif %}
+      </section>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="account-ios-empty">
+    <h2>No lists yet</h2>
+    <p>Create your first list to start saving favorite places.</p>
+  </section>
+{% endif %}
 
             <section class="account-ios-account-panel">
               <h2>Your account</h2>
