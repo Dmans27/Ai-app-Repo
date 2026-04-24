@@ -76,206 +76,136 @@ app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-ple
 db.init_app(app)
 
 
-def init_db():
-    db_dir = os.path.dirname(SQLITE_PATH)
-    if db_dir:
-        os.makedirs(db_dir, exist_ok=True)
+def create_core_tables():
+    with engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS pages (
+                id SERIAL PRIMARY KEY,
+                slug TEXT UNIQUE NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                template TEXT NOT NULL DEFAULT 'landing_default',
+                status TEXT NOT NULL DEFAULT 'draft',
+                tag_title TEXT,
+                hero_title TEXT,
+                card_image_url TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-    print("Initializing DB at:", SQLITE_PATH, flush=True)
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS sections (
+                id SERIAL PRIMARY KEY,
+                page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                section_type TEXT NOT NULL DEFAULT 'paragraph',
+                heading TEXT,
+                body TEXT,
+                media_path TEXT,
+                media_alt TEXT,
+                media_caption TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-    with sqlite3.connect(SQLITE_PATH) as conn:
-        conn.execute("PRAGMA foreign_keys=ON;")
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS listings (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                slug TEXT UNIQUE,
+                category TEXT,
+                city TEXT,
+                state TEXT,
+                address TEXT,
+                phone TEXT,
+                website TEXT,
+                description TEXT,
+                latitude DOUBLE PRECISION,
+                longitude DOUBLE PRECISION,
+                photo_url TEXT,
+                photo_urls_json TEXT,
+                card_image_url TEXT,
+                featured INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'published',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS listing_comments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            listing_id INTEGER NOT NULL,
-            author_name TEXT NOT NULL,
-            author_email TEXT,
-            body TEXT NOT NULL,
-            rating INTEGER NOT NULL DEFAULT 5,
-            is_approved INTEGER NOT NULL DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE CASCADE
-        );
-        """)
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS ads (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                placement TEXT NOT NULL,
+                image_url TEXT,
+                headline TEXT,
+                body TEXT,
+                button_text TEXT,
+                target_url TEXT,
+                is_active INTEGER DEFAULT 1,
+                sort_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS ads (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            placement TEXT NOT NULL,
-            image_url TEXT,
-            headline TEXT,
-            body TEXT,
-            button_text TEXT,
-            target_url TEXT,
-            is_active INTEGER DEFAULT 1,
-            sort_order INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS facts (
+                id SERIAL PRIMARY KEY,
+                topic TEXT NOT NULL,
+                title TEXT NOT NULL,
+                url TEXT,
+                snippet TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS google_places_cache (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cache_key TEXT UNIQUE NOT NULL,
-            response_json TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                session_id TEXT,
+                state_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS listings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            slug TEXT UNIQUE,
-            category TEXT,
-            city TEXT,
-            state TEXT,
-            address TEXT,
-            phone TEXT,
-            website TEXT,
-            description TEXT,
-            latitude REAL,
-            longitude REAL,
-            photo_url TEXT,
-            photo_urls_json TEXT,
-            featured INTEGER DEFAULT 0,
-            status TEXT DEFAULT 'published',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS conversation_messages (
+                id SERIAL PRIMARY KEY,
+                conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS pages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            slug TEXT UNIQUE NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT,
-            template TEXT NOT NULL DEFAULT 'landing_default',
-            status TEXT NOT NULL DEFAULT 'draft',
-            tag_title TEXT,
-            hero_title TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS listing_comments (
+                id SERIAL PRIMARY KEY,
+                listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+                author_name TEXT NOT NULL,
+                author_email TEXT,
+                body TEXT NOT NULL,
+                rating INTEGER NOT NULL DEFAULT 5,
+                is_approved INTEGER NOT NULL DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
 
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS directory_page_meta (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            page_id INTEGER UNIQUE NOT NULL,
-            city TEXT NOT NULL,
-            state TEXT NOT NULL,
-            category TEXT NOT NULL,
-            intro_text TEXT,
-            FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
-        );
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS sections (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            page_id INTEGER NOT NULL,
-            sort_order INTEGER NOT NULL DEFAULT 0,
-            section_type TEXT NOT NULL DEFAULT 'paragraph',
-            heading TEXT,
-            body TEXT,
-            media_path TEXT,
-            media_alt TEXT,
-            media_caption TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
-        );
-        """)
-
-        conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_sections_page_order
-        ON sections(page_id, sort_order);
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            is_admin INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS facts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            topic TEXT NOT NULL,
-            title TEXT NOT NULL,
-            url TEXT,
-            snippet TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            session_id TEXT,
-            state_json TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS conversation_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            conversation_id INTEGER NOT NULL,
-            role TEXT NOT NULL,
-            content TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-        );
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS feed_posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            post_type TEXT NOT NULL DEFAULT 'text',
-            title TEXT,
-            body TEXT,
-            image_url TEXT,
-            listing_id INTEGER,
-            saved_list_id INTEGER,
-            city TEXT,
-            is_public INTEGER NOT NULL DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS feed_post_likes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            post_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(post_id, user_id)
-        );
-        """)
-
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS feed_post_comments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            post_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            body TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-        """)
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS directory_page_meta (
+                id SERIAL PRIMARY KEY,
+                page_id INTEGER UNIQUE NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+                city TEXT NOT NULL,
+                state TEXT NOT NULL,
+                category TEXT NOT NULL,
+                intro_text TEXT
+            );
+        """))
 
         # ---- CLEAN MIGRATIONS ----
 
@@ -309,6 +239,7 @@ def init_db():
 def init_db():
     with app.app_context():
         db.create_all()
+        create_core_tables()
         print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
 
 
@@ -2944,7 +2875,7 @@ def home():
         SELECT id, slug, title, description, updated_at, card_image_url
         FROM pages
         WHERE status='published'
-        ORDER BY datetime(updated_at) DESC, id DESC
+        ORDER BY updated_at DESC, id DESC
         LIMIT 8
     """)
 
@@ -3493,7 +3424,7 @@ def listing_page(slug):
         FROM listing_comments
         WHERE listing_id = ?
           AND is_approved = 1
-        ORDER BY datetime(created_at) DESC, id DESC
+        ORDER BY updated_at DESC, id DESC
         LIMIT 20
     """, (listing["id"],), label="LISTING_COMMENTS_ERROR")
 
@@ -3546,7 +3477,7 @@ def discover_page():
             card_image_url
         FROM pages
         WHERE status = 'published'
-        ORDER BY datetime(updated_at) DESC, id DESC
+        ORDER BY updated_at DESC, id DESC
     """)
 
     return render_template(
@@ -3566,7 +3497,7 @@ def admin_listings():
     listings = query_all("""
         SELECT id, name, slug, category, city, state, featured, status, updated_at
         FROM listings
-        ORDER BY datetime(updated_at) DESC, id DESC
+        ORDER BY updated_at DESC, id DESC
     """)
     return render_template("admin_listings.html", listings=listings)
 
@@ -3996,7 +3927,7 @@ def admin_home():
     pages = safe_query_all("""
         SELECT id, slug, title, status, template, updated_at
         FROM pages
-        ORDER BY datetime(updated_at) DESC, id DESC
+        ORDER BY updated_at DESC, id DESC
     """, label="ADMIN_HOME_PAGES_ERROR")
 
     return render_template("admin_home.html", counts=counts, pages=pages)
