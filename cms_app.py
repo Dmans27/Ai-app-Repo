@@ -77,13 +77,13 @@ db.init_app(app)
 
 
 def init_db():
-    db_dir = os.path.dirname(DB_PATH)
+    db_dir = os.path.dirname(SQLITE_PATH)
     if db_dir:
         os.makedirs(db_dir, exist_ok=True)
 
-    print("Initializing DB at:", DB_PATH, flush=True)
+    print("Initializing DB at:", SQLITE_PATH, flush=True)
 
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(SQLITE_PATH) as conn:
         conn.execute("PRAGMA foreign_keys=ON;")
 
         conn.execute("""
@@ -324,8 +324,8 @@ bootstrap_app()
 
 
 def get_db_connection():
-    print("[RAW SQLITE DB PATH]", DB_PATH, flush=True)
-    conn = sqlite3.connect(DB_PATH)
+    print("[RAW SQLITE DB PATH]", SQLITE_PATH, flush=True)
+    conn = sqlite3.connect(SQLITE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -1693,11 +1693,11 @@ def allowed_file(filename: str) -> bool:
 
 
 def get_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(SQLITE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-conn = sqlite3.connect(DB_PATH)
+conn = sqlite3.connect(SQLITE_PATH)
 rows = conn.execute("PRAGMA table_info(listing_comments);").fetchall()
 print(rows)
 
@@ -2313,7 +2313,7 @@ if database_url:
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DB_PATH = os.path.join(BASE_DIR, "cms.db")
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{SQLITE_PATH}"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
@@ -2355,7 +2355,7 @@ def create_feed_post():
         flash("Write something or upload a photo.")
         return redirect(url_for("feed"))
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(SQLITE_PATH)
     cur = conn.cursor()
 
     cur.execute("""
@@ -2393,7 +2393,7 @@ def comment_feed_post(post_id):
     if not body:
         return redirect(url_for("feed"))
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(SQLITE_PATH)
     cur = conn.cursor()
 
     cur.execute("""
@@ -2768,7 +2768,7 @@ def directory_page(slug):
     
 @app.get("/feed")
 def feed():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(SQLITE_PATH)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
@@ -3230,7 +3230,7 @@ def get_google_cached_results(cache_key: str):
     
     
 def SQLITE_PATH_connection():
-    return sqlite3.connect(DB_PATH)
+    return sqlite3.connect(SQLITE_PATH)
 
 
 def save_google_cached_results(cache_key: str, results: list):
