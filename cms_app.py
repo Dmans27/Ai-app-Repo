@@ -54,6 +54,8 @@ AI_JOBS = {}  # job_id -> dict(status, result, error, created_at)
 
 
 
+from sqlalchemy import create_engine, text
+
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -61,19 +63,20 @@ SQLITE_PATH = os.path.join(BASE_DIR, "cms.db")
 
 database_url = os.environ.get("DATABASE_URL")
 
-if database_url:
-    # Safety for providers that use postgres://
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{SQLITE_PATH}"
-
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url or f"sqlite:///{SQLITE_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
 
 db.init_app(app)
+
+engine = create_engine(
+    app.config["SQLALCHEMY_DATABASE_URI"],
+    pool_pre_ping=True,
+    future=True
+)
 
 
 def create_core_tables():
