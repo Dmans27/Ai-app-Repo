@@ -81,7 +81,7 @@ select {
 }
 
 .saved-place-slide__thumb {
-  width: 128px;
+  max-width: auto;
   height: 128px;
   border-radius: 20px;
   overflow: hidden;
@@ -356,7 +356,7 @@ select {
 
 .saved-place-slide {
   flex: 0 0 82%;
-  max-width: 360px;
+  max-width: 100%;
   scroll-snap-align: start;
   border-radius: 26px;
   overflow: hidden;
