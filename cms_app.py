@@ -1885,40 +1885,49 @@ def search_internal_listings(
     max_distance_miles: float = 50
 ):
     sql = """
-    SELECT
-        id,
-        name,
-        slug,
-        category,
-        city,
-        state,
-        address,
-        phone,
-        website,
-        description,
-        featured,
-        latitude,
-        longitude
-    FROM listings
-    WHERE status = 'published'
+        SELECT
+            id,
+            name,
+            slug,
+            category,
+            city,
+            state,
+            address,
+            phone,
+            website,
+            description,
+            featured,
+            latitude,
+            longitude,
+            photo_url,
+            photo_urls_json,
+            card_image_url
+        FROM listings
+        WHERE status = 'published'
     """
-    params = []
+
+    params = {}
 
     q_lower = (q or "").lower().strip()
 
-    if q:
+    if q_lower:
         sql += """
-        AND (
-            LOWER(name) LIKE ?
-            OR LOWER(category) LIKE ?
-            OR LOWER(description) LIKE ?
-            OR LOWER(city) LIKE ?
-        )
+            AND (
+                LOWER(name) LIKE :term
+                OR LOWER(category) LIKE :term
+                OR LOWER(description) LIKE :term
+                OR LOWER(city) LIKE :term
+            )
         """
-        term = f"%{q_lower}%"
-        params.extend([term, term, term, term])
+        params["term"] = f"%{q_lower}%"
 
-    results = query_all(sql, tuple(params))
+    sql += """
+        ORDER BY featured DESC, name ASC
+        LIMIT :limit
+    """
+    params["limit"] = limit * 4
+
+    results = query_all(sql, params)
     results = rows_to_dicts(results)
 
     filtered_results = []
@@ -1929,7 +1938,12 @@ def search_internal_listings(
         item_lat = item.get("latitude")
         item_lng = item.get("longitude")
 
-        if lat is not None and lng is not None and item_lat is not None and item_lng is not None:
+        if (
+            lat is not None
+            and lng is not None
+            and item_lat is not None
+            and item_lng is not None
+        ):
             try:
                 item["distance_miles"] = round(
                     haversine_miles(
@@ -1963,15 +1977,16 @@ def search_internal_listings(
         item["relevance_score"] = score
 
         if lat is not None and lng is not None:
-            if item["distance_miles"] is not None and item["distance_miles"] <= max_distance_miles:
+            if (
+                item["distance_miles"] is not None
+                and item["distance_miles"] <= max_distance_miles
+            ):
                 filtered_results.append(item)
         else:
             filtered_results.append(item)
 
-    results = filtered_results
-
     if lat is not None and lng is not None:
-        results.sort(
+        filtered_results.sort(
             key=lambda x: (
                 -(x.get("relevance_score", 0)),
                 -int(x.get("featured", 0)),
@@ -1980,7 +1995,7 @@ def search_internal_listings(
             )
         )
     else:
-        results.sort(
+        filtered_results.sort(
             key=lambda x: (
                 -(x.get("relevance_score", 0)),
                 -int(x.get("featured", 0)),
@@ -1988,7 +2003,7 @@ def search_internal_listings(
             )
         )
 
-    return results[:limit]
+    return filtered_results[:limit]
 
 
 def is_relevant_featured_result(item, query: str, searched_city: str = None, max_featured_distance: float = 10):
@@ -2202,11 +2217,7 @@ def ai_chat():
             "state": state
         })
 
-    except sqlite3.OperationalError as e:
-        print("[AI_CHAT_SQLITE_ERROR]", str(e), flush=True)
-        return jsonify({
-            "error": "Chat is still initializing. Please try again in a moment."
-        }), 500
+    
     except Exception as e:
         print("[AI_CHAT_ERROR]", str(e), flush=True)
         print(traceback.format_exc(), flush=True)
