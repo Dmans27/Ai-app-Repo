@@ -32,6 +32,11 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default="user", nullable=False)
+    favorite_categories = db.Column(db.Text, nullable=True)
+    home_city = db.Column(db.String(120), nullable=True)
+    budget_style = db.Column(db.String(50), nullable=True)
+    intent_type = db.Column(db.String(120), nullable=True)
+    onboarding_complete = db.Column(db.Boolean, default=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

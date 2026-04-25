@@ -284,8 +284,45 @@ def create_core_tables():
             );
         """))
 
-        print("create_core_tables() complete", flush=True)
 
+
+def ensure_user_profile_columns():
+    with engine.begin() as conn:
+        conn.execute(sql_text("""
+        ALTER TABLE "user"
+        ADD COLUMN IF NOT EXISTS favorite_categories TEXT;
+    """))
+
+    conn.execute(sql_text("""
+        ALTER TABLE "user"
+        ADD COLUMN IF NOT EXISTS home_city VARCHAR(120);
+    """))
+
+    conn.execute(sql_text("""
+        ALTER TABLE "user"
+        ADD COLUMN IF NOT EXISTS budget_style VARCHAR(50);
+    """))
+
+    conn.execute(sql_text("""
+        ALTER TABLE "user"
+        ADD COLUMN IF NOT EXISTS intent_type VARCHAR(120);
+    """))
+
+    conn.execute(sql_text("""
+        ALTER TABLE "user"
+        ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE;
+    """))
+
+    print("create_core_tables() complete", flush=True)
+
+
+
+def init_db():
+    with app.app_context():
+        db.create_all()
+        create_core_tables()
+        ensure_user_profile_columns()
+        print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
 
 
 
@@ -302,6 +339,9 @@ def bootstrap_app():
 
 
 bootstrap_app()
+
+
+
 
 
 
@@ -3983,9 +4023,34 @@ def signup():
 
         login_user(user)
         flash("Account created successfully.")
-        return redirect(url_for("account"))
+        return redirect(url_for("onboarding"))
 
     return render_template("signup.html")
+
+
+
+
+@app.route("/onboarding", methods=["GET", "POST"])
+@login_required
+def onboarding():
+    if request.method == "POST":
+        favorite_categories = request.form.getlist("favorite_categories")
+        home_city = request.form.get("home_city", "").strip()
+        budget_style = request.form.get("budget_style", "").strip()
+        intent_type = request.form.get("intent_type", "").strip()
+
+        current_user.favorite_categories = json.dumps(favorite_categories)
+        current_user.home_city = home_city
+        current_user.budget_style = budget_style
+        current_user.intent_type = intent_type
+        current_user.onboarding_complete = True
+
+        db.session.commit()
+
+        flash("Your profile is ready.")
+        return redirect(url_for("account"))
+
+    return render_template("onboarding.html")
 
 
 

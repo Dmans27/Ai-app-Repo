@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personalize Local AI</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body class="app-body onboarding-page">
+  <main class="onboarding-shell">
+    <section class="onboarding-card">
+      <p class="onboarding-eyebrow">Welcome to Local AI</p>
+
+      <h1>Personalize your recommendations</h1>
+
+      <p class="onboarding-subtitle">
+        Pick what you love so Local AI can suggest better places for you.
+      </p>
+
+      <form method="post" class="onboarding-form">
+        <div class="onboarding-section">
+          <h2>What kinds of places do you like?</h2>
+
+          <div class="onboarding-chip-grid">
+            {% for item in ["Coffee", "Restaurants", "Bars", "Rooftops", "Brunch", "Wine", "Date Spots", "Hidden Gems", "Shopping", "Work Cafes"] %}
+              <label class="onboarding-chip">
+                <input
+                  type="checkbox"
+                  name="favorite_categories"
+                  value="{{ item }}"
+                >
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="onboarding-section">
+          <h2>What city do you explore most?</h2>
+
+          <input
+            type="text"
+            name="home_city"
+            class="onboarding-input"
+            placeholder="Chicago, Naperville, Miami..."
+            required
+          >
+        </div>
+
+        <div class="onboarding-section">
+          <h2>What brings you here most?</h2>
+
+          <select name="intent_type" class="onboarding-input" required>
+            <option value="">Choose one</option>
+            <option value="Find tonight plans">Find tonight’s plans</option>
+            <option value="Save favorite places">Save favorite places</option>
+            <option value="Plan dates">Plan dates</option>
+            <option value="Discover food">Discover food</option>
+            <option value="Travel planning">Travel planning</option>
+          </select>
+        </div>
+
+        <div class="onboarding-section">
+          <h2>What’s your usual budget?</h2>
+
+          <div class="onboarding-chip-grid">
+            {% for item in ["Budget", "Moderate", "Premium", "Mix of everything"] %}
+              <label class="onboarding-chip">
+                <input
+                  type="radio"
+                  name="budget_style"
+                  value="{{ item }}"
+                  required
+                >
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <button type="submit" class="onboarding-submit">
+          Finish setup
+        </button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
