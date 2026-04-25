@@ -67,6 +67,39 @@ select {
 
 
 
+@media (max-width: 768px) {
+  .account-avatar,
+  .account-avatar-img {
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+    min-height: 72px;
+  }
+
+
+.account-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.06);
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.account-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+
+}
+
+
+
+
 .onboarding-page {
   background: #05070b;
   color: #fff;
