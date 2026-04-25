@@ -159,18 +159,37 @@
             <div class="account-ios-shell">
               <section class="saved-hero">
               <div class="saved-hero__avatar">
-                {% if user.profile_image_url %}
-                  <img
-                    src="{{ user.profile_image_url }}"
-                    alt="{{ user.name or user.email }}"
-                    class="saved-hero__avatar-img"
+                <form
+                  method="post"
+                  action="{{ url_for('update_profile_photo') }}"
+                  enctype="multipart/form-data"
+                  class="saved-hero__avatar-form"
+                >
+                  <label class="saved-hero__avatar" for="account-profile-photo">
+                    {% if user.profile_image_url %}
+                      <img
+                        src="{{ user.profile_image_url }}"
+                        alt="{{ user.name or user.email }}"
+                        class="saved-hero__avatar-img"
+                      >
+                    {% else %}
+                      <span class="saved-hero__avatar-fallback">
+                        {{ (user.name or user.email or "U")[0]|upper }}
+                      </span>
+                    {% endif %}
+
+                    <span class="saved-hero__avatar-edit">📷</span>
+                  </label>
+
+                  <input
+                    id="account-profile-photo"
+                    type="file"
+                    name="profile_photo"
+                    accept="image/*"
+                    hidden
+                    onchange="this.form.submit()"
                   >
-                {% else %}
-                  <span class="saved-hero__avatar-fallback">
-                    {{ (user.name or user.email or "U")[0]|upper }}
-                  </span>
-                {% endif %}
-              </div>
+                </form>
 
                 <div class="saved-hero__content">
                   <h1 class="saved-hero__title">Saved Places</h1>

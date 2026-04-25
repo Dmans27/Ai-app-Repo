@@ -2478,6 +2478,42 @@ def create_feed_post():
     )
 
     return redirect(url_for("feed"))
+
+
+
+
+
+@app.post("/account/profile-photo")
+@login_required
+def update_profile_photo():
+    profile_photo = request.files.get("profile_photo")
+
+    if not profile_photo or not profile_photo.filename:
+        flash("Please choose a photo.")
+        return redirect(url_for("account"))
+
+    filename = secure_filename(profile_photo.filename)
+    ext = os.path.splitext(filename)[1].lower() or ".jpg"
+    new_filename = f"profile_{current_user.id}_{uuid.uuid4().hex}{ext}"
+
+    profile_upload_folder = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        "profiles"
+    )
+    os.makedirs(profile_upload_folder, exist_ok=True)
+
+    save_path = os.path.join(profile_upload_folder, new_filename)
+    profile_photo.save(save_path)
+
+    current_user.profile_image_url = url_for(
+        "static",
+        filename=f"uploads/profiles/{new_filename}"
+    )
+
+    db.session.commit()
+
+    flash("Profile photo updated.")
+    return redirect(url_for("account"))
     
     
     
