@@ -95,6 +95,21 @@ select {
 }
 
 
+
+.mobile-app-header__avatar-link {
+  overflow: hidden;
+  padding: 0;
+}
+
+.mobile-app-header__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+
 }
 
 

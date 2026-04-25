@@ -130,13 +130,21 @@
           </div>
 
           {% if current_user.is_authenticated %}
-            <a
-              href="{{ url_for('account') }}"
-              class="mobile-app-header__icon mobile-app-header__icon--link"
-              aria-label="Account"
-            >
+          <a
+            href="{{ url_for('account') }}"
+            class="mobile-app-header__icon mobile-app-header__icon--link mobile-app-header__avatar-link"
+            aria-label="Account"
+          >
+            {% if user.profile_image_url %}
+              <img
+                src="{{ user.profile_image_url }}"
+                alt="{{ user.name or user.email }}"
+                class="mobile-app-header__avatar-img"
+              >
+            {% else %}
               {{ (user.name or user.email or "U")[0]|upper }}
-            </a>
+            {% endif %}
+          </a>
           {% else %}
             <a
               href="{{ url_for('login') }}"
