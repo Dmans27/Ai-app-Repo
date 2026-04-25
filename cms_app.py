@@ -288,33 +288,33 @@ def create_core_tables():
 
 def ensure_user_profile_columns():
     with engine.begin() as conn:
+
         conn.execute(sql_text("""
-        ALTER TABLE "user"
-        ADD COLUMN IF NOT EXISTS favorite_categories TEXT;
-    """))
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS favorite_categories TEXT;
+        """))
 
-    conn.execute(sql_text("""
-        ALTER TABLE "user"
-        ADD COLUMN IF NOT EXISTS home_city VARCHAR(120);
-    """))
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS home_city VARCHAR(120);
+        """))
 
-    conn.execute(sql_text("""
-        ALTER TABLE "user"
-        ADD COLUMN IF NOT EXISTS budget_style VARCHAR(50);
-    """))
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS budget_style VARCHAR(50);
+        """))
 
-    conn.execute(sql_text("""
-        ALTER TABLE "user"
-        ADD COLUMN IF NOT EXISTS intent_type VARCHAR(120);
-    """))
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS intent_type VARCHAR(120);
+        """))
 
-    conn.execute(sql_text("""
-        ALTER TABLE "user"
-        ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE;
-    """))
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE;
+        """))
 
-    print("create_core_tables() complete", flush=True)
-
+    print("user profile columns checked", flush=True)
 
 
 def init_db():
@@ -322,14 +322,6 @@ def init_db():
         db.create_all()
         create_core_tables()
         ensure_user_profile_columns()
-        print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
-
-
-
-def init_db():
-    with app.app_context():
-        db.create_all()
-        create_core_tables()
         print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
 
 
