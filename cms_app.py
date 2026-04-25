@@ -72,11 +72,15 @@ app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-ple
 
 db.init_app(app)
 
-engine = create_engine(
-    app.config["SQLALCHEMY_DATABASE_URI"],
-    pool_pre_ping=True,
-    future=True
-)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 280,
+    "pool_size": 5,
+    "max_overflow": 10
+}
 
 
 def create_core_tables():
@@ -4035,6 +4039,26 @@ def onboarding():
         home_city = request.form.get("home_city", "").strip()
         budget_style = request.form.get("budget_style", "").strip()
         intent_type = request.form.get("intent_type", "").strip()
+        profile_photo = request.files.get("profile_photo")
+
+        if profile_photo and profile_photo.filename:
+            filename = secure_filename(profile_photo.filename)
+            ext = os.path.splitext(filename)[1].lower() or ".jpg"
+            new_filename = f"profile_{current_user.id}_{uuid.uuid4().hex}{ext}"
+
+            profile_upload_folder = os.path.join(
+                app.config["UPLOAD_FOLDER"],
+                "profiles"
+            )
+            os.makedirs(profile_upload_folder, exist_ok=True)
+
+            save_path = os.path.join(profile_upload_folder, new_filename)
+            profile_photo.save(save_path)
+
+            current_user.profile_image_url = url_for(
+                "static",
+                filename=f"uploads/profiles/{new_filename}"
+            )
 
         current_user.favorite_categories = json.dumps(favorite_categories)
         current_user.home_city = home_city
