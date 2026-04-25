@@ -183,6 +183,19 @@
                 </a>
               </div>
 
+
+<div class="saved-filter-bar" id="saved-filter-bar">
+  <button class="saved-filter-chip is-active" data-filter="all">All</button>
+  <button class="saved-filter-chip" data-filter="coffee">Coffee</button>
+  <button class="saved-filter-chip" data-filter="restaurant">Restaurants</button>
+  <button class="saved-filter-chip" data-filter="bar">Bars</button>
+  <button class="saved-filter-chip" data-filter="wine">Wine</button>
+  <button class="saved-filter-chip" data-filter="rooftop">Rooftops</button>
+  <button class="saved-filter-chip" data-filter="shopping">Shopping</button>
+</div>
+
+
+
               <section class="account-map-card">
                 <div id="account-map" class="account-map"></div>
               </section>
@@ -204,7 +217,9 @@
   {% if saved_list.places %}
     <div class="saved-place-carousel">
       {% for place in saved_list.places %}
-        <article class="saved-place-slide saved-place-slide--full">
+        <article class="saved-place-slide saved-place-slide--full" data-category="{{ (place.category or '')|lower }}"
+  data-name="{{ (place.name or '')|lower }}"
+  data-address="{{ (place.address or '')|lower }}">
           <div class="saved-place-slide__thumb">
             {% if place.photo_url %}
               <img src="{{ place.photo_url }}" alt="{{ place.name }}">
@@ -356,6 +371,136 @@
         sidebar?.classList.remove("is-open");
         backdrop?.classList.remove("is-open");
       }
+
+
+
+let activeFilters = new Set(["all"]);
+let currentMarkers = [];
+
+function placeMatchesFilter(place, filter) {
+  if (filter === "all") return true;
+
+  const text = [
+    place.name || "",
+    place.category || "",
+    place.address || "",
+    place.cuisine || "",
+    place.city || ""
+  ].join(" ").toLowerCase();
+
+  return text.includes(filter);
+}
+
+function getFilteredPlaces() {
+  if (activeFilters.has("all")) {
+    return places;
+  }
+
+  return places.filter((place) => {
+    return Array.from(activeFilters).some((filter) => {
+      return placeMatchesFilter(place, filter);
+    });
+  });
+}
+
+function clearMarkers() {
+  currentMarkers.forEach((marker) => marker.remove());
+  currentMarkers = [];
+}
+
+function renderFilteredMarkers() {
+  clearMarkers();
+
+  const filteredPlaces = getFilteredPlaces();
+  const bounds = new mapboxgl.LngLatBounds();
+
+  filteredPlaces.forEach((place) => {
+    if (place.lng == null || place.lat == null) return;
+
+    const popupHtml = `
+      <div style="max-width:220px;">
+        <strong>${place.name || ""}</strong>
+        ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
+        ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
+      </div>
+    `;
+
+    const marker = new mapboxgl.Marker()
+      .setLngLat([place.lng, place.lat])
+      .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
+      .addTo(map);
+
+    currentMarkers.push(marker);
+    bounds.extend([place.lng, place.lat]);
+  });
+
+  if (filteredPlaces.length > 1) {
+    map.fitBounds(bounds, {
+      padding: 50,
+      maxZoom: 13
+    });
+  } else if (filteredPlaces.length === 1) {
+    map.flyTo({
+      center: [filteredPlaces[0].lng, filteredPlaces[0].lat],
+      zoom: 13
+    });
+  }
+}
+
+function filterCards() {
+  document.querySelectorAll(".saved-place-slide").forEach((card) => {
+    const text = [
+      card.dataset.category || "",
+      card.dataset.name || "",
+      card.dataset.address || ""
+    ].join(" ").toLowerCase();
+
+    if (activeFilters.has("all")) {
+      card.hidden = false;
+      return;
+    }
+
+    card.hidden = !Array.from(activeFilters).some((filter) => {
+      return text.includes(filter);
+    });
+  });
+}
+
+function applySavedFilters() {
+  renderFilteredMarkers();
+  filterCards();
+}
+
+document.querySelectorAll(".saved-filter-chip").forEach((chip) => {
+  chip.addEventListener("click", function () {
+    const filter = chip.dataset.filter;
+
+    if (filter === "all") {
+      activeFilters = new Set(["all"]);
+    } else {
+      activeFilters.delete("all");
+
+      if (activeFilters.has(filter)) {
+        activeFilters.delete(filter);
+      } else {
+        activeFilters.add(filter);
+      }
+
+      if (activeFilters.size === 0) {
+        activeFilters.add("all");
+      }
+    }
+
+    document.querySelectorAll(".saved-filter-chip").forEach((btn) => {
+      const btnFilter = btn.dataset.filter;
+      btn.classList.toggle("is-active", activeFilters.has(btnFilter));
+    });
+
+    applySavedFilters();
+  });
+});
+
+
 
       sidebarToggle?.addEventListener("click", openDrawer);
       closeBtn?.addEventListener("click", closeDrawer);
