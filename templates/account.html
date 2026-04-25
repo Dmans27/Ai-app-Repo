@@ -146,6 +146,7 @@
             {% endif %}
           </a>
           {% else %}
+          
             <a
               href="{{ url_for('login') }}"
               class="mobile-app-header__icon mobile-app-header__icon--link"
@@ -200,6 +201,69 @@
               </section>
 
               <div class="saved-stats-row">
+
+
+                  <section class="account-share-panel">
+                  <h2>Share & Collaborate</h2>
+
+                  <p class="account-share-panel__subtitle">
+                    Create shareable lists, invite friends, and connect with others.
+                  </p>
+
+                  <div class="account-share-grid">
+
+                    <a
+                      href="{{ url_for('create_list') }}"
+                      class="account-share-card"
+                    >
+                      <div class="account-share-card__icon">📋</div>
+                      <div class="account-share-card__content">
+                        <h3>Create Share List</h3>
+                        <p>Build a list and generate a public share link.</p>
+                      </div>
+                    </a>
+
+                    <button
+                      type="button"
+                      class="account-share-card"
+                      onclick="alert('QR sharing coming next update')"
+                    >
+                      <div class="account-share-card__icon">📱</div>
+                      <div class="account-share-card__content">
+                        <h3>QR Code</h3>
+                        <p>Instantly share your saved list with a scannable QR code.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="account-share-card"
+                      onclick="alert('Invite feature coming next update')"
+                    >
+                      <div class="account-share-card__icon">✉️</div>
+                      <div class="account-share-card__content">
+                        <h3>Invite Friends</h3>
+                        <p>Send lists by email or phone number.</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="account-share-card"
+                      onclick="alert('User search coming next update')"
+                    >
+                      <div class="account-share-card__icon">👥</div>
+                      <div class="account-share-card__content">
+                        <h3>Find People</h3>
+                        <p>Search users and share lists back and forth.</p>
+                      </div>
+                    </button>
+
+                  </div>
+                </section>
+
+
+
                 <div class="saved-pill">
                   <span class="saved-pill-number">{{ lists|length }}</span>
                   <span class="saved-pill-label">Lists</span>
@@ -601,5 +665,54 @@ document.querySelectorAll(".saved-filter-chip").forEach((chip) => {
       });
     });
   </script>
+
+
+
+<script>
+  function showComingSoon(message) {
+    alert(message);
+  }
+
+  function copyShareLink(url) {
+    if (!url) {
+      showComingSoon("Create a public list first.");
+      return;
+    }
+
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        alert("Share link copied.");
+      })
+      .catch(() => {
+        alert("Could not copy link.");
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-share-action]").forEach((button) => {
+      button.addEventListener("click", function () {
+        const action = button.dataset.shareAction;
+
+        if (action === "qr") {
+          showComingSoon("QR sharing is coming next.");
+        }
+
+        if (action === "invite") {
+          showComingSoon("Email and phone invites are coming next.");
+        }
+
+        if (action === "find-users") {
+          showComingSoon("User search is coming next.");
+        }
+
+        if (action === "copy-link") {
+          copyShareLink(button.dataset.shareUrl);
+        }
+      });
+    });
+  });
+</script>
+
+
 </body>
 </html>

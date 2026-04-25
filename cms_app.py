@@ -2893,6 +2893,27 @@ def admin_required(view):
 # -----------------------
 
 
+
+@app.get("/lists/<slug>/qr")
+@login_required
+def list_qr(slug):
+    saved_list = SavedList.query.filter_by(
+        slug=slug,
+        user_id=current_user.id
+    ).first_or_404()
+
+    share_url = url_for("view_public_list", slug=saved_list.slug, _external=True)
+
+    return render_template(
+        "list_qr.html",
+        saved_list=saved_list,
+        share_url=share_url
+    )
+
+
+
+
+
 @app.get("/admin/seed-directory-pages")
 def admin_seed_directory_pages():
     seed_directory_pages()
@@ -4182,6 +4203,18 @@ def logout():
 
 
 
+@app.get("/users/search")
+@login_required
+def search_users():
+    q = request.args.get("q", "").strip()
+
+    users = User.query.filter(
+        User.email.ilike(f"%{q}%")
+    ).limit(10).all() if q else []
+
+    return render_template("user_search.html", users=users, q=q)
+
+
 
 
 @app.get("/admin")
@@ -4458,7 +4491,23 @@ def view_public_list(slug):
     return render_template("public_list.html", saved_list=saved_list)
 
 
+@app.post("/lists/invite")
+@login_required
+def send_list_invite():
+    list_id = request.form.get("list_id")
+    recipient = request.form.get("recipient", "").strip()
 
+    saved_list = SavedList.query.filter_by(
+        id=list_id,
+        user_id=current_user.id
+    ).first_or_404()
+
+    share_url = url_for("view_public_list", slug=saved_list.slug, _external=True)
+
+    print("[LIST_INVITE]", recipient, share_url, flush=True)
+
+    flash("Invite ready to send.")
+    return redirect(url_for("account"))
 
 
 @app.post("/listing/<slug>/comments")
