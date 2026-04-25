@@ -357,10 +357,7 @@ bootstrap_app()
 
 
 
-def get_db_connection():
-    print("[RAW SQLITE DB PATH]", SQLITE_PATH, flush=True)
-    conn.row_factory = sqlite3.Row
-    return conn
+
 
 
 login_manager = LoginManager()
@@ -1332,11 +1329,40 @@ def seed_directory_pages():
                 hero_title = f"Best {category_label} in {city}, {state}"
                 tag_title = f"{city}, {state}"
 
-                cur = conn.execute("""
-                    INSERT OR IGNORE INTO pages
-                    (slug, title, description, template, status, tag_title, hero_title, created_at, updated_at)
-                    VALUES (?, ?, ?, 'landing_default', 'published', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                """, (slug, title, description, tag_title, hero_title))
+                execute(
+    """
+    INSERT INTO pages (
+        slug,
+        title,
+        description,
+        template,
+        status,
+        tag_title,
+        hero_title,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        :slug,
+        :title,
+        :description,
+        'landing_default',
+        'published',
+        :tag_title,
+        :hero_title,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (slug) DO NOTHING
+    """,
+    {
+        "slug": slug,
+        "title": title,
+        "description": description,
+        "tag_title": tag_title,
+        "hero_title": hero_title
+    }
+)
 
                 page = conn.execute("SELECT id FROM pages WHERE slug = ?", (slug,)).fetchone()
                 if not page:
@@ -1742,25 +1768,31 @@ def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def get_conn():
-    
-    conn.row_factory = sqlite3.Row
-    return conn
 
-conn = sqlite3.connect(database_url)
-rows = conn.execute("PRAGMA table_info(listing_comments);").fetchall()
-print(rows)
 
 
 def slugify(s: str) -> str:
     s = (s or "").strip().lower()
-    s = re.sub(r"[^a-z0-9]+", "-", s)   # non-alnum -> hyphen
+    s = re.sub(r"[^a-z0-9]+", "-", s)
     s = re.sub(r"-{2,}", "-", s).strip("-")
     return s
 
 
+def normalize_params(params):
+    if params is None:
+        return {}
+
+    if isinstance(params, dict):
+        return params
+
+    raise ValueError(
+        "Tuple/list SQL params are no longer supported. "
+        "Use named params like :id with {'id': value}."
+    )
+
+
 def query_all(sql, params=None):
-    params = params or {}
+    params = normalize_params(params)
 
     with engine.connect() as conn:
         result = conn.execute(sql_text(sql), params)
@@ -1768,7 +1800,7 @@ def query_all(sql, params=None):
 
 
 def query_one(sql, params=None):
-    params = params or {}
+    params = normalize_params(params)
 
     with engine.connect() as conn:
         row = conn.execute(sql_text(sql), params).first()
@@ -1776,7 +1808,7 @@ def query_one(sql, params=None):
 
 
 def execute(sql, params=None):
-    params = params or {}
+    params = normalize_params(params)
 
     with engine.begin() as conn:
         result = conn.execute(sql_text(sql), params)
@@ -1785,6 +1817,10 @@ def execute(sql, params=None):
             return result.scalar_one_or_none()
         except Exception:
             return None
+
+
+def get_conn():
+    return engine.begin()
 
 
 def next_sort_order(page_id: int) -> int:
@@ -2194,8 +2230,7 @@ def ai_chat():
 
         user_id = current_user.id if current_user.is_authenticated else None
 
-        # Safety net for Render cold starts
-        init_db()
+ 
 
         conversation = load_or_create_conversation(user_id=user_id)
         conversation_id = conversation["id"]
@@ -2372,22 +2407,7 @@ def ai_chat():
     
     
     
-import os
 
-database_url = os.environ.get("DATABASE_URL")
-
-if database_url:
-    # Some providers use postgres://, SQLAlchemy wants postgresql://
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DB_PATH = os.path.join(BASE_DIR, "cms.db")
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{SQLITE_PATH}"
-
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
     
     
@@ -2756,7 +2776,10 @@ def ai_search():
 @app.post("/admin/pages/<int:page_id>/refresh-sources")
 def admin_refresh_sources(page_id):
     # Ensure page exists
-    page = query_one("SELECT * FROM pages WHERE id=?", (page_id,))
+    page = query_one(
+    "SELECT * FROM pages WHERE id = :page_id",
+    {"page_id": page_id}
+)
     if not page:
         abort(404)
 
