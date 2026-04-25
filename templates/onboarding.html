@@ -18,7 +18,29 @@
         Pick what you love so Local AI can suggest better places for you.
       </p>
 
-      <form method="post" class="onboarding-form">
+
+      <div class="onboarding-section">
+  <h2>Add a profile photo</h2>
+
+  <label class="profile-photo-upload">
+    <input
+      type="file"
+      name="profile_photo"
+      accept="image/*"
+    >
+
+    <span class="profile-photo-upload__circle">
+      📷
+    </span>
+
+    <span class="profile-photo-upload__text">
+      Upload photo
+    </span>
+  </label>
+</div>
+
+
+      <form method="post" enctype="multipart/form-data" class="onboarding-form">
         <div class="onboarding-section">
           <h2>What kinds of places do you like?</h2>
 

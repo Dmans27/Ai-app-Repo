@@ -313,6 +313,11 @@ def ensure_user_profile_columns():
             ALTER TABLE "user"
             ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE;
         """))
+        
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
+        """))
 
     print("user profile columns checked", flush=True)
 

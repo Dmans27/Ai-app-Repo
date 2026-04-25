@@ -36,6 +36,7 @@ class User(UserMixin, db.Model):
     home_city = db.Column(db.String(120), nullable=True)
     budget_style = db.Column(db.String(50), nullable=True)
     intent_type = db.Column(db.String(120), nullable=True)
+    profile_image_url = db.Column(db.Text, nullable=True)
     onboarding_complete = db.Column(db.Boolean, default=False)
 
     def set_password(self, password):

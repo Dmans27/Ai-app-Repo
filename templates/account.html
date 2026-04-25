@@ -150,9 +150,15 @@
           <div class="account-desktop-wrap">
             <div class="account-ios-shell">
               <section class="saved-hero">
-                <div class="saved-hero__avatar">
-                  {{ (user.name or user.email or "U")[0]|upper }}
-                </div>
+                {% if user.profile_image_url %}
+                <img
+                  src="{{ user.profile_image_url }}"
+                  alt="{{ user.name or user.email }}"
+                  class="saved-hero__avatar-img"
+                >
+              {% else %}
+                {{ (user.name or user.email or "U")[0]|upper }}
+              {% endif %}
 
                 <div class="saved-hero__content">
                   <h1 class="saved-hero__title">Saved Places</h1>
