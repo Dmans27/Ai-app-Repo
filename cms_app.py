@@ -359,7 +359,6 @@ bootstrap_app()
 
 def get_db_connection():
     print("[RAW SQLITE DB PATH]", SQLITE_PATH, flush=True)
-    conn = sqlite3.connect(SQLITE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -1744,11 +1743,11 @@ def allowed_file(filename: str) -> bool:
 
 
 def get_conn():
-    conn = sqlite3.connect(SQLITE_PATH)
+    
     conn.row_factory = sqlite3.Row
     return conn
 
-conn = sqlite3.connect(SQLITE_PATH)
+conn = sqlite3.connect(database_url)
 rows = conn.execute("PRAGMA table_info(listing_comments);").fetchall()
 print(rows)
 
@@ -3332,8 +3331,7 @@ def get_google_cached_results(cache_key: str):
     
     
     
-def SQLITE_PATH_connection():
-    return sqlite3.connect(SQLITE_PATH)
+
 
 
 def save_google_cached_results(cache_key: str, results: list):
