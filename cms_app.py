@@ -70,17 +70,26 @@ app.config["SQLALCHEMY_DATABASE_URI"] = database_url or f"sqlite:///{SQLITE_PATH
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
 
-db.init_app(app)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 280,
     "pool_size": 5,
     "max_overflow": 10
 }
+
+db.init_app(app)
+
+engine = create_engine(
+    app.config["SQLALCHEMY_DATABASE_URI"],
+    pool_pre_ping=True,
+    pool_recycle=280,
+    pool_size=5,
+    max_overflow=10,
+    future=True
+)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 
 def create_core_tables():
