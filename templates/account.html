@@ -7,27 +7,7 @@
 
 
 
-  <div class="saved-list-share-actions">
-  <a
-    href="{{ url_for('account') }}"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="saved-list-share-btn"
-  >
-    Open Share Link
-  </a>
 
-  {% if saved_list.is_public %}
-    <a
-      href="{{ url_for('public_list_qr_png', slug=saved_list.slug) }}"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="saved-list-share-btn is-primary"
-    >
-      QR Code
-    </a>
-  {% endif %}
-</div>
 
   <link rel="stylesheet" href="/static/css/styles.css">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
@@ -291,6 +271,31 @@
 {% if lists %}
   <section class="saved-lists-wrap">
     {% for saved_list in lists %}
+
+  <div class="saved-list-share-actions">
+  <a
+    href="{{ url_for('account') }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="saved-list-share-btn"
+  >
+    Open Share Link
+  </a>
+
+  {% if saved_list.is_public %}
+    <a
+      href="{{ url_for('public_list_qr_png', slug=saved_list.slug) }}"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="saved-list-share-btn is-primary"
+    >
+      QR Code
+    </a>
+  {% endif %}
+</div>
+
+
+
 <section class="saved-list-section">
   <div class="saved-list-header">
     <div>
