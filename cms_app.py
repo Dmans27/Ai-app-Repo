@@ -2893,21 +2893,48 @@ def admin_required(view):
 # -----------------------
 
 
+import io
+import qrcode
+from flask import send_file
 
-@app.get("/lists/<slug>/qr")
-@login_required
-def list_qr(slug):
+
+
+@app.get("/lists/<slug>/qr.png")
+def public_list_qr_png(slug):
     saved_list = SavedList.query.filter_by(
         slug=slug,
-        user_id=current_user.id
+        is_public=True
     ).first_or_404()
 
-    share_url = url_for("view_public_list", slug=saved_list.slug, _external=True)
+    share_url = url_for(
+        "view_public_list",
+        slug=saved_list.slug,
+        _external=True
+    )
 
-    return render_template(
-        "list_qr.html",
-        saved_list=saved_list,
-        share_url=share_url
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4
+    )
+
+    qr.add_data(share_url)
+    qr.make(fit=True)
+
+    img = qr.make_image(
+        fill_color="black",
+        back_color="white"
+    )
+
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        mimetype="image/png",
+        download_name=f"{saved_list.slug}-qr.png"
     )
 
 

@@ -197,6 +197,35 @@ select {
 
 
 
+.saved-list-share-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.saved-list-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.saved-list-share-btn.is-primary {
+  background: #7ee2bf;
+  color: #06100c;
+}
+
+
+
+
 .onboarding-page {
   background: #05070b;
   color: #fff;
