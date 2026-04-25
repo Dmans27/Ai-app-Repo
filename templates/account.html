@@ -91,7 +91,7 @@
           <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
           <a href="/discover" class="mobile-drawer__link">Discover</a>
           <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
-          <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active">Saved Places</a>
+          <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active"></a>
         </nav>
 
         <div class="mobile-drawer__section-label">Account</div>
@@ -125,8 +125,8 @@
           >☰</button>
 
           <div class="mobile-app-header__center">
-            <div class="mobile-app-header__title">Saved Places</div>
-            <div class="mobile-app-header__subtitle">Your personal guides and lists</div>
+            <div class="mobile-app-header__title"></div>
+            <div class="mobile-app-header__subtitle"></div>
           </div>
 
           {% if current_user.is_authenticated %}
@@ -192,7 +192,7 @@
                 </form>
 
                 <div class="saved-hero__content">
-                  <h1 class="saved-hero__title">Saved Places</h1>
+                  <h1 class="saved-hero__title"></h1>
                   <p class="saved-hero__subtitle">
                     
                   </p>
