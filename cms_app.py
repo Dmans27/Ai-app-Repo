@@ -2494,8 +2494,18 @@ def create_feed_post():
     body = (request.form.get("body") or "").strip()
     city = (request.form.get("city") or "").strip()
     photo = request.files.get("photo")
-
     image_url = None
+
+    if photo and photo.filename:
+        photo.stream.seek(0)
+
+        upload_result = cloudinary.uploader.upload(
+            photo.stream,
+            folder="localai/feed",
+            resource_type="image"
+        )
+
+        image_url = upload_result["secure_url"]
 
     feed_upload_folder = os.path.join(app.config["UPLOAD_FOLDER"], "feed")
     os.makedirs(feed_upload_folder, exist_ok=True)
