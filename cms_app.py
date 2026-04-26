@@ -313,6 +313,18 @@ def create_core_tables():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """))
+        
+        
+        
+        conn.execute(sql_text("""
+    CREATE TABLE IF NOT EXISTS user_saved_lists (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        saved_list_id INTEGER NOT NULL REFERENCES saved_list(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uq_user_saved_list UNIQUE (user_id, saved_list_id)
+    );
+"""))
 
 
 
