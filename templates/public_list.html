@@ -2,103 +2,259 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ saved_list.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ saved_list.title }} · Local AI</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
 </head>
 
+<body class="app-body public-list-body">
+  <div class="public-list-shell">
+    <header class="public-list-header">
+      <button class="public-list-menu-btn" type="button" aria-label="Open menu">
+        ☰
+      </button>
 
+      <a href="/" class="public-list-brand">
+        <strong>Local AI</strong>
+        <span>Shared guide</span>
+      </a>
 
+      <a
+        href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
+        class="public-list-header-avatar"
+        aria-label="Account"
+      >
+        {% if current_user.is_authenticated and current_user.profile_image_url %}
+          <img src="{{ current_user.profile_image_url }}" alt="{{ current_user.name or current_user.email }}">
+        {% elif current_user.is_authenticated %}
+          {{ (current_user.name or current_user.email or "U")[0]|upper }}
+        {% else %}
+          👤
+        {% endif %}
+      </a>
+    </header>
 
+    <main class="public-list-main">
+      <section class="public-list-owner-card">
+        <div class="public-list-owner-avatar">
+          {% if owner and owner.profile_image_url %}
+            <img src="{{ owner.profile_image_url }}" alt="{{ owner.name or owner.email }}">
+          {% else %}
+            <span>{{ (owner.name or owner.email or "U")[0]|upper if owner else "U" }}</span>
+          {% endif %}
+        </div>
 
+        <div class="public-list-owner-copy">
+          <p>Shared by</p>
+          <h2>{{ owner.name or "Local AI User" if owner else "Local AI User" }}</h2>
+        </div>
+      </section>
 
-<body class="search-page-body">
+      <section class="public-list-hero">
+        <p class="public-list-eyebrow">Public list</p>
 
+        <h1>{{ saved_list.title }}</h1>
 
-  
+        <p class="public-list-meta">
+          {{ saved_list.places|length }} places · Curated on Local AI
+        </p>
 
-  <div class="search-page-shell">
+        {% if saved_list.description %}
+          <p class="public-list-description">
+            {{ saved_list.description }}
+          </p>
+        {% endif %}
 
+        <div class="public-list-cta-row">
+          <a href="/" class="public-list-cta is-primary">
+            Find places
+          </a>
 
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('account') }}" class="public-list-cta">
+              Save your own
+            </a>
+          {% else %}
+            <a href="{{ url_for('signup') }}" class="public-list-cta">
+              Join Local AI
+            </a>
+          {% endif %}
+        </div>
+      </section>
 
-    
-    
-    <div class="results-section">
-      <h1>{{ saved_list.title }}</h1>
+      <section class="public-list-map-card">
+        <div id="public-list-map" class="public-list-map"></div>
+      </section>
 
-      {% if saved_list.description %}
-        <p>{{ saved_list.description }}</p>
-      {% endif %}
+      <section class="public-list-carousel-section">
+        <div class="public-list-section-heading">
+          <h2>Pinned locations</h2>
+          <span>{{ saved_list.places|length }} spots</span>
+        </div>
 
-      {% if saved_list.places %}
-        <div class="saved-list-grid">
-          {% for place in saved_list.places %}
-            <div class="search-result-card">
-
-              <div class="search-result-card__image-wrap">
+        {% if saved_list.places %}
+          <div class="public-list-carousel">
+            {% for place in saved_list.places %}
+              <article
+                class="public-place-slide"
+                data-lat="{{ place.latitude or '' }}"
+                data-lng="{{ place.longitude or '' }}"
+              >
                 {% if place.photo_url %}
                   <img
                     src="{{ place.photo_url }}"
                     alt="{{ place.name }}"
-                    class="search-result-card__image"
+                    class="public-place-slide__image"
                   >
                 {% else %}
                   <img
                     src="/static/img/default-business.jpg"
                     alt="{{ place.name }}"
-                    class="search-result-card__image"
+                    class="public-place-slide__image"
                   >
                 {% endif %}
-              </div>
 
-              <div class="search-result-card__body">
-                <div class="search-result-card__top">
-                  <div>
-                    <div class="search-result-card__title">
-                      {{ place.name }}
-                    </div>
+                <div class="public-place-slide__body">
+                  <h3>{{ place.name }}</h3>
 
-                    <div class="search-result-card__meta">
+                  {% if place.category %}
+                    <p class="public-place-slide__category">
                       {{ category_icon(place.category) }}
                       {{ (place.category or "Local business")|replace('_', ' ')|title }}
-                    </div>
-                  </div>
-                </div>
-
-                {% if place.address %}
-                  <div class="search-result-card__address">
-                    {{ place.address }}
-                  </div>
-                {% endif %}
-
-                {% if place.notes %}
-                  <div class="search-result-card__description">
-                    {{ place.notes }}
-                  </div>
-                {% endif %}
-
-                <div class="search-result-card__actions">
-                  {% if place.website %}
-                    <a
-                      href="{{ place.website }}"
-                      target="_blank"
-                      rel="noopener"
-                      class="btn-primary"
-                    >
-                      Visit website
-                    </a>
+                    </p>
                   {% endif %}
-                </div>
-              </div>
 
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p>This list does not have any places yet.</p>
-      {% endif %}
-    </div>
+                  {% if place.address %}
+                    <p class="public-place-slide__address">
+                      {{ place.address }}
+                    </p>
+                  {% endif %}
+
+                  {% if place.notes %}
+                    <p class="public-place-slide__notes">
+                      {{ place.notes }}
+                    </p>
+                  {% endif %}
+
+                  <div class="public-place-slide__actions">
+                    {% if place.website %}
+                      <a
+                        href="{{ place.website }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Website
+                      </a>
+                    {% endif %}
+
+                    {% if place.latitude and place.longitude %}
+                      <a
+                        href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="is-primary"
+                      >
+                        Directions
+                      </a>
+                    {% elif place.address %}
+                      <a
+                        href="https://www.google.com/maps/search/?api=1&query={{ place.address|urlencode }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="is-primary"
+                      >
+                        Directions
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="public-list-empty">
+            This list does not have any places yet.
+          </p>
+        {% endif %}
+      </section>
+    </main>
   </div>
 
+  <script id="public-map-data" type="application/json">
+    {{ map_places|tojson|safe }}
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const mapEl = document.getElementById("public-list-map");
+
+      if (!mapEl || typeof mapboxgl === "undefined") return;
+
+      const token = "{{ mapbox_token }}";
+      const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
+      const places = JSON.parse(
+        document.getElementById("public-map-data").textContent || "[]"
+      );
+
+      if (!token) return;
+
+      mapboxgl.accessToken = token;
+
+      const defaultCenter = places.length
+        ? [places[0].lng, places[0].lat]
+        : [-87.6298, 41.8781];
+
+      const map = new mapboxgl.Map({
+        container: "public-list-map",
+        style: styleUrl,
+        center: defaultCenter,
+        zoom: places.length ? 11 : 9,
+        projection: "mercator",
+        pitch: 0,
+        bearing: 0,
+        antialias: true
+      });
+
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+      const bounds = new mapboxgl.LngLatBounds();
+
+      places.forEach((place) => {
+        if (place.lng == null || place.lat == null) return;
+
+        const popupHtml = `
+          <div style="max-width:220px;">
+            <strong>${place.name || ""}</strong>
+            ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
+            ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
+          </div>
+        `;
+
+        new mapboxgl.Marker()
+          .setLngLat([place.lng, place.lat])
+          .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
+          .addTo(map);
+
+        bounds.extend([place.lng, place.lat]);
+      });
+
+      map.on("load", function () {
+        if (places.length > 1) {
+          map.fitBounds(bounds, {
+            padding: 52,
+            maxZoom: 13
+          });
+        } else if (places.length === 1) {
+          map.flyTo({
+            center: [places[0].lng, places[0].lat],
+            zoom: 13
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
