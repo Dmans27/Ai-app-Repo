@@ -2483,9 +2483,9 @@ from flask import url_for
 import os
 import uuid
 from werkzeug.utils import secure_filename
+import base64
 
-UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads", "feed")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 
 @app.post("/feed/create")
@@ -2496,22 +2496,19 @@ def create_feed_post():
     photo = request.files.get("photo")
     image_url = None
 
-    print("[FEED_UPLOAD_FILES]", list(request.files.keys()), flush=True)
-
     if photo and photo.filename:
-        photo.seek(0, os.SEEK_END)
-        file_size = photo.tell()
-        photo.seek(0)
+        photo_bytes = photo.read()
 
-        print("[FEED_UPLOAD_NAME]", photo.filename, flush=True)
-        print("[FEED_UPLOAD_SIZE]", file_size, flush=True)
-
-        if file_size <= 0:
+        if not photo_bytes:
             flash("The uploaded image was empty. Please choose another photo.")
             return redirect(url_for("feed"))
 
+        content_type = photo.content_type or "image/jpeg"
+        encoded_photo = base64.b64encode(photo_bytes).decode("utf-8")
+        data_uri = f"data:{content_type};base64,{encoded_photo}"
+
         upload_result = cloudinary.uploader.upload(
-            photo,
+            data_uri,
             folder="localai/feed",
             resource_type="image"
         )
