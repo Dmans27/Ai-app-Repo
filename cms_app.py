@@ -2483,7 +2483,7 @@ from flask import url_for
 import os
 import uuid
 from werkzeug.utils import secure_filename
-import base64
+from io import BytesIO
 
 
 
@@ -2499,16 +2499,16 @@ def create_feed_post():
     if photo and photo.filename:
         photo_bytes = photo.read()
 
-        if not photo_bytes:
+        print("[FEED_PHOTO_NAME]", photo.filename, flush=True)
+        print("[FEED_PHOTO_CONTENT_TYPE]", photo.content_type, flush=True)
+        print("[FEED_PHOTO_BYTES]", len(photo_bytes), flush=True)
+
+        if len(photo_bytes) == 0:
             flash("The uploaded image was empty. Please choose another photo.")
             return redirect(url_for("feed"))
 
-        content_type = photo.content_type or "image/jpeg"
-        encoded_photo = base64.b64encode(photo_bytes).decode("utf-8")
-        data_uri = f"data:{content_type};base64,{encoded_photo}"
-
         upload_result = cloudinary.uploader.upload(
-            data_uri,
+            BytesIO(photo_bytes),
             folder="localai/feed",
             resource_type="image"
         )
