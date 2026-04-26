@@ -282,3 +282,18 @@ def logout():
     logout_user()
     flash("Logged out.")
     return redirect(url_for("login"))
+
+
+
+
+class UserSavedList(db.Model):
+    __tablename__ = "user_saved_lists"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    saved_list_id = db.Column(db.Integer, db.ForeignKey("saved_lists.id"), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "saved_list_id", name="uq_user_saved_list"),
+    )

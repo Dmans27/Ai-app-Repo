@@ -83,6 +83,29 @@
             </a>
           {% endif %}
         </div>
+
+
+        {% if current_user.is_authenticated %}
+          {% if is_saved %}
+            <form method="post" action="{{ url_for('unsave_public_list', list_id=saved_list.id) }}">
+              <button type="submit" class="public-list-cta">
+                ✓ Saved
+              </button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('save_public_list', list_id=saved_list.id) }}">
+              <button type="submit" class="public-list-cta is-primary">
+                ＋ Save List
+              </button>
+            </form>
+          {% endif %}
+        {% else %}
+          <a href="{{ url_for('signup') }}" class="public-list-cta is-primary">
+            Save this list
+          </a>
+        {% endif %}
+
+        
       </section>
 
       <section class="public-list-map-card">

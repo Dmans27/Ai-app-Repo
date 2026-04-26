@@ -10,6 +10,7 @@ import sqlite3
 from datetime import datetime
 from functools import wraps
 from flask import redirect
+from models import UserSavedList
 
 
 import pandas as pd
@@ -2421,7 +2422,46 @@ def ai_chat():
         return jsonify({"error": str(e)}), 500
     
     
-    
+@app.post("/lists/<int:list_id>/save")
+@login_required
+def save_public_list(list_id):
+    saved_list = SavedList.query.filter_by(
+        id=list_id,
+        is_public=True
+    ).first_or_404()
+
+    existing = UserSavedList.query.filter_by(
+        user_id=current_user.id,
+        saved_list_id=saved_list.id
+    ).first()
+
+    if not existing:
+        db.session.add(
+            UserSavedList(
+                user_id=current_user.id,
+                saved_list_id=saved_list.id
+            )
+        )
+        db.session.commit()
+
+    flash("List saved.")
+    return redirect(request.referrer or url_for("account"))
+
+
+@app.post("/lists/<int:list_id>/unsave")
+@login_required
+def unsave_public_list(list_id):
+    existing = UserSavedList.query.filter_by(
+        user_id=current_user.id,
+        saved_list_id=list_id
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+
+    flash("List removed.")
+    return redirect(request.referrer or url_for("account"))   
     
 
     
@@ -4538,18 +4578,28 @@ def view_public_list(slug):
                 "category": place.category or "",
                 "address": place.address or ""
             })
+            
+        is_saved = False
 
-    return render_template(
-        "public_list.html",
-        saved_list=saved_list,
-        owner=saved_list.user,
-        map_places=map_places,
-        mapbox_token=os.environ.get("MAPBOX_TOKEN"),
-        mapbox_style_url=os.environ.get(
-            "MAPBOX_STYLE_URL",
-            "mapbox://styles/mapbox/dark-v11"
+    if current_user.is_authenticated:
+        is_saved = UserSavedList.query.filter_by(
+            user_id=current_user.id,
+            saved_list_id=saved_list.id
+        ).first() is not None
+
+        return render_template(
+            "public_list.html",
+            saved_list=saved_list,
+            owner=saved_list.user,
+            map_places=map_places,
+            mapbox_token=os.environ.get("MAPBOX_TOKEN"),
+            mapbox_style_url=os.environ.get(
+                "MAPBOX_STYLE_URL",
+                "mapbox://styles/mapbox/dark-v11"
+            ),
+            is_saved=is_saved
         )
-    )
+    
 
 
 @app.post("/lists/invite")
