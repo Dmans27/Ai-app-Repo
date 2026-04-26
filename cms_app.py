@@ -2519,15 +2519,15 @@ def create_feed_post():
         image_url = upload_result["secure_url"]
 
     feed_upload_folder = os.path.join(app.config["UPLOAD_FOLDER"], "feed")
-    os.makedirs(feed_upload_folder, exist_ok=True)
+   
 
     if photo and photo.filename:
         filename = secure_filename(photo.filename)
         ext = os.path.splitext(filename)[1].lower() or ".jpg"
         new_filename = f"{uuid.uuid4().hex}{ext}"
 
-        save_path = os.path.join(feed_upload_folder, new_filename)
-        photo.save(save_path)
+        
+       
 
         if photo and photo.filename:
 
@@ -4251,7 +4251,7 @@ def onboarding():
             os.makedirs(profile_upload_folder, exist_ok=True)
 
             save_path = os.path.join(profile_upload_folder, new_filename)
-            profile_photo.save(save_path)
+            
 
             current_user.profile_image_url = url_for(
                 "static",
