@@ -11,6 +11,7 @@ from datetime import datetime
 from functools import wraps
 from flask import redirect
 from models import UserSavedList
+import base64
 
 
 import pandas as pd
@@ -2507,33 +2508,17 @@ def create_feed_post():
             flash("The uploaded image was empty. Please choose another photo.")
             return redirect(url_for("feed"))
 
+        content_type = photo.content_type or "image/jpeg"
+        encoded_photo = base64.b64encode(photo_bytes).decode("utf-8")
+        data_uri = f"data:{content_type};base64,{encoded_photo}"
+
         upload_result = cloudinary.uploader.upload(
-            BytesIO(photo_bytes),
+            data_uri,
             folder="localai/feed",
             resource_type="image"
         )
 
         image_url = upload_result["secure_url"]
-
-    feed_upload_folder = os.path.join(app.config["UPLOAD_FOLDER"], "feed")
-   
-
-    if photo and photo.filename:
-        filename = secure_filename(photo.filename)
-        ext = os.path.splitext(filename)[1].lower() or ".jpg"
-        new_filename = f"{uuid.uuid4().hex}{ext}"
-
-        
-       
-
-        if photo and photo.filename:
-
-            upload_result = cloudinary.uploader.upload(
-                photo,
-                folder="localai/feed"
-            )
-
-            image_url = upload_result["secure_url"]
 
     if not body and not image_url:
         flash("Write something or upload a photo.")
