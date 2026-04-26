@@ -2496,15 +2496,22 @@ def create_feed_post():
     photo = request.files.get("photo")
     image_url = None
 
-    if photo and photo.filename:
-        photo_bytes = photo.read()
+    print("[FEED_UPLOAD_FILES]", list(request.files.keys()), flush=True)
 
-        if not photo_bytes:
+    if photo and photo.filename:
+        photo.seek(0, os.SEEK_END)
+        file_size = photo.tell()
+        photo.seek(0)
+
+        print("[FEED_UPLOAD_NAME]", photo.filename, flush=True)
+        print("[FEED_UPLOAD_SIZE]", file_size, flush=True)
+
+        if file_size <= 0:
             flash("The uploaded image was empty. Please choose another photo.")
             return redirect(url_for("feed"))
 
         upload_result = cloudinary.uploader.upload(
-            photo_bytes,
+            photo,
             folder="localai/feed",
             resource_type="image"
         )
