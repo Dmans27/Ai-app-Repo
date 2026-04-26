@@ -4515,7 +4515,30 @@ def view_public_list(slug):
         slug=slug,
         is_public=True
     ).first_or_404()
-    return render_template("public_list.html", saved_list=saved_list)
+
+    map_places = []
+
+    for place in saved_list.places:
+        if place.latitude and place.longitude:
+            map_places.append({
+                "name": place.name,
+                "lat": float(place.latitude),
+                "lng": float(place.longitude),
+                "category": place.category or "",
+                "address": place.address or ""
+            })
+
+    return render_template(
+        "public_list.html",
+        saved_list=saved_list,
+        owner=saved_list.user,
+        map_places=map_places,
+        mapbox_token=os.environ.get("MAPBOX_TOKEN"),
+        mapbox_style_url=os.environ.get(
+            "MAPBOX_STYLE_URL",
+            "mapbox://styles/mapbox/dark-v11"
+        )
+    )
 
 
 @app.post("/lists/invite")
