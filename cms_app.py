@@ -2456,10 +2456,14 @@ def create_feed_post():
         save_path = os.path.join(feed_upload_folder, new_filename)
         photo.save(save_path)
 
-        image_url = url_for(
-            "static",
-            filename=f"uploads/feed/{new_filename}"
-        )
+        if photo and photo.filename:
+
+            upload_result = cloudinary.uploader.upload(
+                photo,
+                folder="localai/feed"
+            )
+
+            image_url = upload_result["secure_url"]
 
     if not body and not image_url:
         flash("Write something or upload a photo.")
@@ -2522,12 +2526,15 @@ def update_profile_photo():
     upload_result = cloudinary.uploader.upload(profile_photo)
     current_user.profile_image_url = upload_result["secure_url"]
 
-    current_user.profile_image_url = url_for(
-        "static",
-        filename=f"uploads/profiles/{new_filename}"
+    upload_result = cloudinary.uploader.upload(
+        profile_photo,
+        folder="localai/profiles"
     )
 
+    current_user.profile_image_url = upload_result["secure_url"]
     db.session.commit()
+
+
 
     flash("Profile photo updated.")
     return redirect(url_for("account"))
