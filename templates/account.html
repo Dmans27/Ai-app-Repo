@@ -273,24 +273,6 @@
     {% for saved_list in lists %}
 
   <div class="saved-list-share-actions">
-  <a
-    href="{{ url_for('account') }}"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="saved-list-share-btn"
-  >
-    Open Share Link
-  </a>
-
-  {% if saved_list.is_public %}
-<button
-  type="button"
-  class="saved-list-share-btn is-primary"
-  onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
->
-  QR Code
-</button>
-  {% endif %}
 </div>
 
 
@@ -304,6 +286,15 @@
         {{ "Public" if saved_list.is_public else "Private" }}
       </p>
     </div>
+      {% if saved_list.is_public %}
+<button
+  type="button"
+  class="saved-list-share-btn is-primary"
+  onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
+>
+  QR Code
+</button>
+  {% endif %}
   </div>
 
   {% if saved_list.places %}
