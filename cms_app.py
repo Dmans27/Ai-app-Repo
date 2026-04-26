@@ -2512,33 +2512,20 @@ def update_profile_photo():
         flash("Please choose a photo.")
         return redirect(url_for("account"))
 
-    filename = secure_filename(profile_photo.filename)
-    ext = os.path.splitext(filename)[1].lower() or ".jpg"
-    new_filename = f"profile_{current_user.id}_{uuid.uuid4().hex}{ext}"
-
-    profile_upload_folder = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        "profiles"
-    )
-    os.makedirs(profile_upload_folder, exist_ok=True)
-
-    save_path = os.path.join(profile_upload_folder, new_filename)
-    upload_result = cloudinary.uploader.upload(profile_photo)
-    current_user.profile_image_url = upload_result["secure_url"]
+    profile_photo.stream.seek(0)
 
     upload_result = cloudinary.uploader.upload(
-        profile_photo,
-        folder="localai/profiles"
+        profile_photo.stream,
+        folder="localai/profiles",
+        resource_type="image"
     )
 
     current_user.profile_image_url = upload_result["secure_url"]
+
     db.session.commit()
-
-
 
     flash("Profile photo updated.")
     return redirect(url_for("account"))
-    
     
     
     
