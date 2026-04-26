@@ -4590,8 +4590,8 @@ def view_public_list(slug):
                 "category": place.category or "",
                 "address": place.address or ""
             })
-            
-        is_saved = False
+
+    is_saved = False
 
     if current_user.is_authenticated:
         is_saved = UserSavedList.query.filter_by(
@@ -4599,18 +4599,18 @@ def view_public_list(slug):
             saved_list_id=saved_list.id
         ).first() is not None
 
-        return render_template(
-            "public_list.html",
-            saved_list=saved_list,
-            owner=saved_list.user,
-            map_places=map_places,
-            mapbox_token=os.environ.get("MAPBOX_TOKEN"),
-            mapbox_style_url=os.environ.get(
-                "MAPBOX_STYLE_URL",
-                "mapbox://styles/mapbox/dark-v11"
-            ),
-            is_saved=is_saved
-        )
+    return render_template(
+        "public_list.html",
+        saved_list=saved_list,
+        owner=saved_list.user,
+        map_places=map_places,
+        mapbox_token=os.environ.get("MAPBOX_TOKEN"),
+        mapbox_style_url=os.environ.get(
+            "MAPBOX_STYLE_URL",
+            "mapbox://styles/mapbox/dark-v11"
+        ),
+        is_saved=is_saved
+    )
     
 
 
