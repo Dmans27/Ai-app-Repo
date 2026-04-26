@@ -67,6 +67,71 @@ select {
 
 
 
+.qr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+}
+
+.qr-modal.is-open {
+  display: block;
+}
+
+.qr-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(10px);
+}
+
+.qr-modal__card {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 20px;
+  background: #111;
+  border-radius: 28px;
+  padding: 24px;
+  text-align: center;
+  color: white;
+}
+
+.qr-modal__card img {
+  width: 220px;
+  height: 220px;
+  border-radius: 18px;
+  background: white;
+  padding: 10px;
+  margin: 18px auto;
+}
+
+.qr-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.qr-actions button {
+  flex: 1;
+  height: 46px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 700;
+}
+
+.qr-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 22px;
+}
+
+
+
+
 @media (max-width: 768px) {
   .account-avatar,
   .account-avatar-img {

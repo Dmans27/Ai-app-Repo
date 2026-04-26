@@ -283,14 +283,13 @@
   </a>
 
   {% if saved_list.is_public %}
-    <a
-      href="{{ url_for('public_list_qr_png', slug=saved_list.slug) }}"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="saved-list-share-btn is-primary"
-    >
-      QR Code
-    </a>
+<button
+  type="button"
+  class="saved-list-share-btn is-primary"
+  onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
+>
+  QR Code
+</button>
   {% endif %}
 </div>
 
@@ -705,6 +704,55 @@ document.querySelectorAll(".saved-filter-chip").forEach((chip) => {
   });
 </script>
 
+
+
+<script>
+let currentQrUrl = "";
+
+function openQrModal(slug, title) {
+  currentQrUrl = `/lists/${slug}`;
+  document.getElementById("qrTitle").innerText = title;
+  document.getElementById("qrImage").src = `/lists/${slug}/qr.png`;
+  document.getElementById("qrModal").classList.add("is-open");
+}
+
+function closeQrModal() {
+  document.getElementById("qrModal").classList.remove("is-open");
+}
+
+function copyQrLink() {
+  navigator.clipboard.writeText(window.location.origin + currentQrUrl);
+}
+
+function nativeShareQr() {
+  if (navigator.share) {
+    navigator.share({
+      title: "Shared List",
+      url: window.location.origin + currentQrUrl
+    });
+  }
+}
+</script>
+
+
+
+<div class="qr-modal" id="qrModal">
+  <div class="qr-modal__backdrop" onclick="closeQrModal()"></div>
+
+  <div class="qr-modal__card">
+    <button class="qr-close" onclick="closeQrModal()">✕</button>
+
+    <h3 id="qrTitle">Share List</h3>
+    <p>Scan to open this list</p>
+
+    <img id="qrImage" src="" alt="QR Code">
+
+    <div class="qr-actions">
+      <button onclick="copyQrLink()">Copy Link</button>
+      <button onclick="nativeShareQr()">Share</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
