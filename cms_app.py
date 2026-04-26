@@ -46,6 +46,13 @@ from models import db, User, SavedList, SavedPlace, BusinessClaim
 
 
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+import os
+
+
+
 AI_EXECUTOR = ThreadPoolExecutor(max_workers=2)
 AI_JOBS = {}  # job_id -> dict(status, result, error, created_at)
 # -----------------------
@@ -76,6 +83,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_size": 5,
     "max_overflow": 10
 }
+
+
+
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 db.init_app(app)
 
@@ -2503,7 +2519,8 @@ def update_profile_photo():
     os.makedirs(profile_upload_folder, exist_ok=True)
 
     save_path = os.path.join(profile_upload_folder, new_filename)
-    profile_photo.save(save_path)
+    upload_result = cloudinary.uploader.upload(profile_photo)
+    current_user.profile_image_url = upload_result["secure_url"]
 
     current_user.profile_image_url = url_for(
         "static",
