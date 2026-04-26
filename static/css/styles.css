@@ -3060,3 +3060,49 @@ margin: 10px 10px -86px 10px;
   background:#34c759;
   color:#000;
 }
+
+
+.public-list-carousel-section {
+  overflow: hidden;
+}
+
+.public-list-carousel {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-left: 0;
+  padding-right: 18px;
+}
+
+.public-place-slide {
+  width: min(86vw, 340px);
+  min-width: min(86vw, 340px);
+  max-width: min(86vw, 340px);
+  box-sizing: border-box;
+}
+
+.public-place-slide__body {
+  overflow: hidden;
+}
+
+.public-place-slide__body h3,
+.public-place-slide__address,
+.public-place-slide__category,
+.public-place-slide__notes {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.public-place-slide__body h3 {
+  font-size: clamp(24px, 7vw, 32px);
+  line-height: 1.05;
+}
+
+.public-place-slide__actions {
+  flex-wrap: wrap;
+}
+
+.public-place-slide__actions a {
+  white-space: nowrap;
+}
