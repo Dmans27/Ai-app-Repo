@@ -3802,7 +3802,9 @@ def listing_page(slug):
     
     
     
-    
+@app.route("/privacy")
+def privacy_policy():
+    return render_template("privacy.html")
 
     
     
@@ -4265,6 +4267,7 @@ def signup():
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        
 
         if not email or not password:
             flash("Email and password are required.")
@@ -4273,6 +4276,11 @@ def signup():
         existing = User.query.filter_by(email=email).first()
         if existing:
             flash("That email is already registered.")
+            return redirect(url_for("signup"))
+        
+        
+        if request.form.get("privacy_agree") != "on":
+            flash("You must agree to the Privacy Policy to create an account.")
             return redirect(url_for("signup"))
 
         user = User(name=name, email=email)

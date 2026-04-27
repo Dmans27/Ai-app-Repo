@@ -224,6 +224,22 @@
           >
         </div>
 
+
+        <label class="signup-privacy-row">
+  <input
+    type="checkbox"
+    name="privacy_agree"
+    id="privacy-agree-checkbox"
+    required
+  >
+  <span>
+    I agree to the
+    <button type="button" class="privacy-link-button" id="privacy-open">
+      Privacy Policy
+    </button>
+  </span>
+</label>
+
         <button type="submit" class="auth-submit">Create account</button>
       </form>
 
@@ -233,5 +249,79 @@
       </p>
     </section>
   </main>
+
+
+<div class="privacy-popup" id="privacy-popup" hidden>
+  <div class="privacy-popup__backdrop"></div>
+
+  <div class="privacy-popup__card">
+    <button type="button" class="privacy-popup__close" id="privacy-close">✕</button>
+
+    <h2>Privacy Policy</h2>
+    <p class="privacy-updated">Effective Date: April 2026</p>
+
+    <div class="privacy-popup__content">
+      <p>Local AI collects account details, profile preferences, saved places, lists, and optional location data to personalize your experience.</p>
+
+      <p>Your public lists may be visible to others through shared links or QR codes.</p>
+
+      <p>You can update your profile, remove lists, or delete your account in Settings.</p>
+
+      <p>
+        Full policy:
+        <a href="{{ url_for('privacy_policy') }}" target="_blank">View Privacy Policy</a>
+      </p>
+    </div>
+
+    <div class="privacy-popup__actions">
+      <button type="button" class="privacy-btn-secondary" id="privacy-decline">
+        Decline
+      </button>
+
+      <button type="button" class="privacy-btn-primary" id="privacy-agree">
+        I Agree
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const popup = document.getElementById("privacy-popup");
+    const openBtn = document.getElementById("privacy-open");
+    const closeBtn = document.getElementById("privacy-close");
+    const agreeBtn = document.getElementById("privacy-agree");
+    const declineBtn = document.getElementById("privacy-decline");
+    const checkbox = document.getElementById("privacy-agree-checkbox");
+
+    function openPrivacyPopup() {
+      popup.hidden = false;
+      document.body.classList.add("privacy-popup-open");
+    }
+
+    function closePrivacyPopup() {
+      popup.hidden = true;
+      document.body.classList.remove("privacy-popup-open");
+    }
+
+    openBtn?.addEventListener("click", openPrivacyPopup);
+    closeBtn?.addEventListener("click", closePrivacyPopup);
+
+    agreeBtn?.addEventListener("click", function () {
+      checkbox.checked = true;
+      closePrivacyPopup();
+    });
+
+    declineBtn?.addEventListener("click", function () {
+      checkbox.checked = false;
+      closePrivacyPopup();
+    });
+  });
+</script>
+
+
 </body>
 </html>
