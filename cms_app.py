@@ -14,6 +14,7 @@ from models import UserSavedList
 import base64
 
 
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -44,7 +45,7 @@ from flask_login import LoginManager
 from flask import request, render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, SavedList, SavedPlace, BusinessClaim
+from models import db, User, SavedList, SavedPlace, BusinessClaim, UserSavedList
 
 
 
@@ -3864,6 +3865,14 @@ def delete_user_list(list_id):
         id=list_id,
         user_id=current_user.id
     ).first_or_404()
+
+    SavedPlace.query.filter_by(
+        saved_list_id=saved_list.id
+    ).delete(synchronize_session=False)
+
+    UserSavedList.query.filter_by(
+        saved_list_id=saved_list.id
+    ).delete(synchronize_session=False)
 
     db.session.delete(saved_list)
     db.session.commit()
