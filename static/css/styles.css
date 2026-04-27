@@ -725,6 +725,49 @@ select {
 
 
 
+.saved-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0 18px;
+}
+
+.saved-profile-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.saved-profile-copy h1 {
+  margin: 0;
+  font-size: clamp(32px, 8vw, 48px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #fff;
+}
+
+.saved-profile-copy p {
+  margin: 8px 0 0;
+  font-size: 17px;
+  color: rgba(255,255,255,.58);
+}
+
+@media (max-width: 420px) {
+  .saved-profile-row {
+    gap: 12px;
+  }
+
+  .saved-profile-copy h1 {
+    font-size: 34px;
+  }
+
+  .saved-profile-copy p {
+    font-size: 15px;
+  }
+}
+
+
+
 .saved-list-header{
   display:flex;
   justify-content:space-between;

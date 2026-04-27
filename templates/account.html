@@ -163,7 +163,10 @@
           <div class="account-desktop-wrap">
             <div class="account-ios-shell">
               <section class="saved-hero">
-              <div class="saved-hero__avatar">
+
+
+
+              <div class="saved-profile-row">
                 <form
                   method="post"
                   action="{{ url_for('update_profile_photo') }}"
@@ -196,12 +199,20 @@
                   >
                 </form>
 
-                <div class="saved-hero__content">
-                  <h1 class="saved-hero__title"></h1>
-                  <p class="saved-hero__subtitle">
-                    
+                <div class="saved-profile-copy">
+                  <h1>{{ user.name or "Your Profile" }}</h1>
+
+                  <p>
+                    {% if user.home_city %}
+                      📍 {{ user.home_city }}
+                    {% else %}
+                      Add your city
+                    {% endif %}
                   </p>
                 </div>
+              </div>
+
+
               </section>
 
               <div class="saved-stats-row">
