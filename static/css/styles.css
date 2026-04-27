@@ -67,6 +67,280 @@ select {
 
 
 
+/* =========================
+   SETTINGS PAGE
+========================= */
+
+.settings-page{
+  background:#0b0b0c;
+  color:#fff;
+  min-height:100vh;
+}
+
+.settings-shell{
+  max-width:760px;
+  margin:0 auto;
+  padding:22px 16px 120px;
+}
+
+.settings-header{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.settings-back{
+  width:46px;
+  height:46px;
+  border-radius:16px;
+  background:#17191e;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  font-size:22px;
+  flex-shrink:0;
+}
+
+.settings-header h1{
+  margin:0;
+  font-size:2rem;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:-0.04em;
+}
+
+.settings-header p{
+  margin:6px 0 0;
+  color:rgba(255,255,255,.56);
+  font-size:.96rem;
+}
+
+/* =========================
+   CARDS
+========================= */
+
+.settings-card{
+  background:linear-gradient(180deg,#17181b,#121316);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:28px;
+  padding:20px;
+  margin-bottom:16px;
+  box-shadow:0 18px 50px rgba(0,0,0,.28);
+}
+
+.settings-card h2{
+  margin:0 0 14px;
+  font-size:1.15rem;
+  font-weight:800;
+}
+
+.settings-card p{
+  margin:0;
+  color:rgba(255,255,255,.62);
+  line-height:1.5;
+}
+
+/* =========================
+   PROFILE PHOTO
+========================= */
+
+.settings-photo-form{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+.settings-avatar-upload{
+  width:78px;
+  height:78px;
+  border-radius:50%;
+  overflow:hidden;
+  background:#1f2228;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  flex-shrink:0;
+  position:relative;
+}
+
+.settings-avatar-upload img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.settings-avatar-upload span{
+  font-size:28px;
+  font-weight:800;
+  color:#fff;
+}
+
+/* =========================
+   FORMS
+========================= */
+
+.settings-form{
+  display:grid;
+  gap:14px;
+}
+
+.settings-form label{
+  display:grid;
+  gap:8px;
+  font-size:14px;
+  color:rgba(255,255,255,.74);
+}
+
+.settings-form input,
+.settings-form textarea{
+  width:100%;
+  border:none;
+  outline:none;
+  border-radius:18px;
+  background:#1d1f24;
+  color:#fff;
+  padding:14px 16px;
+  font-size:15px;
+}
+
+.settings-form textarea{
+  min-height:120px;
+  resize:vertical;
+}
+
+.settings-form input::placeholder,
+.settings-form textarea::placeholder{
+  color:rgba(255,255,255,.35);
+}
+
+.settings-form button{
+  height:50px;
+  border:none;
+  border-radius:18px;
+  background:#19c38a;
+  color:#07110d;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+/* =========================
+   LISTS
+========================= */
+
+.settings-list-stack{
+  display:grid;
+  gap:12px;
+}
+
+.settings-list-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  padding:14px;
+  border-radius:20px;
+  background:#1a1c20;
+}
+
+.settings-list-row strong{
+  display:block;
+  font-size:15px;
+}
+
+.settings-list-row p{
+  margin:4px 0 0;
+  font-size:13px;
+  color:rgba(255,255,255,.52);
+}
+
+.settings-muted{
+  color:rgba(255,255,255,.52);
+  font-size:14px;
+}
+
+/* =========================
+   DANGER BUTTONS
+========================= */
+
+.settings-danger-btn{
+  border:none;
+  border-radius:14px;
+  padding:10px 14px;
+  background:#ff453a;
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.settings-danger-card{
+  border:1px solid rgba(255,69,58,.28);
+}
+
+/* =========================
+   ACCOUNT SETTINGS LINK
+========================= */
+
+.account-settings-link{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-top:14px;
+  padding:10px 14px;
+  border-radius:999px;
+  background:#17191e;
+  color:#fff;
+  text-decoration:none;
+  font-size:14px;
+  font-weight:700;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width:640px){
+
+  .settings-shell{
+    padding:18px 12px 120px;
+  }
+
+  .settings-header h1{
+    font-size:1.6rem;
+  }
+
+  .settings-card{
+    padding:18px;
+    border-radius:24px;
+  }
+
+  .settings-list-row{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .settings-danger-btn{
+    width:100%;
+  }
+
+  .settings-form button{
+    width:100%;
+  }
+
+  .settings-photo-form{
+    align-items:flex-start;
+  }
+}
+
+
+
+
 .qr-modal {
   position: fixed;
   inset: 0;
