@@ -3832,6 +3832,76 @@ def discover_page():
 
 
 
+
+
+@app.route("/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+    if request.method == "POST":
+        current_user.name = request.form.get("name", "").strip()
+        current_user.home_city = request.form.get("home_city", "").strip()
+
+        db.session.commit()
+
+        flash("Settings updated.")
+        return redirect(url_for("settings"))
+
+    lists = SavedList.query.filter_by(
+        user_id=current_user.id
+    ).order_by(SavedList.created_at.desc()).all()
+
+    return render_template(
+        "settings.html",
+        user=current_user,
+        lists=lists
+    )
+
+
+@app.post("/settings/lists/<int:list_id>/delete")
+@login_required
+def delete_user_list(list_id):
+    saved_list = SavedList.query.filter_by(
+        id=list_id,
+        user_id=current_user.id
+    ).first_or_404()
+
+    db.session.delete(saved_list)
+    db.session.commit()
+
+    flash("List deleted.")
+    return redirect(url_for("settings"))
+
+
+@app.post("/settings/contact-support")
+@login_required
+def contact_support():
+    message = request.form.get("message", "").strip()
+
+    print("[SUPPORT_REQUEST]", {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "message": message
+    }, flush=True)
+
+    flash("Support request sent.")
+    return redirect(url_for("settings"))
+
+
+@app.post("/settings/delete-account")
+@login_required
+def delete_account():
+    user = current_user
+
+    logout_user()
+
+    db.session.delete(user)
+    db.session.commit()
+
+    flash("Your account has been deleted.")
+    return redirect(url_for("home"))
+
+
+
     
     
     

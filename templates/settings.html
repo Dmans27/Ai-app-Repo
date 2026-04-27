@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings · Local AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body class="app-body settings-page">
+  <main class="settings-shell">
+    <header class="settings-header">
+      <a href="{{ url_for('account') }}" class="settings-back">←</a>
+      <div>
+        <h1>Settings</h1>
+        <p>Manage your profile, lists, and account.</p>
+      </div>
+    </header>
+
+    <section class="settings-card">
+      <h2>Profile photo</h2>
+
+      <form
+        method="post"
+        action="{{ url_for('update_profile_photo') }}"
+        enctype="multipart/form-data"
+        class="settings-photo-form"
+      >
+        <label class="settings-avatar-upload">
+          {% if user.profile_image_url %}
+            <img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}">
+          {% else %}
+            <span>{{ (user.name or user.email or "U")[0]|upper }}</span>
+          {% endif %}
+
+          <input
+            type="file"
+            name="profile_photo"
+            accept="image/*"
+            hidden
+            onchange="this.form.submit()"
+          >
+        </label>
+
+        <p>Tap your photo to update it.</p>
+      </form>
+    </section>
+
+    <section class="settings-card">
+      <h2>Profile details</h2>
+
+      <form method="post" action="{{ url_for('settings') }}" class="settings-form">
+        <label>
+          Name
+          <input
+            type="text"
+            name="name"
+            value="{{ user.name or '' }}"
+            placeholder="Your name"
+          >
+        </label>
+
+        <label>
+          Home city
+          <input
+            type="text"
+            name="home_city"
+            value="{{ user.home_city or '' }}"
+            placeholder="Naperville, Chicago..."
+          >
+        </label>
+
+        <button type="submit">Save changes</button>
+      </form>
+    </section>
+
+    <section class="settings-card">
+      <h2>Your lists</h2>
+
+      {% if lists %}
+        <div class="settings-list-stack">
+          {% for saved_list in lists %}
+            <div class="settings-list-row">
+              <div>
+                <strong>{{ saved_list.title }}</strong>
+                <p>{{ saved_list.places|length }} places</p>
+              </div>
+
+              <form
+                method="post"
+                action="{{ url_for('delete_user_list', list_id=saved_list.id) }}"
+                onsubmit="return confirm('Delete this list? This cannot be undone.');"
+              >
+                <button type="submit" class="settings-danger-btn">
+                  Delete
+                </button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="settings-muted">You have not created any lists yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="settings-card">
+      <h2>Contact support</h2>
+
+      <form
+        method="post"
+        action="{{ url_for('contact_support') }}"
+        class="settings-form"
+      >
+        <label>
+          Message
+          <textarea
+            name="message"
+            placeholder="Tell us what you need help with..."
+            required
+          ></textarea>
+        </label>
+
+        <button type="submit">Send message</button>
+      </form>
+    </section>
+
+    <section class="settings-card settings-danger-card">
+      <h2>Delete account</h2>
+
+      <p>
+        This will permanently delete your account. This action cannot be undone.
+      </p>
+
+      <form
+        method="post"
+        action="{{ url_for('delete_account') }}"
+        onsubmit="return confirm('Are you sure you want to delete your account?');"
+      >
+        <button type="submit" class="settings-danger-btn">
+          Delete account
+        </button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
