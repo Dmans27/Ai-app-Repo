@@ -3141,7 +3141,6 @@ def import_google_place():
         latitude = location.get("latitude")
         longitude = location.get("longitude")
 
-        # --- PHOTO BLOCK ---
         photos = data.get("photos") or []
         photo_url = None
         photo_urls = []
@@ -3150,12 +3149,14 @@ def import_google_place():
 
         for photo in photos[:8]:
             photo_name = photo.get("name")
+
             if not photo_name:
                 continue
 
             print("[IMPORT_GOOGLE_PLACE_PHOTO_NAME]", photo_name, flush=True)
 
             resolved_url = google_place_photo_uri(photo_name, max_width=1200)
+
             if resolved_url:
                 photo_urls.append(resolved_url)
 
@@ -3163,26 +3164,68 @@ def import_google_place():
             photo_url = photo_urls[0]
 
         print("[IMPORT_GOOGLE_PLACE_PHOTO_URLS]", photo_urls, flush=True)
-        # -------------------
 
         slug = slugify(name)
 
-        # make slug unique
-        existing = query_one("SELECT id FROM listings WHERE slug=?", (slug,))
+        existing = query_one(
+            """
+            SELECT id
+            FROM listings
+            WHERE slug = :slug
+            """,
+            {
+                "slug": slug
+            }
+        )
+
         if existing:
             slug = f"{slug}-{place_id[:8]}"
 
-        execute("""
+        execute(
+            """
             INSERT INTO listings (
-                name, slug, category, address, website,
-                latitude, longitude, photo_url, photo_urls_json,
-                status, featured, created_at, updated_at
+                name,
+                slug,
+                category,
+                address,
+                website,
+                latitude,
+                longitude,
+                photo_url,
+                photo_urls_json,
+                status,
+                featured,
+                created_at,
+                updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        """, (
-            name, slug, category, address, website,
-            latitude, longitude, photo_url, json.dumps(photo_urls)
-        ))
+            VALUES (
+                :name,
+                :slug,
+                :category,
+                :address,
+                :website,
+                :latitude,
+                :longitude,
+                :photo_url,
+                :photo_urls_json,
+                'published',
+                0,
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+            )
+            """,
+            {
+                "name": name,
+                "slug": slug,
+                "category": category,
+                "address": address,
+                "website": website,
+                "latitude": latitude,
+                "longitude": longitude,
+                "photo_url": photo_url,
+                "photo_urls_json": json.dumps(photo_urls)
+            }
+        )
 
         return redirect(f"/listing/{slug}")
 
