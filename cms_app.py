@@ -3099,13 +3099,24 @@ def feed():
 
 
 
-
 @app.get("/admin/import-google-place")
 def import_google_place():
     place_id = (request.args.get("place_id") or "").strip()
 
     if not place_id:
         return "Missing place_id", 400
+
+    existing_place = query_one(
+        """
+        SELECT slug
+        FROM listings
+        WHERE place_id = :place_id
+        """,
+        {"place_id": place_id}
+    )
+
+    if existing_place:
+        return redirect(f"/listing/{existing_place['slug']}")
 
     url = f"https://places.googleapis.com/v1/places/{place_id}"
 
@@ -3165,25 +3176,37 @@ def import_google_place():
 
         print("[IMPORT_GOOGLE_PLACE_PHOTO_URLS]", photo_urls, flush=True)
 
-        slug = slugify(name)
+        base_slug = slugify(name)
+        slug = base_slug
 
-        existing = query_one(
+        existing_slug = query_one(
             """
-            SELECT id
+            SELECT slug
             FROM listings
             WHERE slug = :slug
             """,
-            {
-                "slug": slug
-            }
+            {"slug": slug}
         )
 
-        if existing:
-            slug = f"{slug}-{place_id[:8]}"
+        if existing_slug:
+            slug = f"{base_slug}-{place_id[:8]}"
+
+        existing_final_slug = query_one(
+            """
+            SELECT slug
+            FROM listings
+            WHERE slug = :slug
+            """,
+            {"slug": slug}
+        )
+
+        if existing_final_slug:
+            return redirect(f"/listing/{existing_final_slug['slug']}")
 
         execute(
             """
             INSERT INTO listings (
+                place_id,
                 name,
                 slug,
                 category,
@@ -3199,6 +3222,7 @@ def import_google_place():
                 updated_at
             )
             VALUES (
+                :place_id,
                 :name,
                 :slug,
                 :category,
@@ -3215,6 +3239,7 @@ def import_google_place():
             )
             """,
             {
+                "place_id": place_id,
                 "name": name,
                 "slug": slug,
                 "category": category,
