@@ -4272,7 +4272,16 @@ def admin_new_listing():
             error = "Name and slug are required."
             return render_template("admin_listing_form.html", error=error, listing=None)
 
-        existing = query_one("SELECT id FROM listings WHERE slug=?", (slug,))
+        existing = listing = query_one(
+    """
+    SELECT *
+    FROM listings
+    WHERE slug = :slug
+    """,
+    {
+        "slug": slug
+    }
+)
         if existing:
             error = "That slug is already taken."
             return render_template("admin_listing_form.html", error=error, listing=None)
