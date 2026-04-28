@@ -331,6 +331,20 @@ def create_core_tables():
         
         
         
+        
+        conn.execute(sql_text("""
+    CREATE TABLE IF NOT EXISTS user_friends (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        friend_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, friend_id)
+    );
+"""))
+        
+        
+        
         conn.execute(sql_text("""
     CREATE TABLE IF NOT EXISTS user_saved_lists (
         id SERIAL PRIMARY KEY,
@@ -2252,6 +2266,65 @@ def is_relevant_featured_result(item, query: str, searched_city: str = None, max
         distance_matches = float(item["distance_miles"]) <= max_featured_distance
 
     return query_matches and city_matches and distance_matches
+
+
+
+
+@app.post("/friends/<int:user_id>/add")
+@login_required
+def add_friend(user_id):
+    if user_id == current_user.id:
+        flash("You cannot add yourself.")
+        return redirect(request.referrer or url_for("account"))
+
+    existing = query_one(
+        """
+        SELECT id
+        FROM user_friends
+        WHERE user_id = :user_id
+          AND friend_id = :friend_id
+        """,
+        {
+            "user_id": current_user.id,
+            "friend_id": user_id
+        }
+    )
+
+    if not existing:
+        execute(
+            """
+            INSERT INTO user_friends (
+                user_id,
+                friend_id,
+                status,
+                created_at
+            )
+            VALUES (
+                :user_id,
+                :friend_id,
+                'pending',
+                CURRENT_TIMESTAMP
+            )
+            """,
+            {
+                "user_id": current_user.id,
+                "friend_id": user_id
+            }
+        )
+
+    flash("Friend request sent.")
+    return redirect(request.referrer or url_for("account"))
+
+
+@app.get("/messages/<int:user_id>")
+@login_required
+def messages_with_user(user_id):
+    other_user = User.query.get_or_404(user_id)
+
+    return render_template(
+        "messages.html",
+        other_user=other_user
+    )
 
 
 

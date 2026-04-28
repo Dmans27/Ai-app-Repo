@@ -400,6 +400,119 @@ select {
 
 
 
+.profile-name-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.profile-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.profile-action-btn {
+  border: 0;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #9de8c8;
+  color: #07110d;
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-action-btn--message {
+  padding: 0;
+  width: 38px;
+  background: #1f2228;
+  color: #fff;
+}
+
+
+.profile-name-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.profile-label {
+  margin: 0 0 4px;
+  color: rgba(255,255,255,.52);
+  font-size: 15px;
+}
+
+.profile-name-actions h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 26px;
+  line-height: 1.05;
+  font-weight: 900;
+}
+
+.profile-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.profile-action-btn {
+  border: 0;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #9de8c8;
+  color: #07110d;
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.profile-action-btn--message {
+  padding: 0;
+  width: 38px;
+  font-size: 17px;
+  background: #1f2228;
+  color: #fff;
+}
+
+@media (max-width: 430px) {
+  .profile-name-actions h2 {
+    font-size: 22px;
+  }
+
+  .profile-action-btn {
+    height: 36px;
+    min-width: 36px;
+    padding: 0 12px;
+  }
+
+  .profile-action-btn--message {
+    width: 36px;
+  }
+}
+
+
+
+
 /* =========================
    SETTINGS PAGE
 ========================= */

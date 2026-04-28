@@ -203,17 +203,36 @@
                 </form>
 
                 <div class="saved-profile-copy">
-                  <h1>{{ user.name or "Your Profile" }}</h1>
+                  <div class="profile-name-actions">
+                    <div>
+                      <h1>{{ user.name or "Your Profile" }}</h1>
 
-                  <p>
-                    {% if user.home_city %}
-                      📍 {{ user.home_city }}
-                    {% else %}
-                      Add your city
-                    {% endif %}
-                  </p>
+                      <p>
+                        {% if user.home_city %}
+                          📍 {{ user.home_city }}
+                        {% else %}
+                          Add your city
+                        {% endif %}
+                      </p>
+                    </div>
+
+                    <div class="profile-action-buttons">
+                      <a
+                        href="{{ url_for('settings') }}"
+                        class="profile-action-btn"
+                      >
+                        Edit
+                      </a>
+
+                      <a
+                        href="{{ url_for('messages_with_user', user_id=user.id) }}"
+                        class="profile-action-btn profile-action-btn--message"
+                      >
+                        💬
+                      </a>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
 
               </section>
