@@ -3898,7 +3898,7 @@ def listing_page(slug):
         listing_photos = [listing["photo_url"]]
 
     return render_template(
-        "listing.html",
+        "listing_page.html",
         listing=listing,
         related=related,
         comments=comments,
