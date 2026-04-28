@@ -294,7 +294,18 @@
   {% if saved_list.places %}
     <div class="saved-place-carousel">
       {% for place in saved_list.places %}
-        <article class="saved-place-slide saved-place-slide--full" data-category="{{ (place.category or '')|lower }}"
+        <article
+  class="saved-place-slide saved-place-slide--full js-place-popup"
+  data-name="{{ place.name }}"
+  data-category="{{ place.category or 'Local business' }}"
+  data-address="{{ place.address or '' }}"
+  data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+  data-website="{{ place.website or '' }}"
+  data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% else %}{% endif %}"
+  data-category-filter="{{ (place.category or '')|lower }}"
+  data-name-filter="{{ (place.name or '')|lower }}"
+  data-address-filter="{{ (place.address or '')|lower }}"
+>
   data-name="{{ (place.name or '')|lower }}"
   data-address="{{ (place.address or '')|lower }}">
           <div class="saved-place-slide__thumb">
@@ -393,6 +404,50 @@
             </div>
             </div>
             </section>
+
+
+            <div class="place-popup" id="place-popup" hidden>
+  <div class="place-popup__backdrop" data-close-place-popup></div>
+
+  <div class="place-popup__card">
+    <button class="place-popup__close" type="button" data-close-place-popup">
+      ✕
+    </button>
+
+    <img
+      id="place-popup-photo"
+      class="place-popup__image"
+      src=""
+      alt=""
+    >
+
+    <div class="place-popup__body">
+      <p id="place-popup-category" class="place-popup__category"></p>
+
+      <h2 id="place-popup-name"></h2>
+
+      <p id="place-popup-address" class="place-popup__address"></p>
+
+      <div class="place-popup__actions">
+        <a
+          id="place-popup-website"
+          class="place-popup__btn"
+          target="_blank"
+          rel="noopener"
+        >
+          Website
+        </a>
+
+        <a
+          id="place-popup-listing"
+          class="place-popup__btn place-popup__btn--primary"
+        >
+          View listing
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 
             <nav class="mobile-tabbar">
               <a href="/" class="mobile-tabbar__item">
@@ -717,6 +772,53 @@ function nativeShareQr() {
     });
   }
 }
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const popup = document.getElementById("place-popup");
+  const photo = document.getElementById("place-popup-photo");
+  const name = document.getElementById("place-popup-name");
+  const category = document.getElementById("place-popup-category");
+  const address = document.getElementById("place-popup-address");
+  const website = document.getElementById("place-popup-website");
+  const listing = document.getElementById("place-popup-listing");
+
+  document.querySelectorAll(".js-place-popup").forEach((card) => {
+    card.addEventListener("click", function (e) {
+      if (e.target.closest("a, button, form")) return;
+
+      photo.src = card.dataset.photo;
+      name.textContent = card.dataset.name;
+      category.textContent = card.dataset.category;
+      address.textContent = card.dataset.address;
+
+      if (card.dataset.website) {
+        website.href = card.dataset.website;
+        website.style.display = "flex";
+      } else {
+        website.style.display = "none";
+      }
+
+      if (card.dataset.listingUrl) {
+        listing.href = card.dataset.listingUrl;
+        listing.style.display = "flex";
+      } else {
+        listing.style.display = "none";
+      }
+
+      popup.hidden = false;
+    });
+  });
+
+  document.querySelectorAll("[data-close-place-popup]").forEach((el) => {
+    el.addEventListener("click", function () {
+      popup.hidden = true;
+    });
+  });
+});
 </script>
 
 

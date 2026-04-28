@@ -310,6 +310,96 @@ select {
 
 
 
+.place-popup[hidden] {
+  display: none !important;
+}
+
+.place-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.place-popup__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(10px);
+}
+
+.place-popup__card {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: min(420px, calc(100vw - 22px));
+  background: #17191f;
+  border-radius: 28px;
+  overflow: hidden;
+  color: white;
+}
+
+.place-popup__image {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+}
+
+.place-popup__body {
+  padding: 18px;
+}
+
+.place-popup__category {
+  color: #9de8c8;
+  font-weight: 800;
+}
+
+.place-popup__body h2 {
+  font-size: 28px;
+  margin: 6px 0;
+}
+
+.place-popup__address {
+  color: rgba(255,255,255,.6);
+}
+
+.place-popup__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.place-popup__btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 999px;
+  text-align: center;
+  text-decoration: none;
+  background: #2a2d34;
+  color: white;
+  font-weight: 800;
+}
+
+.place-popup__btn--primary {
+  background: #9de8c8;
+  color: #06110d;
+}
+
+.place-popup__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,.45);
+  color: white;
+}
+
+
+
+
 /* =========================
    SETTINGS PAGE
 ========================= */
