@@ -319,6 +319,19 @@ def create_core_tables():
         
         
         conn.execute(sql_text("""
+            ALTER TABLE listings
+            ADD COLUMN IF NOT EXISTS place_id TEXT;
+        """))
+
+        conn.execute(sql_text("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_listings_place_id
+            ON listings(place_id)
+            WHERE place_id IS NOT NULL;
+        """))
+        
+        
+        
+        conn.execute(sql_text("""
     CREATE TABLE IF NOT EXISTS user_saved_lists (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
