@@ -10,6 +10,59 @@
 
 
 
+.listing-app-main {
+  background: #050505;
+  color: #fff;
+}
+
+.listing-page {
+  max-width: 760px;
+  padding: 18px 14px 120px;
+}
+
+.listing-card {
+  background: #15171c;
+  border: 1px solid rgba(255,255,255,.08);
+  color: #fff;
+}
+
+.listing-title,
+.listing-section-title,
+.listing-sidebar-card h3,
+.listing-comments-card h3,
+.related-card__title {
+  color: #fff;
+}
+
+.listing-summary,
+.listing-subtitle,
+.listing-detail-value,
+.listing-context p,
+.listing-map-address,
+.related-card__desc,
+.related-card__meta {
+  color: rgba(255,255,255,.62);
+}
+
+.listing-hero {
+  grid-template-columns: 1fr;
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.listing-hero__image {
+  border-radius: 22px;
+}
+
+.mobile-app-header__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+
+
 
 .listing-rating-input {
   display: grid;
@@ -698,30 +751,44 @@
     </div>
   </aside>
 
-  <div class="app-main" style="background-color:#fff">
+<div class="app-main listing-app-main">
 
-    <button class="app-sidebar-toggle" id="app-sidebar-toggle" type="button">
+  <header class="mobile-app-header">
+    <button
+      class="mobile-app-header__icon"
+      id="app-sidebar-toggle"
+      type="button"
+      aria-label="Open menu"
+    >
       ☰
     </button>
 
-    <nav class="navbar">
-      <div id="scroll-profile" class="scroll-profile">
-        <img
-          src="{{ url_for('static', filename='img/headshot.png') }}"
-          class="scroll-profile__img"
-          alt="Profile"
-        />
-        <div class="scroll-profile__text">
-          <div class="scroll-profile__name">Daniel J Mansfield</div>
-          <div class="scroll-profile__title">Help Desk Analytics</div>
-        </div>
+    <div class="mobile-app-header__center">
+      <div class="mobile-app-header__title">
+        {{ listing.name }}
       </div>
 
-      <div id="hamburger" class="hamburger" role="button" aria-label="Toggle menu" aria-expanded="false" tabindex="0">☰</div>
-      <ul id="menu" class="menu collapsed">
-        <li><a href="/">Home</a></li>
-      </ul>
-    </nav>
+      <div class="mobile-app-header__subtitle">
+        {{ (listing.category or "Local business")|replace('_', ' ')|title }}
+      </div>
+    </div>
+
+    <a
+      href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
+      class="mobile-app-header__icon mobile-app-header__icon--link"
+      aria-label="Account"
+    >
+      {% if current_user.is_authenticated and current_user.profile_image_url %}
+        <img
+          src="{{ current_user.profile_image_url }}"
+          alt="{{ current_user.name or current_user.email }}"
+          class="mobile-app-header__avatar-img"
+        >
+      {% else %}
+        👤
+      {% endif %}
+    </a>
+  </header>
 
    <main class="listing-page">
   <a
@@ -1059,6 +1126,21 @@
 </main>
   </div>
 </div>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebar = document.getElementById("app-sidebar");
+  const toggle = document.getElementById("app-sidebar-toggle");
+
+  if (toggle && sidebar) {
+    toggle.addEventListener("click", function () {
+      sidebar.classList.toggle("is-open");
+    });
+  }
+});
+</script>
 
 
 
