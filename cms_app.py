@@ -3824,73 +3824,87 @@ def haversine(lat1, lon1, lat2, lon2):
     
 @app.get("/listing/<slug>")
 def listing_page(slug):
+    listing = query_one(
+        """
+        SELECT *
+        FROM listings
+        WHERE slug = :slug
+          AND status = 'published'
+        """,
+        {"slug": slug}
+    )
+
+    if not listing:
+        abort(404)
+
+    related = query_all(
+        """
+        SELECT *
+        FROM listings
+        WHERE id != :id
+          AND status = 'published'
+          AND (
+            category = :category
+            OR city = :city
+          )
+        ORDER BY featured DESC, id DESC
+        LIMIT 6
+        """,
+        {
+            "id": listing.get("id"),
+            "category": listing.get("category") or "",
+            "city": listing.get("city") or ""
+        }
+    ) or []
+
+    comments = query_all(
+        """
+        SELECT *
+        FROM listing_comments
+        WHERE listing_id = :listing_id
+        ORDER BY created_at DESC
+        """,
+        {"listing_id": listing.get("id")}
+    ) or []
+
+    rating_summary = {
+        "comment_count": 0,
+        "avg_rating": 0
+    }
+
     try:
-        listing = query_one("""
-            SELECT *
-            FROM listings
-            WHERE slug = :slug
-              AND status = 'published'
-        """, {
-            "slug": slug
-        })
-
-        if not listing:
-            abort(404)
-
-        related = query_all("""
-            SELECT *
-            FROM listings
-            WHERE category = :category
-              AND city = :city
-              AND id != :id
-            LIMIT 6
-        """, {
-            "category": listing["category"],
-            "city": listing["city"],
-            "id": listing["id"]
-        })
-
-        comments = query_all("""
-            SELECT *
+        rating_summary = query_one(
+            """
+            SELECT
+                COUNT(*) AS comment_count,
+                COALESCE(ROUND(AVG(NULLIF(rating, 0))::numeric, 1), 0) AS avg_rating
             FROM listing_comments
             WHERE listing_id = :listing_id
-            ORDER BY created_at DESC
-        """, {
-            "listing_id": listing["id"]
-        })
-
-        listing_photos = []
-
-        try:
-            if listing.get("photo_urls_json"):
-                listing_photos = json.loads(listing["photo_urls_json"]) or []
-        except Exception:
-            listing_photos = []
-
-        if not listing_photos and listing.get("photo_url"):
-            listing_photos = [listing["photo_url"]]
-
-        # Calculate rating summary
-        rating_summary = None
-        if comments:
-            total_rating = sum(c.get("rating", 0) for c in comments)
-            avg_rating = total_rating / len(comments)
-            rating_summary = f"Average rating: {avg_rating:.1f} out of 5"
-        else:
-            rating_summary = "No ratings yet"
-
-        return render_template(
-            "listing.html",
-            listing=listing,
-            related=related or [],
-            comments=comments or [],
-            listing_photos=listing_photos or [],
-            rating_summary=rating_summary if 'rating_summary' in locals() else None
-        )
-
+            """,
+            {"listing_id": listing.get("id")}
+        ) or rating_summary
     except Exception as e:
-        print("[LISTING_PAGE_QUERY_ERROR_UNEXPECTED]", str(e), flush=True)
-        abort(404)
+        print("[LISTING_RATING_SUMMARY_ERROR]", str(e), flush=True)
+
+    listing_photos = []
+
+    try:
+        if listing.get("photo_urls_json"):
+            listing_photos = json.loads(listing["photo_urls_json"]) or []
+    except Exception as e:
+        print("[LISTING_PHOTO_JSON_ERROR]", str(e), flush=True)
+
+    if not listing_photos and listing.get("photo_url"):
+        listing_photos = [listing["photo_url"]]
+
+    return render_template(
+        "listing.html",
+        listing=listing,
+        related=related,
+        comments=comments,
+        listing_photos=listing_photos,
+        rating_summary=rating_summary
+    )
     
     
     
