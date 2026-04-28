@@ -3786,62 +3786,61 @@ def haversine(lat1, lon1, lat2, lon2):
     
 @app.get("/listing/<slug>")
 def listing_page(slug):
-    listing = safe_query_one("""
-        SELECT *
-        FROM listings
-        WHERE slug=? AND status='published'
-    """, (slug,), label="LISTING_PAGE_QUERY_ERROR")
-
-    if not listing:
-        abort(404)
-
-    related = safe_query_all("""
-        SELECT id, name, slug, category, city, state, featured, photo_url, description
-        FROM listings
-        WHERE status='published'
-          AND category=?
-          AND city=?
-          AND id != ?
-        ORDER BY featured DESC, name ASC
-        LIMIT 6
-    """, (listing["category"], listing["city"], listing["id"]), label="LISTING_RELATED_ERROR") if listing["category"] and listing["city"] else []
-
-    comments = safe_query_all("""
-        SELECT id, author_name, body, rating, created_at
-        FROM listing_comments
-        WHERE listing_id = ?
-          AND is_approved = 1
-        ORDER BY updated_at DESC, id DESC
-        LIMIT 20
-    """, (listing["id"],), label="LISTING_COMMENTS_ERROR")
-
-    rating_summary = safe_query_one("""
-        SELECT
-            COUNT(*) AS comment_count,
-            ROUND(AVG(rating), 1) AS avg_rating
-        FROM listing_comments
-        WHERE listing_id = ?
-          AND is_approved = 1
-    """, (listing["id"],), fallback={"comment_count": 0, "avg_rating": None}, label="LISTING_RATING_ERROR")
-
-    listing_photos = []
     try:
-        if listing["photo_urls_json"]:
-            listing_photos = json.loads(listing["photo_urls_json"])
-    except Exception:
-        listing_photos = []
+        listing = query_one("""
+            SELECT *
+            FROM listings
+            WHERE slug = :slug
+              AND status = 'published'
+        """, {
+            "slug": slug
+        })
 
-    if not listing_photos and listing["photo_url"]:
-        listing_photos = [listing["photo_url"]]
+        if not listing:
+            abort(404)
 
-    return render_template(
-        "listing_page.html",
-        listing=listing,
-        related=related,
-        comments=comments,
-        listing_photos=listing_photos,
-        rating_summary=rating_summary
-    )
+        related = query_all("""
+            SELECT *
+            FROM listings
+            WHERE category = :category
+              AND city = :city
+              AND id != :id
+            LIMIT 6
+        """, {
+            "category": listing["category"],
+            "city": listing["city"],
+            "id": listing["id"]
+        })
+
+        comments = query_all("""
+            SELECT *
+            FROM listing_comments
+            WHERE listing_id = :listing_id
+            ORDER BY created_at DESC
+        """, {
+            "listing_id": listing["id"]
+        })
+
+        photos = query_all("""
+            SELECT *
+            FROM listing_photos
+            WHERE listing_id = :listing_id
+            ORDER BY id ASC
+        """, {
+            "listing_id": listing["id"]
+        })
+
+        return render_template(
+            "listing.html",
+            listing=listing,
+            related=related,
+            comments=comments,
+            photos=photos
+        )
+
+    except Exception as e:
+        print("[LISTING_PAGE_QUERY_ERROR_UNEXPECTED]", str(e), flush=True)
+        abort(404)
     
     
     
