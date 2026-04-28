@@ -3821,21 +3821,23 @@ def listing_page(slug):
             "listing_id": listing["id"]
         })
 
-        photos = query_all("""
-            SELECT *
-            FROM listing_photos
-            WHERE listing_id = :listing_id
-            ORDER BY id ASC
-        """, {
-            "listing_id": listing["id"]
-        })
+        listing_photos = []
+
+        try:
+            if listing.get("photo_urls_json"):
+                listing_photos = json.loads(listing["photo_urls_json"]) or []
+        except Exception:
+            listing_photos = []
+
+        if not listing_photos and listing.get("photo_url"):
+            listing_photos = [listing["photo_url"]]
 
         return render_template(
             "listing.html",
             listing=listing,
             related=related,
             comments=comments,
-            photos=photos
+            listing_photos=listing_photos
         )
 
     except Exception as e:
