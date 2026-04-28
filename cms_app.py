@@ -3870,12 +3870,22 @@ def listing_page(slug):
         if not listing_photos and listing.get("photo_url"):
             listing_photos = [listing["photo_url"]]
 
+        # Calculate rating summary
+        rating_summary = None
+        if comments:
+            total_rating = sum(c.get("rating", 0) for c in comments)
+            avg_rating = total_rating / len(comments)
+            rating_summary = f"Average rating: {avg_rating:.1f} out of 5"
+        else:
+            rating_summary = "No ratings yet"
+
         return render_template(
             "listing.html",
             listing=listing,
-            related=related,
-            comments=comments,
-            listing_photos=listing_photos
+            related=related or [],
+            comments=comments or [],
+            listing_photos=listing_photos or [],
+            rating_summary=rating_summary if 'rating_summary' in locals() else None
         )
 
     except Exception as e:

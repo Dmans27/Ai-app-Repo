@@ -966,7 +966,7 @@
   </div>
 
 
-  {% if rating_summary and rating_summary.comment_count %}
+{% if rating_summary is defined and rating_summary and rating_summary.comment_count %}
   <div class="listing-rating-summary">
     {{ rating_summary.avg_rating }} ★ · {{ rating_summary.comment_count }} review{% if rating_summary.comment_count != 1 %}s{% endif %}
   </div>
