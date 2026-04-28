@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" style="overflow-y: hidden;">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,9 +56,39 @@
 
   <div class="app-main">
 
-    <button class="app-sidebar-toggle" id="app-sidebar-toggle" type="button">
-      ☰
-    </button>
+<header class="mobile-app-header">
+  <button
+    class="mobile-app-header__icon"
+    id="app-sidebar-toggle"
+    type="button"
+    aria-label="Open menu"
+  >
+    ☰
+  </button>
+
+  <div class="mobile-app-header__center">
+    <div class="mobile-app-header__title">Search Results</div>
+    <div class="mobile-app-header__subtitle">
+      {{ query or "Local places near you" }}
+    </div>
+  </div>
+
+  <a
+    href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
+    class="mobile-app-header__icon mobile-app-header__icon--link"
+    aria-label="Account"
+  >
+    {% if current_user.is_authenticated and current_user.profile_image_url %}
+      <img
+        src="{{ current_user.profile_image_url }}"
+        alt="{{ current_user.name or current_user.email }}"
+        class="mobile-app-header__avatar-img"
+      >
+    {% else %}
+      👤
+    {% endif %}
+  </a>
+</header>
 
 
 
@@ -94,21 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
   
-        <!-- Navbar with hamburger -->
-    <nav class="navbar">
 
-
-            <div id="scroll-profile" class="scroll-profile">
-        <img
-          src="{{ url_for('static', filename='img/headshot.png') }}"
-          class="scroll-profile__img"
-          alt="Profile"
-        />
-        <div class="scroll-profile__text">
-          <div class="scroll-profile__name">Daniel J Mansfield</div>
-          <div class="scroll-profile__title">Help Desk Analytics</div>
-        </div>
-      </div>
 
 
 
@@ -615,6 +631,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   );
 })();
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebar = document.getElementById("app-sidebar");
+  const toggle = document.getElementById("app-sidebar-toggle");
+
+  if (toggle && sidebar) {
+    toggle.addEventListener("click", function () {
+      sidebar.classList.toggle("is-open");
+    });
+  }
+});
 </script>
 
 
