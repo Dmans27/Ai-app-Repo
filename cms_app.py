@@ -3892,6 +3892,31 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return R * c
+
+
+
+
+@app.get("/listing-data/<slug>")
+def listing_data(slug):
+    listing = query_one("""
+        SELECT *
+        FROM listings
+        WHERE slug = :slug
+        LIMIT 1
+    """, {"slug": slug})
+
+    if not listing:
+        return {"error": "Not found"}, 404
+
+    return {
+        "name": listing["name"],
+        "category": listing["category"],
+        "address": listing["address"],
+        "website": listing["website"],
+        "photo_url": listing["photo_url"],
+        "photos": json.loads(listing["photo_urls_json"] or "[]"),
+        "description": listing.get("description") or "",
+    }
     
 
     

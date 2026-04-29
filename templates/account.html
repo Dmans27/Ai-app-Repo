@@ -315,6 +315,7 @@
       {% for place in saved_list.places %}
         <article
   class="saved-place-slide saved-place-slide--full js-place-popup"
+  data-slug="{{ place.slug }}"
   data-name="{{ place.name }}"
   data-category="{{ place.category or 'Local business' }}"
   data-address="{{ place.address or '' }}"
@@ -426,47 +427,96 @@
 
 
             <div class="place-popup" id="place-popup" hidden>
-  <div class="place-popup__backdrop" data-close-place-popup></div>
+              <div class="place-popup__backdrop" data-close-place-popup></div>
 
-  <div class="place-popup__card">
-    <button class="place-popup__close" type="button" data-close-place-popup">
-      ✕
-    </button>
+              <div class="place-popup__card place-popup__card--large">
+                <button class="place-popup__close" type="button" data-close-place-popup>
+                  ✕
+                </button>
 
-    <img
-      id="place-popup-photo"
-      class="place-popup__image"
-      src=""
-      alt=""
-    >
+                <!-- Section 1: Hero / business info -->
+                <section class="place-popup__hero">
+                  <img
+                    id="place-popup-photo"
+                    class="place-popup__image"
+                    src=""
+                    alt=""
+                  >
 
-    <div class="place-popup__body">
-      <p id="place-popup-category" class="place-popup__category"></p>
+                  <div class="place-popup__body">
+                    <p id="place-popup-category" class="place-popup__category"></p>
 
-      <h2 id="place-popup-name"></h2>
+                    <h2 id="place-popup-name"></h2>
 
-      <p id="place-popup-address" class="place-popup__address"></p>
+                    <p id="place-popup-address" class="place-popup__address"></p>
 
-      <div class="place-popup__actions">
-        <a
-          id="place-popup-website"
-          class="place-popup__btn"
-          target="_blank"
-          rel="noopener"
-        >
-          Website
-        </a>
+                    <p id="place-popup-description" class="place-popup__description"></p>
 
-        <a
-          id="place-popup-listing"
-          class="place-popup__btn place-popup__btn--primary"
-        >
-          View listing
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
+                    <div class="place-popup__actions">
+                      <a
+                        id="place-popup-website"
+                        class="place-popup__btn"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Website
+                      </a>
+
+                      <a
+                        id="place-popup-directions"
+                        class="place-popup__btn"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Directions
+                      </a>
+
+                      <a
+                        id="place-popup-listing"
+                        class="place-popup__btn place-popup__btn--primary"
+                      >
+                        View listing
+                      </a>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Section 2: Photo gallery -->
+                <section class="place-popup__section">
+                  <div class="place-popup__section-header">
+                    <h3>Photo gallery</h3>
+                  </div>
+
+                  <div class="place-popup__gallery" id="popup-gallery"></div>
+                </section>
+
+                <!-- Section 3: Comments -->
+                <section class="place-popup__section place-popup__comments">
+                  <h3>Comments</h3>
+
+                  <div id="popup-comments-list" class="place-popup__comments-list">
+                    <p class="place-popup__muted">No comments yet. Be the first to leave one.</p>
+                  </div>
+
+                  <form id="popup-comment-form" class="place-popup__comment-form">
+                    <input
+                      type="text"
+                      name="author_name"
+                      placeholder="Your name"
+                    >
+
+                    <textarea
+                      name="body"
+                      placeholder="Share your experience or thoughts about this business"
+                    ></textarea>
+
+                    <button type="submit">
+                      Post comment
+                    </button>
+                  </form>
+                </section>
+              </div>
+            </div>
 
             <nav class="mobile-tabbar">
               <a href="/" class="mobile-tabbar__item">
@@ -837,6 +887,38 @@ document.addEventListener("DOMContentLoaded", function () {
       popup.hidden = true;
     });
   });
+});
+</script>
+
+
+
+<script>
+document.querySelectorAll(".js-place-popup").forEach(card => {
+
+card.addEventListener("click", async function(){
+
+const slug = this.dataset.slug;
+const popup = document.getElementById("place-popup");
+
+popup.hidden = false;
+
+const r = await fetch(`/listing-data/${slug}`);
+const data = await r.json();
+
+document.getElementById("place-popup-name").textContent = data.name;
+document.getElementById("place-popup-category").textContent = data.category;
+document.getElementById("place-popup-address").textContent = data.address;
+document.getElementById("place-popup-photo").src = data.photo_url;
+
+let gallery = "";
+
+data.photos.forEach(photo => {
+ gallery += `<img src="${photo}" class="popup-thumb">`;
+});
+
+document.getElementById("popup-gallery").innerHTML = gallery;
+
+});
 });
 </script>
 
