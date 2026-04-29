@@ -919,8 +919,25 @@ data.photos.forEach(photo => {
 document.getElementById("popup-gallery").innerHTML = gallery;
 
 });
+
+
+const gallery = document.getElementById("popup-gallery");
+
+if (data.photos && data.photos.length) {
+  gallery.innerHTML = data.photos
+    .map(photo => `<img src="${photo}" class="popup-thumb" alt="">`)
+    .join("");
+} else {
+  gallery.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+}
+
+
 });
 </script>
+
+
+
+
 
 
 

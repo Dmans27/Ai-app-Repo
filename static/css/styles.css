@@ -511,6 +511,79 @@ select {
 }
 
 
+.place-popup__card--large {
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.place-popup__section {
+  padding: 0 28px 24px;
+}
+
+.place-popup__section h3 {
+  margin: 0 0 14px;
+  font-size: 22px;
+  color: #fff;
+}
+
+.place-popup__gallery {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.popup-thumb {
+  width: 120px;
+  height: 92px;
+  object-fit: cover;
+  border-radius: 18px;
+  flex: 0 0 auto;
+}
+
+.place-popup__comments-list {
+  margin-bottom: 16px;
+}
+
+.place-popup__comment-form {
+  display: grid;
+  gap: 12px;
+}
+
+.place-popup__comment-form input,
+.place-popup__comment-form textarea {
+  width: 100%;
+  border: 0;
+  outline: none;
+  border-radius: 18px;
+  background: #242730;
+  color: #fff;
+  padding: 15px 16px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.place-popup__comment-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.place-popup__comment-form button {
+  border: 0;
+  border-radius: 999px;
+  background: #9de8c8;
+  color: #06110d;
+  font-weight: 900;
+  padding: 15px 18px;
+  font-size: 16px;
+}
+
+.place-popup__muted {
+  color: rgba(255,255,255,.58);
+  line-height: 1.5;
+}
+
+
 
 
 /* =========================
