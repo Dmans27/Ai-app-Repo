@@ -3898,24 +3898,41 @@ def haversine(lat1, lon1, lat2, lon2):
 
 @app.get("/listing-data/<slug>")
 def listing_data(slug):
-    listing = query_one("""
+    listing = query_one(
+        """
         SELECT *
         FROM listings
         WHERE slug = :slug
         LIMIT 1
-    """, {"slug": slug})
+        """,
+        {"slug": slug}
+    )
 
     if not listing:
         return {"error": "Not found"}, 404
 
+    photos = []
+
+    try:
+        if listing.get("photo_urls_json"):
+            photos = json.loads(listing["photo_urls_json"]) or []
+    except Exception as e:
+        print("[LISTING_DATA_PHOTO_JSON_ERROR]", str(e), flush=True)
+
+    if not photos and listing.get("photo_url"):
+        photos = [listing["photo_url"]]
+
     return {
-        "name": listing["name"],
-        "category": listing["category"],
-        "address": listing["address"],
-        "website": listing["website"],
-        "photo_url": listing["photo_url"],
-        "photos": json.loads(listing["photo_urls_json"] or "[]"),
+        "name": listing.get("name"),
+        "category": listing.get("category"),
+        "address": listing.get("address"),
+        "website": listing.get("website"),
+        "photo_url": listing.get("photo_url"),
+        "photos": photos,
         "description": listing.get("description") or "",
+        "latitude": listing.get("latitude"),
+        "longitude": listing.get("longitude"),
+        "slug": listing.get("slug"),
     }
     
 
