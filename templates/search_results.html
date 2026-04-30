@@ -157,8 +157,8 @@ document.addEventListener("DOMContentLoaded", function () {
         placeholder="Search local businesses near me"
       >
 
-      <input type="hidden" name="lat" id="search-lat" value="{{ user_lat or '' }}">
-      <input type="hidden" name="lng" id="search-lng" value="{{ user_lng or '' }}">
+      <input type="hidden" name="lat" value="{{ user_lat or '' }}">
+      <input type="hidden" name="lng" value="{{ user_lng or '' }}">
 
       <button type="submit">Search</button>
     </form>
@@ -241,8 +241,8 @@ document.addEventListener("DOMContentLoaded", function () {
   <input type="hidden" name="photo_url" value="{{ l.photo_url or '' }}">
 
   <!-- 🔥 THIS IS THE FIX -->
-  <input type="hidden" name="latitude" value="{{ l.latitude or '' }}">
-  <input type="hidden" name="longitude" value="{{ l.longitude or '' }}">
+  <input type="hidden" name="lat" value="{{ user_lat or '' }}">
+  <input type="hidden" name="lng" value="{{ user_lng or '' }}">
   <input type="hidden" name="city" value="{{ l.city or '' }}">
   <input type="hidden" name="cuisine" value="{{ l.category or '' }}">
 
@@ -666,6 +666,81 @@ document.addEventListener("DOMContentLoaded", function () {
       timeout: 10000
     }
   );
+})();
+</script>
+
+
+
+<script>
+(function () {
+  function addLocationToUrl(url, lat, lng) {
+    const u = new URL(url, window.location.origin);
+    if (u.pathname === "/search") {
+      u.searchParams.set("lat", lat);
+      u.searchParams.set("lng", lng);
+    }
+    return u.toString();
+  }
+
+  function saveAndApplyLocation(position) {
+    const lat = position.coords.latitude.toFixed(6);
+    const lng = position.coords.longitude.toFixed(6);
+
+    localStorage.setItem("user_lat", lat);
+    localStorage.setItem("user_lng", lng);
+
+    document.querySelectorAll('a[href^="/search"]').forEach((link) => {
+      link.href = addLocationToUrl(link.getAttribute("href"), lat, lng);
+    });
+
+    document.querySelectorAll('input[name="lat"]').forEach((input) => {
+      input.value = lat;
+    });
+
+    document.querySelectorAll('input[name="lng"]').forEach((input) => {
+      input.value = lng;
+    });
+
+    const currentUrl = new URL(window.location.href);
+
+    if (
+      currentUrl.pathname === "/search" &&
+      currentUrl.searchParams.get("q") &&
+      !currentUrl.searchParams.get("lat") &&
+      !currentUrl.searchParams.get("lng")
+    ) {
+      currentUrl.searchParams.set("lat", lat);
+      currentUrl.searchParams.set("lng", lng);
+      window.location.replace(currentUrl.toString());
+    }
+  }
+
+  function requestLocation() {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      saveAndApplyLocation,
+      function (error) {
+        console.warn("[LOCATION_ERROR]", error.message);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
+      }
+    );
+  }
+
+  const savedLat = localStorage.getItem("user_lat");
+  const savedLng = localStorage.getItem("user_lng");
+
+  if (savedLat && savedLng) {
+    document.querySelectorAll('a[href^="/search"]').forEach((link) => {
+      link.href = addLocationToUrl(link.getAttribute("href"), savedLat, savedLng);
+    });
+  }
+
+  requestLocation();
 })();
 </script>
 

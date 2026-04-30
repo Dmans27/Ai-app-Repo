@@ -3937,8 +3937,11 @@ def listing_data(slug):
     except Exception as e:
         print("[LISTING_DATA_PHOTO_JSON_ERROR]", str(e), flush=True)
 
-    if not photos and listing.get("photo_url"):
-        photos = [listing["photo_url"]]
+    if listing.get("photo_url") and listing["photo_url"] not in photos:
+        photos.insert(0, listing["photo_url"])
+
+    print("[LISTING_DATA_SLUG]", slug, flush=True)
+    print("[LISTING_DATA_PHOTOS_COUNT]", len(photos), flush=True)
 
     return {
         "name": listing.get("name"),
