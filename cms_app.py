@@ -4796,6 +4796,34 @@ def account():
         .order_by(SavedList.created_at.desc()) \
         .all()
 
+    for saved_list in lists:
+        for place in saved_list.places:
+            listing = None
+
+            if getattr(place, "place_id", None):
+                listing = query_one(
+                    """
+                    SELECT slug
+                    FROM listings
+                    WHERE place_id = :place_id
+                    LIMIT 1
+                    """,
+                    {"place_id": place.place_id}
+                )
+
+            if not listing and place.name:
+                listing = query_one(
+                    """
+                    SELECT slug
+                    FROM listings
+                    WHERE LOWER(name) = LOWER(:name)
+                    LIMIT 1
+                    """,
+                    {"name": place.name}
+                )
+
+            place.slug = listing["slug"] if listing else ""
+
     map_places = []
 
     for saved_list in lists:
@@ -4820,6 +4848,7 @@ def account():
                 "photo_url": place.photo_url or "",
                 "city": (getattr(place, "city", None) or "").strip(),
                 "cuisine": (getattr(place, "cuisine", None) or place.category or "").strip(),
+                "slug": getattr(place, "slug", "") or "",
             })
 
     print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
