@@ -3427,24 +3427,25 @@ def google_place_photo_uri(photo_name: str, max_width: int = 600):
         f"?maxWidthPx={max_width}&key={GOOGLE_MAPS_API_KEY}"
     )
 
-
 def google_places_text_search(query: str, lat: float = None, lng: float = None, limit: int = 10):
     if not GOOGLE_MAPS_API_KEY or not query:
         return []
 
     url = "https://places.googleapis.com/v1/places:searchText"
 
+    has_location = lat is not None and lng is not None
+
     body = {
         "textQuery": query,
-        "maxResultCount": limit
+        "maxResultCount": max(1, min(int(limit or 10), 20))
     }
 
-    if lat is not None and lng is not None:
+    if has_location:
         body["locationBias"] = {
             "circle": {
                 "center": {
-                    "latitude": lat,
-                    "longitude": lng
+                    "latitude": float(lat),
+                    "longitude": float(lng)
                 },
                 "radius": 12000.0
             }
@@ -3467,13 +3468,17 @@ def google_places_text_search(query: str, lat: float = None, lng: float = None, 
         ])
     }
 
+    print("[GOOGLE_PLACES_QUERY]", query, flush=True)
+    print("[GOOGLE_PLACES_LOCATION]", lat, lng, flush=True)
+    print("[GOOGLE_PLACES_BODY]", body, flush=True)
+
     try:
         r = requests.post(url, headers=headers, json=body, timeout=20)
 
         if not r.ok:
             print("[GOOGLE_PLACES_STATUS]", r.status_code, flush=True)
-            print("[GOOGLE_PLACES_BODY]", r.text, flush=True)
-            r.raise_for_status()
+            print("[GOOGLE_PLACES_RESPONSE]", r.text, flush=True)
+            return []
 
         data = r.json()
 
@@ -3481,13 +3486,16 @@ def google_places_text_search(query: str, lat: float = None, lng: float = None, 
         print("[GOOGLE_PLACES_ERROR]", str(e), flush=True)
         return []
 
-    places = data.get("places", []) or []
+    places = data.get("places") or []
     results = []
 
     for p in places:
         location = p.get("location") or {}
         display_name = p.get("displayName") or {}
         photos = p.get("photos") or []
+
+        place_lat = location.get("latitude")
+        place_lng = location.get("longitude")
 
         photo_name = None
         photo_url = None
@@ -3503,35 +3511,32 @@ def google_places_text_search(query: str, lat: float = None, lng: float = None, 
             if not photo_uri:
                 continue
 
+            if not photo_name:
+                photo_name = name
+
+            if not photo_url:
+                photo_url = google_place_photo_uri(name, max_width=600) or photo_uri
+
             photo_urls.append(photo_uri)
-            photo_gallery.append({
-                "url": photo_uri
-            })
-
-        if photos:
-            first_photo = photos[0]
-            photo_name = first_photo.get("name")
-
-            if photo_name:
-                photo_url = google_place_photo_uri(photo_name, max_width=600)
+            photo_gallery.append({"url": photo_uri})
 
         item = {
             "source": "google",
             "badge": "Nearby result",
             "place_id": p.get("id"),
             "slug": None,
-            "name": display_name.get("text"),
+            "name": display_name.get("text") or "Unnamed place",
             "category": p.get("primaryType") or "",
             "city": "",
             "state": "",
-            "address": p.get("formattedAddress"),
+            "address": p.get("formattedAddress") or "",
             "phone": None,
-            "website": p.get("websiteUri") or p.get("googleMapsUri"),
-            "google_maps_uri": p.get("googleMapsUri"),
+            "website": p.get("websiteUri") or p.get("googleMapsUri") or "",
+            "google_maps_uri": p.get("googleMapsUri") or "",
             "description": None,
             "featured": 0,
-            "latitude": location.get("latitude"),
-            "longitude": location.get("longitude"),
+            "latitude": place_lat,
+            "longitude": place_lng,
             "rating": p.get("rating"),
             "review_count": p.get("userRatingCount"),
             "photo_name": photo_name,
@@ -3541,33 +3546,40 @@ def google_places_text_search(query: str, lat: float = None, lng: float = None, 
             "distance_miles": None,
         }
 
-        if lat is not None and lng is not None:
-            if item["latitude"] is not None and item["longitude"] is not None:
-                try:
-                    item["distance_miles"] = round(
-                        haversine_miles(
-                            float(lat),
-                            float(lng),
-                            float(item["latitude"]),
-                            float(item["longitude"])
-                        ),
-                        1
-                    )
-                except Exception:
-                    item["distance_miles"] = None
+        if has_location and place_lat is not None and place_lng is not None:
+            try:
+                item["distance_miles"] = round(
+                    haversine_miles(
+                        float(lat),
+                        float(lng),
+                        float(place_lat),
+                        float(place_lng)
+                    ),
+                    1
+                )
+            except Exception as e:
+                print("[GOOGLE_PLACES_DISTANCE_ERROR]", str(e), flush=True)
+                item["distance_miles"] = None
 
         results.append(item)
 
-    if lat is not None and lng is not None:
+    if has_location:
+        results = [
+            r for r in results
+            if r.get("distance_miles") is not None
+            and r["distance_miles"] <= LOCAL_RADIUS_MILES
+        ]
+
         results.sort(
             key=lambda x: (
-                x["distance_miles"] is None,
-                x["distance_miles"] if x["distance_miles"] is not None else 999999,
+                x["distance_miles"],
                 x.get("name") or ""
             )
         )
     else:
         results.sort(key=lambda x: x.get("name") or "")
+
+    print("[GOOGLE_PLACES_RESULTS_COUNT]", len(results), flush=True)
 
     return results
 
