@@ -326,8 +326,7 @@
   data-name-filter="{{ (place.name or '')|lower }}"
   data-address-filter="{{ (place.address or '')|lower }}"
 >
-  data-name="{{ (place.name or '')|lower }}"
-  data-address="{{ (place.address or '')|lower }}">
+
           <div class="saved-place-slide__thumb">
             {% if place.photo_url %}
               <img src="{{ place.photo_url }}" alt="{{ place.name }}">
@@ -853,32 +852,57 @@ document.addEventListener("DOMContentLoaded", function () {
   const category = document.getElementById("place-popup-category");
   const address = document.getElementById("place-popup-address");
   const website = document.getElementById("place-popup-website");
+  const directions = document.getElementById("place-popup-directions");
   const listing = document.getElementById("place-popup-listing");
+  const gallery = document.getElementById("popup-gallery");
 
   document.querySelectorAll(".js-place-popup").forEach((card) => {
-    card.addEventListener("click", function (e) {
+    card.addEventListener("click", async function (e) {
       if (e.target.closest("a, button, form")) return;
 
-      photo.src = card.dataset.photo;
-      name.textContent = card.dataset.name;
-      category.textContent = card.dataset.category;
-      address.textContent = card.dataset.address;
+      const slug = card.dataset.slug;
 
-      if (card.dataset.website) {
-        website.href = card.dataset.website;
-        website.style.display = "flex";
-      } else {
-        website.style.display = "none";
-      }
+      photo.src = card.dataset.photo || "/static/img/default-business.jpg";
+      name.textContent = card.dataset.name || "Local business";
+      category.textContent = card.dataset.category || "Local business";
+      address.textContent = card.dataset.address || "";
 
-      if (card.dataset.listingUrl) {
-        listing.href = card.dataset.listingUrl;
-        listing.style.display = "flex";
-      } else {
-        listing.style.display = "none";
-      }
+      website.style.display = card.dataset.website ? "flex" : "none";
+      website.href = card.dataset.website || "#";
 
+      listing.style.display = card.dataset.listingUrl ? "flex" : "none";
+      listing.href = card.dataset.listingUrl || "#";
+
+      directions.href = card.dataset.address
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`
+        : "#";
+
+      gallery.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
       popup.hidden = false;
+
+      if (!slug) {
+        gallery.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+        return;
+      }
+
+      try {
+        const res = await fetch(`/listing-data/${slug}`);
+        const data = await res.json();
+
+        if (data.photo_url) {
+          photo.src = data.photo_url;
+        }
+
+        if (data.photos && data.photos.length) {
+          gallery.innerHTML = data.photos
+            .map((url) => `<img src="${url}" class="popup-thumb" alt="">`)
+            .join("");
+        } else {
+          gallery.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+        }
+      } catch (err) {
+        gallery.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
+      }
     });
   });
 
@@ -892,48 +916,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-<script>
-document.querySelectorAll(".js-place-popup").forEach(card => {
 
-card.addEventListener("click", async function(){
-
-const slug = this.dataset.slug;
-const popup = document.getElementById("place-popup");
-
-popup.hidden = false;
-
-const r = await fetch(`/listing-data/${slug}`);
-const data = await r.json();
-
-document.getElementById("place-popup-name").textContent = data.name;
-document.getElementById("place-popup-category").textContent = data.category;
-document.getElementById("place-popup-address").textContent = data.address;
-document.getElementById("place-popup-photo").src = data.photo_url;
-
-let gallery = "";
-
-data.photos.forEach(photo => {
- gallery += `<img src="${photo}" class="popup-thumb">`;
-});
-
-document.getElementById("popup-gallery").innerHTML = gallery;
-
-});
-
-
-const gallery = document.getElementById("popup-gallery");
-
-if (data.photos && data.photos.length) {
-  gallery.innerHTML = data.photos
-    .map(photo => `<img src="${photo}" class="popup-thumb" alt="">`)
-    .join("");
-} else {
-  gallery.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
-}
-
-
-});
-</script>
 
 
 
