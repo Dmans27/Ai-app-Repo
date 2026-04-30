@@ -641,5 +641,34 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+<script>
+(function () {
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+
+  if (url.pathname !== "/search") return;
+  if (!params.get("q")) return;
+  if (params.get("lat") && params.get("lng")) return;
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      params.set("lat", position.coords.latitude.toFixed(6));
+      params.set("lng", position.coords.longitude.toFixed(6));
+      window.location.replace(url.toString());
+    },
+    function (error) {
+      console.warn("Location permission failed:", error.message);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10000
+    }
+  );
+})();
+</script>
+
+
 </body>
 </html>
