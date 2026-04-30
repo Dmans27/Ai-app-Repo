@@ -149,21 +149,19 @@ document.addEventListener("DOMContentLoaded", function () {
     <div class="search-header">
       
 
-      <form action="/search" method="get" class="search-form">
-        <input
-          type="text"
-          name="q"
-          value="{{ query or '' }}"
-          placeholder="Search local businesses near me"
-        >
-        {% if user_lat is not none %}
-          <input type="hidden" name="lat" value="{{ user_lat }}">
-        {% endif %}
-        {% if user_lng is not none %}
-          <input type="hidden" name="lng" value="{{ user_lng }}">
-        {% endif %}
-        <button type="submit">Search</button>
-      </form>
+    <form action="/search" method="get" class="search-form" id="search-form">
+      <input
+        type="text"
+        name="q"
+        value="{{ query or '' }}"
+        placeholder="Search local businesses near me"
+      >
+
+      <input type="hidden" name="lat" id="search-lat" value="{{ user_lat or '' }}">
+      <input type="hidden" name="lng" id="search-lng" value="{{ user_lng or '' }}">
+
+      <button type="submit">Search</button>
+    </form>
     </div>
 
     <div class="search-layout">
@@ -596,40 +594,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 <script>
-(function () {
-  if (window.location.pathname !== "/search") return;
-  if (!navigator.geolocation) return;
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("search-form");
+  const latInput = document.getElementById("search-lat");
+  const lngInput = document.getElementById("search-lng");
 
-  const url = new URL(window.location.href);
-  const params = url.searchParams;
-  const q = (params.get("q") || "").trim();
+  if (!form || !navigator.geolocation) return;
 
-  if (!q) return;
-  if (params.get("lat") && params.get("lng")) return;
+  form.addEventListener("submit", function (e) {
+    if (latInput.value && lngInput.value) return;
 
-  navigator.geolocation.getCurrentPosition(
-    function (position) {
-      const lat = position.coords.latitude.toFixed(6);
-      const lng = position.coords.longitude.toFixed(6);
+    e.preventDefault();
 
-      localStorage.setItem("user_lat", lat);
-      localStorage.setItem("user_lng", lng);
-
-      params.set("lat", lat);
-      params.set("lng", lng);
-
-      window.location.replace(url.toString());
-    },
-    function (error) {
-      console.warn("Geolocation error:", error.message);
-    },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 10000
-    }
-  );
-})();
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        latInput.value = position.coords.latitude.toFixed(6);
+        lngInput.value = position.coords.longitude.toFixed(6);
+        form.submit();
+      },
+      function () {
+        form.submit();
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
+      }
+    );
+  });
+});
 </script>
 
 
