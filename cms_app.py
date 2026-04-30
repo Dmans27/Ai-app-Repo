@@ -3742,17 +3742,48 @@ def search():
         user_lat = None
         user_lng = None
 
+    has_user_location = user_lat is not None and user_lng is not None
+
+    print("[SEARCH_QUERY]", q_raw, flush=True)
+    print("[SEARCH_NORMALIZED]", q, flush=True)
+    print("[SEARCH_LAT_LNG]", user_lat, user_lng, flush=True)
+
     internal_results = search_internal_listings(
         q=q,
-        lat=user_lat,
-        lng=user_lng,
+        lat=user_lat if has_user_location else None,
+        lng=user_lng if has_user_location else None,
         limit=30
-    )
-    
+    ) or []
+
+    if has_user_location:
+        internal_results = filter_nearby_results(
+            internal_results,
+            user_lat,
+            user_lng,
+            radius_miles=LOCAL_RADIUS_MILES
+        )
+
+    external_results = []
+
+    if q:
+        external_results = google_places_text_search(
+            query=q,
+            lat=user_lat if has_user_location else None,
+            lng=user_lng if has_user_location else None,
+            limit=25
+        ) or []
+
+    if has_user_location:
+        external_results = filter_nearby_results(
+            external_results,
+            user_lat,
+            user_lng,
+            radius_miles=LOCAL_RADIUS_MILES
+        )
+
     featured_results = [r for r in internal_results if r.get("featured")]
     nearby_results = [r for r in internal_results if not r.get("featured")]
-    
-    
+
     featured_results = featured_results[:3]
     nearby_results = nearby_results[:10]
 
@@ -3761,41 +3792,18 @@ def search():
         featured_results=featured_results,
         nearby_results=nearby_results
     )
-    
-
-    external_results = []
-    if q:
-        external_results = google_places_text_search(
-            query=q,
-            lat=user_lat,
-            lng=user_lng,
-            limit=25
-        )
-
-    # Keep only local results when user location is available
-    if user_lat is not None and user_lng is not None:
-        internal_results = filter_nearby_results(
-            internal_results,
-            user_lat,
-            user_lng,
-            radius_miles=LOCAL_RADIUS_MILES
-        )
-
-        external_results = filter_nearby_results(
-            external_results,
-            user_lat,
-            user_lng,
-            radius_miles=LOCAL_RADIUS_MILES
-        )
 
     map_results = []
 
     for l in internal_results:
-        if l.get("latitude") is not None and l.get("longitude") is not None:
+        lat = l.get("latitude")
+        lng = l.get("longitude")
+
+        if lat is not None and lng is not None:
             map_results.append({
                 "name": l.get("name"),
-                "lat": l.get("latitude"),
-                "lng": l.get("longitude"),
+                "lat": lat,
+                "lng": lng,
                 "category": l.get("category"),
                 "slug": l.get("slug"),
                 "source": "internal",
@@ -3803,11 +3811,14 @@ def search():
             })
 
     for l in external_results:
-        if l.get("latitude") is not None and l.get("longitude") is not None:
+        lat = l.get("latitude")
+        lng = l.get("longitude")
+
+        if lat is not None and lng is not None:
             map_results.append({
                 "name": l.get("name"),
-                "lat": l.get("latitude"),
-                "lng": l.get("longitude"),
+                "lat": lat,
+                "lng": lng,
                 "category": l.get("category"),
                 "slug": None,
                 "source": "google",
@@ -3815,25 +3826,19 @@ def search():
                 "distance_miles": l.get("distance_miles"),
             })
 
-    # inside search(), replace:
-    search_ads = get_active_ads("search_inline", limit=3)
-
-    # with:
     try:
         search_ads = get_active_ads("search_inline", limit=3)
     except Exception as e:
         print("[SEARCH_ADS_ERROR]", str(e), flush=True)
         search_ads = []
-    
-    
-    
-    
-    # If request wants JSON (AJAX request)
+
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return jsonify({
             "internal_results": internal_results,
             "external_results": external_results,
             "map_results": map_results,
+            "user_lat": user_lat,
+            "user_lng": user_lng,
         })
 
     return render_template(
@@ -3853,7 +3858,6 @@ def search():
         search_ads=search_ads,
         local_radius_miles=LOCAL_RADIUS_MILES,
     )
-    
     
     
 def generate_local_answer(user_query, featured_results, nearby_results):
