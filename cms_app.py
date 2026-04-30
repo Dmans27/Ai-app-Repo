@@ -3471,6 +3471,7 @@ def google_places_text_search(query: str, lat: float = None, lng: float = None, 
     print("[GOOGLE_PLACES_QUERY]", query, flush=True)
     print("[GOOGLE_PLACES_LOCATION]", lat, lng, flush=True)
     print("[GOOGLE_PLACES_BODY]", body, flush=True)
+    print("[GOOGLE_API_REQUEST_BODY]", body, flush=True)
 
     try:
         r = requests.post(url, headers=headers, json=body, timeout=20)
@@ -3759,6 +3760,7 @@ def search():
     print("[SEARCH_QUERY]", q_raw, flush=True)
     print("[SEARCH_NORMALIZED]", q, flush=True)
     print("[SEARCH_LAT_LNG]", user_lat, user_lng, flush=True)
+    print("[FINAL_USER_LOCATION]", user_lat, user_lng, flush=True)
 
     internal_results = search_internal_listings(
         q=q,
