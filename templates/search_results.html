@@ -20,12 +20,10 @@
     </div>
 
     <nav class="app-sidebar__nav">
-      <a href="/" class="app-sidebar__link app-sidebar__link--active">AI Search</a>
-      <a href="/search?q=coffee" class="app-sidebar__link">Coffee</a>
-      <a href="/search?q=restaurant" class="app-sidebar__link">Restaurants</a>
-      <a href="/search?q=bars" class="app-sidebar__link">Bars</a>
-      <a href="/search?q=shopping" class="app-sidebar__link">Shopping</a>
-      <a href="/admin" class="app-sidebar__link">Admin</a>
+    <a href="/search?q=coffee" class="app-sidebar__link">Coffee</a>
+    <a href="/search?q=restaurant" class="app-sidebar__link">Restaurants</a>
+    <a href="/search?q=bars" class="app-sidebar__link">Bars</a>
+    <a href="/search?q=shopping" class="app-sidebar__link">Shopping</a>
     </nav>
 
     <div class="app-sidebar__section-title">Recent searches</div>
@@ -486,20 +484,21 @@ document.addEventListener("DOMContentLoaded", function () {
   </script>
 
   <script>
-    function initResultsMap() {
-      const center = window.MAP_CENTER || {
-        lat: 41.80264,
-        lng: 88.16858
-      };
+      const center = window.MAP_CENTER || null;
 
-      const results = window.MAP_RESULTS || [];
-      const mapEl = document.getElementById("results-map");
-
-      if (!mapEl) return;
+      const fallbackCenter = results.length
+        ? {
+            lat: Number(results[0].lat),
+            lng: Number(results[0].lng)
+          }
+        : {
+            lat: 39.8283,
+            lng: -98.5795
+          };
 
       const map = new google.maps.Map(mapEl, {
-        zoom: 12,
-        center: center,
+        zoom: results.length ? 12 : 4,
+        center: center || fallbackCenter,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false
@@ -508,8 +507,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const bounds = new google.maps.LatLngBounds();
 
       if (center && center.lat != null && center.lng != null) {
-        bounds.extend(center);
-      }
+  bounds.extend(center);
+}
 
       results.forEach((item) => {
         if (item.lat == null || item.lng == null) return;
@@ -571,7 +570,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
       }
-    }
+    
   </script>
 
   <script
