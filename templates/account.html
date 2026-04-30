@@ -858,67 +858,52 @@ document.addEventListener("DOMContentLoaded", function () {
   const website = document.getElementById("place-popup-website");
   const directions = document.getElementById("place-popup-directions");
   const listing = document.getElementById("place-popup-listing");
-  const gallery = document.getElementById("popup-gallery");
+
+  const track = document.getElementById("popup-slider-track");
+  const thumbs = document.getElementById("popup-slider-thumbs");
 
   let popupPhotos = [];
-  let popupPhotoIndex = 0;
+  let currentIndex = 0;
 
-  function renderPopupSlider(index = 0) {
-    if (!gallery) return;
+  function renderSlider(index = 0) {
+    if (!track || !thumbs) return;
 
     if (!popupPhotos.length) {
-      gallery.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+      track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+      thumbs.innerHTML = "";
       return;
     }
 
-    popupPhotoIndex = (index + popupPhotos.length) % popupPhotos.length;
+    currentIndex = (index + popupPhotos.length) % popupPhotos.length;
 
-    gallery.innerHTML = `
-      <div class="popup-slider">
-        <button class="popup-slider__arrow popup-slider__arrow--left" type="button" data-popup-prev>
-          ←
-        </button>
-
-        <div class="popup-slider__viewport">
-          <img
-            src="${popupPhotos[popupPhotoIndex]}"
-            class="popup-slider__image"
-            alt=""
-          >
-        </div>
-
-        <button class="popup-slider__arrow popup-slider__arrow--right" type="button" data-popup-next>
-          →
-        </button>
-      </div>
-
-      <div class="popup-slider__thumbs">
-        ${popupPhotos.map((url, i) => `
-          <button
-            type="button"
-            class="popup-slider__thumb ${i === popupPhotoIndex ? "is-active" : ""}"
-            data-popup-thumb="${i}"
-          >
-            <img src="${url}" alt="">
-          </button>
-        `).join("")}
-      </div>
+    track.innerHTML = `
+      <img src="${popupPhotos[currentIndex]}" class="popup-slider__image" alt="">
     `;
 
-    gallery.querySelector("[data-popup-prev]")?.addEventListener("click", function () {
-      renderPopupSlider(popupPhotoIndex - 1);
-    });
+    thumbs.innerHTML = popupPhotos.map((url, i) => `
+      <button
+        type="button"
+        class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}"
+        data-popup-thumb="${i}"
+      >
+        <img src="${url}" alt="">
+      </button>
+    `).join("");
 
-    gallery.querySelector("[data-popup-next]")?.addEventListener("click", function () {
-      renderPopupSlider(popupPhotoIndex + 1);
-    });
-
-    gallery.querySelectorAll("[data-popup-thumb]").forEach((thumb) => {
+    thumbs.querySelectorAll("[data-popup-thumb]").forEach((thumb) => {
       thumb.addEventListener("click", function () {
-        renderPopupSlider(Number(thumb.dataset.popupThumb));
+        renderSlider(Number(thumb.dataset.popupThumb));
       });
     });
   }
+
+  document.querySelector(".slider-btn.prev")?.addEventListener("click", function () {
+    renderSlider(currentIndex - 1);
+  });
+
+  document.querySelector(".slider-btn.next")?.addEventListener("click", function () {
+    renderSlider(currentIndex + 1);
+  });
 
   document.querySelectorAll(".js-place-popup").forEach((card) => {
     card.addEventListener("click", async function (e) {
@@ -941,12 +926,13 @@ document.addEventListener("DOMContentLoaded", function () {
         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`
         : "#";
 
-      popupPhotos = [];
-      gallery.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
       popup.hidden = false;
+      popupPhotos = [];
+      track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
+      thumbs.innerHTML = "";
 
       if (!slug) {
-        gallery.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
+        track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
         return;
       }
 
@@ -959,10 +945,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         popupPhotos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
-
-        renderPopupSlider(0);
+        renderSlider(0);
       } catch (err) {
-        gallery.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
+        track.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
       }
     });
   });
@@ -971,7 +956,7 @@ document.addEventListener("DOMContentLoaded", function () {
     el.addEventListener("click", function () {
       popup.hidden = true;
       popupPhotos = [];
-      popupPhotoIndex = 0;
+      currentIndex = 0;
     });
   });
 });
