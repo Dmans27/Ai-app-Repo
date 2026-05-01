@@ -4067,10 +4067,11 @@ def discover_page():
             photo_url
         FROM listings
         WHERE status = 'published'
-          AND LOWER(COALESCE(city, '')) = 'naperville'
         ORDER BY name ASC
         LIMIT 100
     """)
+
+    print("[DISCOVER_LISTINGS_COUNT]", len(listings), flush=True)
 
     return render_template(
         "discover.html",
