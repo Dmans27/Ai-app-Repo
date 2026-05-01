@@ -4064,12 +4064,30 @@ def discover_page():
             city,
             state,
             website,
-            COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url
+            COALESCE(
+                NULLIF(photo_url, ''),
+                NULLIF(card_image_url, '')
+            ) AS photo_url,
+            photo_urls_json
         FROM listings
         WHERE status = 'published'
         ORDER BY name ASC
         LIMIT 100
     """)
+
+    for listing in listings:
+        if not listing.get("photo_url") and listing.get("photo_urls_json"):
+            try:
+                photos = json.loads(listing["photo_urls_json"]) or []
+                if photos:
+                    listing["photo_url"] = photos[0]
+            except Exception as e:
+                print("[DISCOVER_PHOTO_JSON_ERROR]", str(e), flush=True)
+
+        print("[DISCOVER_PHOTO_DEBUG]", {
+            "name": listing.get("name"),
+            "photo_url": listing.get("photo_url")
+        }, flush=True)
 
     print("[DISCOVER_LISTINGS_COUNT]", len(listings), flush=True)
 

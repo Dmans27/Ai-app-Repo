@@ -158,11 +158,13 @@
           data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
         >
           <div class="discover-place-card__image-wrap">
-            <img
-              src="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-              alt="{{ place.name }}"
-              class="discover-place-card__image"
-            >
+          <img
+            src="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+            alt="{{ place.name }}"
+            class="discover-place-card__image"
+            loading="lazy"
+            onerror="this.onerror=null; this.src='/static/img/default-business.jpg';"
+          >
           </div>
 
           <div class="discover-place-card__body">
