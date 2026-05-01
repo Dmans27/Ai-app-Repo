@@ -139,118 +139,61 @@
             {% set top_cards = articles[1:3] %}
             {% set grid_articles = articles[3:] %}
 
-            <section class="discover-hero">
-              <p class="discover-hero__eyebrow">Local editorial</p>
-              <h1 class="discover-hero__title">Discover</h1>
-              <p class="discover-hero__subtitle">
-                Neighborhood guides, local recommendations, and articles worth reading.
-              </p>
-            </section>
+        <section class="discover-hero">
+          <p class="discover-hero__eyebrow">Naperville directory</p>
+          <h1 class="discover-hero__title">Discover</h1>
+          <p class="discover-hero__subtitle">
+            Browse places imported into the Local AI directory.
+          </p>
+        </section>
 
-            {% if featured_article %}
-              <section class="discover-feature-layout">
-                <article class="discover-feature-card">
-                  <a class="discover-feature-card__link" href="/p/{{ featured_article.slug }}">
-                    {% if featured_article.card_image_url %}
-                      <div class="discover-feature-card__image-wrap">
-                        <img
-                          src="{{ featured_article.card_image_url }}"
-                          alt="{{ featured_article.title }}"
-                          class="discover-feature-card__image"
-                        >
-                      </div>
-                    {% endif %}
+        {% if listings %}
+          <section class="discover-directory-section">
+            <div class="discover-directory-grid">
 
-                    <div class="discover-feature-card__content">
-                      <div class="discover-feature-card__meta">
-                        <span class="discover-feature-card__tag">Featured story</span>
-                        {% if featured_article.updated_at %}
-                          <span class="discover-feature-card__date">{{ featured_article.updated_at }}</span>
-                        {% endif %}
-                      </div>
+              {% for place in listings %}
+                <article
+                  class="discover-place-card js-place-popup"
+                  data-slug="{{ place.slug }}"
+                  data-name="{{ place.name }}"
+                  data-category="{{ place.category or 'Local business' }}"
+                  data-address="{{ place.address or '' }}"
+                  data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                  data-website="{{ place.website or '' }}"
+                  data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
+                >
+                  <div class="discover-place-card__image-wrap">
+                    <img
+                      src="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                      alt="{{ place.name }}"
+                      class="discover-place-card__image"
+                    >
+                  </div>
 
-                      <h2 class="discover-feature-card__title">{{ featured_article.title }}</h2>
-                      <p class="discover-feature-card__excerpt">
-                        {{ featured_article.description or "Read the latest featured local story and recommendations." }}
-                      </p>
+                  <div class="discover-place-card__body">
+                    <p class="discover-place-card__category">
+                      {{ place.category or "Local business" }}
+                    </p>
 
-                      <div class="discover-feature-card__cta">Read featured article →</div>
-                    </div>
-                  </a>
+                    <h3 class="discover-place-card__title">
+                      {{ place.name }}
+                    </h3>
+
+                    <p class="discover-place-card__address">
+                      {{ place.address or "Naperville, IL" }}
+                    </p>
+                  </div>
                 </article>
+              {% endfor %}
 
-                <div class="discover-top-cards">
-                  {% for article in top_cards %}
-                    <article class="discover-side-card">
-                      <a class="discover-side-card__link" href="/p/{{ article.slug }}">
-                        {% if article.card_image_url %}
-                          <div class="discover-side-card__image-wrap">
-                            <img
-                              src="{{ article.card_image_url }}"
-                              alt="{{ article.title }}"
-                              class="discover-side-card__image"
-                            >
-                          </div>
-                        {% endif %}
-
-                        <div class="discover-side-card__content">
-                          <div class="discover-side-card__meta">
-                            <span class="discover-side-card__tag">{{ article.tag_title or "Article" }}</span>
-                          </div>
-
-                          <h3 class="discover-side-card__title">{{ article.title }}</h3>
-                          <p class="discover-side-card__excerpt">
-                            {{ article.description or "Read this local article for more recommendations." }}
-                          </p>
-                        </div>
-                      </a>
-                    </article>
-                  {% endfor %}
-                </div>
-              </section>
-            {% endif %}
-
-            {% if grid_articles %}
-              <section class="discover-grid-section">
-                <div class="discover-grid">
-                  {% for article in grid_articles %}
-                    <article class="discover-article-card">
-                      <a class="discover-article-card__link" href="/p/{{ article.slug }}">
-                        {% if article.card_image_url %}
-                          <div class="discover-article-card__image-wrap">
-                            <img
-                              src="{{ article.card_image_url }}"
-                              alt="{{ article.title }}"
-                              class="discover-article-card__image"
-                            >
-                          </div>
-                        {% endif %}
-
-                        <div class="discover-article-card__body">
-                          <div class="discover-article-card__meta">
-                            <span class="discover-article-card__tag">{{ article.tag_title or "Article" }}</span>
-                            {% if article.updated_at %}
-                              <span class="discover-article-card__date">{{ article.updated_at }}</span>
-                            {% endif %}
-                          </div>
-
-                          <h3 class="discover-article-card__title">{{ article.title }}</h3>
-                          <p class="discover-article-card__excerpt">
-                            {{ article.description or "Read this article for local insights and recommendations." }}
-                          </p>
-
-                          <div class="discover-article-card__footer">
-                            <span class="discover-article-card__cta">Read article</span>
-                          </div>
-                        </div>
-                      </a>
-                    </article>
-                  {% endfor %}
-                </div>
-              </section>
-            {% endif %}
-
-            {% if not articles %}
+            </div>
+          </section>
+        {% else %}
+          <section class="discover-empty">
+            <h2>No places yet</h2>
+            <p>Import Naperville listings into your directory and they’ll appear here.</p>
+          </section>
+        {% endif %}
               <section class="discover-empty">
                 <h2>No articles yet</h2>
                 <p>Publish some pages and they’ll appear here automatically.</p>

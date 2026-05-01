@@ -4054,24 +4054,28 @@ def privacy_policy():
     
 @app.route("/discover")
 def discover_page():
-    articles = query_all("""
+    listings = query_all("""
         SELECT
             id,
+            name,
             slug,
-            title,
-            description,
-            tag_title,
-            updated_at,
-            card_image_url
-        FROM pages
+            category,
+            address,
+            city,
+            state,
+            website,
+            photo_url
+        FROM listings
         WHERE status = 'published'
-        ORDER BY updated_at DESC, id DESC
+          AND LOWER(COALESCE(city, '')) = 'naperville'
+        ORDER BY name ASC
+        LIMIT 100
     """)
 
     return render_template(
         "discover.html",
         page_title="Discover",
-        articles=articles
+        listings=listings
     )
 
 
