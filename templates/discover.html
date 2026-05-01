@@ -143,54 +143,51 @@
           </p>
         </section>
 
-        {% if listings and listings|length > 0 %}
-          <section class="discover-directory-section">
-            <div class="discover-directory-grid">
+{% if listings and listings|length > 0 %}
+  <section class="discover-directory-section">
+    <div class="discover-directory-grid">
+      {% for place in listings %}
+        <article
+          class="discover-place-card js-place-popup"
+          data-slug="{{ place.slug }}"
+          data-name="{{ place.name }}"
+          data-category="{{ place.category or 'Local business' }}"
+          data-address="{{ place.address or '' }}"
+          data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+          data-website="{{ place.website or '' }}"
+          data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
+        >
+          <div class="discover-place-card__image-wrap">
+            <img
+              src="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+              alt="{{ place.name }}"
+              class="discover-place-card__image"
+            >
+          </div>
 
-              {% for place in listings %}
-                <article
-                  class="discover-place-card js-place-popup"
-                  data-slug="{{ place.slug }}"
-                  data-name="{{ place.name }}"
-                  data-category="{{ place.category or 'Local business' }}"
-                  data-address="{{ place.address or '' }}"
-                  data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-                  data-website="{{ place.website or '' }}"
-                  data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
-                >
-                  <div class="discover-place-card__image-wrap">
-                    <img
-                      src="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-                      alt="{{ place.name }}"
-                      class="discover-place-card__image"
-                    >
-                  </div>
+          <div class="discover-place-card__body">
+            <p class="discover-place-card__category">
+              {{ place.category or "Local business" }}
+            </p>
 
-                  <div class="discover-place-card__body">
-                    <p class="discover-place-card__category">
-                      {{ place.category or "Local business" }}
-                    </p>
+            <h3 class="discover-place-card__title">
+              {{ place.name }}
+            </h3>
 
-                    <h3 class="discover-place-card__title">
-                      {{ place.name }}
-                    </h3>
-
-                    <p class="discover-place-card__address">
-                      {{ place.address or "Naperville, IL" }}
-                    </p>
-                  </div>
-                </article>
-              {% endfor %}
-
-            </div>
-          </section>
-          {% else %}
-          {% else %}
-            <section class="discover-empty">
-              <h2>No places yet</h2>
-              <p>Import Naperville listings into your directory and they’ll appear here.</p>
-            </section>
-          {% endif %}
+            <p class="discover-place-card__address">
+              {{ place.address or "Naperville, IL" }}
+            </p>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% else %}
+  <section class="discover-empty">
+    <h2>No places yet</h2>
+    <p>Import Naperville listings into your directory and they’ll appear here.</p>
+  </section>
+{% endif %}
 
           </div>
           </section>
