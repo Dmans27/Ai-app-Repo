@@ -481,15 +481,21 @@
                 </section>
 
                 <!-- Section 2: Photo gallery -->
-                <div class="photo-slider">
-                <button class="slider-btn prev">‹</button>
+                <div class="photo-slider" id="popup-slider">
+                  
+                  <button type="button" class="slider-btn slider-btn--left" data-slider-prev>
+                    ‹
+                  </button>
 
-                <div class="slider-track" id="popup-slider-track">
-                  <!-- images go here -->
+                  <div class="slider-track" id="popup-slider-track"></div>
+
+                  <button type="button" class="slider-btn slider-btn--right" data-slider-next>
+                    ›
+                  </button>
+
                 </div>
 
-                <button class="slider-btn next">›</button>
-              </div>
+                <div class="slider-thumbs" id="popup-slider-thumbs"></div>
 
               <div class="slider-thumbs" id="popup-slider-thumbs"></div>
 
@@ -859,8 +865,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const directions = document.getElementById("place-popup-directions");
   const listing = document.getElementById("place-popup-listing");
 
+  const slider = document.getElementById("popup-slider");
   const track = document.getElementById("popup-slider-track");
   const thumbs = document.getElementById("popup-slider-thumbs");
+  const prevBtn = slider?.querySelector("[data-slider-prev]");
+  const nextBtn = slider?.querySelector("[data-slider-next]");
 
   let popupPhotos = [];
   let currentIndex = 0;
@@ -871,10 +880,16 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!popupPhotos.length) {
       track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
       thumbs.innerHTML = "";
+
+      if (prevBtn) prevBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
       return;
     }
 
     currentIndex = (index + popupPhotos.length) % popupPhotos.length;
+
+    if (prevBtn) prevBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
+    if (nextBtn) nextBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
 
     track.innerHTML = `
       <img src="${popupPhotos[currentIndex]}" class="popup-slider__image" alt="">
@@ -884,24 +899,26 @@ document.addEventListener("DOMContentLoaded", function () {
       <button
         type="button"
         class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}"
-        data-popup-thumb="${i}"
+        data-thumb="${i}"
       >
         <img src="${url}" alt="">
       </button>
     `).join("");
 
-    thumbs.querySelectorAll("[data-popup-thumb]").forEach((thumb) => {
-      thumb.addEventListener("click", function () {
-        renderSlider(Number(thumb.dataset.popupThumb));
+    thumbs.querySelectorAll("[data-thumb]").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        renderSlider(Number(btn.dataset.thumb));
       });
     });
   }
 
-  document.querySelector(".slider-btn.prev")?.addEventListener("click", function () {
+  prevBtn?.addEventListener("click", function (e) {
+    e.stopPropagation();
     renderSlider(currentIndex - 1);
   });
 
-  document.querySelector(".slider-btn.next")?.addEventListener("click", function () {
+  nextBtn?.addEventListener("click", function (e) {
+    e.stopPropagation();
     renderSlider(currentIndex + 1);
   });
 
@@ -928,8 +945,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       popup.hidden = false;
       popupPhotos = [];
+      currentIndex = 0;
+
       track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
       thumbs.innerHTML = "";
+
+      if (prevBtn) prevBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
 
       if (!slug) {
         track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
@@ -944,7 +966,10 @@ document.addEventListener("DOMContentLoaded", function () {
           photo.src = data.photo_url;
         }
 
-        popupPhotos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
+        popupPhotos = Array.isArray(data.photos)
+          ? data.photos.filter(Boolean)
+          : [];
+
         renderSlider(0);
       } catch (err) {
         track.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
@@ -957,11 +982,12 @@ document.addEventListener("DOMContentLoaded", function () {
       popup.hidden = true;
       popupPhotos = [];
       currentIndex = 0;
+      track.innerHTML = "";
+      thumbs.innerHTML = "";
     });
   });
 });
 </script>
-
 
 
 

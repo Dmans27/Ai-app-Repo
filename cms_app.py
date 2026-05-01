@@ -4796,14 +4796,19 @@ def account():
         .order_by(SavedList.created_at.desc()) \
         .all()
 
+    account_lists = []
+    map_places = []
+
     for saved_list in lists:
+        list_places = []
+
         for place in saved_list.places:
             listing = None
 
             if getattr(place, "place_id", None):
                 listing = query_one(
                     """
-                    SELECT slug
+                    SELECT id, slug, photo_url, photo_urls_json
                     FROM listings
                     WHERE place_id = :place_id
                     LIMIT 1
@@ -4814,7 +4819,7 @@ def account():
             if not listing and place.name:
                 listing = query_one(
                     """
-                    SELECT slug
+                    SELECT id, slug, photo_url, photo_urls_json
                     FROM listings
                     WHERE LOWER(name) = LOWER(:name)
                     LIMIT 1
@@ -4822,34 +4827,55 @@ def account():
                     {"name": place.name}
                 )
 
-            place.slug = listing["slug"] if listing else ""
-
-    map_places = []
-
-    for saved_list in lists:
-        for place in saved_list.places:
-            if place.latitude is None or place.longitude is None:
-                continue
-
-            try:
-                lat = float(place.latitude)
-                lng = float(place.longitude)
-            except (TypeError, ValueError):
-                continue
-
-            map_places.append({
+            place_dict = {
                 "id": place.id,
                 "name": place.name or "",
-                "lat": lat,
-                "lng": lng,
                 "address": place.address or "",
                 "website": place.website or "",
                 "category": place.category or "",
                 "photo_url": place.photo_url or "",
+                "notes": place.notes or "",
+                "latitude": place.latitude,
+                "longitude": place.longitude,
                 "city": (getattr(place, "city", None) or "").strip(),
                 "cuisine": (getattr(place, "cuisine", None) or place.category or "").strip(),
-                "slug": getattr(place, "slug", "") or "",
-            })
+                "place_id": getattr(place, "place_id", None) or "",
+                "listing_id": listing["id"] if listing else "",
+                "slug": listing["slug"] if listing else "",
+            }
+
+            list_places.append(place_dict)
+
+            if place.latitude is not None and place.longitude is not None:
+                try:
+                    lat = float(place.latitude)
+                    lng = float(place.longitude)
+
+                    map_places.append({
+                        "id": place.id,
+                        "name": place.name or "",
+                        "lat": lat,
+                        "lng": lng,
+                        "address": place.address or "",
+                        "website": place.website or "",
+                        "category": place.category or "",
+                        "photo_url": place.photo_url or "",
+                        "city": place_dict["city"],
+                        "cuisine": place_dict["cuisine"],
+                        "slug": place_dict["slug"],
+                    })
+                except (TypeError, ValueError):
+                    pass
+
+        account_lists.append({
+            "id": saved_list.id,
+            "title": saved_list.title,
+            "description": saved_list.description,
+            "slug": saved_list.slug,
+            "is_public": saved_list.is_public,
+            "created_at": saved_list.created_at,
+            "places": list_places,
+        })
 
     print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
     print("[ACCOUNT_MAPBOX_STYLE_URL]", os.getenv("MAPBOX_STYLE_URL", ""), flush=True)
@@ -4858,7 +4884,7 @@ def account():
     return render_template(
         "account.html",
         user=current_user,
-        lists=lists,
+        lists=account_lists,
         map_places=map_places,
         mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
         mapbox_style_url=os.getenv("MAPBOX_STYLE_URL", "")
