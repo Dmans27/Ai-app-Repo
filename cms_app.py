@@ -4054,7 +4054,10 @@ def privacy_policy():
     
 @app.route("/discover")
 def discover_page():
-    listings = query_all("""
+    q = (request.args.get("q") or "").strip().lower()
+    category = (request.args.get("category") or "").strip().lower()
+
+    sql = """
         SELECT
             id,
             name,
@@ -4064,16 +4067,33 @@ def discover_page():
             city,
             state,
             website,
-            COALESCE(
-                NULLIF(photo_url, ''),
-                NULLIF(card_image_url, '')
-            ) AS photo_url,
+            COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url,
             photo_urls_json
         FROM listings
         WHERE status = 'published'
-        ORDER BY name ASC
-        LIMIT 100
-    """)
+    """
+
+    params = {}
+
+    if q:
+        sql += """
+          AND (
+            LOWER(name) LIKE :q
+            OR LOWER(category) LIKE :q
+            OR LOWER(address) LIKE :q
+            OR LOWER(city) LIKE :q
+            OR LOWER(state) LIKE :q
+          )
+        """
+        params["q"] = f"%{q}%"
+
+    if category:
+        sql += " AND LOWER(category) LIKE :category"
+        params["category"] = f"%{category}%"
+
+    sql += " ORDER BY name ASC LIMIT 100"
+
+    listings = query_all(sql, params)
 
     for listing in listings:
         if not listing.get("photo_url") and listing.get("photo_urls_json"):
@@ -4081,20 +4101,15 @@ def discover_page():
                 photos = json.loads(listing["photo_urls_json"]) or []
                 if photos:
                     listing["photo_url"] = photos[0]
-            except Exception as e:
-                print("[DISCOVER_PHOTO_JSON_ERROR]", str(e), flush=True)
-
-        print("[DISCOVER_PHOTO_DEBUG]", {
-            "name": listing.get("name"),
-            "photo_url": listing.get("photo_url")
-        }, flush=True)
-
-    print("[DISCOVER_LISTINGS_COUNT]", len(listings), flush=True)
+            except Exception:
+                pass
 
     return render_template(
         "discover.html",
         page_title="Discover",
-        listings=listings
+        listings=listings,
+        q=q,
+        active_category=category
     )
 
 
