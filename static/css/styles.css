@@ -698,10 +698,32 @@ select {
 
 
 
+.photo-slider {
+  width: 100%;
+}
+
+/* This is the key wrapper */
+.photo-slider__viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;/* adjust to match your design */
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* Main image */
+.popup-slider__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Arrows */
 .slider-btn {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%); /* PERFECT vertical centering */
+
   z-index: 10;
 
   width: 44px;
@@ -710,19 +732,31 @@ select {
 
   background: rgba(20,20,20,0.6);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
 
   color: white;
   font-size: 22px;
-  cursor: pointer;
 
   display: flex;
   align-items: center;
   justify-content: center;
+
+  cursor: pointer;
 }
 
-.slider-btn--left { left: 12px; }
-.slider-btn--right { right: 12px; }
+.slider-btn:hover {
+  background: rgba(80, 200, 160, 0.9);
+  color: black;
+}
+
+/* Left / Right positioning */
+.slider-btn--left {
+  left: 12px;
+}
+
+.slider-btn--right {
+  right: 12px;
+}
 
 
 
