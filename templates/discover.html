@@ -143,7 +143,7 @@
           </p>
         </section>
 
-        {% if listings %}
+        {% if listings and listings|length > 0 %}
           <section class="discover-directory-section">
             <div class="discover-directory-grid">
 
@@ -185,6 +185,7 @@
             </div>
           </section>
           {% else %}
+          {% else %}
             <section class="discover-empty">
               <h2>No places yet</h2>
               <p>Import Naperville listings into your directory and they’ll appear here.</p>
@@ -192,9 +193,9 @@
           {% endif %}
 
           </div>
-        </section>
+          </section>
 
-        <nav class="mobile-tabbar mobile-only">
+          <nav class="mobile-tabbar mobile-only">
 
         
               <section class="discover-empty">
