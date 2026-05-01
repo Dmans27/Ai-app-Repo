@@ -2139,7 +2139,7 @@ def search_internal_listings(
             featured,
             latitude,
             longitude,
-            photo_url,
+            COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url,
             photo_urls_json,
             card_image_url
         FROM listings
@@ -4064,7 +4064,7 @@ def discover_page():
             city,
             state,
             website,
-            photo_url
+            COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url
         FROM listings
         WHERE status = 'published'
         ORDER BY name ASC
@@ -4078,7 +4078,6 @@ def discover_page():
         page_title="Discover",
         listings=listings
     )
-
 
 
 
