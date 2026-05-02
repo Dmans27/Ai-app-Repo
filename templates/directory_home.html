@@ -411,17 +411,17 @@
 
 
 
-function scrollConversationToBottom() {
-  const thread = document.getElementById("chat-thread");
-  if (!thread) return;
+        function scrollConversationToBottom() {
+          const thread = document.getElementById("chat-thread");
+          if (!thread) return;
 
-  requestAnimationFrame(() => {
-    thread.scrollTo({
-      top: thread.scrollHeight,
-      behavior: "smooth"
-    });
-  });
-}
+          requestAnimationFrame(() => {
+            thread.scrollTo({
+              top: thread.scrollHeight,
+              behavior: "smooth"
+            });
+          });
+        }
 
 
 
@@ -1100,7 +1100,6 @@ function scrollConversationToBottom() {
 
       page.classList.remove("is-empty");
       page.classList.add("is-active");
-      scrollConversationToBottom();
 
       messages.insertAdjacentHTML(
         "beforeend",
