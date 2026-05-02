@@ -2328,7 +2328,7 @@ select {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 118px;
+  bottom: 90px;
   z-index: 40;
   padding: 0 14px;
   pointer-events: none;
