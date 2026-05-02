@@ -4628,44 +4628,74 @@ body.app-body {
   padding-bottom: 120px;
 }
 
+/* Mobile chat layout fix */
 @media (max-width: 1024px) {
   body.app-body {
-    height: 100dvh;
+    height: 100svh;
     overflow: hidden;
   }
 
   .app-main {
-    height: 100dvh;
+    height: 100svh;
+    overflow: hidden;
   }
 
   .app-main__inner {
-    height: calc(100dvh - var(--header-h));
+    height: calc(100svh - var(--header-h));
     overflow: hidden;
     padding: 0 16px;
   }
 
   .chat-page {
     height: 100%;
+    overflow: hidden;
   }
 
   .chat-thread {
     height: 100%;
-    padding-bottom: 180px;
+    overflow-y: auto;
+    padding: 14px 0 210px;
   }
 
   .app-composer-wrap {
+    position: fixed;
     left: 0;
     right: 0;
-    bottom: var(--tabbar-h);
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    z-index: 930;
+    padding: 8px 14px 10px;
+  }
+
+  .mobile-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom);
+    z-index: 940;
   }
 
   .quick-scroll-wrap {
-    bottom: calc(var(--tabbar-h) + 92px);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--tabbar-h) + 92px + env(safe-area-inset-bottom));
+    z-index: 935;
+    padding: 0 14px;
+    display: block !important;
   }
 
-  .chat-page.is-active .mobile-home-hero,
-  .chat-page.is-active .quick-scroll-wrap {
+  .chat-page.is-active .mobile-home-hero {
     display: none !important;
+  }
+
+  /* Do NOT hide quick chips during chat */
+  .chat-page.is-active .quick-scroll-wrap {
+    display: block !important;
+  }
+
+  .ai-results-thread,
+  .chat-thread__inner {
+    padding-bottom: 0;
   }
 }
 
