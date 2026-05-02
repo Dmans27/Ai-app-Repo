@@ -3498,6 +3498,7 @@ select {
 .chat-thread {
   flex: 1;
   min-height: 0;
+  height: calc(100dvh - 250px);
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -3510,7 +3511,7 @@ select {
   margin: 0 auto;
   display: grid;
   gap: 18px;
-  padding-bottom: 260px;
+
 }
 
 .ai-chat-messages {

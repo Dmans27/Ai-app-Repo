@@ -411,15 +411,16 @@
 
 
 
-        function scrollConversationToBottom() {
-        const thread = document.getElementById("chat-thread");
-        const inner = document.getElementById("chat-thread-inner");
+function scrollConversationToBottom() {
+  const lastMessage = document.querySelector(
+    "#ai-chat-messages .ai-chat-message:last-child"
+  );
 
-        if (!thread || !inner) return;
+  if (!lastMessage) return;
 
-        thread.scrollTo({
-        top: thread.scrollHeight,
-        behavior: "smooth"
+  lastMessage.scrollIntoView({
+    behavior: "smooth",
+    block: "end"
   });
 }
 
