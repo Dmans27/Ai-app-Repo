@@ -412,15 +412,14 @@
 
 
 function scrollConversationToBottom() {
-  const lastMessage = document.querySelector(
-    "#ai-chat-messages .ai-chat-message:last-child"
-  );
+  const thread = document.getElementById("chat-thread");
+  if (!thread) return;
 
-  if (!lastMessage) return;
-
-  lastMessage.scrollIntoView({
-    behavior: "smooth",
-    block: "end"
+  requestAnimationFrame(() => {
+    thread.scrollTo({
+      top: thread.scrollHeight,
+      behavior: "smooth"
+    });
   });
 }
 
@@ -1101,6 +1100,7 @@ function scrollConversationToBottom() {
 
       page.classList.remove("is-empty");
       page.classList.add("is-active");
+      scrollConversationToBottom();
 
       messages.insertAdjacentHTML(
         "beforeend",
