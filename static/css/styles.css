@@ -3932,6 +3932,8 @@ margin: 10px 10px -86px 10px;
 
   .chat-thread {
     padding: 8px 0 24px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
   }
 
   .chat-thread__inner {
