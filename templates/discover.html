@@ -138,7 +138,17 @@
               <section class="directory-list directory-list--compact">
                 {% for place in listings %}
                   <div class="directory-row">
-                    <a class="directory-row__link" href="{{ url_for('listing_page', slug=place.slug) }}">
+                    <button
+                      type="button"
+                      class="directory-row__link js-place-popup"
+                      data-slug="{{ place.slug }}"
+                      data-name="{{ place.name }}"
+                      data-category="{{ place.category or 'Local business' }}"
+                      data-address="{{ place.address or '' }}"
+                      data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                      data-website="{{ place.website or '' }}"
+                      data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
+                    >
                       <div class="directory-row__main">
                         <h2 class="directory-row__title">{{ place.name }}</h2>
                         <p class="directory-row__meta">
@@ -148,7 +158,7 @@
                         <p class="directory-row__address">{{ place.address or "Naperville, IL" }}</p>
                       </div>
                       <div class="directory-row__arrow">›</div>
-                    </a>
+                    </button>
 
                     {% if current_user.is_authenticated and default_list_id %}
                       <form method="post" action="{{ url_for('save_place_to_list', list_id=default_list_id) }}" class="directory-row__save">
@@ -160,10 +170,10 @@
                         <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
                         <input type="hidden" name="listing_id" value="{{ place.id }}">
                         <input type="hidden" name="place_id" value="{{ place.place_id or '' }}">
-                        <button type="submit" class="directory-row__save-btn">+</button>
+                        <button type="submit" class="directory-row__save-btn" aria-label="Save {{ place.name }}">+</button>
                       </form>
                     {% elif not current_user.is_authenticated %}
-                      <a href="{{ url_for('login') }}" class="directory-row__save-btn directory-row__save-btn--link">Save</a>
+                      <a href="{{ url_for('login') }}" class="directory-row__save-btn directory-row__save-btn--link">+</a>
                     {% endif %}
                   </div>
                 {% endfor %}
@@ -188,6 +198,42 @@
     </div>
   </div>
 
+  <div class="place-popup" id="place-popup" hidden>
+    <div class="place-popup__backdrop" data-close-place-popup></div>
+
+    <div class="place-popup__card">
+      <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
+
+      <img id="place-popup-photo" class="place-popup__image" src="" alt="">
+
+      <div class="place-popup__body">
+        <p id="place-popup-category" class="place-popup__category"></p>
+        <h2 id="place-popup-name"></h2>
+        <p id="place-popup-address" class="place-popup__address"></p>
+
+        <div class="place-popup__actions">
+          <a id="place-popup-website" class="place-popup__btn" target="_blank" rel="noopener">Website</a>
+          <a id="place-popup-directions" class="place-popup__btn" target="_blank" rel="noopener">Directions</a>
+          <a id="place-popup-listing" class="place-popup__btn place-popup__btn--primary">View listing</a>
+        </div>
+
+        <section class="place-popup__section">
+          <h3>Photo gallery</h3>
+
+          <div class="photo-slider" id="popup-slider">
+            <div class="photo-slider__viewport">
+              <button type="button" class="slider-btn slider-btn--left" data-slider-prev>‹</button>
+              <div class="slider-track" id="popup-slider-track"></div>
+              <button type="button" class="slider-btn slider-btn--right" data-slider-next>›</button>
+            </div>
+          </div>
+
+          <div class="slider-thumbs" id="popup-slider-thumbs"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       const sidebar = document.getElementById("app-sidebar");
@@ -208,6 +254,137 @@
       toggle?.addEventListener("click", openDrawer);
       closeBtn?.addEventListener("click", closeDrawer);
       backdrop?.addEventListener("click", closeDrawer);
+    });
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const popup = document.getElementById("place-popup");
+      const photo = document.getElementById("place-popup-photo");
+      const name = document.getElementById("place-popup-name");
+      const category = document.getElementById("place-popup-category");
+      const address = document.getElementById("place-popup-address");
+      const website = document.getElementById("place-popup-website");
+      const directions = document.getElementById("place-popup-directions");
+      const listing = document.getElementById("place-popup-listing");
+
+      const slider = document.getElementById("popup-slider");
+      const track = document.getElementById("popup-slider-track");
+      const thumbs = document.getElementById("popup-slider-thumbs");
+      const prevBtn = slider?.querySelector("[data-slider-prev]");
+      const nextBtn = slider?.querySelector("[data-slider-next]");
+
+      let popupPhotos = [];
+      let currentIndex = 0;
+
+      function renderSlider(index = 0) {
+        if (!track || !thumbs) return;
+
+        if (!popupPhotos.length) {
+          track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+          thumbs.innerHTML = "";
+          if (prevBtn) prevBtn.style.display = "none";
+          if (nextBtn) nextBtn.style.display = "none";
+          return;
+        }
+
+        currentIndex = (index + popupPhotos.length) % popupPhotos.length;
+
+        if (prevBtn) prevBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
+        if (nextBtn) nextBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
+
+        track.innerHTML = `
+          <img src="${popupPhotos[currentIndex]}" class="popup-slider__image" alt="">
+        `;
+
+        thumbs.innerHTML = popupPhotos.map((url, i) => `
+          <button
+            type="button"
+            class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}"
+            data-thumb="${i}"
+          >
+            <img src="${url}" alt="">
+          </button>
+        `).join("");
+
+        thumbs.querySelectorAll("[data-thumb]").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            renderSlider(Number(btn.dataset.thumb));
+          });
+        });
+      }
+
+      prevBtn?.addEventListener("click", function (e) {
+        e.stopPropagation();
+        renderSlider(currentIndex - 1);
+      });
+
+      nextBtn?.addEventListener("click", function (e) {
+        e.stopPropagation();
+        renderSlider(currentIndex + 1);
+      });
+
+      document.querySelectorAll(".js-place-popup").forEach((card) => {
+        card.addEventListener("click", async function (e) {
+          if (e.target.closest("a, button:not(.js-place-popup), form")) return;
+
+          const slug = card.dataset.slug;
+
+          photo.src = card.dataset.photo || "/static/img/default-business.jpg";
+          name.textContent = card.dataset.name || "Local business";
+          category.textContent = card.dataset.category || "Local business";
+          address.textContent = card.dataset.address || "";
+
+          website.style.display = card.dataset.website ? "flex" : "none";
+          website.href = card.dataset.website || "#";
+
+          listing.style.display = card.dataset.listingUrl ? "flex" : "none";
+          listing.href = card.dataset.listingUrl || "#";
+
+          directions.href = card.dataset.address
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`
+            : "#";
+
+          popup.hidden = false;
+          popupPhotos = [];
+          currentIndex = 0;
+
+          track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
+          thumbs.innerHTML = "";
+
+          if (prevBtn) prevBtn.style.display = "none";
+          if (nextBtn) nextBtn.style.display = "none";
+
+          if (!slug) {
+            track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
+            return;
+          }
+
+          try {
+            const res = await fetch(`/listing-data/${slug}`);
+            const data = await res.json();
+
+            if (data.photo_url) {
+              photo.src = data.photo_url;
+            }
+
+            popupPhotos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
+            renderSlider(0);
+          } catch (err) {
+            track.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-close-place-popup]").forEach((el) => {
+        el.addEventListener("click", function () {
+          popup.hidden = true;
+          popupPhotos = [];
+          currentIndex = 0;
+          track.innerHTML = "";
+          thumbs.innerHTML = "";
+        });
+      });
     });
   </script>
 </body>
