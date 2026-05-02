@@ -4057,6 +4057,25 @@ def discover_page():
     q = (request.args.get("q") or "").strip().lower()
     category = (request.args.get("category") or "").strip().lower()
 
+    default_list_id = None
+
+    if current_user.is_authenticated:
+        default_list = SavedList.query.filter_by(user_id=current_user.id) \
+            .order_by(SavedList.created_at.asc()) \
+            .first()
+
+        if not default_list:
+            default_list = SavedList(
+                user_id=current_user.id,
+                title="My Places",
+                description="Places I saved from Local AI",
+                is_public=False
+            )
+            db.session.add(default_list)
+            db.session.commit()
+
+        default_list_id = default_list.id
+
     sql = """
         SELECT
             id,
@@ -4067,6 +4086,9 @@ def discover_page():
             city,
             state,
             website,
+            latitude,
+            longitude,
+            place_id,
             COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url,
             photo_urls_json
         FROM listings
@@ -4078,20 +4100,25 @@ def discover_page():
     if q:
         sql += """
           AND (
-            LOWER(name) LIKE :q
-            OR LOWER(category) LIKE :q
-            OR LOWER(address) LIKE :q
-            OR LOWER(city) LIKE :q
-            OR LOWER(state) LIKE :q
+            LOWER(COALESCE(name, '')) LIKE :q
+            OR LOWER(COALESCE(category, '')) LIKE :q
+            OR LOWER(COALESCE(address, '')) LIKE :q
+            OR LOWER(COALESCE(city, '')) LIKE :q
+            OR LOWER(COALESCE(state, '')) LIKE :q
           )
         """
         params["q"] = f"%{q}%"
 
     if category:
-        sql += " AND LOWER(category) LIKE :category"
+        sql += """
+          AND LOWER(COALESCE(category, '')) LIKE :category
+        """
         params["category"] = f"%{category}%"
 
-    sql += " ORDER BY name ASC LIMIT 100"
+    sql += """
+        ORDER BY name ASC
+        LIMIT 100
+    """
 
     listings = query_all(sql, params)
 
@@ -4101,15 +4128,19 @@ def discover_page():
                 photos = json.loads(listing["photo_urls_json"]) or []
                 if photos:
                     listing["photo_url"] = photos[0]
-            except Exception:
-                pass
+            except Exception as e:
+                print("[DISCOVER_PHOTO_JSON_ERROR]", str(e), flush=True)
+
+    print("[DISCOVER_LISTINGS_COUNT]", len(listings), flush=True)
+    print("[DISCOVER_DEFAULT_LIST_ID]", default_list_id, flush=True)
 
     return render_template(
         "discover.html",
         page_title="Discover",
         listings=listings,
         q=q,
-        active_category=category
+        active_category=category,
+        default_list_id=default_list_id
     )
 
 

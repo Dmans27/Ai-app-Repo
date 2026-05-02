@@ -4,13 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{{ page_title or "Discover" }}</title>
-
   <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 
 <body class="app-body page-discover">
   <div class="app-shell">
-    <!-- Desktop sidebar -->
     <aside class="app-sidebar desktop-sidebar">
       <div class="app-sidebar__top">
         <div class="app-brand">
@@ -25,11 +23,7 @@
         {% endif %}
       </div>
 
-      <button
-        class="app-sidebar__new-search"
-        type="button"
-        onclick="window.location.href='/'"
-      >
+      <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">
         + New search
       </button>
 
@@ -61,24 +55,14 @@
       </div>
     </aside>
 
-    <!-- Mobile shell -->
     <div class="mobile-app-shell">
       <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
         <div class="mobile-drawer__header">
           <div class="mobile-drawer__title">Local AI</div>
-          <button
-            class="mobile-drawer__close"
-            id="app-sidebar-close"
-            type="button"
-            aria-label="Close menu"
-          >✕</button>
+          <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
         </div>
 
-        <button
-          class="mobile-drawer__new-search"
-          type="button"
-          onclick="window.location.href='/'"
-        >
+        <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">
           + New search
         </button>
 
@@ -114,12 +98,7 @@
 
       <main class="mobile-screen">
         <header class="mobile-app-header mobile-only">
-          <button
-            class="mobile-app-header__icon"
-            id="app-sidebar-toggle"
-            type="button"
-            aria-label="Open menu"
-          >☰</button>
+          <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
 
           <div class="mobile-app-header__center">
             <div class="mobile-app-header__title">Discover</div>
@@ -135,100 +114,75 @@
 
         <section class="mobile-content discover-page-content">
           <div class="discover-shell">
-<section class="discover-hero discover-hero--directory">
-  <p class="discover-hero__eyebrow">Naperville directory</p>
-  <h1 class="discover-hero__title">Find local places</h1>
-  <p class="discover-hero__subtitle">
-    Browse restaurants, coffee shops, bars, and local businesses imported into Local AI.
-  </p>
+            <section class="discover-hero discover-hero--directory">
+              <p class="discover-hero__eyebrow">Naperville directory</p>
+              <h1 class="discover-hero__title">Find local places</h1>
+              <p class="discover-hero__subtitle">
+                Browse restaurants, coffee shops, bars, and local businesses imported into Local AI.
+              </p>
 
-  <form class="directory-search" method="get" action="{{ url_for('discover_page') }}">
-    <input
-      type="search"
-      name="q"
-      value="{{ q or '' }}"
-      placeholder="Search places, cuisines, or locations"
-      class="directory-search__input"
-    >
-    <button type="submit" class="directory-search__button">Search</button>
-  </form>
+              <form class="directory-search" method="get" action="{{ url_for('discover_page') }}">
+                <input type="search" name="q" value="{{ q or '' }}" placeholder="Search places, cuisines, or locations" class="directory-search__input">
+                <button type="submit" class="directory-search__button">Search</button>
+              </form>
 
-  <div class="directory-filters">
-    <a href="{{ url_for('discover_page') }}" class="directory-filter {% if not active_category %}is-active{% endif %}">All</a>
-    <a href="{{ url_for('discover_page', category='coffee') }}" class="directory-filter {% if active_category == 'coffee' %}is-active{% endif %}">Coffee</a>
-    <a href="{{ url_for('discover_page', category='restaurant') }}" class="directory-filter {% if active_category == 'restaurant' %}is-active{% endif %}">Restaurants</a>
-    <a href="{{ url_for('discover_page', category='bar') }}" class="directory-filter {% if active_category == 'bar' %}is-active{% endif %}">Bars</a>
-  </div>
-</section>
+              <div class="directory-filters">
+                <a href="{{ url_for('discover_page') }}" class="directory-filter {% if not active_category %}is-active{% endif %}">All</a>
+                <a href="{{ url_for('discover_page', category='coffee') }}" class="directory-filter {% if active_category == 'coffee' %}is-active{% endif %}">Coffee</a>
+                <a href="{{ url_for('discover_page', category='restaurant') }}" class="directory-filter {% if active_category == 'restaurant' %}is-active{% endif %}">Restaurants</a>
+                <a href="{{ url_for('discover_page', category='bar') }}" class="directory-filter {% if active_category == 'bar' %}is-active{% endif %}">Bars</a>
+              </div>
+            </section>
 
-{% if listings and listings|length > 0 %}
-  <section class="directory-list directory-list--compact">
-    {% for place in listings %}
-      <a
-        class="directory-row"
-        href="{{ url_for('listing_page', slug=place.slug) }}"
-      >
-        <div class="directory-row__main">
-          <h2 class="directory-row__title">{{ place.name }}</h2>
+            {% if listings and listings|length > 0 %}
+              <section class="directory-list directory-list--compact">
+                {% for place in listings %}
+                  <div class="directory-row">
+                    <a class="directory-row__link" href="{{ url_for('listing_page', slug=place.slug) }}">
+                      <div class="directory-row__main">
+                        <h2 class="directory-row__title">{{ place.name }}</h2>
+                        <p class="directory-row__meta">
+                          {{ (place.category or "Local business").replace("_", " ").title() }}
+                          {% if place.city %} · {{ place.city }}{% endif %}
+                        </p>
+                        <p class="directory-row__address">{{ place.address or "Naperville, IL" }}</p>
+                      </div>
+                      <div class="directory-row__arrow">›</div>
+                    </a>
 
-          <p class="directory-row__meta">
-            {{ (place.category or "Local business").replace("_", " ").title() }}
-            {% if place.city %} · {{ place.city }}{% endif %}
-          </p>
-
-          <p class="directory-row__address">
-            {{ place.address or "Naperville, IL" }}
-          </p>
-        </div>
-
-        <div class="directory-row__arrow">›</div>
-      </a>
-    {% endfor %}
-  </section>
-{% else %}
-  <section class="discover-empty">
-    <h2>No places found</h2>
-    <p>Try another search or import more places into your directory.</p>
-  </section>
-{% endif %}
-
-          </div>
-          </section>
-
-          <nav class="mobile-tabbar mobile-only">
-
-        
-              <section class="discover-empty">
-
+                    {% if current_user.is_authenticated and default_list_id %}
+                      <form method="post" action="{{ url_for('save_place_to_list', list_id=default_list_id) }}" class="directory-row__save">
+                        <input type="hidden" name="name" value="{{ place.name }}">
+                        <input type="hidden" name="address" value="{{ place.address or '' }}">
+                        <input type="hidden" name="website" value="{{ place.website or '' }}">
+                        <input type="hidden" name="category" value="{{ place.category or '' }}">
+                        <input type="hidden" name="latitude" value="{{ place.latitude or '' }}">
+                        <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
+                        <input type="hidden" name="listing_id" value="{{ place.id }}">
+                        <input type="hidden" name="place_id" value="{{ place.place_id or '' }}">
+                        <button type="submit" class="directory-row__save-btn">Save</button>
+                      </form>
+                    {% elif not current_user.is_authenticated %}
+                      <a href="{{ url_for('login') }}" class="directory-row__save-btn directory-row__save-btn--link">Save</a>
+                    {% endif %}
+                  </div>
+                {% endfor %}
               </section>
+            {% else %}
+              <section class="discover-empty">
+                <h2>No places found</h2>
+                <p>Try another search or import more places into your directory.</p>
+              </section>
+            {% endif %}
           </div>
         </section>
 
         <nav class="mobile-tabbar mobile-only">
-          <a href="/" class="mobile-tabbar__item">
-            <span class="mobile-tabbar__icon">🏠</span>
-            <span class="mobile-tabbar__label">Home</span>
-          </a>
-
-          <a href="/discover" class="mobile-tabbar__item is-active">
-            <span class="mobile-tabbar__icon">🗺️</span>
-            <span class="mobile-tabbar__label">Discover</span>
-          </a>
-
-          <a href="/" class="mobile-tabbar__item">
-            <span class="mobile-tabbar__icon">🔎</span>
-            <span class="mobile-tabbar__label">Search</span>
-          </a>
-
-          <a href="{{ url_for('feed') }}" class="mobile-tabbar__item">
-            <span class="mobile-tabbar__icon">📰</span>
-            <span class="mobile-tabbar__label">Feed</span>
-          </a>
-
-          <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
-            <span class="mobile-tabbar__icon">👤</span>
-            <span class="mobile-tabbar__label">Account</span>
-          </a>
+          <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🏠</span><span class="mobile-tabbar__label">Home</span></a>
+          <a href="/discover" class="mobile-tabbar__item is-active"><span class="mobile-tabbar__icon">🗺️</span><span class="mobile-tabbar__label">Discover</span></a>
+          <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🔎</span><span class="mobile-tabbar__label">Search</span></a>
+          <a href="{{ url_for('feed') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">📰</span><span class="mobile-tabbar__label">Feed</span></a>
+          <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">👤</span><span class="mobile-tabbar__label">Account</span></a>
         </nav>
       </main>
     </div>

@@ -918,6 +918,38 @@ select {
 }
 
 
+.directory-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.directory-row__link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+}
+
+.directory-row__save {
+  flex: 0 0 auto;
+}
+
+.directory-row__save-btn {
+  border: 0;
+  border-radius: 999px;
+  background: #9de8c8;
+  color: #07110d;
+  font-weight: 900;
+  padding: 9px 14px;
+  font-size: 14px;
+}
+
+
 
 
 .photo-slider {
