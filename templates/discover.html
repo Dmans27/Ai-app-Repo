@@ -160,7 +160,7 @@
                         <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
                         <input type="hidden" name="listing_id" value="{{ place.id }}">
                         <input type="hidden" name="place_id" value="{{ place.place_id or '' }}">
-                        <button type="submit" class="directory-row__save-btn">Save</button>
+                        <button type="submit" class="directory-row__save-btn">+</button>
                       </form>
                     {% elif not current_user.is_authenticated %}
                       <a href="{{ url_for('login') }}" class="directory-row__save-btn directory-row__save-btn--link">Save</a>
