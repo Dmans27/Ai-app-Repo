@@ -3589,6 +3589,83 @@ margin: 10px 10px -86px 10px;
   font-size: 0.84rem;
 }
 
+
+
+
+
+/* =========================
+   AI SEARCH GLOW (YOUR APP)
+========================= */
+
+.ai-input-bar {
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow:
+  0 0 0 1px rgba(255,255,255,0.05),
+  0 10px 40px rgba(16,185,129,0.08);
+}
+
+
+
+.ai-input-bar:focus-within {
+  box-shadow:
+    0 0 0 1px rgba(157,232,200,0.35),
+    0 0 50px rgba(16,185,129,0.25);
+}
+
+/* animated border glow */
+.ai-input-bar::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    #9de8c8,
+    #10b981,
+    #6ee7ff,
+    transparent
+  );
+
+  opacity: 0;
+  animation: aiGlowSpin 4s linear infinite;
+  transition: opacity 0.25s ease;
+
+  z-index: 0;
+}
+
+/* inner mask (keeps your design intact) */
+.ai-input-bar::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: #111; /* match your dark theme */
+  z-index: 1;
+}
+
+/* show glow on focus */
+.ai-input-bar:focus-within::before {
+  opacity: 1;
+}
+
+/* keep input + button above glow */
+.ai-input-bar__input,
+.ai-input-bar__send {
+  position: relative;
+  z-index: 2;
+}
+
+/* animation */
+@keyframes aiGlowSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .ai-input-bar {
   display: flex;
   align-items: center;
