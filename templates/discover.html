@@ -162,50 +162,27 @@
 </section>
 
 {% if listings and listings|length > 0 %}
-  <section class="directory-list">
+  <section class="directory-list directory-list--compact">
     {% for place in listings %}
-<article
-  class="directory-card js-place-popup"
-  data-slug="{{ place.slug }}"
-  data-name="{{ place.name }}"
-  data-category="{{ place.category or 'Local business' }}"
-  data-address="{{ place.address or '' }}"
-  data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-  data-website="{{ place.website or '' }}"
-  data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
->
-  <img
-    src="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-    alt="{{ place.name }}"
-    class="directory-card__image"
-    loading="lazy"
-    onerror="this.onerror=null; this.src='/static/img/default-business.jpg';"
-  >
+      <a
+        class="directory-row"
+        href="{{ url_for('listing_page', slug=place.slug) }}"
+      >
+        <div class="directory-row__main">
+          <h2 class="directory-row__title">{{ place.name }}</h2>
 
-  <div class="directory-card__body">
-    <p class="directory-card__category">
-      {{ (place.category or "Local business").replace("_", " ").title() }}
-    </p>
+          <p class="directory-row__meta">
+            {{ (place.category or "Local business").replace("_", " ").title() }}
+            {% if place.city %} · {{ place.city }}{% endif %}
+          </p>
 
-    <h2 class="directory-card__title">{{ place.name }}</h2>
+          <p class="directory-row__address">
+            {{ place.address or "Naperville, IL" }}
+          </p>
+        </div>
 
-    <p class="directory-card__address">
-      {{ place.address or "Naperville, IL" }}
-    </p>
-
-    <div class="directory-card__actions">
-      <a href="{{ url_for('listing_page', slug=place.slug) }}" class="directory-card__btn directory-card__btn--primary">
-        View listing
+        <div class="directory-row__arrow">›</div>
       </a>
-
-      {% if place.website %}
-        <a href="{{ place.website }}" target="_blank" rel="noopener" class="directory-card__btn">
-          Website
-        </a>
-      {% endif %}
-    </div>
-  </div>
-</article>
     {% endfor %}
   </section>
 {% else %}

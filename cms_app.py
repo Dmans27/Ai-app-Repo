@@ -4420,7 +4420,7 @@ Rules:
 - Return JSON only.
 - "query" should be a short practical business type like:
   "coffee shop", "bar", "restaurant", "shopping mall", "gym", "dentist"
-- If the user says "near me" or "nearby", set use_current_location to true.
+- If the user says "near me", "close to me" or "nearby", set use_current_location to true.
 - Use bulletin points in the summary when you name nearby places.
 - If the user clearly mentions another city, set use_current_location to false and fill city/state.
 - Prefer city-based search when a city is explicitly mentioned.
