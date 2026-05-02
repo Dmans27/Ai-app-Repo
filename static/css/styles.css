@@ -3607,11 +3607,13 @@ select {
 }
 
 
+
+
 .chat-composer {
-
-margin: 10px 10px -86px 10px;
-
+  margin: 0;
 }
+
+
 
 .ai-chat-status {
   min-height: 18px;
@@ -4557,4 +4559,70 @@ margin: 10px 10px -86px 10px;
 
 .public-place-slide__actions a {
   white-space: nowrap;
+}
+
+
+
+@media (min-width: 1025px) {
+  .app-main {
+    min-height: 100vh;
+  }
+
+  .desktop-page-header {
+    max-width: 960px;
+    padding: 44px 48px 0;
+  }
+
+  .desktop-page-header__title {
+    max-width: 900px;
+    font-size: clamp(3.5rem, 5vw, 5.8rem);
+  }
+
+  .desktop-page-header__subtitle {
+    font-size: 1.25rem;
+  }
+
+  .app-main__inner {
+    max-width: 960px;
+    margin: 0;
+    padding: 24px 48px 140px;
+  }
+
+  .chat-page.is-empty {
+    min-height: calc(100vh - 360px);
+  }
+
+  .chat-thread {
+    height: auto;
+    min-height: 260px;
+    padding-bottom: 120px;
+  }
+
+  .app-composer-wrap {
+    position: fixed;
+    left: var(--sidebar-w);
+    right: 0;
+    bottom: 0;
+    padding: 24px 48px 28px;
+    background: linear-gradient(
+      to top,
+      rgba(5,5,5,0.98) 70%,
+      rgba(5,5,5,0)
+    );
+  }
+
+  .chat-composer__inner {
+    max-width: 960px;
+    margin: 0;
+  }
+
+  .quick-scroll-wrap {
+    left: var(--sidebar-w);
+    bottom: 118px;
+    padding: 0 48px;
+  }
+
+  .quick-scroll {
+    max-width: 960px;
+  }
 }
