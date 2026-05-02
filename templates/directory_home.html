@@ -399,11 +399,31 @@
             const char = text.charAt(index);
             element.textContent += char;
             index += 1;
+
+            scrollConversationToBottom();
+
             setTimeout(typeNext, getDelay(char));
           } else {
+            scrollConversationToBottom();
             resolve();
           }
         }
+
+
+
+        function scrollConversationToBottom() {
+        const thread = document.getElementById("chat-thread");
+        const inner = document.getElementById("chat-thread-inner");
+
+        if (!thread || !inner) return;
+
+        thread.scrollTo({
+        top: thread.scrollHeight,
+        behavior: "smooth"
+  });
+}
+
+
 
         typeNext();
       });
