@@ -28,6 +28,19 @@
   --content-max: 1400px;
 }
 
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    600px circle at 20% 20%,
+    rgba(120,255,200,0.08),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
 *,
 *::before,
 *::after {
@@ -39,7 +52,12 @@ body {
   margin: 0;
   width: 100%;
   min-height: 100%;
-  background: var(--bg-main);
+  background: radial-gradient(
+    circle at top,
+    #0f1115 0%,
+    #0a0b0f 60%,
+    #07080b 100%
+  );
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
 }
@@ -886,6 +904,8 @@ select {
   padding: 18px 0;
   text-decoration: none;
   border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .directory-row__title {
@@ -923,7 +943,8 @@ select {
   align-items: center;
   gap: 12px;
   padding: 18px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .directory-row__link {
@@ -1898,7 +1919,7 @@ select {
 .page-account .app-shell {
   display: flex;
   min-height: 100vh;
-  background: #050505;
+ background: rgba(255, 255, 255, 0.02);
 }
 
 .page-account .desktop-sidebar {
@@ -1939,6 +1960,7 @@ select {
 
   .page-account .app-shell {
     display: block;
+    background: rgba(255, 255, 255, 0.02);
   }
 
   .account-desktop-wrap {
@@ -2131,7 +2153,8 @@ select {
 .page-account .app-shell {
   display: flex;
   min-height: 100vh;
-  background: #050505;
+  background: rgba(255, 255, 255, 0.02);
+
 }
 
 .page-account .desktop-sidebar {
@@ -2214,6 +2237,7 @@ select {
 
   .page-account .app-shell {
     display: block;
+    background: rgba(255, 255, 255, 0.02);
   }
 
   .page-account .mobile-app-shell,
@@ -3140,7 +3164,7 @@ select {
 .app-shell {
   display: flex;
   min-height: 100vh;
-  background: var(--bg-main);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text-primary);
 }
 
@@ -3611,6 +3635,9 @@ margin: 10px 10px -86px 10px;
   box-shadow:
   0 0 0 1px rgba(255,255,255,0.05),
   0 10px 40px rgba(16,185,129,0.08);
+    background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
 }
 
 
@@ -3717,7 +3744,9 @@ margin: 10px 10px -86px 10px;
   padding: 6px 8px 6px 14px;
   border: 1px solid var(--line-subtle);
   border-radius: 999px;
-  background: var(--bg-elevated);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
 }
 
 .ai-input-bar__input {
@@ -3908,6 +3937,7 @@ margin: 10px 10px -86px 10px;
 
   .app-shell {
     display: block;
+    background: rgba(255, 255, 255, 0.02);
   }
 
   .app-main {
