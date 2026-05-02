@@ -4569,38 +4569,6 @@ margin: 10px 10px -86px 10px;
   white-space: nowrap;
 }
 
-/* When conversation starts, remove the home hero from layout */
-.chat-page.is-active .mobile-home-hero {
-  display: none !important;
-}
 
-.chat-page.is-active .quick-scroll-wrap {
-  display: none !important;
-}
-
-/* Make chat area stable */
-.chat-page.is-active {
-  height: calc(100dvh - var(--header-h));
-  overflow: hidden;
-}
-
-.chat-page.is-active .chat-thread {
-  height: 100%;
-  overflow-y: auto;
-  padding: 16px 16px 160px;
-}
-
-.chat-page.is-active .chat-thread__inner {
-  padding-bottom: 0;
-}
-
-/* Stop extra page growth */
-.ai-results-thread {
-  padding-bottom: 120px;
-}
-
-.chat-composer {
-  margin: 0 !important;
-}
 
 
