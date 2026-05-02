@@ -3607,6 +3607,42 @@ margin: 10px 10px -86px 10px;
 }
 
 
+/* Thinking glow while AI is searching */
+.chat-composer.is-loading .ai-input-bar::before {
+  opacity: 1;
+  animation: aiThinkingGlowSpin 1.4s linear infinite;
+}
+
+.chat-composer.is-loading .ai-input-bar {
+  box-shadow:
+    0 0 0 1px rgba(157,232,200,0.45),
+    0 0 28px rgba(16,185,129,0.35),
+    0 0 70px rgba(110,231,255,0.18);
+}
+
+.chat-composer.is-loading .ai-input-bar__send {
+  animation: aiSendPulse 1s ease-in-out infinite;
+}
+
+@keyframes aiThinkingGlowSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes aiSendPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(16,185,129,0);
+  }
+
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 24px rgba(16,185,129,0.55);
+  }
+}
+
+
 
 .ai-input-bar:focus-within {
   box-shadow:
