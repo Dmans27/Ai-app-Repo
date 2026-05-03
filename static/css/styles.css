@@ -4572,10 +4572,24 @@ margin: 10px 10px -86px 10px;
   white-space: nowrap;
 }
 
-/* directory_home overflow fix */
+/* Remove/override global scroll lock */
 body.app-body {
-  height: 100dvh;
-  overflow: hidden;
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Only lock the AI home chat page */
+body:not(.page-discover):not(.page-account) .app-main {
+  min-height: 100svh;
+}
+
+/* Mobile home composer only */
+@media (max-width: 1024px) {
+  body:not(.page-discover):not(.page-account) .chat-page {
+    min-height: 100svh;
+  }
 }
 
 .app-main {
