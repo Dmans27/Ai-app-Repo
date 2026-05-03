@@ -595,9 +595,7 @@ function placeMatchesFilter(place, filter) {
 }
 
 function getFilteredPlaces() {
-  if (activeFilters.has("all")) {
-    return places;
-  }
+  if (activeFilters.has("all")) return places;
 
   return places.filter((place) => {
     return Array.from(activeFilters).some((filter) => {
@@ -616,6 +614,7 @@ function renderFilteredMarkers() {
 
   const filteredPlaces = getFilteredPlaces();
   const bounds = new mapboxgl.LngLatBounds();
+  let markerCount = 0;
 
   filteredPlaces.forEach((place) => {
     if (place.lng == null || place.lat == null) return;
@@ -635,14 +634,15 @@ function renderFilteredMarkers() {
 
     currentMarkers.push(marker);
     bounds.extend([place.lng, place.lat]);
+    markerCount += 1;
   });
 
-  if (filteredPlaces.length > 1) {
+  if (markerCount > 1) {
     map.fitBounds(bounds, {
       padding: 50,
       maxZoom: 13
     });
-  } else if (filteredPlaces.length === 1) {
+  } else if (markerCount === 1) {
     map.flyTo({
       center: [filteredPlaces[0].lng, filteredPlaces[0].lat],
       zoom: 13
@@ -653,9 +653,9 @@ function renderFilteredMarkers() {
 function filterCards() {
   document.querySelectorAll(".saved-place-slide").forEach((card) => {
     const text = [
-      card.dataset.category || "",
-      card.dataset.name || "",
-      card.dataset.address || ""
+      card.dataset.categoryFilter || "",
+      card.dataset.nameFilter || "",
+      card.dataset.addressFilter || ""
     ].join(" ").toLowerCase();
 
     if (activeFilters.has("all")) {
@@ -674,35 +674,11 @@ function applySavedFilters() {
   filterCards();
 }
 
-document.querySelectorAll(".saved-filter-chip").forEach((chip) => {
-  chip.addEventListener("click", function () {
-    const filter = chip.dataset.filter;
+const filterSelect = document.getElementById("saved-filter-select");
 
-    if (filter === "all") {
-      activeFilters = new Set(["all"]);
-    } else {
-      activeFilters.delete("all");
-
-      if (activeFilters.has(filter)) {
-        activeFilters.delete(filter);
-      } else {
-        activeFilters.add(filter);
-      }
-
-      if (activeFilters.size === 0) {
-        activeFilters.add("all");
-      }
-    }
-
-      const filterSelect = document.getElementById("saved-filter-select");
-
-      filterSelect?.addEventListener("change", function () {
-        activeFilters = new Set([filterSelect.value || "all"]);
-        applySavedFilters();
-      });
-
-    applySavedFilters();
-  });
+filterSelect?.addEventListener("change", function () {
+  activeFilters = new Set([filterSelect.value || "all"]);
+  applySavedFilters();
 });
 
 
@@ -741,32 +717,12 @@ document.querySelectorAll(".saved-filter-chip").forEach((chip) => {
 
       map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-      const bounds = new mapboxgl.LngLatBounds();
-
-      places.forEach((place) => {
-        if (place.lng == null || place.lat == null) return;
-
-        const popupHtml = `
-          <div style="max-width:220px;">
-            <strong>${place.name || ""}</strong>
-            ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
-            ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
-          </div>
-        `;
-
-        new mapboxgl.Marker()
-          .setLngLat([place.lng, place.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
-          .addTo(map);
-
-        bounds.extend([place.lng, place.lat]);
-      });
 
       map.on("load", function () {
-        if (places.length > 1) {
-          map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
-        }
+        renderFilteredMarkers();
       });
+
+
     });
   </script>
 
