@@ -567,88 +567,57 @@
 {{ map_places|tojson|safe }}
   </script>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const sidebar = document.getElementById("app-sidebar");
-      const sidebarToggle = document.getElementById("app-sidebar-toggle");
-      const closeBtn = document.getElementById("app-sidebar-close");
-      const backdrop = document.getElementById("app-sidebar-backdrop");
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebar = document.getElementById("app-sidebar");
+  const sidebarToggle = document.getElementById("app-sidebar-toggle");
+  const closeBtn = document.getElementById("app-sidebar-close");
+  const backdrop = document.getElementById("app-sidebar-backdrop");
 
-      function openDrawer() {
-        sidebar?.classList.add("is-open");
-        backdrop?.classList.add("is-open");
-      }
+  function openDrawer() {
+    sidebar?.classList.add("is-open");
+    backdrop?.classList.add("is-open");
+  }
 
-      function closeDrawer() {
-        sidebar?.classList.remove("is-open");
-        backdrop?.classList.remove("is-open");
-      }
+  function closeDrawer() {
+    sidebar?.classList.remove("is-open");
+    backdrop?.classList.remove("is-open");
+  }
 
+  sidebarToggle?.addEventListener("click", openDrawer);
+  closeBtn?.addEventListener("click", closeDrawer);
+  backdrop?.addEventListener("click", closeDrawer);
 
+  const mapEl = document.getElementById("account-map");
+  if (!mapEl || typeof mapboxgl === "undefined") return;
 
-let activeCategoryFilter = "all";
-let activeLocationFilter = "all";
+  const token = "{{ mapbox_token }}";
+  const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
+  const places = JSON.parse(document.getElementById("map-data").textContent || "[]");
 
-function normalizeText(value) {
-  return String(value || "").trim().toLowerCase();
-}
+  if (!token) return;
 
-function getPlaceLocation(place) {
-  return normalizeText(place.city || place.address || "");
-}
+  let activeCategoryFilter = "all";
+  let activeLocationFilter = "all";
+  let currentMarkers = [];
 
-function placeMatchesFilters(place) {
-  const categoryText = [
-    place.name || "",
-    place.category || "",
-    place.cuisine || "",
-    place.address || ""
-  ].join(" ").toLowerCase();
+  function normalizeText(value) {
+    return String(value || "").trim().toLowerCase();
+  }
 
-  const locationText = getPlaceLocation(place);
+  function getPlaceLocation(place) {
+    return normalizeText(place.city || place.address || "");
+  }
 
-  const categoryMatch =
-    activeCategoryFilter === "all" ||
-    categoryText.includes(activeCategoryFilter);
-
-  const locationMatch =
-    activeLocationFilter === "all" ||
-    locationText.includes(activeLocationFilter);
-
-  return categoryMatch && locationMatch;
-}
-
-function getFilteredPlaces() {
-  return places.filter(placeMatchesFilters);
-}
-
-function populateLocationFilter() {
-  const locationSelect = document.getElementById("saved-location-select");
-  if (!locationSelect) return;
-
-  const locations = [...new Set(
-    places
-      .map((place) => (place.city || "").trim())
-      .filter(Boolean)
-  )].sort();
-
-  locationSelect.innerHTML = `
-    <option value="all">All locations</option>
-    ${locations.map((city) => `
-      <option value="${city.toLowerCase()}">${city}</option>
-    `).join("")}
-  `;
-}
-
-function filterCards() {
-  document.querySelectorAll(".saved-place-slide").forEach((card) => {
+  function placeMatchesFilters(place) {
     const categoryText = [
-      card.dataset.categoryFilter || "",
-      card.dataset.nameFilter || "",
-      card.dataset.addressFilter || ""
+      place.name || "",
+      place.category || "",
+      place.cuisine || "",
+      place.address || ""
     ].join(" ").toLowerCase();
 
-    const locationText = card.dataset.addressFilter || "";
+    const locationText = getPlaceLocation(place);
 
     const categoryMatch =
       activeCategoryFilter === "all" ||
@@ -658,98 +627,135 @@ function filterCards() {
       activeLocationFilter === "all" ||
       locationText.includes(activeLocationFilter);
 
-    card.hidden = !(categoryMatch && locationMatch);
-  });
-}
+    return categoryMatch && locationMatch;
+  }
 
-document.getElementById("saved-filter-select")?.addEventListener("change", function () {
-  activeCategoryFilter = this.value || "all";
-  applySavedFilters();
-});
+  function getFilteredPlaces() {
+    return places.filter(placeMatchesFilters);
+  }
 
-document.getElementById("saved-location-select")?.addEventListener("change", function () {
-  activeLocationFilter = this.value || "all";
-  applySavedFilters();
-});
+  function populateLocationFilter() {
+    const locationSelect = document.getElementById("saved-location-select");
+    if (!locationSelect) return;
 
+    const locations = [...new Set(
+      places.map((place) => (place.city || "").trim()).filter(Boolean)
+    )].sort();
 
-populateLocationFilter();
+    locationSelect.innerHTML = `
+      <option value="all">All locations</option>
+      ${locations.map((city) => `
+        <option value="${city.toLowerCase()}">${city}</option>
+      `).join("")}
+    `;
+  }
 
-function filterCards() {
-  document.querySelectorAll(".saved-place-slide").forEach((card) => {
-    const text = [
-      card.dataset.categoryFilter || "",
-      card.dataset.nameFilter || "",
-      card.dataset.addressFilter || ""
-    ].join(" ").toLowerCase();
+  function clearMarkers() {
+    currentMarkers.forEach((marker) => marker.remove());
+    currentMarkers = [];
+  }
 
-    if (activeFilters.has("all")) {
-      card.hidden = false;
-      return;
+  function renderFilteredMarkers() {
+    clearMarkers();
+
+    const filteredPlaces = getFilteredPlaces();
+    const bounds = new mapboxgl.LngLatBounds();
+    let markerCount = 0;
+
+    filteredPlaces.forEach((place) => {
+      if (place.lng == null || place.lat == null) return;
+
+      const marker = new mapboxgl.Marker()
+        .setLngLat([place.lng, place.lat])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 18 }).setHTML(`
+            <div style="max-width:220px;">
+              <strong>${place.name || ""}</strong>
+              ${place.category ? `<div>${place.category}</div>` : ""}
+              ${place.address ? `<div>${place.address}</div>` : ""}
+            </div>
+          `)
+        )
+        .addTo(map);
+
+      currentMarkers.push(marker);
+      bounds.extend([place.lng, place.lat]);
+      markerCount += 1;
+    });
+
+    if (markerCount > 1) {
+      map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
+    } else if (markerCount === 1) {
+      map.flyTo({
+        center: [filteredPlaces[0].lng, filteredPlaces[0].lat],
+        zoom: 13
+      });
     }
+  }
 
-    card.hidden = !Array.from(activeFilters).some((filter) => {
-      return text.includes(filter);
+  function filterCards() {
+    document.querySelectorAll(".saved-place-slide").forEach((card) => {
+      const categoryText = [
+        card.dataset.categoryFilter || "",
+        card.dataset.nameFilter || "",
+        card.dataset.addressFilter || ""
+      ].join(" ").toLowerCase();
+
+      const locationText = card.dataset.addressFilter || "";
+
+      const categoryMatch =
+        activeCategoryFilter === "all" ||
+        categoryText.includes(activeCategoryFilter);
+
+      const locationMatch =
+        activeLocationFilter === "all" ||
+        locationText.includes(activeLocationFilter);
+
+      card.hidden = !(categoryMatch && locationMatch);
     });
+  }
+
+  function applySavedFilters() {
+    renderFilteredMarkers();
+    filterCards();
+  }
+
+  mapboxgl.accessToken = token;
+
+  const defaultCenter = places.length
+    ? [places[0].lng, places[0].lat]
+    : [-87.6298, 41.8781];
+
+  const map = new mapboxgl.Map({
+    container: "account-map",
+    style: styleUrl,
+    center: defaultCenter,
+    zoom: places.length ? 11 : 9,
+    projection: "mercator",
+    pitch: 0,
+    bearing: 0,
+    antialias: true
   });
-}
 
-function applySavedFilters() {
-  renderFilteredMarkers();
-  filterCards();
-}
+  map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-const filterSelect = document.getElementById("saved-filter-select");
+  populateLocationFilter();
 
-filterSelect?.addEventListener("change", function () {
-  activeFilters = new Set([filterSelect.value || "all"]);
-  applySavedFilters();
+  document.getElementById("saved-filter-select")?.addEventListener("change", function () {
+    activeCategoryFilter = this.value || "all";
+    applySavedFilters();
+  });
+
+  document.getElementById("saved-location-select")?.addEventListener("change", function () {
+    activeLocationFilter = this.value || "all";
+    applySavedFilters();
+  });
+
+  map.on("load", function () {
+    renderFilteredMarkers();
+  });
 });
-
-
-
-      sidebarToggle?.addEventListener("click", openDrawer);
-      closeBtn?.addEventListener("click", closeDrawer);
-      backdrop?.addEventListener("click", closeDrawer);
-
-      const mapEl = document.getElementById("account-map");
-      if (!mapEl || typeof mapboxgl === "undefined") return;
-
-      const token = "{{ mapbox_token }}";
-      const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
-      const places = JSON.parse(
-        document.getElementById("map-data").textContent || "[]"
-      );
-
-      if (!token) return;
-
-      mapboxgl.accessToken = token;
-
-      const defaultCenter = places.length
-        ? [places[0].lng, places[0].lat]
-        : [-87.6298, 41.8781];
-
-      const map = new mapboxgl.Map({
-        container: "account-map",
-        style: styleUrl,
-        center: defaultCenter,
-        zoom: places.length ? 11 : 9,
-        projection: "mercator",
-        pitch: 0,
-        bearing: 0,
-        antialias: true
-      });
-
-      map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-
-      map.on("load", function () {
-        renderFilteredMarkers();
-      });
-
-
-    });
-  </script>
+</script>
 
 
 
