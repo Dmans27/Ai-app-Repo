@@ -4642,7 +4642,7 @@ body.app-body {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 92px;
+
     z-index: 950;
     padding: 8px 14px;
   }
@@ -4671,7 +4671,7 @@ body.app-body {
   .chat-thread {
     height: 100%;
     overflow-y: auto;
-    padding-bottom: 280px;
+    
   }
 
   .chat-composer {
