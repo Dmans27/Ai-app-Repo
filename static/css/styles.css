@@ -3586,9 +3586,9 @@ padding-bottom: 0;
    ========================= */
 .app-composer-wrap {
   position: fixed;
-  left: var(--sidebar-w);
+  left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(72px + 104px + env(safe-area-inset-bottom));
   z-index: 950;
   padding: 0 32px 24px;
   background: linear-gradient(to top, rgba(5,5,5,0.98) 65%, rgba(5,5,5,0));
@@ -3869,14 +3869,17 @@ margin: 10px 10px -86px 10px;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 940;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-  background: rgba(18,18,18,0.96);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 960;
+  background: rgba(10, 12, 14, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--line-subtle);
+  
+
+  z-index: 960;
 }
 
 .mobile-tabbar__item {
@@ -4613,10 +4616,10 @@ body.app-body {
 
 .app-composer-wrap {
   position: fixed;
-  left: var(--sidebar-w);
+  left: 0;
   right: 0;
-  bottom: 0;
-  z-index: 950;
+  bottom: calc(72px + 104px + env(safe-area-inset-bottom));
+  z-index: 930;
 }
 
 .chat-composer {
@@ -4689,6 +4692,7 @@ body.app-body {
     z-index: 960;
     height: var(--mobile-tabbar-h);
     padding: 7px 10px 10px;
+
   }
 
   .chat-composer {
