@@ -1100,8 +1100,7 @@ function buildResultRow(item, isInternal, index = 0) {
         return;
       }
 
-      page.classList.remove("is-empty");
-      page.classList.add("is-active");
+        setChatUiState(true);
 
       messages.insertAdjacentHTML(
         "beforeend",
@@ -1215,6 +1214,21 @@ function buildResultRow(item, isInternal, index = 0) {
 
 
 
+
+function setChatUiState(isActive) {
+  const page = document.getElementById("chat-page");
+
+  if (page) {
+    page.classList.toggle("is-empty", !isActive);
+    page.classList.toggle("is-active", isActive);
+  }
+
+  document.body.classList.toggle("ai-chat-empty", !isActive);
+  document.body.classList.toggle("ai-chat-active", isActive);
+}
+
+
+
     function runQuickPrompt(text) {
   const input = document.querySelector("#chat-input, #search-input, textarea");
 
@@ -1247,8 +1261,13 @@ function buildResultRow(item, isInternal, index = 0) {
       const desktopGreeting = document.getElementById("time-greeting");
       const mobileGreeting = document.getElementById("time-greeting-mobile");
 
+
+      setChatUiState(false);
+
       if (desktopGreeting) desktopGreeting.textContent = greeting;
       if (mobileGreeting) mobileGreeting.textContent = greeting;
+
+      
 
       function openDrawer() {
         sidebar?.classList.add("is-open");
