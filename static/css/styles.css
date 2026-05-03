@@ -2353,8 +2353,8 @@ select {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 90px;
-  z-index: 40;
+  bottom: calc(env(safe-area-inset-bottom) + 70px);
+  z-index: 940;
   padding: 0 14px;
   pointer-events: none;
 }
@@ -3525,7 +3525,7 @@ select {
   min-height: 0;
   height: auto;
   overflow-y: auto;
-  padding-bottom: 150px;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 120px);
 }
 
 .chat-thread__inner {
@@ -3588,9 +3588,9 @@ padding-bottom: 0;
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(72px + 104px + env(safe-area-inset-bottom));
+  bottom: calc(env(safe-area-inset-bottom) + 8px);
   z-index: 950;
-  padding: 0 32px 24px;
+  padding: 8px 14px;
   background: linear-gradient(to top, rgba(5,5,5,0.98) 65%, rgba(5,5,5,0));
 }
 
@@ -4604,6 +4604,7 @@ body.app-body {
   min-height: 0;
   overflow-y: auto;
   padding: 12px 0 150px;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 120px);
 }
 
 .mobile-home-hero {
@@ -4650,7 +4651,7 @@ body.app-body {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 210px;
+    bottom: calc(env(safe-area-inset-bottom) + 70px);
     z-index: 940;
     padding: 0 14px;
   }
