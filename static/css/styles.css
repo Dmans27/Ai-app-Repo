@@ -2353,7 +2353,7 @@ select {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(env(safe-area-inset-bottom) + 70px);
+  bottom: 75px;
   z-index: 940;
   padding: 0 14px;
   pointer-events: none;
@@ -4626,7 +4626,7 @@ body:not(.page-discover):not(.page-account) .app-main {
 }
 
 .quick-scroll-wrap {
-  bottom: 120px;
+  bottom: 75px;
 }
 
 .app-composer-wrap {
@@ -4692,7 +4692,7 @@ body:not(.page-discover):not(.page-account) .app-main {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 112px;
+    bottom: 75px;
     z-index: 940;
     padding: 0 14px;
   }
