@@ -4632,28 +4632,10 @@ body.app-body {
   padding-bottom: 120px;
 }
 
-/* FINAL directory_home mobile bottom fix */
+/* FINAL MOBILE AI COMPOSER POSITION */
 @media (max-width: 1024px) {
   .mobile-tabbar {
     display: none !important;
-  }
-
-  .app-composer-wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-
-    z-index: 950;
-    padding: 8px 14px;
-  }
-
-  .quick-scroll-wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(env(safe-area-inset-bottom) + 70px);
-    z-index: 940;
-    padding: 0 14px;
   }
 
   .app-main,
@@ -4665,17 +4647,49 @@ body.app-body {
   .app-main__inner {
     height: calc(100svh - var(--header-h));
     overflow: hidden;
-    padding: 0 16px;
+    padding: 0 14px;
   }
 
   .chat-thread {
     height: 100%;
     overflow-y: auto;
-    
+    padding: 14px 0 150px;
+  }
+
+  .app-composer-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    z-index: 950;
+    padding: 0 14px;
+    background: none;
   }
 
   .chat-composer {
     margin: 0 !important;
+  }
+
+  .chat-composer__inner {
+    border-radius: 28px;
+  }
+
+  .quick-scroll-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 112px;
+    z-index: 940;
+    padding: 0 14px;
+  }
+
+  .ai-chat-status {
+    display: none;
+  }
+
+  .ai-results-thread,
+  .chat-thread__inner {
+    padding-bottom: 0 !important;
   }
 }
 
