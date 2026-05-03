@@ -1683,6 +1683,31 @@ select {
 }
 
 
+.saved-filter-select-wrap {
+  padding: 18px 28px 8px;
+}
+
+.saved-filter-select-wrap label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(255,255,255,0.62);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.saved-filter-select {
+  width: 100%;
+  height: 58px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  background: #15171d;
+  color: #fff;
+  padding: 0 16px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+
 
 
 .saved-filter-bar {
