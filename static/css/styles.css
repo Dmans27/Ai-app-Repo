@@ -3896,7 +3896,7 @@ margin: 10px 10px -86px 10px;
 
 .search-view-toggle {
   position: sticky;
-  top: 1px;
+  top: -10px;
   z-index: 20;
   display: inline-flex;
   gap: 1px;
