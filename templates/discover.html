@@ -135,49 +135,61 @@
             </section>
 
             {% if listings and listings|length > 0 %}
-              <section class="directory-list directory-list--compact">
-                {% for place in listings %}
-                  <div class="directory-row">
-                    <button
-                      type="button"
-                      class="directory-row__link js-place-popup"
-                      data-slug="{{ place.slug }}"
-                      data-name="{{ place.name }}"
-                      data-category="{{ place.category or 'Local business' }}"
-                      data-address="{{ place.address or '' }}"
-                      data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-                      data-website="{{ place.website or '' }}"
-                      data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
-                    >
-                      <div class="directory-row__main">
-                        <h2 class="directory-row__title">{{ place.name }}</h2>
-                        <p class="directory-row__meta">
-                          {{ (place.category or "Local business").replace("_", " ").title() }}
-                          {% if place.city %} · {{ place.city }}{% endif %}
-                        </p>
-                        <p class="directory-row__address">{{ place.address or "Naperville, IL" }}</p>
-                      </div>
-                      <div class="directory-row__arrow">›</div>
-                    </button>
+              <div class="discover-desktop-layout">
+                <section class="directory-list directory-list--compact" aria-label="Local directory places">
+                  {% for place in listings %}
+                    <div class="directory-row">
+                      <button
+                        type="button"
+                        class="directory-row__link js-place-popup"
+                        data-slug="{{ place.slug }}"
+                        data-name="{{ place.name }}"
+                        data-category="{{ place.category or 'Local business' }}"
+                        data-address="{{ place.address or '' }}"
+                        data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                        data-website="{{ place.website or '' }}"
+                        data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
+                      >
+                        <div class="directory-row__main">
+                          <h2 class="directory-row__title">{{ place.name }}</h2>
+                          <p class="directory-row__meta">
+                            {{ (place.category or "Local business").replace("_", " ").title() }}
+                            {% if place.city %} · {{ place.city }}{% endif %}
+                          </p>
+                          <p class="directory-row__address">{{ place.address or "Naperville, IL" }}</p>
+                        </div>
+                        <div class="directory-row__arrow" aria-hidden="true">›</div>
+                      </button>
 
-                    {% if current_user.is_authenticated and default_list_id %}
-                      <form method="post" action="{{ url_for('save_place_to_list', list_id=default_list_id) }}" class="directory-row__save">
-                        <input type="hidden" name="name" value="{{ place.name }}">
-                        <input type="hidden" name="address" value="{{ place.address or '' }}">
-                        <input type="hidden" name="website" value="{{ place.website or '' }}">
-                        <input type="hidden" name="category" value="{{ place.category or '' }}">
-                        <input type="hidden" name="latitude" value="{{ place.latitude or '' }}">
-                        <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
-                        <input type="hidden" name="listing_id" value="{{ place.id }}">
-                        <input type="hidden" name="place_id" value="{{ place.place_id or '' }}">
-                        <button type="submit" class="directory-row__save-btn" aria-label="Save {{ place.name }}">+</button>
-                      </form>
-                    {% elif not current_user.is_authenticated %}
-                      <a href="{{ url_for('login') }}" class="directory-row__save-btn directory-row__save-btn--link">+</a>
-                    {% endif %}
+                      {% if current_user.is_authenticated and default_list_id %}
+                        <form method="post" action="{{ url_for('save_place_to_list', list_id=default_list_id) }}" class="directory-row__save">
+                          <input type="hidden" name="name" value="{{ place.name }}">
+                          <input type="hidden" name="address" value="{{ place.address or '' }}">
+                          <input type="hidden" name="website" value="{{ place.website or '' }}">
+                          <input type="hidden" name="category" value="{{ place.category or '' }}">
+                          <input type="hidden" name="latitude" value="{{ place.latitude or '' }}">
+                          <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
+                          <input type="hidden" name="listing_id" value="{{ place.id }}">
+                          <input type="hidden" name="place_id" value="{{ place.place_id or '' }}">
+                          <button type="submit" class="directory-row__save-btn" aria-label="Save {{ place.name }}">+</button>
+                        </form>
+                      {% elif not current_user.is_authenticated %}
+                        <a href="{{ url_for('login') }}" class="directory-row__save-btn directory-row__save-btn--link" aria-label="Log in to save {{ place.name }}">+</a>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </section>
+
+                <aside class="directory-detail-panel" id="directory-detail-panel" aria-live="polite">
+                  <div class="directory-detail-empty">
+                    <div>
+                      <p class="directory-detail-empty__eyebrow">Preview</p>
+                      <h2>Select a place</h2>
+                      <p>Click a business from the directory to see photos, details, and actions here.</p>
+                    </div>
                   </div>
-                {% endfor %}
-              </section>
+                </aside>
+              </div>
             {% else %}
               <section class="discover-empty">
                 <h2>No places found</h2>
@@ -204,7 +216,7 @@
     <div class="place-popup__card">
       <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
 
-      <img id="place-popup-photo" class="place-popup__image" src="" alt="" style="display: none;">
+      <img id="place-popup-photo" class="place-popup__image" src="" alt="">
 
       <div class="place-popup__body">
         <p id="place-popup-category" class="place-popup__category"></p>
@@ -273,9 +285,56 @@
       const thumbs = document.getElementById("popup-slider-thumbs");
       const prevBtn = slider?.querySelector("[data-slider-prev]");
       const nextBtn = slider?.querySelector("[data-slider-next]");
+      const detailPanel = document.getElementById("directory-detail-panel");
 
       let popupPhotos = [];
       let currentIndex = 0;
+
+      function isDesktopDirectory() {
+        return window.matchMedia("(min-width: 1025px)").matches;
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function getDirectionsUrl(addressText) {
+        return addressText
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`
+          : "#";
+      }
+
+      function setActiveDirectoryRow(card) {
+        document.querySelectorAll(".js-place-popup.is-selected").forEach((el) => {
+          el.classList.remove("is-selected");
+        });
+        card?.classList.add("is-selected");
+      }
+
+      async function loadListingPhotos(slug) {
+        if (!slug) return [];
+
+        try {
+          const res = await fetch(`/listing-data/${slug}`);
+          if (!res.ok) return [];
+
+          const data = await res.json();
+          const photos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
+
+          if (data.photo_url && !photos.includes(data.photo_url)) {
+            photos.unshift(data.photo_url);
+          }
+
+          return photos;
+        } catch (err) {
+          return [];
+        }
+      }
 
       function renderSlider(index = 0) {
         if (!track || !thumbs) return;
@@ -294,7 +353,7 @@
         if (nextBtn) nextBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
 
         track.innerHTML = `
-          <img src="${popupPhotos[currentIndex]}" class="popup-slider__image" alt="">
+          <img src="${escapeHtml(popupPhotos[currentIndex])}" class="popup-slider__image" alt="">
         `;
 
         thumbs.innerHTML = popupPhotos.map((url, i) => `
@@ -303,7 +362,7 @@
             class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}"
             data-thumb="${i}"
           >
-            <img src="${url}" alt="">
+            <img src="${escapeHtml(url)}" alt="">
           </button>
         `).join("");
 
@@ -312,6 +371,102 @@
             renderSlider(Number(btn.dataset.thumb));
           });
         });
+      }
+
+      function renderDesktopDetail(card, photos = []) {
+        if (!detailPanel) return;
+
+        const displayPhotos = photos.length
+          ? photos
+          : [card.dataset.photo || "/static/img/default-business.jpg"].filter(Boolean);
+
+        const primaryPhoto = displayPhotos[0] || card.dataset.photo || "/static/img/default-business.jpg";
+        const websiteHtml = card.dataset.website
+          ? `<a class="directory-detail-btn" href="${escapeHtml(card.dataset.website)}" target="_blank" rel="noopener">Website</a>`
+          : "";
+        const directionsHtml = card.dataset.address
+          ? `<a class="directory-detail-btn" href="${escapeHtml(getDirectionsUrl(card.dataset.address))}" target="_blank" rel="noopener">Directions</a>`
+          : "";
+        const listingHtml = card.dataset.listingUrl
+          ? `<a class="directory-detail-btn directory-detail-btn--primary" href="${escapeHtml(card.dataset.listingUrl)}">View listing</a>`
+          : "";
+
+        detailPanel.innerHTML = `
+          <article class="directory-detail-card">
+            <img class="directory-detail-hero" src="${escapeHtml(primaryPhoto)}" alt="${escapeHtml(card.dataset.name || "Local business")}">
+
+            <div class="directory-detail-body">
+              <p class="directory-detail-category">${escapeHtml(card.dataset.category || "Local business")}</p>
+              <h2>${escapeHtml(card.dataset.name || "Local business")}</h2>
+              <p class="directory-detail-address">${escapeHtml(card.dataset.address || "")}</p>
+
+              <div class="directory-detail-actions">
+                ${websiteHtml}
+                ${directionsHtml}
+                ${listingHtml}
+              </div>
+
+              <section class="directory-detail-gallery-section">
+                <h3>Photo gallery</h3>
+                <div class="directory-detail-gallery">
+                  ${displayPhotos.map((url) => `
+                    <img class="directory-detail-thumb" src="${escapeHtml(url)}" alt="">
+                  `).join("")}
+                </div>
+              </section>
+            </div>
+          </article>
+        `;
+      }
+
+      async function openDesktopDetail(card) {
+        setActiveDirectoryRow(card);
+
+        if (detailPanel) {
+          detailPanel.innerHTML = `
+            <div class="directory-detail-loading">
+              Loading ${escapeHtml(card.dataset.name || "place")}...
+            </div>
+          `;
+        }
+
+        const photos = await loadListingPhotos(card.dataset.slug);
+        renderDesktopDetail(card, photos);
+      }
+
+      async function openMobilePopup(card) {
+        const slug = card.dataset.slug;
+
+        photo.src = card.dataset.photo || "/static/img/default-business.jpg";
+        name.textContent = card.dataset.name || "Local business";
+        category.textContent = card.dataset.category || "Local business";
+        address.textContent = card.dataset.address || "";
+
+        website.style.display = card.dataset.website ? "flex" : "none";
+        website.href = card.dataset.website || "#";
+
+        listing.style.display = card.dataset.listingUrl ? "flex" : "none";
+        listing.href = card.dataset.listingUrl || "#";
+
+        directions.href = getDirectionsUrl(card.dataset.address || "");
+
+        popup.hidden = false;
+        popupPhotos = [];
+        currentIndex = 0;
+
+        track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
+        thumbs.innerHTML = "";
+
+        if (prevBtn) prevBtn.style.display = "none";
+        if (nextBtn) nextBtn.style.display = "none";
+
+        if (!slug) {
+          track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
+          return;
+        }
+
+        popupPhotos = await loadListingPhotos(slug);
+        renderSlider(0);
       }
 
       prevBtn?.addEventListener("click", function (e) {
@@ -328,51 +483,12 @@
         card.addEventListener("click", async function (e) {
           if (e.target.closest("a, button:not(.js-place-popup), form")) return;
 
-          const slug = card.dataset.slug;
-
-          photo.src = card.dataset.photo || "/static/img/default-business.jpg";
-          name.textContent = card.dataset.name || "Local business";
-          category.textContent = card.dataset.category || "Local business";
-          address.textContent = card.dataset.address || "";
-
-          website.style.display = card.dataset.website ? "flex" : "none";
-          website.href = card.dataset.website || "#";
-
-          listing.style.display = card.dataset.listingUrl ? "flex" : "none";
-          listing.href = card.dataset.listingUrl || "#";
-
-          directions.href = card.dataset.address
-            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`
-            : "#";
-
-          popup.hidden = false;
-          popupPhotos = [];
-          currentIndex = 0;
-
-          track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
-          thumbs.innerHTML = "";
-
-          if (prevBtn) prevBtn.style.display = "none";
-          if (nextBtn) nextBtn.style.display = "none";
-
-          if (!slug) {
-            track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
+          if (isDesktopDirectory()) {
+            await openDesktopDetail(card);
             return;
           }
 
-          try {
-            const res = await fetch(`/listing-data/${slug}`);
-            const data = await res.json();
-
-            if (data.photo_url) {
-              photo.src = data.photo_url;
-            }
-
-            popupPhotos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
-            renderSlider(0);
-          } catch (err) {
-            track.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
-          }
+          await openMobilePopup(card);
         });
       });
 
@@ -385,6 +501,11 @@
           thumbs.innerHTML = "";
         });
       });
+
+      const firstPlace = document.querySelector(".js-place-popup");
+      if (firstPlace && isDesktopDirectory()) {
+        openDesktopDetail(firstPlace);
+      }
     });
   </script>
 </body>

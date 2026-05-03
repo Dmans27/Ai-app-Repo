@@ -4826,3 +4826,69 @@ body:not(.page-discover):not(.page-account) .app-main {
     position: relative;
   }
 }
+
+
+
+@media (min-width: 1025px) {
+  .discover-desktop-layout {
+    display: grid;
+    grid-template-columns: minmax(420px, 560px) minmax(420px, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .directory-detail-panel {
+    position: sticky;
+    top: 40px;
+    min-height: 620px;
+    border-radius: 28px;
+    background: #111214;
+    border: 1px solid rgba(255,255,255,.08);
+    overflow: hidden;
+  }
+
+  .directory-detail-empty {
+    min-height: 620px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,255,255,.55);
+    padding: 32px;
+    text-align: center;
+  }
+
+  .directory-detail-hero {
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+  }
+
+  .directory-detail-body {
+    padding: 24px;
+  }
+
+  .directory-detail-category {
+    color: #9de8c8;
+    font-weight: 900;
+    text-transform: capitalize;
+  }
+
+  .directory-detail-body h2 {
+    margin: 8px 0;
+    font-size: 42px;
+    line-height: 1;
+  }
+
+  #directory-detail-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .directory-detail-thumb {
+    height: 90px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+  }
+}
