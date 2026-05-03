@@ -580,7 +580,89 @@
        RESULTS RENDERING
     ====================================================== */
 
+    function buildQuickPickList(items) {
+      if (!items.length) return "";
 
+      return `
+        <section class="search-quick-picks search-quick-picks--editorial">
+          <h2 class="search-quick-picks__title">Top recommendations</h2>
+
+          <div class="search-quick-picks__editorial-list">
+            ${items.slice(0, 5).map((item, index) => {
+              const name = item.name || "Untitled";
+              const category = item.category ? String(item.category).replaceAll("_", " ") : "";
+              const address = item.address || "";
+              const website = item.website || "";
+              const photo =
+                item.photo_url ||
+                (item.photo_urls && item.photo_urls[0]) ||
+                item.image_url ||
+                "/static/img/default-business.jpg";
+
+              const ratingHtml = item.rating
+                ? `<span class="search-quick-picks__rating">⭐ ${Number(item.rating).toFixed(1)}</span>`
+                : "";
+
+              const websiteIcon = website
+                ? `<a href="${website}" target="_blank" rel="noopener" class="search-quick-picks__icon-btn" aria-label="Visit website" title="Visit website">🌐</a>`
+                : "";
+
+              const directionsIcon =
+                item.latitude != null && item.longitude != null
+                  ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}" target="_blank" rel="noopener" class="search-quick-picks__icon-btn" aria-label="Directions" title="Directions">📍</a>`
+                  : address
+                    ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}" target="_blank" rel="noopener" class="search-quick-picks__icon-btn" aria-label="Directions" title="Directions">📍</a>`
+                    : "";
+
+              const saveIcon = `
+                <button
+                  type="button"
+                  class="search-quick-picks__icon-btn save-place-btn"
+                  aria-label="Save place"
+                  title="Save place"
+                  data-place-name="${name}"
+                  data-place-address="${address}"
+                  data-place-category="${category}"
+                  data-place-website="${website}"
+                  data-place-photo="${photo}"
+                  data-place-lat="${item.latitude || ""}"
+                  data-place-lng="${item.longitude || ""}"
+                  data-place-rating="${item.rating || ""}"
+                >📌</button>
+              `;
+
+              return `
+                <article class="search-quick-picks__entry search-quick-picks__entry--with-photo">
+                  <div class="search-quick-picks__entry-main">
+                    <h3 class="search-quick-picks__entry-title">${index + 1}. ${name}</h3>
+
+                    <div class="search-quick-picks__entry-meta">
+                      ${ratingHtml}
+                      ${websiteIcon}
+                      ${directionsIcon}
+                      ${saveIcon}
+                    </div>
+
+                    <p class="search-quick-picks__entry-text">
+                      ${category}${category && address ? ", " : ""}${address}
+                    </p>
+                  </div>
+
+                  <div class="search-quick-picks__entry-photo-wrap">
+                    <img
+                      src="${photo}"
+                      alt="${name}"
+                      class="search-quick-picks__entry-photo"
+                      loading="lazy"
+                    >
+                  </div>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `;
+    }
 
 function buildResultRow(item, isInternal, index = 0) {
   const name = item.name || "Untitled";
