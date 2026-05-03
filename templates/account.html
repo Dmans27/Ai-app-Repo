@@ -267,6 +267,15 @@
               </div>
 
 
+              <div class="saved-filter-select-wrap">
+              <label for="saved-location-select">Filter location</label>
+
+              <select id="saved-location-select" class="saved-filter-select">
+              <option value="all">All locations</option>
+              </select>
+              </div>
+
+
 
               <section class="account-map-card">
                 <div id="account-map" class="account-map"></div>
@@ -577,78 +586,94 @@
 
 
 
-let activeFilters = new Set(["all"]);
-let currentMarkers = [];
+let activeCategoryFilter = "all";
+let activeLocationFilter = "all";
 
-function placeMatchesFilter(place, filter) {
-  if (filter === "all") return true;
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
-  const text = [
+function getPlaceLocation(place) {
+  return normalizeText(place.city || place.address || "");
+}
+
+function placeMatchesFilters(place) {
+  const categoryText = [
     place.name || "",
     place.category || "",
-    place.address || "",
     place.cuisine || "",
-    place.city || ""
+    place.address || ""
   ].join(" ").toLowerCase();
 
-  return text.includes(filter);
+  const locationText = getPlaceLocation(place);
+
+  const categoryMatch =
+    activeCategoryFilter === "all" ||
+    categoryText.includes(activeCategoryFilter);
+
+  const locationMatch =
+    activeLocationFilter === "all" ||
+    locationText.includes(activeLocationFilter);
+
+  return categoryMatch && locationMatch;
 }
 
 function getFilteredPlaces() {
-  if (activeFilters.has("all")) return places;
+  return places.filter(placeMatchesFilters);
+}
 
-  return places.filter((place) => {
-    return Array.from(activeFilters).some((filter) => {
-      return placeMatchesFilter(place, filter);
-    });
+function populateLocationFilter() {
+  const locationSelect = document.getElementById("saved-location-select");
+  if (!locationSelect) return;
+
+  const locations = [...new Set(
+    places
+      .map((place) => (place.city || "").trim())
+      .filter(Boolean)
+  )].sort();
+
+  locationSelect.innerHTML = `
+    <option value="all">All locations</option>
+    ${locations.map((city) => `
+      <option value="${city.toLowerCase()}">${city}</option>
+    `).join("")}
+  `;
+}
+
+function filterCards() {
+  document.querySelectorAll(".saved-place-slide").forEach((card) => {
+    const categoryText = [
+      card.dataset.categoryFilter || "",
+      card.dataset.nameFilter || "",
+      card.dataset.addressFilter || ""
+    ].join(" ").toLowerCase();
+
+    const locationText = card.dataset.addressFilter || "";
+
+    const categoryMatch =
+      activeCategoryFilter === "all" ||
+      categoryText.includes(activeCategoryFilter);
+
+    const locationMatch =
+      activeLocationFilter === "all" ||
+      locationText.includes(activeLocationFilter);
+
+    card.hidden = !(categoryMatch && locationMatch);
   });
 }
 
-function clearMarkers() {
-  currentMarkers.forEach((marker) => marker.remove());
-  currentMarkers = [];
-}
+document.getElementById("saved-filter-select")?.addEventListener("change", function () {
+  activeCategoryFilter = this.value || "all";
+  applySavedFilters();
+});
 
-function renderFilteredMarkers() {
-  clearMarkers();
+document.getElementById("saved-location-select")?.addEventListener("change", function () {
+  activeLocationFilter = this.value || "all";
+  applySavedFilters();
+});
 
-  const filteredPlaces = getFilteredPlaces();
-  const bounds = new mapboxgl.LngLatBounds();
-  let markerCount = 0;
 
-  filteredPlaces.forEach((place) => {
-    if (place.lng == null || place.lat == null) return;
-
-    const popupHtml = `
-      <div style="max-width:220px;">
-        <strong>${place.name || ""}</strong>
-        ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
-        ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
-      </div>
-    `;
-
-    const marker = new mapboxgl.Marker()
-      .setLngLat([place.lng, place.lat])
-      .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
-      .addTo(map);
-
-    currentMarkers.push(marker);
-    bounds.extend([place.lng, place.lat]);
-    markerCount += 1;
-  });
-
-  if (markerCount > 1) {
-    map.fitBounds(bounds, {
-      padding: 50,
-      maxZoom: 13
-    });
-  } else if (markerCount === 1) {
-    map.flyTo({
-      center: [filteredPlaces[0].lng, filteredPlaces[0].lat],
-      zoom: 13
-    });
-  }
-}
+populateLocationFilter();
 
 function filterCards() {
   document.querySelectorAll(".saved-place-slide").forEach((card) => {
