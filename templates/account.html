@@ -165,77 +165,64 @@
         <section class="mobile-content account-page-content">
           <div class="account-desktop-wrap">
             <div class="account-ios-shell">
-              <section class="saved-hero">
+            <section class="saved-hero saved-hero--stacked">
+              <form
+                method="post"
+                action="{{ url_for('update_profile_photo') }}"
+                enctype="multipart/form-data"
+                class="saved-hero__avatar-form"
+              >
+                <label class="saved-hero__avatar saved-hero__avatar--large" for="account-profile-photo">
+                  {% if user.profile_image_url %}
+                    <img
+                      src="{{ user.profile_image_url }}"
+                      alt="{{ user.name or user.email }}"
+                      class="saved-hero__avatar-img"
+                    >
+                  {% else %}
+                    <span class="saved-hero__avatar-fallback">
+                      {{ (user.name or user.email or "U")[0]|upper }}
+                    </span>
+                  {% endif %}
 
+                  <span class="saved-hero__avatar-edit">📷</span>
+                </label>
 
-
-              <div class="saved-profile-row">
-                <form
-                  method="post"
-                  action="{{ url_for('update_profile_photo') }}"
-                  enctype="multipart/form-data"
-                  class="saved-hero__avatar-form"
+                <input
+                  id="account-profile-photo"
+                  type="file"
+                  name="profile_photo"
+                  accept="image/*"
+                  hidden
+                  onchange="this.form.submit()"
                 >
-                  <label class="saved-hero__avatar" for="account-profile-photo">
-                    {% if user.profile_image_url %}
-                      <img
-                        src="{{ user.profile_image_url }}"
-                        alt="{{ user.name or user.email }}"
-                        class="saved-hero__avatar-img"
-                      >
-                    {% else %}
-                      <span class="saved-hero__avatar-fallback">
-                        {{ (user.name or user.email or "U")[0]|upper }}
-                      </span>
-                    {% endif %}
+              </form>
 
-                    <span class="saved-hero__avatar-edit">📷</span>
-                  </label>
+              <div class="saved-profile-copy saved-profile-copy--stacked">
+                <h1>{{ user.name or "Your Profile" }}</h1>
 
-                  <input
-                    id="account-profile-photo"
-                    type="file"
-                    name="profile_photo"
-                    accept="image/*"
-                    hidden
-                    onchange="this.form.submit()"
+                <p>
+                  {% if user.home_city %}
+                    📍 {{ user.home_city }}
+                  {% else %}
+                    Add your city
+                  {% endif %}
+                </p>
+
+                <div class="profile-action-buttons profile-action-buttons--centered">
+                  <a href="{{ url_for('settings') }}" class="profile-action-btn">
+                    Edit
+                  </a>
+
+                  <a
+                    href="{{ url_for('messages_with_user', user_id=user.id) }}"
+                    class="profile-action-btn profile-action-btn--message"
                   >
-                </form>
-
-                <div class="saved-profile-copy">
-                  <div class="profile-name-actions">
-                    <div>
-                      <h1>{{ user.name or "Your Profile" }}</h1>
-
-                      <p>
-                        {% if user.home_city %}
-                          📍 {{ user.home_city }}
-                        {% else %}
-                          Add your city
-                        {% endif %}
-                      </p>
-                    </div>
-
-                    <div class="profile-action-buttons">
-                      <a
-                        href="{{ url_for('settings') }}"
-                        class="profile-action-btn"
-                      >
-                        Edit
-                      </a>
-
-                      <a
-                        href="{{ url_for('messages_with_user', user_id=user.id) }}"
-                        class="profile-action-btn profile-action-btn--message"
-                      >
-                        💬
-                      </a>
-                    </div>
-                  </div>
+                    💬
+                  </a>
                 </div>
-
-
-              </section>
+              </div>
+            </section>
 
               <div class="saved-stats-row">
 

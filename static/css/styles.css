@@ -4989,3 +4989,44 @@ body:not(.page-discover):not(.page-account) .app-main {
     margin-top: 8px;
   }
 }
+
+
+
+.saved-hero--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding-top: 34px;
+}
+
+.saved-hero__avatar--large {
+  width: 104px;
+  height: 104px;
+  margin: 0 auto;
+}
+
+.saved-profile-copy--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.saved-profile-copy--stacked h1 {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(44px, 12vw, 72px);
+  line-height: .95;
+}
+
+.saved-profile-copy--stacked p {
+  margin: 10px 0 0;
+  text-align: center;
+}
+
+.profile-action-buttons--centered {
+  justify-content: center;
+  margin-top: 14px;
+}
