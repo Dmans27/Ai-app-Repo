@@ -4936,3 +4936,56 @@ body:not(.page-discover):not(.page-account) .app-main {
     margin-top: 12px;
   }
 }
+
+
+@media (max-width: 768px) {
+  .profile-header,
+  .account-profile-header,
+  .account-hero__profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .profile-avatar,
+  .account-avatar,
+  .account-hero__avatar {
+    margin: 0 auto;
+  }
+
+  .profile-name-actions,
+  .account-profile-main,
+  .account-hero__main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .profile-name-actions h1,
+  .account-profile-main h1,
+  .account-hero__name {
+    text-align: center;
+    margin: 0;
+    font-size: clamp(42px, 11vw, 64px);
+    line-height: 0.95;
+  }
+
+  .profile-location,
+  .account-location,
+  .account-hero__location {
+    justify-content: center;
+    text-align: center;
+    margin: 0;
+    font-size: 20px;
+  }
+
+  .profile-actions,
+  .account-profile-actions,
+  .account-hero__actions {
+    justify-content: center;
+    margin-top: 8px;
+  }
+}
