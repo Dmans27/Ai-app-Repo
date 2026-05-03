@@ -409,9 +409,13 @@
               <section class="directory-detail-gallery-section">
                 <h3>Photo gallery</h3>
                 <div class="directory-detail-gallery">
-                  ${displayPhotos.map((url) => `
-                    <img class="directory-detail-thumb" src="${escapeHtml(url)}" alt="">
-                  `).join("")}
+                  <div class="photo-slider__viewport">
+                    <button type="button" class="slider-btn slider-btn--left" data-detail-prev>‹</button>
+                    <div id="directory-detail-slider-track"></div>
+                    <button type="button" class="slider-btn slider-btn--right" data-detail-next>›</button>
+                  </div>
+
+                  <div class="slider-thumbs" id="directory-detail-slider-thumbs"></div>
                 </div>
               </section>
             </div>
@@ -508,5 +512,53 @@
       }
     });
   </script>
+
+
+<script>
+let detailPhotos = [];
+let detailIndex = 0;
+
+function renderDetailSlider(index = 0) {
+  const track = document.getElementById("directory-detail-slider-track");
+  const thumbs = document.getElementById("directory-detail-slider-thumbs");
+  const prev = document.querySelector("[data-detail-prev]");
+  const next = document.querySelector("[data-detail-next]");
+
+  if (!track || !thumbs) return;
+
+  if (!detailPhotos.length) {
+    track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+    thumbs.innerHTML = "";
+    if (prev) prev.style.display = "none";
+    if (next) next.style.display = "none";
+    return;
+  }
+
+  detailIndex = (index + detailPhotos.length) % detailPhotos.length;
+
+  track.innerHTML = `
+    <img src="${detailPhotos[detailIndex]}" class="popup-slider__image" alt="">
+  `;
+
+  thumbs.innerHTML = detailPhotos.map((url, i) => `
+    <button type="button" class="popup-slider__thumb ${i === detailIndex ? "is-active" : ""}" data-detail-thumb="${i}">
+      <img src="${url}" alt="">
+    </button>
+  `).join("");
+
+  if (prev) prev.style.display = detailPhotos.length > 1 ? "flex" : "none";
+  if (next) next.style.display = detailPhotos.length > 1 ? "flex" : "none";
+
+  thumbs.querySelectorAll("[data-detail-thumb]").forEach((btn) => {
+    btn.onclick = () => renderDetailSlider(Number(btn.dataset.detailThumb));
+  });
+
+  prev.onclick = () => renderDetailSlider(detailIndex - 1);
+  next.onclick = () => renderDetailSlider(detailIndex + 1);
+}
+</script>
+
+
+
 </body>
 </html>
