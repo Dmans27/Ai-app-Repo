@@ -4631,19 +4631,32 @@ body.app-body {
   padding-bottom: 120px;
 }
 
-/* FINAL mobile Safari bottom layout fix */
+/* FINAL directory_home mobile bottom fix */
 @media (max-width: 1024px) {
-  :root {
-    --mobile-tabbar-h: 72px;
-    --mobile-composer-h: 104px;
+  .mobile-tabbar {
+    display: none !important;
   }
 
-  body.app-body {
-    height: 100svh;
-    overflow: hidden;
+  .app-composer-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 92px;
+    z-index: 950;
+    padding: 8px 14px;
   }
 
-  .app-main {
+  .quick-scroll-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 210px;
+    z-index: 940;
+    padding: 0 14px;
+  }
+
+  .app-main,
+  .chat-page {
     height: 100svh;
     overflow: hidden;
   }
@@ -4651,60 +4664,17 @@ body.app-body {
   .app-main__inner {
     height: calc(100svh - var(--header-h));
     overflow: hidden;
-    padding: 0 14px;
-  }
-
-  .chat-page {
-    height: 100%;
-    overflow: hidden;
+    padding: 0 16px;
   }
 
   .chat-thread {
     height: 100%;
     overflow-y: auto;
-    padding: 14px 0 calc(var(--mobile-tabbar-h) + var(--mobile-composer-h) + 70px);
-  }
-
-  .quick-scroll-wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(var(--mobile-tabbar-h) + var(--mobile-composer-h) + 8px);
-    z-index: 930;
-    padding: 0 14px;
-    display: block !important;
-  }
-
-  .app-composer-wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: var(--mobile-tabbar-h);
-    z-index: 940;
-    padding: 8px 14px 10px;
-  }
-
-  .mobile-tabbar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 960;
-    height: var(--mobile-tabbar-h);
-    padding: 7px 10px 10px;
-
+    padding-bottom: 280px;
   }
 
   .chat-composer {
     margin: 0 !important;
-  }
-
-  .chat-page.is-active .mobile-home-hero {
-    display: none !important;
-  }
-
-  .chat-page.is-active .quick-scroll-wrap {
-    display: block !important;
   }
 }
 
