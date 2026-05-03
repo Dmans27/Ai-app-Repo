@@ -664,74 +664,76 @@
       `;
     }
 
-    function buildResultRow(item, isInternal) {
-      const title = item.name || "Untitled";
-      const category = item.category ? item.category.replaceAll("_", " ") : "Place";
-      const address = item.address || "";
-      const website = item.website || "";
-      const ratingValue = item.rating ? Number(item.rating).toFixed(1) : "";
-      const rating = ratingValue ? `⭐ ${ratingValue}` : "";
+function buildResultRow(item, isInternal, index = 0) {
+  const name = item.name || "Untitled";
+  const category = item.category
+    ? item.category.replaceAll("_", " ")
+    : "Place";
 
-      const photo =
-        item.photo_url ||
-        item.image_url ||
-        item.thumbnail ||
-        "/static/img/placeholder-business.jpg";
+  const address = item.address || "";
+  const website = item.website || "";
 
-      const directionsLink =
-        item.latitude && item.longitude
-          ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
-          : address
-            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
-            : "";
+  const photo =
+    item.photo_url ||
+    item.image_url ||
+    item.thumbnail ||
+    "/static/img/placeholder-business.jpg";
 
-      return `
-        <article class="place-card">
-          <div class="place-card__image-wrap">
-            <img
-              src="${photo}"
-              alt="${title}"
-              class="place-card__image"
-              loading="lazy"
-            >
-          </div>
+  const directionsLink =
+    item.latitude && item.longitude
+      ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
+      : address
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+        : "";
 
-          <div class="place-card__body">
-            <div class="place-card__top">
-              <div class="place-card__text">
-                <h3 class="place-card__title">${title}</h3>
-                <p class="place-card__category">${category}</p>
-              </div>
-            </div>
+  return `
+    <article class="ai-rec-row">
 
-            <div class="place-card__meta">
-              ${rating ? `<span class="place-card__rating">${rating}</span>` : ""}
-              ${isInternal ? `<span class="place-card__source">Local AI</span>` : ""}
-            </div>
+      <div class="ai-rec-rank">${index + 1}</div>
 
-            <p class="place-card__address">${address}</p>
+      <img
+        class="ai-rec-image"
+        src="${photo}"
+        alt="${name}"
+        loading="lazy"
+      >
 
-            <div class="place-card__actions">
-              ${website ? `<a href="${website}" target="_blank" rel="noopener" class="place-card__action" aria-label="Website">🌐</a>` : ""}
-              ${directionsLink ? `<a href="${directionsLink}" target="_blank" rel="noopener" class="place-card__action" aria-label="Directions">📍</a>` : ""}
-              <button
-                type="button"
-                class="place-card__action save-place-btn"
-                aria-label="Save place"
-                data-place-name="${title}"
-                data-place-address="${address}"
-                data-place-category="${category}"
-                data-place-website="${website}"
-                data-place-photo="${photo}"
-                data-place-lat="${item.latitude || ""}"
-                data-place-lng="${item.longitude || ""}"
-                data-place-rating="${item.rating || ""}"
-              >📌</button>
-            </div>
-          </div>
-        </article>
-      `;
-    }
+      <div class="ai-rec-body">
+        <h3>${name}</h3>
+
+        <p class="ai-rec-meta">
+          ${category}
+          ${isInternal ? " · Local AI" : ""}
+        </p>
+
+        <p class="ai-rec-address">${address}</p>
+
+        <div class="ai-rec-actions">
+          ${website ? `
+            <a href="${website}" target="_blank">Website</a>
+          ` : ""}
+
+          ${directionsLink ? `
+            <a href="${directionsLink}" target="_blank">Directions</a>
+          ` : ""}
+
+          <button
+            class="save-place-btn"
+            data-place-name="${name}"
+            data-place-address="${address}"
+            data-place-category="${category}"
+            data-place-website="${website}"
+            data-place-photo="${photo}"
+            data-place-lat="${item.latitude || ""}"
+            data-place-lng="${item.longitude || ""}"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </article>
+  `;
+}
 
     function buildSearchMapData(items) {
       return items
@@ -991,7 +993,7 @@
           <section class="results-section">
             <h2>Featured from our directory</h2>
             <div class="search-results-stack">
-              ${featured.map((item) => buildResultRow(item, true)).join("")}
+              ${featured.map((item, i) => buildResultRow(item, true, i)).join("")}
             </div>
           </section>
         ` : ""}
