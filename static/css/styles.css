@@ -5058,26 +5058,31 @@ body:not(.page-discover):not(.page-account) .app-main {
 
 
 .saved-filter-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  padding: 22px 28px 8px;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+  padding: 22px 28px 8px !important;
 }
 
 .saved-filter-grid .saved-filter-select-wrap {
-  padding: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
 }
 
+.saved-filter-grid .saved-filter-select {
+  width: 100% !important;
+}
 
 @media (max-width: 520px) {
   .saved-filter-grid {
-    gap: 10px;
-    padding: 18px 20px 8px;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 18px 20px 8px !important;
   }
 
   .saved-filter-select {
-    height: 56px;
-    font-size: 15px;
-    border-radius: 18px;
+    height: 54px !important;
+    font-size: 14px !important;
   }
 }

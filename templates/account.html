@@ -252,32 +252,33 @@
               </div>
 
 
-                <div class="saved-filter-select-wrap">
-                  <label for="saved-filter-select">Filter places</label>
-                  <select id="saved-filter-select" class="saved-filter-select">
-                  <option value="all">All places</option>
-                  <option value="coffee">Coffee</option>
-                  <option value="restaurant">Restaurants</option>
-                  <option value="bar">Bars</option>
-                  <option value="wine">Wine</option>
-                  <option value="rooftop">Rooftops</option>
-                  <option value="shopping">Shopping</option>
-                </select>
-              </div>
+<div class="saved-filter-grid">
 
+  <div class="saved-filter-select-wrap">
+    <label for="saved-filter-select">Filter places</label>
+    <select id="saved-filter-select" class="saved-filter-select">
+      <option value="all">All places</option>
+      <option value="coffee">Coffee</option>
+      <option value="restaurant">Restaurants</option>
+      <option value="bar">Bars</option>
+      <option value="wine">Wine</option>
+      <option value="rooftop">Rooftops</option>
+      <option value="shopping">Shopping</option>
+    </select>
+  </div>
 
-            <div class="saved-filter-select-wrap">
-              <label for="saved-location-select">Filter location</label>
-              <select id="saved-location-select" class="saved-filter-select">
-                <option value="all">All locations</option>
-              </select>
-              </div>
+  <div class="saved-filter-select-wrap">
+    <label for="saved-location-select">Filter location</label>
+    <select id="saved-location-select" class="saved-filter-select">
+      <option value="all">All locations</option>
+    </select>
+  </div>
 
+</div>
 
-
-              <section class="account-map-card">
-                <div id="account-map" class="account-map"></div>
-              </section>
+<section class="account-map-card">
+  <div id="account-map" class="account-map"></div>
+</section>
 
 {% if lists %}
   <section class="saved-lists-wrap">
