@@ -252,15 +252,19 @@
               </div>
 
 
-<div class="saved-filter-bar" id="saved-filter-bar">
-  <button class="saved-filter-chip is-active" data-filter="all">All</button>
-  <button class="saved-filter-chip" data-filter="coffee">Coffee</button>
-  <button class="saved-filter-chip" data-filter="restaurant">Restaurants</button>
-  <button class="saved-filter-chip" data-filter="bar">Bars</button>
-  <button class="saved-filter-chip" data-filter="wine">Wine</button>
-  <button class="saved-filter-chip" data-filter="rooftop">Rooftops</button>
-  <button class="saved-filter-chip" data-filter="shopping">Shopping</button>
-</div>
+              <div class="saved-filter-select-wrap">
+                <label for="saved-filter-select">Filter places</label>
+
+                <select id="saved-filter-select" class="saved-filter-select">
+                  <option value="all">All places</option>
+                  <option value="coffee">Coffee</option>
+                  <option value="restaurant">Restaurants</option>
+                  <option value="bar">Bars</option>
+                  <option value="wine">Wine</option>
+                  <option value="rooftop">Rooftops</option>
+                  <option value="shopping">Shopping</option>
+                </select>
+              </div>
 
 
 
@@ -690,10 +694,12 @@ document.querySelectorAll(".saved-filter-chip").forEach((chip) => {
       }
     }
 
-    document.querySelectorAll(".saved-filter-chip").forEach((btn) => {
-      const btnFilter = btn.dataset.filter;
-      btn.classList.toggle("is-active", activeFilters.has(btnFilter));
-    });
+      const filterSelect = document.getElementById("saved-filter-select");
+
+      filterSelect?.addEventListener("change", function () {
+        activeFilters = new Set([filterSelect.value || "all"]);
+        applySavedFilters();
+      });
 
     applySavedFilters();
   });
