@@ -912,11 +912,12 @@ def update_state_from_message(state, message, lat=None, lng=None):
             state["category"] = category
             break
 
-    city_keywords = ["hoboken", "naperville", "chicago", "san francisco", "miami", "nashville"]
-    for city in city_keywords:
-        if city in text:
-            state["city"] = city.title()
-            break
+    city_override = extract_city(message)
+
+    if city_override:
+        state["city"] = city_override
+        state["lat"] = None
+        state["lng"] = None
 
     if "near path" in text:
         state["area"] = "near PATH"
