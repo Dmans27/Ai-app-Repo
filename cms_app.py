@@ -3736,10 +3736,53 @@ def filter_nearby_results(results, user_lat, user_lng, radius_miles=25):
     return nearby
 
 
+import re
+
+def extract_city(query):
+    patterns = [
+        r"in ([a-zA-Z\s]+)",
+        r"near ([a-zA-Z\s]+)"
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, query.lower())
+        if match:
+            return match.group(1).strip()
+
+    return None
+
+
+
+import requests
+
+def geocode_city(city_name):
+    try:
+        url = "https://maps.googleapis.com/maps/api/geocode/json"
+        params = {
+            "address": city_name,
+            "key": GOOGLE_MAPS_API_KEY
+        }
+
+        res = requests.get(url, params=params).json()
+
+        if res["results"]:
+            loc = res["results"][0]["geometry"]["location"]
+            return {"lat": loc["lat"], "lng": loc["lng"]}
+
+    except Exception as e:
+        print("[GEOCODE_ERROR]", str(e), flush=True)
+
+    return None
+
+
 @app.get("/search")
 def search():
     q_raw = (request.args.get("q") or "").strip()
     q = normalize_search_query(q_raw)
+
+    # ✅ ADD THIS (Step 1: detect city)
+    city_override = extract_city(q_raw)
+
 
     lat_raw = (request.args.get("lat") or "").strip()
     lng_raw = (request.args.get("lng") or "").strip()
@@ -3756,6 +3799,16 @@ def search():
         user_lng = None
 
     has_user_location = user_lat is not None and user_lng is not None
+
+    # ✅ ADD THIS (Step 2: override location BEFORE searches)
+    if city_override:
+        print("[CITY_OVERRIDE]", city_override, flush=True)
+
+        geo = geocode_city(city_override)
+        if geo:
+            user_lat = geo["lat"]
+            user_lng = geo["lng"]
+            has_user_location = True
 
     print("[SEARCH_QUERY]", q_raw, flush=True)
     print("[SEARCH_NORMALIZED]", q, flush=True)
@@ -3893,6 +3946,8 @@ def generate_local_answer(user_query, featured_results, nearby_results):
             f"A good place to start is {first_name}. "
             f"I also found a few more nearby options below so you can compare what’s closest and best for you."
         )
+        
+        
 
     return "I couldn’t find a strong local match yet, but try refining the city or category and I’ll suggest better nearby options."
     
@@ -4291,6 +4346,28 @@ KNOWN_CITIES = {
     "orlando", "boston", "seattle", "phoenix"
 }
 
+
+
+import re
+
+def extract_city(query):
+    patterns = [
+        r"in ([a-zA-Z\s]+)",
+        r"near ([a-zA-Z\s]+)"
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, query.lower())
+        if match:
+            return match.group(1).strip()
+
+    return None
+
+
+
+
+
+
 def fallback_intent_from_message(message: str):
     text = (message or "").strip()
     lowered = text.lower()
@@ -4456,6 +4533,15 @@ Rules:
 - If the user clearly mentions another city, set use_current_location to false and fill city/state.
 - Prefer city-based search when a city is explicitly mentioned.
 - Do not include explanation outside the JSON.
+- ALWAYS prioritize the city explicitly mentioned by the user.
+- If the user says a different city (e.g. "tacos in Boston"), IGNORE their current location.
+- Only use the user's current location if NO city is mentioned.
+- Extract the city from the query and base all recommendations on that city.
+
+Examples:
+- "tacos in Boston" → use Boston
+- "coffee near me" → use user's location
+- "best bars in Chicago" → use Chicago
 
 User message:
 {user_message}
