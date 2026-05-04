@@ -579,11 +579,12 @@ def update_state_from_message(state: dict, message: str, lat=None, lng=None) -> 
     if detected_category:
         state["category"] = detected_category
 
-    city_keywords = ["hoboken", "naperville", "chicago", "san francisco", "miami", "nashville"]
-    for city in city_keywords:
-        if city in text:
-            state["city"] = city.title()
-            break
+    city_override = extract_city(message)
+
+    if city_override:
+        state["city"] = city_override
+        state["lat"] = None
+        state["lng"] = None
 
     if "near path" in text:
         state["area"] = "near PATH"
@@ -4349,7 +4350,6 @@ def extract_city(query):
         r"\bin\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
         r"\bnear\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
         r"\baround\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
-        r"\bby\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
     ]
 
     for pattern in patterns:
@@ -4363,7 +4363,6 @@ def extract_city(query):
             return CITY_ALIASES.get(city, city.title())
 
     return None
-
 
 
 
