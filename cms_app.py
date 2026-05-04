@@ -4330,36 +4330,37 @@ def build_map_results(internal_results, external_results):
 
 import re
 
-US_STATE_CODES = {
-    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-    "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-    "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-    "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-    "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
-}
-
-import re
-
 KNOWN_CITIES = {
-    "nashville", "miami", "austin", "chicago", "naperville",
-    "new york", "denver", "atlanta", "dallas", "houston",
-    "orlando", "boston", "seattle", "phoenix"
+    "naperville", "chicago", "boston", "miami", "new york", "nyc",
+    "los angeles", "la", "san francisco", "austin", "nashville",
+    "denver", "seattle", "orlando", "dallas", "houston", "phoenix",
+    "atlanta", "tampa", "fort lauderdale", "west palm beach"
 }
 
-
-
-import re
+CITY_ALIASES = {
+    "nyc": "New York",
+    "la": "Los Angeles",
+}
 
 def extract_city(query):
+    text = (query or "").strip().lower()
+
     patterns = [
-        r"in ([a-zA-Z\s]+)",
-        r"near ([a-zA-Z\s]+)"
+        r"\bin\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
+        r"\bnear\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
+        r"\baround\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
+        r"\bby\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
     ]
 
     for pattern in patterns:
-        match = re.search(pattern, query.lower())
+        match = re.search(pattern, text)
         if match:
-            return match.group(1).strip()
+            city = match.group(1).strip()
+            return CITY_ALIASES.get(city, city.title())
+
+    for city in sorted(KNOWN_CITIES, key=len, reverse=True):
+        if re.search(rf"\b{re.escape(city)}\b", text):
+            return CITY_ALIASES.get(city, city.title())
 
     return None
 
