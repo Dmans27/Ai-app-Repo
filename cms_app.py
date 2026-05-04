@@ -473,6 +473,58 @@ client = OpenAI(
 
 
 
+def geocode_location_name(location_name):
+    if not GOOGLE_MAPS_API_KEY or not location_name:
+        return None
+
+    cleaned = location_name.strip()
+
+    # remove business/category words so "bars in los angeles" doesn't geocode as a bar
+    category_words = [
+        "bars", "bar", "restaurants", "restaurant", "coffee", "coffee shops",
+        "tacos", "pizza", "brunch", "dinner", "lunch", "breakfast",
+        "near me", "nearby", "tonight", "best", "good"
+    ]
+
+    lowered = cleaned.lower()
+    for word in category_words:
+        lowered = lowered.replace(word, "")
+
+    cleaned = lowered.strip(" ,")
+
+    if not cleaned:
+        return None
+
+    try:
+        url = "https://maps.googleapis.com/maps/api/geocode/json"
+        params = {
+            "address": cleaned,
+            "key": GOOGLE_MAPS_API_KEY
+        }
+
+        res = requests.get(url, params=params, timeout=10).json()
+
+        if res.get("status") != "OK" or not res.get("results"):
+            return None
+
+        result = res["results"][0]
+        loc = result["geometry"]["location"]
+
+        return {
+            "city": result.get("formatted_address", cleaned),
+            "lat": loc["lat"],
+            "lng": loc["lng"]
+        }
+
+    except Exception as e:
+        print("[GEOCODE_LOCATION_ERROR]", str(e), flush=True)
+        return None
+
+
+
+
+
+
 
 
 def safe_query_all(sql, params=(), fallback=None, label="SAFE_QUERY_ALL"):
@@ -906,6 +958,15 @@ def update_state_from_message(state, message, lat=None, lng=None):
         "sushi": ["sushi"],
         "mexican": ["mexican", "tacos", "taqueria"],
     }
+    
+    
+    
+    location_override = detect_location_from_query(message)
+
+    if location_override:
+        state["city"] = location_override["city"]
+        state["lat"] = location_override["lat"]
+        state["lng"] = location_override["lng"]
 
     for category, keywords in category_keywords.items():
         if any(k in text for k in keywords):
@@ -4344,26 +4405,29 @@ CITY_ALIASES = {
     "la": "Los Angeles",
 }
 
-def extract_city(query):
-    text = (query or "").strip().lower()
+def detect_location_from_query(query):
+    text = (query or "").strip()
+    if not text:
+        return None
 
     patterns = [
-        r"\bin\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
-        r"\bnear\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
-        r"\baround\s+([a-zA-Z\s]+?)(?:,\s*[a-zA-Z]{2})?$",
+        r"\bin\s+(.+)$",
+        r"\bnear\s+(.+)$",
+        r"\baround\s+(.+)$",
+        r"\bby\s+(.+)$",
     ]
 
     for pattern in patterns:
-        match = re.search(pattern, text)
+        match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            city = match.group(1).strip()
-            return CITY_ALIASES.get(city, city.title())
+            raw_location = match.group(1).strip()
+            return geocode_location_name(raw_location)
 
-    for city in sorted(KNOWN_CITIES, key=len, reverse=True):
-        if re.search(rf"\b{re.escape(city)}\b", text):
-            return CITY_ALIASES.get(city, city.title())
+    return geocode_location_name(text)
 
-    return None
+
+
+
 
 
 
