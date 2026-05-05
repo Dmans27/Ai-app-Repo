@@ -5205,21 +5205,21 @@ def account():
         
         
         
-        shared_with_me = query_all("""
-    SELECT
-        sl.id,
-        sl.status,
-        sl.created_at,
-        l.title,
-        l.slug,
-        u.name AS sender_name,
-        u.email AS sender_email
-    FROM shared_lists sl
-    JOIN saved_lists l ON l.id = sl.list_id
-    JOIN users u ON u.id = sl.sender_id
-    WHERE sl.recipient_id = :user_id
-    ORDER BY sl.created_at DESC
-""", {"user_id": current_user.id}) or []
+    shared_with_me = query_all("""
+        SELECT
+            sl.id,
+            sl.status,
+            sl.created_at,
+            l.title,
+            l.slug,
+            u.name AS sender_name,
+            u.email AS sender_email
+        FROM shared_lists sl
+        JOIN saved_list l ON l.id = sl.list_id
+        JOIN "user" u ON u.id = sl.sender_id
+        WHERE sl.recipient_id = :user_id
+        ORDER BY sl.created_at DESC
+    """, {"user_id": current_user.id}) or []
 
     print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
     print("[ACCOUNT_MAPBOX_STYLE_URL]", os.getenv("MAPBOX_STYLE_URL", ""), flush=True)
