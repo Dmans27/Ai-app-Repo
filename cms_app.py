@@ -2492,7 +2492,7 @@ def ai_chat():
                 google_query = "quiet coffee shop"
             elif purpose == "quick":
                 google_query = "quick coffee shop"
-            elif purpose == "cozy":
+            elif purpose == "popular":
                 google_query = "quick coffee shop"
             else:
                 google_query = "coffee shop"
