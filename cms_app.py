@@ -5065,6 +5065,7 @@ def account():
                 "place_id": getattr(place, "place_id", None) or "",
                 "listing_id": listing["id"] if listing else "",
                 "slug": listing["slug"] if listing else "",
+                
             }
 
             list_places.append(place_dict)

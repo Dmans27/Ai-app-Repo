@@ -279,7 +279,6 @@
 <section class="account-map-card">
   <div id="account-map" class="account-map"></div>
 </section>
-
 {% if lists %}
   <section class="saved-lists-wrap">
     {% for saved_list in lists %}
@@ -324,6 +323,7 @@
   data-category-filter="{{ (place.category or '')|lower }}"
   data-name-filter="{{ (place.name or '')|lower }}"
   data-address-filter="{{ (place.address or '')|lower }}"
+  data-city-filter="{{ (place.city or '')|lower }}"
 >
 
           <div class="saved-place-slide__thumb">
@@ -604,6 +604,26 @@ document.addEventListener("DOMContentLoaded", function () {
     return String(value || "").trim().toLowerCase();
   }
 
+
+function getLocationLabel(place) {
+  if (place.city && place.city.trim()) {
+    return place.city.trim();
+  }
+
+  const address = place.address || "";
+  const parts = address.split(",").map((part) => part.trim());
+
+  // "704 E Boughton Rd, Bolingbrook, IL 60440, USA"
+  if (parts.length >= 2) {
+    return parts[1];
+  }
+
+  return "";
+}
+
+
+
+
 function getPlaceLocation(place) {
   return normalizeText(getLocationLabel(place));
 }
@@ -707,7 +727,7 @@ function populateLocationFilter() {
         card.dataset.addressFilter || ""
       ].join(" ").toLowerCase();
 
-      const locationText = card.dataset.addressFilter || "";
+      const locationText = normalizeText(card.dataset.cityFilter || card.dataset.addressFilter || "");
 
       const categoryMatch =
         activeCategoryFilter === "all" ||
