@@ -604,9 +604,9 @@ document.addEventListener("DOMContentLoaded", function () {
     return String(value || "").trim().toLowerCase();
   }
 
-  function getPlaceLocation(place) {
-    return normalizeText(place.city || place.address || "");
-  }
+function getPlaceLocation(place) {
+  return normalizeText(getLocationLabel(place));
+}
 
   function placeMatchesFilters(place) {
     const categoryText = [
@@ -633,21 +633,28 @@ document.addEventListener("DOMContentLoaded", function () {
     return places.filter(placeMatchesFilters);
   }
 
-  function populateLocationFilter() {
-    const locationSelect = document.getElementById("saved-location-select");
-    if (!locationSelect) return;
+function populateLocationFilter() {
+  const locationSelect = document.getElementById("saved-location-select");
+  if (!locationSelect) return;
 
-    const locations = [...new Set(
-      places.map((place) => (place.city || "").trim()).filter(Boolean)
-    )].sort();
+  const locations = [...new Set(
+    places
+      .map(getLocationLabel)
+      .filter(Boolean)
+  )].sort();
 
-    locationSelect.innerHTML = `
-      <option value="all">All locations</option>
-      ${locations.map((city) => `
-        <option value="${city.toLowerCase()}">${city}</option>
-      `).join("")}
-    `;
-  }
+  locationSelect.innerHTML = `
+    <option value="all">All locations</option>
+    ${locations.map((city) => `
+      <option value="${city.toLowerCase()}">${city}</option>
+    `).join("")}
+  `;
+
+  console.log("[LOCATION_FILTER_OPTIONS]", locations);
+}
+
+
+
 
   function clearMarkers() {
     currentMarkers.forEach((marker) => marker.remove());
