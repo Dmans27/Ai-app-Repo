@@ -1080,7 +1080,16 @@ document.addEventListener("DOMContentLoaded", function () {
       row.hidden = q && !row.dataset.userSearch.includes(q);
     });
   });
+
+  form?.addEventListener("submit", function () {
+    const btn = form.querySelector(".share-user-submit");
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+  });
 });
+
 </script>
 
 
@@ -1128,10 +1137,14 @@ document.addEventListener("DOMContentLoaded", function () {
       <div class="share-user-results">
         {% for user_option in users %}
           {% if user_option.id != current_user.id %}
-            <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
-              <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
-              <span>{{ user_option.name or user_option.email }}</span>
-            </label>
+          <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
+            <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
+
+            <span class="share-user-check">✓</span>
+            <span class="share-user-name">
+              {{ user_option.name or user_option.email }}
+            </span>
+          </label>
           {% endif %}
         {% endfor %}
       </div>

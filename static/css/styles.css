@@ -5245,3 +5245,32 @@ body:not(.page-discover):not(.page-account) .app-main {
 .share-user-submit:hover {
   transform: scale(1.02);
 }
+
+
+
+
+.share-user-row {
+  border: 1px solid transparent;
+}
+
+.share-user-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,.08);
+  color: transparent;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.share-user-row:has(input:checked) {
+  background: rgba(43, 212, 169, .12);
+  border-color: rgba(43, 212, 169, .55);
+}
+
+.share-user-row:has(input:checked) .share-user-check {
+  background: #2bd4a9;
+  color: #07100d;
+}
