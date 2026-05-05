@@ -2405,6 +2405,15 @@ def share_list_internal(list_id):
         "sender_id": current_user.id,
         "recipient_id": int(recipient_id)
     })
+    
+    
+    print("[SHARE_LIST_INTERNAL]", {
+    "list_id": list_id,
+    "sender_id": current_user.id,
+    "recipient_id": recipient_id
+}, flush=True)
+    
+    
 
     flash("List shared.")
     return redirect(request.referrer or url_for("account"))
@@ -5198,16 +5207,19 @@ def account():
         
         shared_with_me = query_all("""
     SELECT
-        sl.*,
+        sl.id,
+        sl.status,
+        sl.created_at,
         l.title,
         l.slug,
-        u.name AS sender_name
-        FROM shared_lists sl
-        JOIN saved_list l ON l.id = sl.list_id
-        JOIN "user" u ON u.id = sl.sender_id
-        WHERE sl.recipient_id = :user_id
-        ORDER BY sl.created_at DESC
-""", {"user_id": current_user.id})
+        u.name AS sender_name,
+        u.email AS sender_email
+    FROM shared_lists sl
+    JOIN saved_lists l ON l.id = sl.list_id
+    JOIN users u ON u.id = sl.sender_id
+    WHERE sl.recipient_id = :user_id
+    ORDER BY sl.created_at DESC
+""", {"user_id": current_user.id}) or []
 
     print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
     print("[ACCOUNT_MAPBOX_STYLE_URL]", os.getenv("MAPBOX_STYLE_URL", ""), flush=True)
