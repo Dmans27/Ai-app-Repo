@@ -5086,3 +5086,162 @@ body:not(.page-discover):not(.page-account) .app-main {
     font-size: 14px !important;
   }
 }
+
+
+
+
+/* =========================
+   SHARE USER MODAL
+========================= */
+
+.share-user-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-user-modal[hidden] {
+  display: none;
+}
+
+.share-user-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+}
+
+.share-user-modal__card {
+  position: relative;
+  width: 92%;
+  max-width: 420px;
+  max-height: 80vh;
+  background: #0f1115;
+  border-radius: 20px;
+  padding: 20px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  animation: modalFade 0.2s ease;
+}
+
+@keyframes modalFade {
+  from {
+    transform: translateY(20px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Close button */
+.share-user-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+/* Title */
+.share-user-modal__card h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+#share-list-title {
+  font-size: 14px;
+  color: #888;
+}
+
+/* Search input */
+.share-user-search {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: none;
+  background: #1a1d23;
+  color: white;
+  font-size: 14px;
+}
+
+.share-user-search:focus {
+  outline: 1px solid #2bd4a9;
+}
+
+/* User list */
+.share-user-results {
+  overflow-y: auto;
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+/* Individual user row */
+.share-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.share-user-row:hover {
+  background: #1a1d23;
+}
+
+/* Hide default radio */
+.share-user-row input {
+  display: none;
+}
+
+/* Custom radio */
+.share-user-row::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #444;
+  display: inline-block;
+}
+
+.share-user-row input:checked + span::before {
+  background: #2bd4a9;
+}
+
+/* User name */
+.share-user-row span {
+  font-size: 14px;
+}
+
+/* Submit button */
+.share-user-submit {
+  margin-top: 8px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  background: #2bd4a9;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.share-user-submit:hover {
+  transform: scale(1.02);
+}
