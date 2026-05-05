@@ -5060,7 +5060,7 @@ def account():
                 "notes": place.notes or "",
                 "latitude": place.latitude,
                 "longitude": place.longitude,
-                "city": place_dict["city"],
+                "city": (getattr(place, "city", None) or "").strip(),
                 "cuisine": (getattr(place, "cuisine", None) or place.category or "").strip(),
                 "place_id": getattr(place, "place_id", None) or "",
                 "listing_id": listing["id"] if listing else "",
