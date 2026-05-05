@@ -2493,7 +2493,7 @@ def ai_chat():
             elif purpose == "quick":
                 google_query = "quick coffee shop"
             elif purpose == "cozy":
-                google_query = "cozy coffee shop"
+                google_query = "quick coffee shop"
             else:
                 google_query = "coffee shop"
 
