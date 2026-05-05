@@ -5093,9 +5093,14 @@ def admin_edit_ad(ad_id):
 
 
 
+
+
+
 @app.route("/account")
 @login_required
 def account():
+    shared_with_me = []
+    users = []
     lists = SavedList.query.filter_by(user_id=current_user.id) \
         .order_by(SavedList.created_at.desc()) \
         .all()
