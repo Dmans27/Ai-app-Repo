@@ -2488,8 +2488,12 @@ def ai_chat():
 
         if category == "coffee":
             internal_query = "coffee"
-            if purpose == "work" or vibe == "quiet" or vibe == "Best":
+            if purpose == "work" or vibe == "quiet":
                 google_query = "quiet coffee shop"
+            elif purpose == "quick":
+                google_query = "quick coffee shop"
+            elif purpose == "best":
+                google_query = "best coffee shop"
             else:
                 google_query = "coffee shop"
 
