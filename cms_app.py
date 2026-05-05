@@ -2435,7 +2435,7 @@ def ai_chat():
                 if followup_key == "food_vibe":
                     followup_question = "Would you prefer something casual, quick, lively, or more date-night?"
                 elif followup_key == "coffee_vibe":
-                    followup_question = "Do you want the best coffee, somewhere quiet to work, or something quick?"
+                    followup_question = "Do you want a cozy coffee shop, somewhere quiet to work, or something quick?"
                 elif followup_key == "location":
                     followup_question = "What area are you in so I can narrow it down?"
                 elif followup_key == "category":
@@ -2492,8 +2492,8 @@ def ai_chat():
                 google_query = "quiet coffee shop"
             elif purpose == "quick":
                 google_query = "quick coffee shop"
-            elif purpose == "best":
-                google_query = "best coffee shop"
+            elif purpose == "cozy":
+                google_query = "cozy coffee shop"
             else:
                 google_query = "coffee shop"
 
