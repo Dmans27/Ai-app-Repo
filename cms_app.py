@@ -151,6 +151,24 @@ def create_core_tables():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """))
+        
+        
+        # ---------------------------------------------------
+        # Social Section
+        # ---------------------------------------------------
+        
+        
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS shared_lists (
+            id SERIAL PRIMARY KEY,
+            list_id INTEGER NOT NULL,
+            sender_id INTEGER NOT NULL,
+            recipient_id INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(list_id, sender_id, recipient_id)
+            )
+        """));
 
         # ---------------------------------------------------
         # Listings
@@ -2329,6 +2347,49 @@ def is_relevant_featured_result(item, query: str, searched_city: str = None, max
         distance_matches = float(item["distance_miles"]) <= max_featured_distance
 
     return query_matches and city_matches and distance_matches
+
+
+
+
+
+@app.post("/lists/<int:list_id>/share")
+@login_required
+def share_list_internal(list_id):
+    recipient_id = request.form.get("recipient_id")
+
+    saved_list = SavedList.query.filter_by(
+        id=list_id,
+        user_id=current_user.id
+    ).first_or_404()
+
+    if not recipient_id:
+        flash("Choose a user to share with.")
+        return redirect(request.referrer or url_for("account"))
+
+    execute("""
+        INSERT INTO shared_lists (
+            list_id,
+            sender_id,
+            recipient_id,
+            status
+        )
+        VALUES (
+            :list_id,
+            :sender_id,
+            :recipient_id,
+            'pending'
+        )
+        ON CONFLICT (list_id, sender_id, recipient_id) DO NOTHING
+    """, {
+        "list_id": list_id,
+        "sender_id": current_user.id,
+        "recipient_id": int(recipient_id)
+    })
+
+    flash("List shared.")
+    return redirect(request.referrer or url_for("account"))
+
+
 
 
 
@@ -5049,6 +5110,7 @@ def account():
                     """,
                     {"name": place.name}
                 )
+                
 
             place_dict = {
                 "id": place.id,
@@ -5100,6 +5162,22 @@ def account():
             "created_at": saved_list.created_at,
             "places": list_places,
         })
+        
+        
+        
+        
+        shared_with_me = query_all("""
+    SELECT
+        sl.*,
+        l.title,
+        l.slug,
+        u.name AS sender_name
+        FROM shared_lists sl
+        JOIN saved_list l ON l.id = sl.list_id
+        JOIN "user" u ON u.id = sl.sender_id
+        WHERE sl.recipient_id = :user_id
+        ORDER BY sl.created_at DESC
+""", {"user_id": current_user.id})
 
     print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
     print("[ACCOUNT_MAPBOX_STYLE_URL]", os.getenv("MAPBOX_STYLE_URL", ""), flush=True)
@@ -5110,6 +5188,7 @@ def account():
         user=current_user,
         lists=account_lists,
         map_places=map_places,
+        shared_with_me=shared_with_me,
         mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
         mapbox_style_url=os.getenv("MAPBOX_STYLE_URL", "")
     )
