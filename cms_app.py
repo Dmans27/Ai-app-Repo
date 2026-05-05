@@ -681,7 +681,7 @@ def should_ask_followup(state):
         return True, "What city or area are you in?", "location"
 
     if category == "coffee" and not vibe and not purpose:
-        return True, "Do you want the best coffee, a quiet work spot, or something quick?", "coffee_vibe"
+        return True, "Do you want a cozy coffee shop, a quiet work spot, or something quick?", "coffee_vibe"
 
     if category in ["restaurants", "bars"] and not vibe and not purpose:
         return True, "What kind of vibe are you looking for — casual, lively, quick, or date-night?", "food_vibe"
@@ -2435,7 +2435,7 @@ def ai_chat():
                 if followup_key == "food_vibe":
                     followup_question = "Would you prefer something casual, quick, lively, or more date-night?"
                 elif followup_key == "coffee_vibe":
-                    followup_question = "Do you want a cozy coffee shop, somewhere quiet to work, or something quick?"
+                    followup_question = "Do you want a popular coffee shop, somewhere quiet to work, or something quick?"
                 elif followup_key == "location":
                     followup_question = "What area are you in so I can narrow it down?"
                 elif followup_key == "category":
