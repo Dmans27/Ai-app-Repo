@@ -152,7 +152,16 @@
               {{ (user.name or user.email or "U")[0]|upper }}
             {% endif %}
           </a>
+
+          {% if shared_with_me %}
+            <span class="notification-badge">{{ shared_with_me|length }}</span>
+          {% endif %}
+
+
           {% else %}
+
+
+
           
             <a
               href="{{ url_for('login') }}"
@@ -279,6 +288,32 @@
 <section class="account-map-card">
   <div id="account-map" class="account-map"></div>
 </section>
+
+
+{% if shared_with_me %}
+  <section class="shared-lists-section">
+    <h2>Shared with me</h2>
+
+    {% for shared in shared_with_me %}
+      <article class="shared-list-card">
+        <h3>{{ shared.title }}</h3>
+        <p>Shared by {{ shared.sender_name or "Someone" }}</p>
+
+        <a href="{{ url_for('view_public_list', slug=shared.slug) }}">
+          View list
+        </a>
+
+      <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}">
+      <button type="submit">Save to my lists</button>
+      </form>
+
+  
+      </article>
+    {% endfor %}
+  </section>
+{% endif %}
+
+
 {% if lists %}
   <section class="saved-lists-wrap">
     {% for saved_list in lists %}
@@ -297,16 +332,29 @@
         {{ "Public" if saved_list.is_public else "Private" }}
       </p>
     </div>
-      {% if saved_list.is_public %}
+{% if saved_list.is_public %}
+  <button
+    type="button"
+    class="saved-list-share-btn is-primary"
+    onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
+  >
+    ⌘
+  </button>
+{% endif %}
+
 <button
   type="button"
-  class="saved-list-share-btn is-primary"
-  onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
+  class="saved-list-share-btn"
+  data-open-share-modal
+  data-list-id="{{ saved_list.id }}"
+  data-list-title="{{ saved_list.title }}"
 >
-  ⌘
+  Share
 </button>
-  {% endif %}
   </div>
+
+
+
 
   {% if saved_list.places %}
     <div class="saved-place-carousel">
@@ -998,7 +1046,42 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("share-user-modal");
+  const form = document.getElementById("share-user-form");
+  const title = document.getElementById("share-list-title");
+  const search = document.getElementById("share-user-search");
 
+  document.querySelectorAll("[data-open-share-modal]").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      form.action = `/lists/${btn.dataset.listId}/share`;
+      title.textContent = btn.dataset.listTitle || "Choose a user";
+      modal.hidden = false;
+      search.value = "";
+      search.focus();
+
+      document.querySelectorAll(".share-user-row").forEach((row) => {
+        row.hidden = false;
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-close-share-modal]").forEach((el) => {
+    el.addEventListener("click", function () {
+      modal.hidden = true;
+    });
+  });
+
+  search?.addEventListener("input", function () {
+    const q = search.value.trim().toLowerCase();
+
+    document.querySelectorAll(".share-user-row").forEach((row) => {
+      row.hidden = q && !row.dataset.userSearch.includes(q);
+    });
+  });
+});
+</script>
 
 
 
@@ -1021,6 +1104,40 @@ document.addEventListener("DOMContentLoaded", function () {
       <button onclick="copyQrLink()">Copy Link</button>
       <button onclick="nativeShareQr()">Share</button>
     </div>
+  </div>
+</div>
+
+
+<div class="share-user-modal" id="share-user-modal" hidden>
+  <div class="share-user-modal__backdrop" data-close-share-modal></div>
+
+  <div class="share-user-modal__card">
+    <button type="button" class="share-user-modal__close" data-close-share-modal>✕</button>
+
+    <h3>Share list</h3>
+    <p id="share-list-title"></p>
+
+    <input
+      id="share-user-search"
+      class="share-user-search"
+      type="search"
+      placeholder="Search users"
+    >
+
+    <form method="post" id="share-user-form">
+      <div class="share-user-results">
+        {% for user_option in users %}
+          {% if user_option.id != current_user.id %}
+            <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
+              <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
+              <span>{{ user_option.name or user_option.email }}</span>
+            </label>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="share-user-submit">Send list</button>
+    </form>
   </div>
 </div>
 

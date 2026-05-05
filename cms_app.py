@@ -2349,7 +2349,27 @@ def is_relevant_featured_result(item, query: str, searched_city: str = None, max
     return query_matches and city_matches and distance_matches
 
 
+@app.post("/shared-lists/<int:shared_id>/accept")
+@login_required
+def accept_shared_list(shared_id):
+    shared = query_one("""
+        SELECT *
+        FROM shared_lists
+        WHERE id = :id AND recipient_id = :user_id
+    """, {"id": shared_id, "user_id": current_user.id})
 
+    if not shared:
+        abort(404)
+
+    # for now, mark accepted
+    execute("""
+        UPDATE shared_lists
+        SET status = 'accepted'
+        WHERE id = :id
+    """, {"id": shared_id})
+
+    flash("List saved.")
+    return redirect(url_for("account"))
 
 
 @app.post("/lists/<int:list_id>/share")
@@ -5079,6 +5099,8 @@ def account():
     lists = SavedList.query.filter_by(user_id=current_user.id) \
         .order_by(SavedList.created_at.desc()) \
         .all()
+        
+        
 
     account_lists = []
     map_places = []
@@ -5131,6 +5153,9 @@ def account():
             }
 
             list_places.append(place_dict)
+            
+            
+            users = User.query.order_by(User.name.asc()).limit(50).all()
 
             if place.latitude is not None and place.longitude is not None:
                 try:
@@ -5182,6 +5207,8 @@ def account():
     print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
     print("[ACCOUNT_MAPBOX_STYLE_URL]", os.getenv("MAPBOX_STYLE_URL", ""), flush=True)
     print("[ACCOUNT_MAP_PLACES_COUNT]", len(map_places), flush=True)
+    
+    
 
     return render_template(
         "account.html",
@@ -5189,6 +5216,7 @@ def account():
         lists=account_lists,
         map_places=map_places,
         shared_with_me=shared_with_me,
+        users=users,
         mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
         mapbox_style_url=os.getenv("MAPBOX_STYLE_URL", "")
     )
