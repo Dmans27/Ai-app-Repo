@@ -233,6 +233,36 @@
               </div>
             </section>
 
+
+
+            <button type="button" class="profile-notifications-tab" onclick="document.getElementById('notifications-panel').classList.toggle('is-open')">
+  🔔 Notifications
+  {% if shared_with_me %}
+    <span>{{ shared_with_me|length }}</span>
+  {% endif %}
+</button>
+
+<section class="notifications-panel" id="notifications-panel">
+  {% if shared_with_me %}
+    {% for shared in shared_with_me %}
+      <article class="notification-card">
+        <p><strong>{{ shared.sender_name or shared.sender_email or "Someone" }}</strong> shared a list with you</p>
+        <h3>{{ shared.title }}</h3>
+
+        <div class="notification-actions">
+          <a href="{{ url_for('view_public_list', slug=shared.slug) }}">View list</a>
+
+          <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}">
+            <button type="submit">Save</button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+  {% else %}
+    <p class="notifications-empty">No notifications yet.</p>
+  {% endif %}
+</section>
+
               <div class="saved-stats-row">
 
 
@@ -290,28 +320,7 @@
 </section>
 
 
-{% if shared_with_me %}
-  <section class="shared-lists-section">
-    <h2>Shared with me</h2>
 
-    {% for shared in shared_with_me %}
-      <article class="shared-list-card">
-        <h3>{{ shared.title }}</h3>
-        <p>Shared by {{ shared.sender_name or "Someone" }}</p>
-
-        <a href="{{ url_for('view_public_list', slug=shared.slug) }}">
-          View list
-        </a>
-
-      <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}">
-      <button type="submit">Save to my lists</button>
-      </form>
-
-  
-      </article>
-    {% endfor %}
-  </section>
-{% endif %}
 
 
 {% if lists %}

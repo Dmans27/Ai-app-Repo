@@ -5273,3 +5273,69 @@ body:not(.page-discover):not(.page-account) .app-main {
   background: #2bd4a9;
   color: #07100d;
 }
+
+
+
+.profile-notifications-tab {
+  margin-top: 14px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: #15181c;
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 900;
+}
+
+.profile-notifications-tab span {
+  margin-left: 8px;
+  background: #9de8c8;
+  color: #06110d;
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.notifications-panel {
+  display: none;
+  max-width: 760px;
+  margin: 18px auto 0;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.notifications-panel.is-open {
+  display: block;
+}
+
+.notification-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #111418;
+  margin-bottom: 12px;
+}
+
+.notification-card p {
+  color: rgba(255,255,255,.65);
+  margin: 0 0 8px;
+}
+
+.notification-card h3 {
+  margin: 0 0 12px;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.notification-actions a,
+.notification-actions button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: #9de8c8;
+  color: #06110d;
+  font-weight: 900;
+  text-decoration: none;
+}
