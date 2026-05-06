@@ -235,10 +235,17 @@
 
 
 
-            <button type="button" class="profile-notifications-tab" onclick="document.getElementById('notifications-panel').classList.toggle('is-open')">
+<button
+  type="button"
+  class="profile-notifications-tab"
+  id="notifications-toggle"
+>
   🔔 Notifications
+
   {% if shared_with_me %}
-    <span>{{ shared_with_me|length }}</span>
+    <span id="notification-badge">
+      {{ shared_with_me|length }}
+    </span>
   {% endif %}
 </button>
 
@@ -1099,6 +1106,23 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+</script>
+
+
+<script>
+  const notificationsToggle = document.getElementById("notifications-toggle");
+  const notificationsPanel = document.getElementById("notifications-panel");
+  const notificationBadge = document.getElementById("notification-badge");
+
+  if (notificationsToggle && notificationsPanel) {
+    notificationsToggle.addEventListener("click", () => {
+      notificationsPanel.classList.toggle("is-open");
+
+      if (notificationBadge) {
+        notificationBadge.style.display = "none";
+      }
+    });
+  }
 </script>
 
 
