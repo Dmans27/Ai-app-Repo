@@ -132,6 +132,8 @@ def create_core_tables():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """))
+            
+        
 
         # ---------------------------------------------------
         # Sections
@@ -5218,8 +5220,11 @@ def account():
         JOIN saved_list l ON l.id = sl.list_id
         JOIN "user" u ON u.id = sl.sender_id
         WHERE sl.recipient_id = :user_id
+            AND sl.seen_at IS NULL
         ORDER BY sl.created_at DESC
     """, {"user_id": current_user.id}) or []
+
+    unread_shared_count = len(shared_with_me)
 
     print("[ACCOUNT_MAPBOX_TOKEN]", bool(os.getenv("MAPBOX_TOKEN")), flush=True)
     print("[ACCOUNT_MAPBOX_STYLE_URL]", os.getenv("MAPBOX_STYLE_URL", ""), flush=True)
@@ -5231,6 +5236,7 @@ def account():
         "account.html",
         user=current_user,
         lists=account_lists,
+        unread_shared_count=unread_shared_count,
         map_places=map_places,
         shared_with_me=shared_with_me,
         users=users,
@@ -5355,6 +5361,21 @@ def view_public_list(slug):
         ),
         is_saved=is_saved
     )
+    
+    
+    
+    
+@app.post("/notifications/mark-seen")
+@login_required
+def mark_notifications_seen():
+    execute("""
+        UPDATE shared_lists
+        SET seen_at = CURRENT_TIMESTAMP
+        WHERE recipient_id = :user_id
+          AND seen_at IS NULL
+    """, {"user_id": current_user.id})
+
+    return {"ok": True}
     
 
 

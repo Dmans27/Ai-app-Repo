@@ -268,6 +268,10 @@
   {% else %}
     <p class="notifications-empty">No notifications yet.</p>
   {% endif %}
+
+  {% if unread_shared_count %}
+  <span id="notification-badge">{{ unread_shared_count }}</span>
+{% endif %}
 </section>
 
               <div class="saved-stats-row">
@@ -1106,6 +1110,9 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+
+
+
 </script>
 
 
@@ -1123,6 +1130,23 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+
+
+  notificationsToggle.addEventListener("click", () => {
+  notificationsPanel.classList.toggle("is-open");
+
+  if (notificationBadge) {
+    notificationBadge.style.display = "none";
+  }
+
+  fetch("/notifications/mark-seen", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
+});
 </script>
 
 
