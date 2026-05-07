@@ -1775,19 +1775,7 @@ select {
   font-size: 2rem;
 }
 
-.saved-place-slide {
-  min-width: 270px;
-  max-width: 270px;
-  background: rgba(20, 24, 34, 0.96);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 28px;
-  padding: 14px;
-  flex-shrink: 0;
 
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .saved-place-slide__image {
   width: 100%;
@@ -6580,93 +6568,145 @@ body:not(.page-discover):not(.page-account) .app-main {
 
 
 /* =============================================================
-   ACCOUNT PAGE — MOBILE LIST SIZE PATCH
-   Append to the bottom of styles.css
-   Increases thumbnail image height, name font, and button
-   sizes so users aren't squinting on mobile.
+   ACCOUNT PAGE — MOBILE LIST SIZE PATCH (CORRECTED)
+   Targets the actual classes used in your live account.html.
+   Append to the very bottom of styles.css — this will override
+   any earlier rules for these selectors on mobile.
    ============================================================= */
 
 @media (max-width: 768px) {
 
-  /* ── List card: more breathing room ── */
-  .acct-list-card {
-    border-radius: 22px;
+  /* ── List card wrapper: more room ── */
+  .saved-list-section {
+    margin: 10px 0 18px;
   }
 
-  .acct-list-card__head {
-    padding: 16px 16px 12px;
-  }
-
-  .acct-list-card__name {
-    font-size: 20px;
+  /* ── List title + meta ── */
+  .saved-list-header h2 {
+    font-size: 22px !important;
+    font-weight: 900;
     letter-spacing: -0.03em;
+    line-height: 1.1;
   }
 
-  .acct-list-card__meta {
-    font-size: 13px;
+  .saved-list-header p {
+    font-size: 13px !important;
     margin-top: 3px;
   }
 
-  .acct-list-badge {
-    height: 26px;
-    padding: 0 12px;
-    font-size: 12px;
+  /* ── Carousel strip: taller + wider thumbnails ── */
+  .saved-place-carousel {
+    gap: 12px;
+    padding: 0 16px 14px;
   }
 
-  /* ── Thumbnail strip: taller images, wider cards ── */
-  .acct-thumb-strip {
-    gap: 10px;
-    padding: 0 16px 16px;
+  /* The slide cards themselves */
+  .saved-place-slide.saved-place-slide--full {
+    /* Override the compact 2-column grid layout */
+    grid-template-columns: 140px 1fr !important;
+    min-height: 140px !important;
+    padding: 14px !important;
+    border-radius: 20px !important;
+    gap: 14px !important;
   }
 
+  /* Thumbnail photo block */
+  .saved-place-slide__thumb {
+    height: 140px !important;   /* was ~90px — bigger photos */
+    border-radius: 16px !important;
+    width: 140px !important;
+  }
+
+  /* Place name */
+  .saved-place-slide__body h3 {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  /* Category + address */
+  .saved-place-slide__category,
+  .saved-place-slide__address {
+    font-size: 12px !important;
+    margin-top: 4px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Action buttons inside slide */
+  .saved-place-slide__actions a {
+    height: 34px !important;
+    padding: 0 14px !important;
+    font-size: 12.5px !important;
+    border-radius: 999px !important;
+  }
+
+  /* ── If using the non-full slide variant ── */
+  .saved-place-slide:not(.saved-place-slide--full) {
+    min-width: 200px !important;
+    max-width: 200px !important;
+    border-radius: 20px !important;
+  }
+
+  .saved-place-slide:not(.saved-place-slide--full) .saved-place-slide__image {
+    height: 130px !important;
+    border-radius: 14px !important;
+  }
+
+  .saved-place-slide:not(.saved-place-slide--full) .saved-place-slide__body h3 {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+  }
+
+  /* ── Share / QR / Edit footer buttons ── */
+  .saved-list-share-btn,
+  .saved-list-qr-btn {
+    height: 38px !important;
+    padding: 0 18px !important;
+    font-size: 13.5px !important;
+    border-radius: 999px !important;
+  }
+
+  /* ── acct- classes from the rewritten account.html ── */
   .acct-place-thumb {
-    width: 110px;
-    border-radius: 16px;
+    width: 120px !important;
+    border-radius: 16px !important;
   }
 
   .acct-place-thumb__img {
-    height: 80px;   /* was 62px — gives photos room to breathe */
-  }
-
-  .acct-place-thumb__body {
-    padding: 8px 10px 10px;
+    height: 86px !important;
   }
 
   .acct-place-thumb__name {
-    font-size: 12.5px;
-    line-height: 1.3;
-    /* Allow wrapping to 2 lines so names don't truncate as aggressively */
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 12.5px !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    line-clamp: 2 !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
   }
 
   .acct-place-thumb__cat {
-    font-size: 11px;
-    margin-top: 2px;
+    font-size: 11px !important;
   }
 
-  /* Add-place dashed thumb matches new size */
   .acct-place-thumb--add {
-    min-height: 106px;
-    width: 110px;
+    width: 120px !important;
+    min-height: 110px !important;
   }
 
-  /* ── Card footer buttons: larger tap targets ── */
-  .acct-list-card__foot {
-    padding: 11px 16px 13px;
-    gap: 10px;
+  .acct-list-card__name {
+    font-size: 20px !important;
+  }
+
+  .acct-list-card__meta {
+    font-size: 13px !important;
   }
 
   .acct-foot-btn {
-    height: 34px;
-    padding: 0 16px;
-    font-size: 13px;
-    border-radius: 999px;
+    height: 36px !important;
+    padding: 0 16px !important;
+    font-size: 13px !important;
   }
 }
