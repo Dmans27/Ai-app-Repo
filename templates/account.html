@@ -3,200 +3,706 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title></title>
-
-
-
-
+  <title>Account · Local AI</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+
+  <style>
+    /* ── Account page scoped styles ── */
+
+    /* Profile hero: left-aligned */
+    .acct-hero {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 16px 16px;
+    }
+
+    .acct-avatar-form { flex-shrink: 0; margin: 0; padding: 0; }
+
+    .acct-avatar-label {
+      position: relative;
+      display: block;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      cursor: pointer;
+      background: rgba(16,163,127,0.18);
+      border: 2px solid rgba(157,232,200,0.28);
+      transition: border-color 0.18s;
+    }
+    .acct-avatar-label:hover { border-color: rgba(157,232,200,0.6); }
+
+    .acct-avatar-label img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .acct-avatar-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      color: #7ee2bf;
+    }
+
+    .acct-avatar-edit {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #10a37f;
+      color: #fff;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #050505;
+      pointer-events: none;
+    }
+
+    .acct-profile-info { flex: 1; min-width: 0; }
+
+    .acct-profile-name {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 0 0 3px;
+    }
+
+    .acct-profile-city {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      margin: 0 0 10px;
+    }
+
+    .acct-profile-btns { display: flex; gap: 8px; }
+
+    .acct-btn {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .acct-btn:active { transform: scale(0.95); }
+    .acct-btn--primary { background: #10a37f; color: #fff; }
+    .acct-btn--primary:hover { background: #0d8a6c; }
+    .acct-btn--ghost {
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.72);
+      border: 0.5px solid rgba(255,255,255,0.12);
+    }
+    .acct-btn--ghost:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    /* Stats row */
+    .acct-stats {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 16px;
+    }
+
+    .acct-stat {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 11px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      cursor: default;
+      transition: background 0.15s;
+    }
+    .acct-stat--cta {
+      background: rgba(16,163,127,0.1);
+      border-color: rgba(16,163,127,0.28);
+      cursor: pointer;
+      justify-content: center;
+    }
+    .acct-stat--cta:hover { background: rgba(16,163,127,0.18); }
+
+    .acct-stat__num {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .acct-stat__lbl {
+      font-size: 10px;
+      color: rgba(255,255,255,0.38);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .acct-stat--cta .acct-stat__lbl {
+      font-size: 13px;
+      font-weight: 800;
+      color: #7ee2bf;
+      margin: 0;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    /* Notification banner */
+    .acct-notif-banner {
+      margin: 0 16px 14px;
+      padding: 11px 14px;
+      background: rgba(16,163,127,0.08);
+      border: 0.5px solid rgba(16,163,127,0.28);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .acct-notif-banner:hover { background: rgba(16,163,127,0.14); }
+
+    .acct-notif-banner__left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .acct-notif-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10a37f;
+      flex-shrink: 0;
+      animation: liveDocPulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes liveDocPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .acct-notif-banner__text {
+      font-size: 13px;
+      font-weight: 700;
+      color: #7ee2bf;
+    }
+
+    .acct-notif-banner__badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #10a37f;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Notifications panel */
+    .notifications-panel {
+      display: none;
+      margin: -6px 16px 14px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 0.5px solid rgba(255,255,255,0.07);
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+    }
+    .notifications-panel.is-open { display: block; }
+
+    /* Bell dot on header */
+    .acct-header-icon-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+    .acct-bell-dot {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10a37f;
+      border: 1.5px solid #050505;
+      pointer-events: none;
+    }
+
+    /* Map card with inline chip filters */
+    .acct-map-card {
+      margin: 0 16px 16px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      background: #111214;
+    }
+
+    .acct-map-card .account-map {
+      width: 100%;
+      height: 210px;
+      min-height: 0;
+      border-radius: 0;
+    }
+
+    .acct-map-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 10px 12px;
+      border-top: 0.5px solid rgba(255,255,255,0.07);
+    }
+    .acct-map-chips::-webkit-scrollbar { display: none; }
+
+    .acct-map-chip {
+      flex-shrink: 0;
+      height: 28px;
+      padding: 0 11px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.55);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .acct-map-chip:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.85); }
+    .acct-map-chip.is-active {
+      background: rgba(16,163,127,0.18);
+      border-color: rgba(16,163,127,0.42);
+      color: #7ee2bf;
+    }
+
+    .acct-map-chip-divider {
+      color: rgba(255,255,255,0.15);
+      font-size: 13px;
+      flex-shrink: 0;
+      padding: 0 2px;
+      pointer-events: none;
+    }
+
+    /* Section header */
+    .acct-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 16px 10px;
+    }
+    .acct-section-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.3);
+    }
+    .acct-section-action {
+      font-size: 13px;
+      font-weight: 700;
+      color: #7ee2bf;
+      text-decoration: none;
+    }
+    .acct-section-action:hover { opacity: 0.75; }
+
+    /* List cards */
+    .acct-lists-stack { display: flex; flex-direction: column; gap: 12px; }
+
+    .acct-list-card {
+      margin: 0 16px;
+      background: #13151a;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: border-color 0.18s;
+    }
+    .acct-list-card:hover { border-color: rgba(157,232,200,0.2); }
+
+    .acct-list-card__head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 14px 10px;
+    }
+
+    .acct-list-card__name {
+      font-size: 17px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      margin: 0 0 3px;
+    }
+
+    .acct-list-card__meta {
+      font-size: 12px;
+      color: rgba(255,255,255,0.38);
+      margin: 0;
+    }
+
+    .acct-list-badge {
+      flex-shrink: 0;
+      height: 24px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      margin-top: 2px;
+      background: rgba(16,163,127,0.14);
+      color: #7ee2bf;
+      border: 0.5px solid rgba(16,163,127,0.3);
+    }
+    .acct-list-badge--private {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.4);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    /* Place thumbnail strip */
+    .acct-thumb-strip {
+      display: flex;
+      gap: 8px;
+      padding: 0 14px 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .acct-thumb-strip::-webkit-scrollbar { display: none; }
+
+    .acct-place-thumb {
+      flex-shrink: 0;
+      width: 92px;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .acct-place-thumb:hover {
+      border-color: rgba(255,255,255,0.18);
+      transform: translateY(-2px);
+    }
+    .acct-place-thumb:active { transform: scale(0.95); }
+
+    .acct-place-thumb__img {
+      width: 100%;
+      height: 62px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .acct-place-thumb__img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .acct-place-thumb__emoji { font-size: 22px; }
+
+    .acct-place-thumb__body { padding: 7px 8px 8px; }
+    .acct-place-thumb__name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+    .acct-place-thumb__cat {
+      font-size: 10px;
+      color: rgba(255,255,255,0.38);
+      margin-top: 1px;
+      text-transform: capitalize;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Add-place dashed thumb */
+    .acct-place-thumb--add {
+      border-style: dashed;
+      border-color: rgba(255,255,255,0.12);
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90px;
+      gap: 4px;
+    }
+    .acct-place-thumb--add:hover {
+      border-color: rgba(157,232,200,0.3);
+      background: rgba(16,163,127,0.06);
+    }
+    .acct-place-thumb--add .acct-thumb-add-icon {
+      font-size: 18px;
+      color: rgba(255,255,255,0.28);
+      line-height: 1;
+    }
+    .acct-place-thumb--add .acct-thumb-add-lbl {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* Empty list state */
+    .acct-list-empty {
+      padding: 0 14px 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.38);
+    }
+    .acct-list-empty a { color: #7ee2bf; font-weight: 700; text-decoration: none; }
+
+    /* Card footer */
+    .acct-list-card__foot {
+      border-top: 0.5px solid rgba(255,255,255,0.07);
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .acct-foot-btn {
+      height: 30px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.15s;
+    }
+    .acct-foot-btn:hover { background: rgba(255,255,255,0.11); color: #fff; }
+    .acct-foot-btn:active { transform: scale(0.95); }
+    .acct-foot-btn--share {
+      background: rgba(16,163,127,0.1);
+      border-color: rgba(16,163,127,0.3);
+      color: #7ee2bf;
+    }
+    .acct-foot-btn--share:hover { background: rgba(16,163,127,0.18); }
+
+    /* Account panel spacing */
+    .acct-info-panel { margin: 20px 16px 0; }
+
+    @media (min-width: 1025px) {
+      .mobile-tabbar { display: none !important; }
+    }
+  </style>
 </head>
 
 <body class="app-body page-account">
-  <div class="app-shell">
-    <!-- Desktop sidebar -->
-    <aside class="app-sidebar desktop-sidebar">
-      <div class="app-sidebar__top">
-        <div class="app-brand">
-          <div class="app-brand__title">Local AI</div>
-          <div class="app-brand__subtitle">Recommendations near you</div>
-        </div>
+<div class="app-shell">
 
-        <a
-          href="{{ url_for('account') }}"
-          class="app-sidebar__account"
-          aria-label="Account"
-        >
+  <!-- ════════════════════════════════
+       DESKTOP SIDEBAR
+  ════════════════════════════════ -->
+  <aside class="app-sidebar desktop-sidebar">
+    <div class="app-sidebar__top">
+      <div class="app-brand">
+        <div class="app-brand__title">Local AI</div>
+        <div class="app-brand__subtitle">Recommendations near you</div>
+      </div>
+      <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">
+        {% if user.profile_image_url %}
+          <img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+        {% else %}
           {{ (user.name or user.email or "U")[0]|upper }}
-        </a>
+        {% endif %}
+      </a>
+    </div>
+
+    <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">
+      + New search
+    </button>
+
+    <nav class="app-sidebar__nav">
+      <a href="/" class="app-sidebar__link">AI Search</a>
+      <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
+      <a href="/search?q=restaurant near me" class="app-sidebar__link">Restaurants</a>
+      <a href="/search?q=bars near me" class="app-sidebar__link">Bars</a>
+      <a href="/search?q=shopping near me" class="app-sidebar__link">Shopping</a>
+      <a href="/discover" class="app-sidebar__link">Discover</a>
+      <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
+      <a href="{{ url_for('account') }}" class="app-sidebar__link is-active">Account</a>
+      <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
+    </nav>
+
+    <div class="app-sidebar__section-label">Account</div>
+
+    <div class="app-sidebar__footer">
+      <a href="/" class="app-sidebar__footer-link">Home</a>
+      <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
+      <a href="{{ url_for('account') }}" class="app-sidebar__footer-link is-active">Account</a>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit" class="app-sidebar__footer-button">Log out</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- ════════════════════════════════
+       MOBILE SHELL
+  ════════════════════════════════ -->
+  <div class="mobile-app-shell">
+
+    <!-- Mobile drawer -->
+    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+      <div class="mobile-drawer__header">
+        <div class="mobile-drawer__title">Local AI</div>
+        <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
       </div>
 
-      <button
-        class="app-sidebar__new-search"
-        type="button"
-        onclick="window.location.href='/'"
-      >
+      <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">
         + New search
       </button>
 
-      <nav class="app-sidebar__nav">
-        <a href="/" class="app-sidebar__link">AI Search</a>
-        <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
-        <a href="/search?q=restaurant near me" class="app-sidebar__link">Restaurants</a>
-        <a href="/search?q=bars near me" class="app-sidebar__link">Bars</a>
-        <a href="/search?q=shopping near me" class="app-sidebar__link">Shopping</a>
-        <a href="/discover" class="app-sidebar__link">Discover</a>
-        <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
-        <a href="{{ url_for('account') }}" class="app-sidebar__link is-active"></a>
-        <a href="{{ url_for('settings') }}" class="account-settings-link"> ⚙️ Settings </a>
+      <nav class="mobile-drawer__nav">
+        <a href="/" class="mobile-drawer__link">AI Search</a>
+        <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
+        <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
+        <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
+        <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
+        <a href="/discover" class="mobile-drawer__link">Discover</a>
+        <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
+        <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active">Account</a>
       </nav>
 
-      <div class="app-sidebar__section-label">Account</div>
+      <div class="mobile-drawer__section-label">Account</div>
 
-      <div class="app-sidebar__footer">
-        <a href="/" class="app-sidebar__footer-link">Home</a>
-        <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
-        <a href="{{ url_for('account') }}" class="app-sidebar__footer-link is-active">Account</a>
-
-        <form method="post" action="{{ url_for('logout') }}">
-          <button type="submit" class="app-sidebar__footer-button">Log out</button>
-        </form>
+      <div class="mobile-drawer__footer">
+        <a href="/" class="mobile-drawer__footer-link">Home</a>
+        <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link is-active">Account</a>
+          <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
+          <form method="post" action="{{ url_for('logout') }}">
+            <button type="submit" class="mobile-drawer__footer-button">Log out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
+          <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
+        {% endif %}
       </div>
     </aside>
 
-    <!-- Mobile shell -->
-    <div class="mobile-app-shell">
-      <!-- Drawer -->
-      <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
-        <div class="mobile-drawer__header">
-          <div class="mobile-drawer__title">Local AI</div>
-          <button
-            class="mobile-drawer__close"
-            id="app-sidebar-close"
-            type="button"
-            aria-label="Close menu"
-          >✕</button>
+    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+
+    <!-- ════════════════════════════════
+         MAIN SCREEN
+    ════════════════════════════════ -->
+    <main class="mobile-screen">
+
+      <!-- Mobile header: bell + settings in top-right -->
+      <header class="mobile-app-header">
+        <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
+
+        <div class="mobile-app-header__center">
+          <div class="mobile-app-header__title">My Account</div>
+          <div class="mobile-app-header__subtitle">Local AI</div>
         </div>
 
-        <button
-          class="mobile-drawer__new-search"
-          type="button"
-          onclick="window.location.href='/'"
-        >
-          + New search
-        </button>
-
-        <nav class="mobile-drawer__nav">
-          <a href="/" class="mobile-drawer__link">AI Search</a>
-          <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
-          <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
-          <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
-          <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
-          <a href="/discover" class="mobile-drawer__link">Discover</a>
-          <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
-          <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active"></a>
-          
-        </nav>
-
-        <div class="mobile-drawer__section-label">Account</div>
-
-        <div class="mobile-drawer__footer">
-          <a href="/" class="mobile-drawer__footer-link">Home</a>
-          <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
-
+        <div style="display:flex;align-items:center;gap:6px;">
           {% if current_user.is_authenticated %}
-            <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link is-active">Account</a>
-            <a href="{{ url_for('settings') }}" class="account-settings-link"> ⚙️ Settings </a>
-            <form method="post" action="{{ url_for('logout') }}">
-              <button type="submit" class="mobile-drawer__footer-button">Log out</button>
-            </form>
+            <div class="acct-header-icon-wrap">
+              <button type="button" class="mobile-app-header__icon" id="notifications-toggle" aria-label="Notifications">🔔</button>
+              {% if shared_with_me %}<span class="acct-bell-dot" id="notification-badge"></span>{% endif %}
+            </div>
+            <a href="{{ url_for('settings') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Settings">⚙️</a>
           {% else %}
-            <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
-            <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
+            <a href="{{ url_for('login') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Log in">👤</a>
           {% endif %}
         </div>
-      </aside>
+      </header>
 
-      <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+      <section class="mobile-content account-page-content">
+        <div class="account-desktop-wrap">
+          <div class="account-ios-shell">
 
-      <!-- Main screen -->
-      <main class="mobile-screen">
-        <header class="mobile-app-header">
-          <button
-            class="mobile-app-header__icon"
-            id="app-sidebar-toggle"
-            type="button"
-            aria-label="Open menu"
-          >☰</button>
-
-          <div class="mobile-app-header__center">
-            <div class="mobile-app-header__title"></div>
-            <div class="mobile-app-header__subtitle"></div>
-          </div>
-
-          {% if current_user.is_authenticated %}
-          <a
-            href="{{ url_for('account') }}"
-            class="mobile-app-header__icon mobile-app-header__icon--link mobile-app-header__avatar-link"
-            aria-label="Account"
-          >
-            {% if user.profile_image_url %}
-              <img
-                src="{{ user.profile_image_url }}"
-                alt="{{ user.name or user.email }}"
-                class="mobile-app-header__avatar-img"
-              >
-            {% else %}
-              {{ (user.name or user.email or "U")[0]|upper }}
+            <!-- ── Notification banner (only renders when notifications exist) ── -->
+            {% if shared_with_me %}
+            <div class="acct-notif-banner" id="notifications-panel-trigger">
+              <div class="acct-notif-banner__left">
+                <span class="acct-notif-live-dot"></span>
+                <span class="acct-notif-banner__text">
+                  {{ shared_with_me|length }} new shared list{{ 's' if shared_with_me|length != 1 else '' }}
+                </span>
+              </div>
+              <span class="acct-notif-banner__badge">{{ shared_with_me|length }}</span>
+            </div>
             {% endif %}
-          </a>
 
-          {% if shared_with_me %}
-            <span class="notification-badge">{{ shared_with_me|length }}</span>
-          {% endif %}
+            <!-- Notifications panel (same cards as original) -->
+            <section class="notifications-panel" id="notifications-panel">
+              {% if shared_with_me %}
+                {% for shared in shared_with_me %}
+                  <article class="notification-card">
+                    <p><strong>{{ shared.sender_name or shared.sender_email or "Someone" }}</strong> shared a list with you</p>
+                    <h3>{{ shared.title }}</h3>
+                    <div class="notification-actions">
+                      <a href="{{ url_for('view_public_list', slug=shared.slug) }}">View list</a>
+                      <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}">
+                        <button type="submit">Save</button>
+                      </form>
+                    </div>
+                  </article>
+                {% endfor %}
+              {% else %}
+                <p class="notifications-empty">No notifications yet.</p>
+              {% endif %}
+              {% if unread_shared_count %}
+                <span id="notification-badge-panel">{{ unread_shared_count }}</span>
+              {% endif %}
+            </section>
 
-
-          {% else %}
-
-
-
-          
-            <a
-              href="{{ url_for('login') }}"
-              class="mobile-app-header__icon mobile-app-header__icon--link"
-              aria-label="Log in"
-            >👤</a>
-          {% endif %}
-        </header>
-
-        <section class="mobile-content account-page-content">
-          <div class="account-desktop-wrap">
-            <div class="account-ios-shell">
-            <section class="saved-hero saved-hero--stacked">
+            <!-- ── Profile hero: LEFT-ALIGNED (replaces centered stacked) ── -->
+            <section class="acct-hero">
               <form
                 method="post"
                 action="{{ url_for('update_profile_photo') }}"
                 enctype="multipart/form-data"
-                class="saved-hero__avatar-form"
+                class="acct-avatar-form"
               >
-                <label class="saved-hero__avatar saved-hero__avatar--large" for="account-profile-photo">
+                <label class="acct-avatar-label" for="account-profile-photo" aria-label="Change profile photo">
                   {% if user.profile_image_url %}
-                    <img
-                      src="{{ user.profile_image_url }}"
-                      alt="{{ user.name or user.email }}"
-                      class="saved-hero__avatar-img"
-                    >
+                    <img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}">
                   {% else %}
-                    <span class="saved-hero__avatar-fallback">
-                      {{ (user.name or user.email or "U")[0]|upper }}
-                    </span>
+                    <span class="acct-avatar-fallback">{{ (user.name or user.email or "U")[0]|upper }}</span>
                   {% endif %}
-
-                  
+                  <span class="acct-avatar-edit" aria-hidden="true">✎</span>
                 </label>
-
                 <input
                   id="account-profile-photo"
                   type="file"
@@ -207,618 +713,460 @@
                 >
               </form>
 
-              <div class="saved-profile-copy saved-profile-copy--stacked">
-                <h1>{{ user.name or "Your Profile" }}</h1>
-
-                <p>
-                  {% if user.home_city %}
-                    📍 {{ user.home_city }}
-                  {% else %}
-                    Add your city
-                  {% endif %}
+              <div class="acct-profile-info">
+                <h1 class="acct-profile-name">{{ user.name or "Your Profile" }}</h1>
+                <p class="acct-profile-city">
+                  {% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}
                 </p>
-
-                <div class="profile-action-buttons profile-action-buttons--centered">
-                  <a href="{{ url_for('settings') }}" class="profile-action-btn">
-                    Edit
-                  </a>
-
-                  <a
-                    href="{{ url_for('messages_with_user', user_id=user.id) }}"
-                    class="profile-action-btn profile-action-btn--message"
-                  >
-                    💬
-                  </a>
+                <div class="acct-profile-btns">
+                  <a href="{{ url_for('settings') }}" class="acct-btn acct-btn--primary">Edit profile</a>
+                  <a href="{{ url_for('messages_with_user', user_id=user.id) }}" class="acct-btn acct-btn--ghost">💬</a>
                 </div>
               </div>
             </section>
 
+            <!-- ── Stats row ── -->
+            <div class="acct-stats">
+              <div class="acct-stat">
+                <span class="acct-stat__num">{{ lists|length }}</span>
+                <span class="acct-stat__lbl">Lists</span>
+              </div>
+              <div class="acct-stat">
+                <span class="acct-stat__num">{{ lists | map(attribute='places') | map('length') | sum }}</span>
+                <span class="acct-stat__lbl">Places</span>
+              </div>
+              <div class="acct-stat">
+                <span class="acct-stat__num">{{ lists | selectattr('is_public') | list | length }}</span>
+                <span class="acct-stat__lbl">Public</span>
+              </div>
+              <a href="{{ url_for('create_list') }}" class="acct-stat acct-stat--cta">
+                <span class="acct-stat__lbl">+ New</span>
+              </a>
+            </div>
 
+            <!-- ── Map card with inline filter chips (replaces two dropdowns) ── -->
+            <section class="acct-map-card">
+              <div id="account-map" class="account-map"></div>
 
-<button
-  type="button"
-  class="profile-notifications-tab"
-  id="notifications-toggle"
->
-  🔔 Notifications
+              <div class="acct-map-chips" id="acct-map-chips">
+                <button class="acct-map-chip is-active" data-cat="all" type="button">All</button>
+                <button class="acct-map-chip" data-cat="coffee" type="button">☕ Coffee</button>
+                <button class="acct-map-chip" data-cat="restaurant" type="button">🍽 Restaurants</button>
+                <button class="acct-map-chip" data-cat="bar" type="button">🍸 Bars</button>
+                <button class="acct-map-chip" data-cat="wine" type="button">🍷 Wine</button>
+                <button class="acct-map-chip" data-cat="rooftop" type="button">🌃 Rooftops</button>
+                <button class="acct-map-chip" data-cat="shopping" type="button">🛍 Shopping</button>
+                <span class="acct-map-chip-divider">|</span>
+                <button class="acct-map-chip is-active" data-loc="all" type="button">All cities</button>
+                <span id="acct-loc-chips" style="display:contents;"></span>
+              </div>
+            </section>
 
-  {% if shared_with_me %}
-    <span id="notification-badge">
-      {{ shared_with_me|length }}
-    </span>
-  {% endif %}
-</button>
-
-<section class="notifications-panel" id="notifications-panel">
-  {% if shared_with_me %}
-    {% for shared in shared_with_me %}
-      <article class="notification-card">
-        <p><strong>{{ shared.sender_name or shared.sender_email or "Someone" }}</strong> shared a list with you</p>
-        <h3>{{ shared.title }}</h3>
-
-        <div class="notification-actions">
-          <a href="{{ url_for('view_public_list', slug=shared.slug) }}">View list</a>
-
-          <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}">
-            <button type="submit">Save</button>
-          </form>
-        </div>
-      </article>
-    {% endfor %}
-  {% else %}
-    <p class="notifications-empty">No notifications yet.</p>
-  {% endif %}
-
-  {% if unread_shared_count %}
-  <span id="notification-badge">{{ unread_shared_count }}</span>
-{% endif %}
-</section>
-
-              <div class="saved-stats-row">
-
-
-
-
-
-
-                <div class="saved-pill">
-                  <span class="saved-pill-number">{{ lists|length }}</span>
-                  <span class="saved-pill-label">Lists</span>
-                </div>
-
-                <div class="saved-pill">
-                  <span class="saved-pill-number">{{ lists | map(attribute='places') | map('length') | sum }}</span>
-                  <span class="saved-pill-label">Places</span>
-                </div>
-
-                <div class="saved-pill">
-                  <span class="saved-pill-number">{{ lists | selectattr('is_public') | list | length }}</span>
-                  <span class="saved-pill-label">Public</span>
-                </div>
-
-                <a href="{{ url_for('create_list') }}" class="saved-pill add-pill">
-                  + New List
-                </a>
+            <!-- ── Saved lists ── -->
+            {% if lists %}
+              <div class="acct-section-header">
+                <span class="acct-section-lbl">Your lists</span>
+                <a href="{{ url_for('create_list') }}" class="acct-section-action">+ New list</a>
               </div>
 
+              <div class="acct-lists-stack">
+                {% for saved_list in lists %}
+                <div class="acct-list-card">
 
-<div class="saved-filter-grid">
+                  <div class="acct-list-card__head">
+                    <div>
+                      <h2 class="acct-list-card__name">{{ saved_list.title }}</h2>
+                      <p class="acct-list-card__meta">
+                        {{ saved_list.places|length }} place{{ 's' if saved_list.places|length != 1 else '' }}
+                      </p>
+                    </div>
+                    <span class="acct-list-badge {% if not saved_list.is_public %}acct-list-badge--private{% endif %}">
+                      {{ "Public" if saved_list.is_public else "Private" }}
+                    </span>
+                  </div>
 
-  <div class="saved-filter-select-wrap">
-    <label for="saved-filter-select">Filter places</label>
-    <select id="saved-filter-select" class="saved-filter-select">
-      <option value="all">All places</option>
-      <option value="coffee">Coffee</option>
-      <option value="restaurant">Restaurants</option>
-      <option value="bar">Bars</option>
-      <option value="wine">Wine</option>
-      <option value="rooftop">Rooftops</option>
-      <option value="shopping">Shopping</option>
-    </select>
-  </div>
+                  <!-- Thumbnail strip (same data-* attrs as original saved-place-slide) -->
+                  {% if saved_list.places %}
+                  <div class="acct-thumb-strip">
+                    {% for place in saved_list.places %}
+                    <article
+                      class="acct-place-thumb js-place-popup"
+                      data-slug="{{ place.slug }}"
+                      data-name="{{ place.name }}"
+                      data-category="{{ place.category or 'Local business' }}"
+                      data-address="{{ place.address or '' }}"
+                      data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                      data-website="{{ place.website or '' }}"
+                      data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% endif %}"
+                      data-category-filter="{{ (place.category or '')|lower }}"
+                      data-name-filter="{{ (place.name or '')|lower }}"
+                      data-address-filter="{{ (place.address or '')|lower }}"
+                      data-city-filter="{{ (place.city or '')|lower }}"
+                    >
+                      <div class="acct-place-thumb__img">
+                        {% if place.photo_url %}
+                          <img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">
+                        {% else %}
+                          <span class="acct-place-thumb__emoji">📍</span>
+                        {% endif %}
+                      </div>
+                      <div class="acct-place-thumb__body">
+                        <div class="acct-place-thumb__name">{{ place.name }}</div>
+                        <div class="acct-place-thumb__cat">{{ place.category or '' }}</div>
+                      </div>
+                    </article>
+                    {% endfor %}
 
-  <div class="saved-filter-select-wrap">
-    <label for="saved-location-select">Filter location</label>
-    <select id="saved-location-select" class="saved-filter-select">
-      <option value="all">All locations</option>
-    </select>
-  </div>
+                    <!-- Dashed add-place thumb -->
+                    <a href="{{ url_for('discover_page') }}" class="acct-place-thumb acct-place-thumb--add">
+                      <span class="acct-thumb-add-icon">+</span>
+                      <span class="acct-thumb-add-lbl">Add place</span>
+                    </a>
+                  </div>
+                  {% else %}
+                  <div class="acct-list-empty">
+                    No saved places yet. <a href="{{ url_for('discover_page') }}">Browse places →</a>
+                  </div>
+                  {% endif %}
 
-</div>
+                  <!-- Card footer: preserves all original share/QR route calls -->
+                  <div class="acct-list-card__foot">
+                    {% if saved_list.is_public %}
+                      <button
+                        type="button"
+                        class="acct-foot-btn acct-foot-btn--share"
+                        data-open-share-modal
+                        data-list-id="{{ saved_list.id }}"
+                        data-list-title="{{ saved_list.title }}"
+                      >⌘ Share</button>
+                      <button
+                        type="button"
+                        class="acct-foot-btn"
+                        onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
+                      >QR Code</button>
+                    {% else %}
+                      <button
+                        type="button"
+                        class="acct-foot-btn"
+                        data-open-share-modal
+                        data-list-id="{{ saved_list.id }}"
+                        data-list-title="{{ saved_list.title }}"
+                      >Share</button>
+                    {% endif %}
+                    <a href="{{ url_for('settings') }}" class="acct-foot-btn">Edit</a>
+                  </div>
 
-<section class="account-map-card">
-  <div id="account-map" class="account-map"></div>
-</section>
+                </div><!-- /.acct-list-card -->
+                {% endfor %}
+              </div><!-- /.acct-lists-stack -->
 
-
-
-
-
-{% if lists %}
-  <section class="saved-lists-wrap">
-    {% for saved_list in lists %}
-
-  <div class="saved-list-share-actions">
-</div>
-
-
-
-<section class="saved-list-section">
-  <div class="saved-list-header">
-    <div>
-      <h2>{{ saved_list.title }}</h2>
-      <p>
-        {{ saved_list.places|length }} places ·
-        {{ "Public" if saved_list.is_public else "Private" }}
-      </p>
-    </div>
-{% if saved_list.is_public %}
-  <button
-    type="button"
-    class="saved-list-share-btn is-primary"
-    onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
-  >
-    ⌘
-  </button>
-{% endif %}
-
-<button
-  type="button"
-  class="saved-list-share-btn"
-  data-open-share-modal
-  data-list-id="{{ saved_list.id }}"
-  data-list-title="{{ saved_list.title }}"
->
-  Share
-</button>
-  </div>
-
-
-
-
-  {% if saved_list.places %}
-    <div class="saved-place-carousel">
-      {% for place in saved_list.places %}
-        <article
-  class="saved-place-slide saved-place-slide--full js-place-popup"
-  data-slug="{{ place.slug }}"
-  data-name="{{ place.name }}"
-  data-category="{{ place.category or 'Local business' }}"
-  data-address="{{ place.address or '' }}"
-  data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-  data-website="{{ place.website or '' }}"
-  data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% else %}{% endif %}"
-  data-category-filter="{{ (place.category or '')|lower }}"
-  data-name-filter="{{ (place.name or '')|lower }}"
-  data-address-filter="{{ (place.address or '')|lower }}"
-  data-city-filter="{{ (place.city or '')|lower }}"
->
-
-          <div class="saved-place-slide__thumb">
-            {% if place.photo_url %}
-              <img src="{{ place.photo_url }}" alt="{{ place.name }}">
             {% else %}
-              <div class="saved-place-slide__placeholder">📍</div>
-            {% endif %}
-          </div>
-
-          <div class="saved-place-slide__content">
-            <h3>{{ place.name }}</h3>
-
-            {% if place.category %}
-              <p class="saved-place-slide__category">{{ place.category }}</p>
+              <section class="account-ios-empty">
+                <h2>No lists yet</h2>
+                <p>Create your first list to start saving favorite places.</p>
+                <a href="{{ url_for('create_list') }}" class="acct-btn acct-btn--primary" style="display:inline-flex;margin-top:14px;">
+                  + Create a list
+                </a>
+              </section>
             {% endif %}
 
-            {% if place.address %}
-              <p class="saved-place-slide__address">{{ place.address }}</p>
-            {% endif %}
-
-            <div class="saved-place-slide__actions">
-              {% if place.website %}
-                <a
-                  href="{{ place.website }}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Website
-                </a>
-              {% endif %}
-
-              {% if place.latitude and place.longitude %}
-                <a
-                  href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="is-primary"
-                >
-                  Directions
-                </a>
-              {% elif place.address %}
-                <a
-                  href="https://www.google.com/maps/search/?api=1&query={{ place.address|urlencode }}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="is-primary"
-                >
-                  Directions
-                </a>
-              {% endif %}
-            </div>
-          </div>
-        </article>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="saved-list-empty">
-      No saved places yet.
-    </div>
-  {% endif %}
-</section>
-    {% endfor %}
-  </section>
-{% else %}
-  <section class="account-ios-empty">
-    <h2>No lists yet</h2>
-    <p>Create your first list to start saving favorite places.</p>
-  </section>
-{% endif %}
-
-            <section class="account-ios-account-panel">
+            <!-- ── Account info panel (original content, unchanged) ── -->
+            <section class="account-ios-account-panel acct-info-panel">
               <h2>Your account</h2>
-
-              <p>
-                <strong>Name:</strong>
-                {{ user.name or "Not added yet" }}
-              </p>
-
-              <p>
-                <strong>Email:</strong>
-                {{ user.email }}
-              </p>
-
-              <form
-                method="post"
-                action="{{ url_for('logout') }}"
-                class="account-logout-form"
-              >
-                <button type="submit" class="btn-secondary">
-                  Log out
-                </button>
+              <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
+              <p><strong>Email:</strong> {{ user.email }}</p>
+              <form method="post" action="{{ url_for('logout') }}" class="account-logout-form" style="margin-top:14px;">
+                <button type="submit" class="acct-foot-btn">Log out</button>
               </form>
             </section>
 
-            </div>
-            </div>
-            </section>
+          </div><!-- /.account-ios-shell -->
+        </div><!-- /.account-desktop-wrap -->
+      </section><!-- /.mobile-content -->
 
+      <!-- ════════════════════════════════
+           PLACE POPUP (100% unchanged — same IDs, classes, structure)
+      ════════════════════════════════ -->
+      <div class="place-popup" id="place-popup" hidden>
+        <div class="place-popup__backdrop" data-close-place-popup></div>
 
-            <div class="place-popup" id="place-popup" hidden>
-              <div class="place-popup__backdrop" data-close-place-popup></div>
+        <div class="place-popup__card place-popup__card--large">
+          <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
 
-              <div class="place-popup__card place-popup__card--large">
-                <button class="place-popup__close" type="button" data-close-place-popup>
-                  ✕
-                </button>
-
-                <!-- Section 1: Hero / business info -->
-                <section class="place-popup__hero">
-                  <img
-                    id="place-popup-photo"
-                    class="place-popup__image"
-                    src=""
-                    alt=""
-                  >
-
-                  <div class="place-popup__body">
-                    <p id="place-popup-category" class="place-popup__category"></p>
-
-                    <h2 id="place-popup-name"></h2>
-
-                    <p id="place-popup-address" class="place-popup__address"></p>
-
-                    <p id="place-popup-description" class="place-popup__description"></p>
-
-                    <div class="place-popup__actions">
-                      <a
-                        id="place-popup-website"
-                        class="place-popup__btn"
-                        target="_blank"
-                        rel="noopener"
-                      >
-                        Website
-                      </a>
-
-                      <a
-                        id="place-popup-directions"
-                        class="place-popup__btn"
-                        target="_blank"
-                        rel="noopener"
-                      >
-                        Directions
-                      </a>
-
-                      <a
-                        id="place-popup-listing"
-                        class="place-popup__btn place-popup__btn--primary"
-                      >
-                        View listing
-                      </a>
-                    </div>
-                  </div>
-                </section>
-
-                <!-- Section 2: Photo gallery -->
-              <div class="photo-slider" id="popup-slider">
-
-                <div class="photo-slider__viewport">
-                  
-                  <button type="button" class="slider-btn slider-btn--left" data-slider-prev>
-                    ‹
-                  </button>
-
-                  <div class="slider-track" id="popup-slider-track"></div>
-
-                  <button type="button" class="slider-btn slider-btn--right" data-slider-next>
-                    ›
-                  </button>
-
-                </div>
-
-              </div>
-
-              <div class="slider-thumbs" id="popup-slider-thumbs"></div>
-
-                <!-- Section 3: Comments -->
-                <section class="place-popup__section place-popup__comments">
-                  <h3>Comments</h3>
-
-                  <div id="popup-comments-list" class="place-popup__comments-list">
-                    <p class="place-popup__muted">No comments yet. Be the first to leave one.</p>
-                  </div>
-
-                  <form id="popup-comment-form" class="place-popup__comment-form">
-                    <input
-                      type="text"
-                      name="author_name"
-                      placeholder="Your name"
-                    >
-
-                    <textarea
-                      name="body"
-                      placeholder="Share your experience or thoughts about this business"
-                    ></textarea>
-
-                    <button type="submit">
-                      Post comment
-                    </button>
-                  </form>
-                </section>
+          <section class="place-popup__hero">
+            <img id="place-popup-photo" class="place-popup__image" src="" alt="">
+            <div class="place-popup__body">
+              <p id="place-popup-category" class="place-popup__category"></p>
+              <h2 id="place-popup-name"></h2>
+              <p id="place-popup-address" class="place-popup__address"></p>
+              <p id="place-popup-description" class="place-popup__description"></p>
+              <div class="place-popup__actions">
+                <a id="place-popup-website" class="place-popup__btn" target="_blank" rel="noopener">Website</a>
+                <a id="place-popup-directions" class="place-popup__btn" target="_blank" rel="noopener">Directions</a>
+                <a id="place-popup-listing" class="place-popup__btn place-popup__btn--primary">View listing</a>
               </div>
             </div>
+          </section>
 
-            <nav class="mobile-tabbar">
-              <a href="/" class="mobile-tabbar__item">
-                <span class="mobile-tabbar__icon">🏠</span>
-                <span class="mobile-tabbar__label">Home</span>
-              </a>
-
-              <a href="/discover" class="mobile-tabbar__item">
-                <span class="mobile-tabbar__icon">🗺️</span>
-                <span class="mobile-tabbar__label">Discover</span>
-              </a>
-
-              <a href="/" class="mobile-tabbar__item">
-                <span class="mobile-tabbar__icon">🔎</span>
-                <span class="mobile-tabbar__label">Search</span>
-              </a>
-
-              <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active">
-                <span class="mobile-tabbar__icon">📌</span>
-                <span class="mobile-tabbar__label">Saved</span>
-              </a>
-
-              <a
-                href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
-                class="mobile-tabbar__item"
-              >
-                <span class="mobile-tabbar__icon">👤</span>
-                <span class="mobile-tabbar__label">Account</span>
-              </a>
-            </nav>
-
-            </main>
+          <div class="photo-slider" id="popup-slider">
+            <div class="photo-slider__viewport">
+              <button type="button" class="slider-btn slider-btn--left" data-slider-prev>‹</button>
+              <div class="slider-track" id="popup-slider-track"></div>
+              <button type="button" class="slider-btn slider-btn--right" data-slider-next>›</button>
             </div>
-            </div>
+          </div>
+          <div class="slider-thumbs" id="popup-slider-thumbs"></div>
 
-  <script id="map-data" type="application/json">
+          <section class="place-popup__section place-popup__comments">
+            <h3>Comments</h3>
+            <div id="popup-comments-list" class="place-popup__comments-list">
+              <p class="place-popup__muted">No comments yet. Be the first to leave one.</p>
+            </div>
+            <form id="popup-comment-form" class="place-popup__comment-form">
+              <input type="text" name="author_name" placeholder="Your name">
+              <textarea name="body" placeholder="Share your experience or thoughts about this business"></textarea>
+              <button type="submit">Post comment</button>
+            </form>
+          </section>
+        </div>
+      </div>
+
+      <!-- Mobile tab bar (unchanged) -->
+      <nav class="mobile-tabbar">
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🏠</span>
+          <span class="mobile-tabbar__label">Home</span>
+        </a>
+        <a href="/discover" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🗺️</span>
+          <span class="mobile-tabbar__label">Discover</span>
+        </a>
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🔎</span>
+          <span class="mobile-tabbar__label">Search</span>
+        </a>
+        <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active">
+          <span class="mobile-tabbar__icon">📌</span>
+          <span class="mobile-tabbar__label">Saved</span>
+        </a>
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">👤</span>
+          <span class="mobile-tabbar__label">Account</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     QR MODAL (unchanged)
+════════════════════════════════ -->
+<div class="qr-modal" id="qrModal">
+  <div class="qr-modal__backdrop" onclick="closeQrModal()"></div>
+  <div class="qr-modal__card">
+    <button class="qr-close" onclick="closeQrModal()">✕</button>
+    <h3 id="qrTitle">Share List</h3>
+    <p>Scan to open this list</p>
+    <img id="qrImage" src="" alt="QR Code">
+    <div class="qr-actions">
+      <button onclick="copyQrLink()">Copy Link</button>
+      <button onclick="nativeShareQr()">Share</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     SHARE USER MODAL (unchanged)
+════════════════════════════════ -->
+<div class="share-user-modal" id="share-user-modal" hidden>
+  <div class="share-user-modal__backdrop" data-close-share-modal></div>
+  <div class="share-user-modal__card">
+    <button type="button" class="share-user-modal__close" data-close-share-modal>✕</button>
+    <h3>Share list</h3>
+    <p id="share-list-title"></p>
+    <input id="share-user-search" class="share-user-search" type="search" placeholder="Search users">
+    <form method="post" id="share-user-form">
+      <div class="share-user-results">
+        {% for user_option in users %}
+          {% if user_option.id != current_user.id %}
+          <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
+            <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
+            <span class="share-user-check">✓</span>
+            <span class="share-user-name">{{ user_option.name or user_option.email }}</span>
+          </label>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <button type="submit" class="share-user-submit">Send list</button>
+    </form>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     MAP DATA (unchanged)
+════════════════════════════════ -->
+<script id="map-data" type="application/json">
 {{ map_places|tojson|safe }}
-  </script>
+</script>
+
+
+<!-- ════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
 
 <script>
+/* ── Drawer ── */
 document.addEventListener("DOMContentLoaded", function () {
-  const sidebar = document.getElementById("app-sidebar");
-  const sidebarToggle = document.getElementById("app-sidebar-toggle");
+  const sidebar  = document.getElementById("app-sidebar");
+  const toggle   = document.getElementById("app-sidebar-toggle");
   const closeBtn = document.getElementById("app-sidebar-close");
   const backdrop = document.getElementById("app-sidebar-backdrop");
 
-  function openDrawer() {
-    sidebar?.classList.add("is-open");
-    backdrop?.classList.add("is-open");
-  }
+  function openDrawer()  { sidebar?.classList.add("is-open");    backdrop?.classList.add("is-open"); }
+  function closeDrawer() { sidebar?.classList.remove("is-open"); backdrop?.classList.remove("is-open"); }
 
-  function closeDrawer() {
-    sidebar?.classList.remove("is-open");
-    backdrop?.classList.remove("is-open");
-  }
-
-  sidebarToggle?.addEventListener("click", openDrawer);
+  toggle?.addEventListener("click", openDrawer);
   closeBtn?.addEventListener("click", closeDrawer);
   backdrop?.addEventListener("click", closeDrawer);
+});
+</script>
 
+
+<script>
+/* ── Notifications: banner + header bell both toggle the panel ── */
+document.addEventListener("DOMContentLoaded", function () {
+  const banner  = document.getElementById("notifications-panel-trigger");
+  const panel   = document.getElementById("notifications-panel");
+  const badge   = document.getElementById("notification-badge");
+  const bellBtn = document.getElementById("notifications-toggle");
+
+  function markSeen() {
+    if (badge) badge.style.display = "none";
+    fetch("/notifications/mark-seen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    }).catch(() => {});
+  }
+
+  function togglePanel() {
+    if (!panel) return;
+    const opening = !panel.classList.contains("is-open");
+    panel.classList.toggle("is-open");
+    if (opening) markSeen();
+  }
+
+  banner?.addEventListener("click", togglePanel);
+  bellBtn?.addEventListener("click", togglePanel);
+});
+</script>
+
+
+<script>
+/* ── Mapbox + chip filters (replaces original select-based filters) ── */
+document.addEventListener("DOMContentLoaded", function () {
   const mapEl = document.getElementById("account-map");
   if (!mapEl || typeof mapboxgl === "undefined") return;
 
-  const token = "{{ mapbox_token }}";
+  const token    = "{{ mapbox_token }}";
   const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
-  const places = JSON.parse(document.getElementById("map-data").textContent || "[]");
+  const places   = JSON.parse(document.getElementById("map-data").textContent || "[]");
 
   if (!token) return;
 
-  let activeCategoryFilter = "all";
-  let activeLocationFilter = "all";
-  let currentMarkers = [];
+  let activeCat = "all";
+  let activeLoc = "all";
+  let markers   = [];
 
-  function normalizeText(value) {
-    return String(value || "").trim().toLowerCase();
+  function norm(v) { return String(v || "").trim().toLowerCase(); }
+
+  function locationLabel(place) {
+    if (place.city && place.city.trim()) return place.city.trim();
+    const parts = (place.address || "").split(",").map(p => p.trim());
+    return parts.length >= 2 ? parts[1] : "";
   }
 
-
-function getLocationLabel(place) {
-  if (place.city && place.city.trim()) {
-    return place.city.trim();
+  function matches(place) {
+    const catTxt = [place.name, place.category, place.cuisine, place.address].join(" ").toLowerCase();
+    const locTxt = norm(locationLabel(place));
+    return (activeCat === "all" || catTxt.includes(activeCat))
+        && (activeLoc === "all" || locTxt.includes(activeLoc));
   }
 
-  const address = place.address || "";
-  const parts = address.split(",").map((part) => part.trim());
+  function clearMarkers() { markers.forEach(m => m.remove()); markers = []; }
 
-  // "704 E Boughton Rd, Bolingbrook, IL 60440, USA"
-  if (parts.length >= 2) {
-    return parts[1];
-  }
-
-  return "";
-}
-
-
-
-
-function getPlaceLocation(place) {
-  return normalizeText(getLocationLabel(place));
-}
-
-  function placeMatchesFilters(place) {
-    const categoryText = [
-      place.name || "",
-      place.category || "",
-      place.cuisine || "",
-      place.address || ""
-    ].join(" ").toLowerCase();
-
-    const locationText = getPlaceLocation(place);
-
-    const categoryMatch =
-      activeCategoryFilter === "all" ||
-      categoryText.includes(activeCategoryFilter);
-
-    const locationMatch =
-      activeLocationFilter === "all" ||
-      locationText.includes(activeLocationFilter);
-
-    return categoryMatch && locationMatch;
-  }
-
-  function getFilteredPlaces() {
-    return places.filter(placeMatchesFilters);
-  }
-
-function populateLocationFilter() {
-  const locationSelect = document.getElementById("saved-location-select");
-  if (!locationSelect) return;
-
-  const locations = [...new Set(
-    places
-      .map(getLocationLabel)
-      .filter(Boolean)
-  )].sort();
-
-  locationSelect.innerHTML = `
-    <option value="all">All locations</option>
-    ${locations.map((city) => `
-      <option value="${city.toLowerCase()}">${city}</option>
-    `).join("")}
-  `;
-
-  console.log("[LOCATION_FILTER_OPTIONS]", locations);
-}
-
-
-
-
-  function clearMarkers() {
-    currentMarkers.forEach((marker) => marker.remove());
-    currentMarkers = [];
-  }
-
-  function renderFilteredMarkers() {
+  function render() {
     clearMarkers();
+    const filtered = places.filter(matches);
+    const bounds   = new mapboxgl.LngLatBounds();
+    let n = 0;
 
-    const filteredPlaces = getFilteredPlaces();
-    const bounds = new mapboxgl.LngLatBounds();
-    let markerCount = 0;
-
-    filteredPlaces.forEach((place) => {
+    filtered.forEach(place => {
       if (place.lng == null || place.lat == null) return;
-
-      const marker = new mapboxgl.Marker()
+      const m = new mapboxgl.Marker()
         .setLngLat([place.lng, place.lat])
-        .setPopup(
-          new mapboxgl.Popup({ offset: 18 }).setHTML(`
-            <div style="max-width:220px;">
-              <strong>${place.name || ""}</strong>
-              ${place.category ? `<div>${place.category}</div>` : ""}
-              ${place.address ? `<div>${place.address}</div>` : ""}
-            </div>
-          `)
-        )
+        .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(`
+          <div style="max-width:200px;">
+            <strong style="font-size:14px;">${place.name || ""}</strong>
+            ${place.category ? `<div style="font-size:12px;color:#888;margin-top:2px;">${place.category}</div>` : ""}
+            ${place.address  ? `<div style="font-size:12px;color:#aaa;margin-top:4px;">${place.address}</div>` : ""}
+          </div>
+        `))
         .addTo(map);
-
-      currentMarkers.push(marker);
+      markers.push(m);
       bounds.extend([place.lng, place.lat]);
-      markerCount += 1;
+      n++;
     });
 
-    if (markerCount > 1) {
-      map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
-    } else if (markerCount === 1) {
-      map.flyTo({
-        center: [filteredPlaces[0].lng, filteredPlaces[0].lat],
-        zoom: 13
+    if (n > 1)      map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
+    else if (n === 1) map.flyTo({ center: [filtered[0].lng, filtered[0].lat], zoom: 13 });
+
+    /* also filter the place thumb cards */
+    document.querySelectorAll(".acct-place-thumb.js-place-popup").forEach(card => {
+      const cat = [card.dataset.categoryFilter, card.dataset.nameFilter, card.dataset.addressFilter].join(" ").toLowerCase();
+      const loc = norm(card.dataset.cityFilter || card.dataset.addressFilter || "");
+      card.style.display =
+        (activeCat === "all" || cat.includes(activeCat)) &&
+        (activeLoc === "all" || loc.includes(activeLoc))
+          ? "" : "none";
+    });
+  }
+
+  /* Build location chips dynamically from real place data */
+  function buildLocChips() {
+    const container = document.getElementById("acct-loc-chips");
+    if (!container) return;
+    const locs = [...new Set(places.map(locationLabel).filter(Boolean))].sort();
+    container.innerHTML = locs.map(city => `
+      <button class="acct-map-chip" data-loc="${city.toLowerCase()}" type="button">${city}</button>
+    `).join("");
+  }
+
+  /* Wire chip clicks */
+  function wireChips() {
+    document.querySelectorAll("#acct-map-chips [data-cat]").forEach(chip => {
+      chip.addEventListener("click", function () {
+        document.querySelectorAll("#acct-map-chips [data-cat]").forEach(c => c.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        activeCat = chip.dataset.cat;
+        render();
       });
-    }
-  }
-
-  function filterCards() {
-    document.querySelectorAll(".saved-place-slide").forEach((card) => {
-      const categoryText = [
-        card.dataset.categoryFilter || "",
-        card.dataset.nameFilter || "",
-        card.dataset.addressFilter || ""
-      ].join(" ").toLowerCase();
-
-      const locationText = normalizeText(card.dataset.cityFilter || card.dataset.addressFilter || "");
-
-      const categoryMatch =
-        activeCategoryFilter === "all" ||
-        categoryText.includes(activeCategoryFilter);
-
-      const locationMatch =
-        activeLocationFilter === "all" ||
-        locationText.includes(activeLocationFilter);
-
-      card.hidden = !(categoryMatch && locationMatch);
     });
-  }
-
-  function applySavedFilters() {
-    renderFilteredMarkers();
-    filterCards();
+    document.querySelectorAll("#acct-map-chips [data-loc]").forEach(chip => {
+      chip.addEventListener("click", function () {
+        document.querySelectorAll("#acct-map-chips [data-loc]").forEach(c => c.classList.remove("is-active"));
+        chip.classList.add("is-active");
+        activeLoc = chip.dataset.loc;
+        render();
+      });
+    });
   }
 
   mapboxgl.accessToken = token;
-
-  const defaultCenter = places.length
-    ? [places[0].lng, places[0].lat]
-    : [-87.6298, 41.8781];
+  const defaultCenter = places.length ? [places[0].lng, places[0].lat] : [-87.6298, 41.8781];
 
   const map = new mapboxgl.Map({
     container: "account-map",
@@ -832,75 +1180,40 @@ function populateLocationFilter() {
   });
 
   map.addControl(new mapboxgl.NavigationControl(), "top-right");
+  buildLocChips();
+  wireChips();
+  map.on("load", render);
+});
+</script>
 
-  populateLocationFilter();
 
-  document.getElementById("saved-filter-select")?.addEventListener("change", function () {
-    activeCategoryFilter = this.value || "all";
-    applySavedFilters();
-  });
+<script>
+/* ── Share actions (unchanged) ── */
+function showComingSoon(message) { alert(message); }
 
-  document.getElementById("saved-location-select")?.addEventListener("change", function () {
-    activeLocationFilter = this.value || "all";
-    applySavedFilters();
-  });
+function copyShareLink(url) {
+  if (!url) { showComingSoon("Create a public list first."); return; }
+  navigator.clipboard.writeText(url)
+    .then(() => alert("Share link copied."))
+    .catch(() => alert("Could not copy link."));
+}
 
-  map.on("load", function () {
-    renderFilteredMarkers();
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll("[data-share-action]").forEach(button => {
+    button.addEventListener("click", function () {
+      const action = button.dataset.shareAction;
+      if (action === "qr")         showComingSoon("QR sharing is coming next.");
+      if (action === "invite")     showComingSoon("Email and phone invites are coming next.");
+      if (action === "find-users") showComingSoon("User search is coming next.");
+      if (action === "copy-link")  copyShareLink(button.dataset.shareUrl);
+    });
   });
 });
 </script>
 
 
-
 <script>
-  function showComingSoon(message) {
-    alert(message);
-  }
-
-  function copyShareLink(url) {
-    if (!url) {
-      showComingSoon("Create a public list first.");
-      return;
-    }
-
-    navigator.clipboard.writeText(url)
-      .then(() => {
-        alert("Share link copied.");
-      })
-      .catch(() => {
-        alert("Could not copy link.");
-      });
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll("[data-share-action]").forEach((button) => {
-      button.addEventListener("click", function () {
-        const action = button.dataset.shareAction;
-
-        if (action === "qr") {
-          showComingSoon("QR sharing is coming next.");
-        }
-
-        if (action === "invite") {
-          showComingSoon("Email and phone invites are coming next.");
-        }
-
-        if (action === "find-users") {
-          showComingSoon("User search is coming next.");
-        }
-
-        if (action === "copy-link") {
-          copyShareLink(button.dataset.shareUrl);
-        }
-      });
-    });
-  });
-</script>
-
-
-
-<script>
+/* ── QR modal (unchanged) ── */
 let currentQrUrl = "";
 
 function openQrModal(slug, title) {
@@ -909,123 +1222,86 @@ function openQrModal(slug, title) {
   document.getElementById("qrImage").src = `/lists/${slug}/qr.png`;
   document.getElementById("qrModal").classList.add("is-open");
 }
-
-function closeQrModal() {
-  document.getElementById("qrModal").classList.remove("is-open");
-}
-
+function closeQrModal() { document.getElementById("qrModal").classList.remove("is-open"); }
 function copyQrLink() {
-  navigator.clipboard.writeText(window.location.origin + currentQrUrl);
+  navigator.clipboard.writeText(window.location.origin + currentQrUrl)
+    .then(() => alert("Link copied!"))
+    .catch(() => alert("Could not copy link."));
 }
-
 function nativeShareQr() {
-  if (navigator.share) {
-    navigator.share({
-      title: "Shared List",
-      url: window.location.origin + currentQrUrl
-    });
-  }
+  if (navigator.share) navigator.share({ title: "Shared List", url: window.location.origin + currentQrUrl });
 }
 </script>
 
 
-
 <script>
+/* ── Place popup (logic unchanged; selector updated to .acct-place-thumb) ── */
 document.addEventListener("DOMContentLoaded", function () {
-  const popup = document.getElementById("place-popup");
-  const photo = document.getElementById("place-popup-photo");
-  const name = document.getElementById("place-popup-name");
-  const category = document.getElementById("place-popup-category");
-  const address = document.getElementById("place-popup-address");
-  const website = document.getElementById("place-popup-website");
+  const popup      = document.getElementById("place-popup");
+  const photo      = document.getElementById("place-popup-photo");
+  const name       = document.getElementById("place-popup-name");
+  const category   = document.getElementById("place-popup-category");
+  const address    = document.getElementById("place-popup-address");
+  const website    = document.getElementById("place-popup-website");
   const directions = document.getElementById("place-popup-directions");
-  const listing = document.getElementById("place-popup-listing");
+  const listing    = document.getElementById("place-popup-listing");
+  const slider     = document.getElementById("popup-slider");
+  const track      = document.getElementById("popup-slider-track");
+  const thumbs     = document.getElementById("popup-slider-thumbs");
+  const prevBtn    = slider?.querySelector("[data-slider-prev]");
+  const nextBtn    = slider?.querySelector("[data-slider-next]");
 
-  const slider = document.getElementById("popup-slider");
-  const track = document.getElementById("popup-slider-track");
-  const thumbs = document.getElementById("popup-slider-thumbs");
-  const prevBtn = slider?.querySelector("[data-slider-prev]");
-  const nextBtn = slider?.querySelector("[data-slider-next]");
-
-  let popupPhotos = [];
+  let popupPhotos  = [];
   let currentIndex = 0;
 
   function renderSlider(index = 0) {
     if (!track || !thumbs) return;
-
     if (!popupPhotos.length) {
       track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
       thumbs.innerHTML = "";
-
       if (prevBtn) prevBtn.style.display = "none";
       if (nextBtn) nextBtn.style.display = "none";
       return;
     }
-
     currentIndex = (index + popupPhotos.length) % popupPhotos.length;
-
     if (prevBtn) prevBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
     if (nextBtn) nextBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
-
-    track.innerHTML = `
-      <img src="${popupPhotos[currentIndex]}" class="popup-slider__image" alt="">
-    `;
-
+    track.innerHTML = `<img src="${popupPhotos[currentIndex]}" class="popup-slider__image" alt="">`;
     thumbs.innerHTML = popupPhotos.map((url, i) => `
-      <button
-        type="button"
-        class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}"
-        data-thumb="${i}"
-      >
+      <button type="button" class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}" data-thumb="${i}">
         <img src="${url}" alt="">
       </button>
     `).join("");
-
-    thumbs.querySelectorAll("[data-thumb]").forEach((btn) => {
-      btn.addEventListener("click", function () {
-        renderSlider(Number(btn.dataset.thumb));
-      });
+    thumbs.querySelectorAll("[data-thumb]").forEach(btn => {
+      btn.addEventListener("click", () => renderSlider(Number(btn.dataset.thumb)));
     });
   }
 
-  prevBtn?.addEventListener("click", function (e) {
-    e.stopPropagation();
-    renderSlider(currentIndex - 1);
-  });
+  prevBtn?.addEventListener("click", e => { e.stopPropagation(); renderSlider(currentIndex - 1); });
+  nextBtn?.addEventListener("click", e => { e.stopPropagation(); renderSlider(currentIndex + 1); });
 
-  nextBtn?.addEventListener("click", function (e) {
-    e.stopPropagation();
-    renderSlider(currentIndex + 1);
-  });
-
-  document.querySelectorAll(".js-place-popup").forEach((card) => {
+  document.querySelectorAll(".js-place-popup").forEach(card => {
     card.addEventListener("click", async function (e) {
       if (e.target.closest("a, button, form")) return;
 
       const slug = card.dataset.slug;
-
-      photo.src = card.dataset.photo || "/static/img/default-business.jpg";
-      name.textContent = card.dataset.name || "Local business";
+      photo.src            = card.dataset.photo || "/static/img/default-business.jpg";
+      name.textContent     = card.dataset.name || "Local business";
       category.textContent = card.dataset.category || "Local business";
-      address.textContent = card.dataset.address || "";
-
-      website.style.display = card.dataset.website ? "flex" : "none";
-      website.href = card.dataset.website || "#";
-
-      listing.style.display = card.dataset.listingUrl ? "flex" : "none";
-      listing.href = card.dataset.listingUrl || "#";
-
-      directions.href = card.dataset.address
+      address.textContent  = card.dataset.address || "";
+      website.style.display  = card.dataset.website ? "flex" : "none";
+      website.href           = card.dataset.website || "#";
+      listing.style.display  = card.dataset.listingUrl ? "flex" : "none";
+      listing.href           = card.dataset.listingUrl || "#";
+      directions.href        = card.dataset.address
         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`
         : "#";
 
       popup.hidden = false;
-      popupPhotos = [];
+      popupPhotos  = [];
       currentIndex = 0;
-
       track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
       thumbs.innerHTML = "";
-
       if (prevBtn) prevBtn.style.display = "none";
       if (nextBtn) nextBtn.style.display = "none";
 
@@ -1035,31 +1311,24 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       try {
-        const res = await fetch(`/listing-data/${slug}`);
+        const res  = await fetch(`/listing-data/${slug}`);
         const data = await res.json();
-
-        if (data.photo_url) {
-          photo.src = data.photo_url;
-        }
-
-        popupPhotos = Array.isArray(data.photos)
-          ? data.photos.filter(Boolean)
-          : [];
-
+        if (data.photo_url) photo.src = data.photo_url;
+        popupPhotos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
         renderSlider(0);
-      } catch (err) {
+      } catch {
         track.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
       }
     });
   });
 
-  document.querySelectorAll("[data-close-place-popup]").forEach((el) => {
+  document.querySelectorAll("[data-close-place-popup]").forEach(el => {
     el.addEventListener("click", function () {
       popup.hidden = true;
-      popupPhotos = [];
+      popupPhotos  = [];
       currentIndex = 0;
-      track.innerHTML = "";
-      thumbs.innerHTML = "";
+      if (track)  track.innerHTML  = "";
+      if (thumbs) thumbs.innerHTML = "";
     });
   });
 });
@@ -1067,36 +1336,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 <script>
+/* ── Share user modal (unchanged) ── */
 document.addEventListener("DOMContentLoaded", function () {
-  const modal = document.getElementById("share-user-modal");
-  const form = document.getElementById("share-user-form");
-  const title = document.getElementById("share-list-title");
+  const modal  = document.getElementById("share-user-modal");
+  const form   = document.getElementById("share-user-form");
+  const title  = document.getElementById("share-list-title");
   const search = document.getElementById("share-user-search");
 
-  document.querySelectorAll("[data-open-share-modal]").forEach((btn) => {
+  document.querySelectorAll("[data-open-share-modal]").forEach(btn => {
     btn.addEventListener("click", function () {
       form.action = `/lists/${btn.dataset.listId}/share`;
       title.textContent = btn.dataset.listTitle || "Choose a user";
       modal.hidden = false;
       search.value = "";
       search.focus();
-
-      document.querySelectorAll(".share-user-row").forEach((row) => {
-        row.hidden = false;
-      });
+      document.querySelectorAll(".share-user-row").forEach(row => { row.hidden = false; });
     });
   });
 
-  document.querySelectorAll("[data-close-share-modal]").forEach((el) => {
-    el.addEventListener("click", function () {
-      modal.hidden = true;
-    });
+  document.querySelectorAll("[data-close-share-modal]").forEach(el => {
+    el.addEventListener("click", () => { modal.hidden = true; });
   });
 
   search?.addEventListener("input", function () {
     const q = search.value.trim().toLowerCase();
-
-    document.querySelectorAll(".share-user-row").forEach((row) => {
+    document.querySelectorAll(".share-user-row").forEach(row => {
       row.hidden = q && !row.dataset.userSearch.includes(q);
     });
   });
@@ -1104,112 +1368,11 @@ document.addEventListener("DOMContentLoaded", function () {
   form?.addEventListener("submit", function () {
     const btn = form.querySelector(".share-user-submit");
     if (!btn) return;
-
     btn.disabled = true;
     btn.textContent = "Sending...";
   });
 });
-
-
-
-
 </script>
-
-
-<script>
-  const notificationsToggle = document.getElementById("notifications-toggle");
-  const notificationsPanel = document.getElementById("notifications-panel");
-  const notificationBadge = document.getElementById("notification-badge");
-
-  if (notificationsToggle && notificationsPanel) {
-    notificationsToggle.addEventListener("click", () => {
-      notificationsPanel.classList.toggle("is-open");
-
-      if (notificationBadge) {
-        notificationBadge.style.display = "none";
-      }
-    });
-  }
-
-
-
-  notificationsToggle.addEventListener("click", () => {
-  notificationsPanel.classList.toggle("is-open");
-
-  if (notificationBadge) {
-    notificationBadge.style.display = "none";
-  }
-
-  fetch("/notifications/mark-seen", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
-});
-</script>
-
-
-
-
-
-
-
-<div class="qr-modal" id="qrModal">
-  <div class="qr-modal__backdrop" onclick="closeQrModal()"></div>
-
-  <div class="qr-modal__card">
-    <button class="qr-close" onclick="closeQrModal()">✕</button>
-
-    <h3 id="qrTitle">Share List</h3>
-    <p>Scan to open this list</p>
-
-    <img id="qrImage" src="" alt="QR Code">
-
-    <div class="qr-actions">
-      <button onclick="copyQrLink()">Copy Link</button>
-      <button onclick="nativeShareQr()">Share</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="share-user-modal" id="share-user-modal" hidden>
-  <div class="share-user-modal__backdrop" data-close-share-modal></div>
-
-  <div class="share-user-modal__card">
-    <button type="button" class="share-user-modal__close" data-close-share-modal>✕</button>
-
-    <h3>Share list</h3>
-    <p id="share-list-title"></p>
-
-    <input
-      id="share-user-search"
-      class="share-user-search"
-      type="search"
-      placeholder="Search users"
-    >
-
-    <form method="post" id="share-user-form">
-      <div class="share-user-results">
-        {% for user_option in users %}
-          {% if user_option.id != current_user.id %}
-          <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
-            <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
-
-            <span class="share-user-check">✓</span>
-            <span class="share-user-name">
-              {{ user_option.name or user_option.email }}
-            </span>
-          </label>
-          {% endif %}
-        {% endfor %}
-      </div>
-
-      <button type="submit" class="share-user-submit">Send list</button>
-    </form>
-  </div>
-</div>
 
 </body>
 </html>
