@@ -6082,3 +6082,497 @@ body:not(.page-discover):not(.page-account) .app-main {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.45; }
 }
+
+
+
+/* =============================================================
+   LOCAL AI — PLACE DETAIL POPUP SHEET
+   Append to styles.css
+   ============================================================= */
+
+/* ── Overlay backdrop ── */
+.place-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.58);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 8000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.place-detail-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Bottom sheet ── */
+.place-detail-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8100;
+  background: #13151a;
+  border-radius: 24px 24px 0 0;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-bottom: none;
+  max-height: 90dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Smooth scroll on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+.place-detail-sheet.is-open {
+  transform: translateY(0);
+}
+
+/* Drag handle */
+.place-detail-sheet__handle {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+  cursor: grab;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #13151a;
+}
+
+.place-detail-sheet__handle-bar {
+  width: 36px;
+  height: 4px;
+  background: rgba(255,255,255,0.16);
+  border-radius: 2px;
+}
+
+/* ── Photo ── */
+.place-detail-sheet__photo-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.place-detail-sheet__photo {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+  background: #1b1d22;
+}
+
+.place-detail-sheet__photo-placeholder {
+  width: 100%;
+  height: 220px;
+  background: linear-gradient(135deg, #1a2420 0%, #0d1a14 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+}
+
+/* Photo thumbnails strip (Google Business photos) */
+.place-detail-sheet__thumbs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 16px;
+  background: #0f1114;
+  scrollbar-width: none;
+}
+
+.place-detail-sheet__thumbs::-webkit-scrollbar { display: none; }
+
+.place-detail-sheet__thumb {
+  width: 72px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s, transform 0.15s;
+  border: 2px solid transparent;
+  background: #1b1d22;
+}
+
+.place-detail-sheet__thumb:hover { opacity: 1; transform: scale(1.04); }
+
+.place-detail-sheet__thumb.is-active {
+  opacity: 1;
+  border-color: #10a37f;
+}
+
+/* Badges over photo */
+.place-detail-sheet__badges {
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.pds-badge-open {
+  background: rgba(16,163,127,0.92);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+
+.pds-badge-closed {
+  background: rgba(30,32,38,0.9);
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+
+.pds-badge-dist {
+  background: rgba(0,0,0,0.55);
+  color: rgba(255,255,255,0.88);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+/* Close button (top-right of photo) */
+.place-detail-sheet__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  z-index: 3;
+  transition: background 0.15s;
+}
+
+.place-detail-sheet__close:hover { background: rgba(0,0,0,0.78); }
+
+/* ── Body ── */
+.place-detail-sheet__body {
+  padding: 18px 16px 32px;
+}
+
+.place-detail-sheet__name {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 4px;
+}
+
+.place-detail-sheet__meta {
+  font-size: 13px;
+  color: rgba(255,255,255,0.42);
+  margin: 0 0 14px;
+  line-height: 1.4;
+}
+
+/* ── Rating summary card ── */
+.pds-rating-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  margin-bottom: 14px;
+}
+
+.pds-rating-score {
+  font-size: 42px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  flex-shrink: 0;
+}
+
+.pds-rating-right { flex: 1; min-width: 0; }
+
+.pds-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+}
+
+.pds-bar-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.38);
+  width: 9px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.pds-bar-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pds-bar-fill {
+  height: 100%;
+  background: #f5b301;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.pds-total-reviews {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 5px;
+}
+
+/* ── Action buttons ── */
+.pds-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.pds-btn {
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.pds-btn:active { transform: scale(0.95); }
+
+.pds-btn--primary {
+  flex: 1;
+  background: #10a37f;
+  color: #fff;
+}
+.pds-btn--primary:hover { background: #0d8a6c; }
+
+.pds-btn--ghost {
+  flex: 1;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.72);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.pds-btn--ghost:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+.pds-btn--icon {
+  width: 42px;
+  flex: none;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 16px;
+}
+.pds-btn--icon:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+.pds-btn--icon.is-saved {
+  background: rgba(16,163,127,0.14);
+  color: #7ee2bf;
+  border-color: rgba(16,163,127,0.25);
+}
+
+/* ── Section header ── */
+.pds-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.32);
+  margin: 0 0 12px;
+}
+
+/* ── Review items ── */
+.pds-review-item {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.pds-review-item:last-of-type { border-bottom: none; }
+
+.pds-reviewer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.pds-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(16,163,127,0.18);
+  border: 1px solid rgba(16,163,127,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #7ee2bf;
+  flex-shrink: 0;
+}
+
+.pds-reviewer-info { flex: 1; min-width: 0; }
+.pds-reviewer-name { font-size: 13px; font-weight: 800; color: #fff; }
+.pds-reviewer-date { font-size: 11px; color: rgba(255,255,255,0.32); margin-top: 1px; }
+
+.pds-review-stars {
+  display: flex;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.pds-review-stars .star-on  { color: #f5b301; font-size: 11px; }
+.pds-review-stars .star-off { color: rgba(255,255,255,0.18); font-size: 11px; }
+
+.pds-review-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.58);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Write review toggle ── */
+.pds-write-btn {
+  width: 100%;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(16,163,127,0.32);
+  background: rgba(16,163,127,0.08);
+  color: #7ee2bf;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: background 0.15s, transform 0.12s;
+}
+.pds-write-btn:hover { background: rgba(16,163,127,0.15); }
+.pds-write-btn:active { transform: scale(0.97); }
+
+/* ── Write review form ── */
+.pds-write-form {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  animation: pdsFormIn 0.22s ease both;
+}
+
+.pds-write-form.is-open { display: flex; }
+
+@keyframes pdsFormIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pds-form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 7px;
+}
+
+.pds-star-picker { display: flex; gap: 8px; }
+
+.pds-star-picker__star {
+  font-size: 30px;
+  color: rgba(255,255,255,0.18);
+  cursor: pointer;
+  transition: color 0.12s, transform 0.12s;
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 1;
+}
+
+.pds-star-picker__star.is-on {
+  color: #f5b301;
+  transform: scale(1.12);
+}
+
+.pds-write-form textarea {
+  width: 100%;
+  min-height: 88px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  transition: border-color 0.18s;
+}
+
+.pds-write-form textarea:focus {
+  border-color: rgba(16,163,127,0.45);
+}
+
+.pds-write-form textarea::placeholder {
+  color: rgba(255,255,255,0.22);
+}
+
+.pds-submit-btn {
+  height: 46px;
+  border-radius: 14px;
+  border: none;
+  background: #10a37f;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+}
+
+.pds-submit-btn:hover { background: #0d8a6c; }
+.pds-submit-btn:active { transform: scale(0.97); }
+
+/* ── Desktop: cap sheet width ── */
+@media (min-width: 768px) {
+  .place-detail-sheet {
+    max-width: 520px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(100%);
+    border-radius: 24px 24px 0 0;
+  }
+
+  .place-detail-sheet.is-open {
+    transform: translateX(-50%) translateY(0);
+  }
+}

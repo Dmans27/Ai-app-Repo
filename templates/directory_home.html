@@ -1753,5 +1753,554 @@ function setChatUiState(isActive) {
     async
     src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}">
   </script>
+
+
+
+
+
+<!-- =============================================================
+     LOCAL AI — PLACE DETAIL SHEET
+     1. Paste the HTML block into directory_home.html (before </body>)
+     2. Replace the existing buildResultRow() JS with the one below
+     3. The JS block at the bottom wires everything up
+     ============================================================= -->
+
+
+<!-- ── 1. SHEET HTML — paste just before </body> ── -->
+
+<div id="place-detail-overlay" class="place-detail-overlay"></div>
+
+<div id="place-detail-sheet" class="place-detail-sheet" aria-modal="true" role="dialog" aria-label="Place details">
+
+  <!-- Drag handle -->
+  <div class="place-detail-sheet__handle">
+    <div class="place-detail-sheet__handle-bar"></div>
+  </div>
+
+  <!-- Photo area -->
+  <div class="place-detail-sheet__photo-wrap">
+    <img
+      id="pds-photo"
+      class="place-detail-sheet__photo"
+      src=""
+      alt=""
+      style="display:none;"
+    >
+    <div id="pds-photo-placeholder" class="place-detail-sheet__photo-placeholder">
+      <span id="pds-photo-emoji">🏠</span>
+    </div>
+
+    <!-- Thumbnail strip (populated from Google photos array) -->
+    <div id="pds-thumbs" class="place-detail-sheet__thumbs" style="display:none;"></div>
+
+    <!-- Open/closed + distance badges -->
+    <div class="place-detail-sheet__badges">
+      <span id="pds-open-badge" style="display:none;"></span>
+      <span id="pds-dist-badge" style="display:none;" class="pds-badge-dist"></span>
+    </div>
+
+    <!-- Close button -->
+    <button
+      class="place-detail-sheet__close"
+      id="pds-close"
+      aria-label="Close"
+    >✕</button>
+  </div>
+
+  <!-- Body -->
+  <div class="place-detail-sheet__body">
+
+    <h2 class="place-detail-sheet__name" id="pds-name"></h2>
+    <p  class="place-detail-sheet__meta" id="pds-meta"></p>
+
+    <!-- Rating summary -->
+    <div class="pds-rating-card" id="pds-rating-card" style="display:none;">
+      <div class="pds-rating-score" id="pds-score">—</div>
+      <div class="pds-rating-right">
+        <div id="pds-bars"></div>
+        <div class="pds-total-reviews" id="pds-total"></div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="pds-actions">
+      <a  id="pds-directions" href="#" target="_blank" rel="noopener"
+          class="pds-btn pds-btn--primary">
+        📍 Directions
+      </a>
+      <a  id="pds-website" href="#" target="_blank" rel="noopener"
+          class="pds-btn pds-btn--ghost"
+          style="display:none;">
+        🌐 Website
+      </a>
+      <button id="pds-save" class="pds-btn pds-btn--icon" title="Save place">📌</button>
+    </div>
+
+    <!-- Reviews -->
+    <div id="pds-reviews-section">
+      <p class="pds-section-label">Reviews</p>
+      <div id="pds-reviews-list">
+        <p style="font-size:13px;color:rgba(255,255,255,0.35);padding:8px 0;">Loading reviews…</p>
+      </div>
+
+      <button class="pds-write-btn" id="pds-write-toggle">+ Write a review</button>
+
+      <form class="pds-write-form" id="pds-write-form" method="post">
+        <input type="hidden" name="place_id" id="pds-form-place-id" value="">
+
+        <div>
+          <span class="pds-form-label">Your rating</span>
+          <div class="pds-star-picker" id="pds-star-picker">
+            <button type="button" class="pds-star-picker__star" data-value="1">★</button>
+            <button type="button" class="pds-star-picker__star" data-value="2">★</button>
+            <button type="button" class="pds-star-picker__star" data-value="3">★</button>
+            <button type="button" class="pds-star-picker__star" data-value="4">★</button>
+            <button type="button" class="pds-star-picker__star" data-value="5">★</button>
+          </div>
+          <input type="hidden" name="rating" id="pds-rating-val" value="0">
+        </div>
+
+        <div>
+          <span class="pds-form-label">Your review</span>
+          <textarea
+            name="body"
+            id="pds-review-body"
+            placeholder="What should others know about this place?"
+            maxlength="500"
+          ></textarea>
+        </div>
+
+        <button type="submit" class="pds-submit-btn">Submit review</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ── 2. JAVASCRIPT — paste in your <script> block or a separate .js file ── -->
+
+<script>
+/* ================================================================
+   PLACE DETAIL SHEET
+   ================================================================ */
+
+(function() {
+
+  /* ── Helpers ── */
+  function renderStars(rating, cls = "star-on", emptyCls = "star-off") {
+    return Array.from({length: 5}, (_, i) =>
+      `<span class="${i < Math.round(rating) ? cls : emptyCls}">★</span>`
+    ).join("");
+  }
+
+  function renderBars(breakdown) {
+    if (!breakdown) return "";
+    return [5,4,3,2,1].map(n => `
+      <div class="pds-bar-row">
+        <span class="pds-bar-label">${n}</span>
+        <div class="pds-bar-track">
+          <div class="pds-bar-fill" style="width:${breakdown[n] || 0}%"></div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function categoryEmoji(category) {
+    const c = (category || "").toLowerCase();
+    if (c.includes("coffee") || c.includes("cafe")) return "☕";
+    if (c.includes("bar") || c.includes("cocktail")) return "🍸";
+    if (c.includes("restaurant") || c.includes("food")) return "🍽️";
+    if (c.includes("pizza")) return "🍕";
+    if (c.includes("sushi") || c.includes("japanese")) return "🍱";
+    if (c.includes("burger")) return "🍔";
+    if (c.includes("brunch") || c.includes("breakfast")) return "🍳";
+    return "📍";
+  }
+
+  /* ── Open / close the sheet ── */
+  function openSheet() {
+    document.getElementById("place-detail-overlay").classList.add("is-open");
+    document.getElementById("place-detail-sheet").classList.add("is-open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeSheet() {
+    document.getElementById("place-detail-overlay").classList.remove("is-open");
+    document.getElementById("place-detail-sheet").classList.remove("is-open");
+    document.body.style.overflow = "";
+
+    // Reset write form
+    document.getElementById("pds-write-form").classList.remove("is-open");
+    document.getElementById("pds-write-toggle").textContent = "+ Write a review";
+    document.getElementById("pds-review-body").value = "";
+    document.getElementById("pds-rating-val").value = "0";
+    document.querySelectorAll(".pds-star-picker__star")
+            .forEach(s => s.classList.remove("is-on"));
+    _selectedRating = 0;
+  }
+
+  document.getElementById("pds-close")
+          ?.addEventListener("click", closeSheet);
+  document.getElementById("place-detail-overlay")
+          ?.addEventListener("click", closeSheet);
+
+  // Swipe down to close
+  let touchStartY = 0;
+  const sheet = document.getElementById("place-detail-sheet");
+  sheet?.addEventListener("touchstart", e => { touchStartY = e.touches[0].clientY; }, {passive:true});
+  sheet?.addEventListener("touchend", e => {
+    if (e.changedTouches[0].clientY - touchStartY > 60) closeSheet();
+  }, {passive:true});
+
+
+  /* ── Populate the sheet with place data ── */
+  function populateSheet(place) {
+    // Name & meta
+    document.getElementById("pds-name").textContent  = place.name || "";
+    document.getElementById("pds-form-place-id").value = place.place_id || place.slug || "";
+
+    const metaParts = [
+      place.category ? place.category.replaceAll("_"," ") : "",
+      place.address  || ""
+    ].filter(Boolean);
+    document.getElementById("pds-meta").textContent = metaParts.join(" · ");
+
+    // Photo
+    const img  = document.getElementById("pds-photo");
+    const ph   = document.getElementById("pds-photo-placeholder");
+    const emoji = document.getElementById("pds-photo-emoji");
+
+    if (place.photo_url || place.image_url) {
+      img.src = place.photo_url || place.image_url;
+      img.alt = place.name || "";
+      img.style.display = "block";
+      ph.style.display  = "none";
+    } else {
+      img.style.display = "none";
+      ph.style.display  = "flex";
+      emoji.textContent = categoryEmoji(place.category);
+    }
+
+    // Thumbnail strip (extra Google photos)
+    const thumbsWrap = document.getElementById("pds-thumbs");
+    if (place.photo_urls && place.photo_urls.length > 1) {
+      thumbsWrap.style.display = "flex";
+      thumbsWrap.innerHTML = place.photo_urls.map((url, i) => `
+        <img
+          class="place-detail-sheet__thumb ${i === 0 ? "is-active" : ""}"
+          src="${url}"
+          alt=""
+          data-src="${url}"
+          loading="lazy"
+        >
+      `).join("");
+
+      thumbsWrap.querySelectorAll(".place-detail-sheet__thumb").forEach(t => {
+        t.addEventListener("click", () => {
+          img.src = t.dataset.src;
+          img.style.display = "block";
+          ph.style.display  = "none";
+          thumbsWrap.querySelectorAll(".place-detail-sheet__thumb")
+                    .forEach(x => x.classList.remove("is-active"));
+          t.classList.add("is-active");
+        });
+      });
+    } else {
+      thumbsWrap.style.display = "none";
+      thumbsWrap.innerHTML = "";
+    }
+
+    // Open/closed badge
+    const openBadge = document.getElementById("pds-open-badge");
+    if (place.is_open === true) {
+      openBadge.className = "pds-badge-open";
+      openBadge.textContent = "Open now";
+      openBadge.style.display = "inline";
+    } else if (place.is_open === false) {
+      openBadge.className = "pds-badge-closed";
+      openBadge.textContent = "Closed";
+      openBadge.style.display = "inline";
+    } else {
+      openBadge.style.display = "none";
+    }
+
+    // Distance badge
+    const distBadge = document.getElementById("pds-dist-badge");
+    if (place.distance) {
+      distBadge.textContent = "📍 " + place.distance;
+      distBadge.style.display = "inline";
+    } else {
+      distBadge.style.display = "none";
+    }
+
+    // Action buttons
+    const directionsEl = document.getElementById("pds-directions");
+    if (place.latitude && place.longitude) {
+      directionsEl.href = `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`;
+    } else if (place.address) {
+      directionsEl.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}`;
+    }
+
+    const websiteEl = document.getElementById("pds-website");
+    if (place.website) {
+      websiteEl.href = place.website;
+      websiteEl.style.display = "inline-flex";
+    } else {
+      websiteEl.style.display = "none";
+    }
+
+    // Save button wiring
+    const saveBtn = document.getElementById("pds-save");
+    saveBtn.dataset.placeName    = place.name || "";
+    saveBtn.dataset.placeAddress = place.address || "";
+    saveBtn.dataset.placeWebsite = place.website || "";
+    saveBtn.dataset.placeCategory = place.category || "";
+    saveBtn.dataset.placePhoto   = place.photo_url || "";
+    saveBtn.dataset.placeLat     = place.latitude || "";
+    saveBtn.dataset.placeLng     = place.longitude || "";
+  }
+
+
+  /* ── Load reviews from your API ── */
+  async function loadReviews(placeId) {
+    const listEl = document.getElementById("pds-reviews-list");
+    const ratingCard = document.getElementById("pds-rating-card");
+
+    listEl.innerHTML = `<p style="font-size:13px;color:rgba(255,255,255,0.35);padding:8px 0;">Loading reviews…</p>`;
+    ratingCard.style.display = "none";
+
+    if (!placeId) {
+      listEl.innerHTML = `<p style="font-size:13px;color:rgba(255,255,255,0.35);padding:8px 0;">No reviews yet.</p>`;
+      return;
+    }
+
+    try {
+      const res  = await fetch(`/api/places/${placeId}/reviews`);
+      const data = await res.json();
+
+      // Rating summary
+      if (data.average_rating) {
+        document.getElementById("pds-score").textContent = parseFloat(data.average_rating).toFixed(1);
+        document.getElementById("pds-bars").innerHTML   = renderBars(data.breakdown);
+        document.getElementById("pds-total").textContent =
+          `${data.total_reviews || 0} review${data.total_reviews !== 1 ? "s" : ""}`;
+        ratingCard.style.display = "flex";
+      }
+
+      // Review items
+      if (!data.reviews || !data.reviews.length) {
+        listEl.innerHTML = `<p style="font-size:13px;color:rgba(255,255,255,0.35);padding:8px 0;">No reviews yet — be the first!</p>`;
+      } else {
+        listEl.innerHTML = data.reviews.map(r => `
+          <div class="pds-review-item">
+            <div class="pds-reviewer-row">
+              <div class="pds-avatar">${(r.user_name || "?").slice(0,2).toUpperCase()}</div>
+              <div class="pds-reviewer-info">
+                <div class="pds-reviewer-name">${r.user_name || "Anonymous"}</div>
+                <div class="pds-reviewer-date">${r.created_at_relative || ""}</div>
+              </div>
+              <div class="pds-review-stars">${renderStars(r.rating)}</div>
+            </div>
+            <p class="pds-review-text">${r.body || ""}</p>
+          </div>
+        `).join("");
+      }
+
+    } catch (err) {
+      listEl.innerHTML = `<p style="font-size:13px;color:rgba(255,255,255,0.35);padding:8px 0;">Could not load reviews.</p>`;
+      console.error("Reviews fetch error:", err);
+    }
+  }
+
+
+  /* ── Public: open sheet for a place object ── */
+  window.openPlaceDetail = function(place) {
+    populateSheet(place);
+    openSheet();
+    loadReviews(place.place_id || place.slug || null);
+
+    // Re-wire the save button into the existing save flow
+    const saveBtn = document.getElementById("pds-save");
+    saveBtn.onclick = function() {
+      // Reuse your existing wireSavePlaceButtons logic
+      const authEl = document.getElementById("page-auth-state");
+      const isAuthenticated = authEl?.dataset.authenticated === "true";
+      if (!isAuthenticated) {
+        window.location.href = authEl?.dataset.loginUrl || "/login";
+        return;
+      }
+      pendingPlaceToSave = {
+        name:     saveBtn.dataset.placeName,
+        address:  saveBtn.dataset.placeAddress,
+        website:  saveBtn.dataset.placeWebsite,
+        category: saveBtn.dataset.placeCategory,
+        photo_url: saveBtn.dataset.placePhoto,
+        latitude: saveBtn.dataset.placeLat,
+        longitude: saveBtn.dataset.placeLng,
+        triggerButton: saveBtn
+      };
+      const listCount = Number(authEl?.dataset.listCount || 0);
+      if (listCount === 0) {
+        window.location.href = authEl?.dataset.createListUrl || "/create-list";
+      } else if (listCount === 1) {
+        const onlyList = document.querySelector(".save-to-list-btn");
+        if (onlyList) savePlaceToList(onlyList.dataset.listId, saveBtn);
+      } else {
+        openSavePlaceSheet(pendingPlaceToSave);
+      }
+    };
+  };
+
+
+  /* ── Write review toggle ── */
+  document.getElementById("pds-write-toggle")
+          ?.addEventListener("click", function() {
+    const form = document.getElementById("pds-write-form");
+    const open = form.classList.toggle("is-open");
+    this.textContent = open ? "✕ Cancel" : "+ Write a review";
+    if (open) form.scrollIntoView({behavior:"smooth", block:"nearest"});
+  });
+
+
+  /* ── Star picker ── */
+  let _selectedRating = 0;
+
+  document.querySelectorAll(".pds-star-picker__star").forEach(star => {
+    star.addEventListener("mouseenter", () => {
+      const v = parseInt(star.dataset.value);
+      document.querySelectorAll(".pds-star-picker__star")
+              .forEach((s,i) => s.classList.toggle("is-on", i < v));
+    });
+    star.addEventListener("mouseleave", () => {
+      document.querySelectorAll(".pds-star-picker__star")
+              .forEach((s,i) => s.classList.toggle("is-on", i < _selectedRating));
+    });
+    star.addEventListener("click", () => {
+      _selectedRating = parseInt(star.dataset.value);
+      document.getElementById("pds-rating-val").value = _selectedRating;
+      document.querySelectorAll(".pds-star-picker__star")
+              .forEach((s,i) => s.classList.toggle("is-on", i < _selectedRating));
+    });
+  });
+
+
+  /* ── Review form submit ── */
+  document.getElementById("pds-write-form")
+          ?.addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const placeId = document.getElementById("pds-form-place-id").value;
+    const rating  = document.getElementById("pds-rating-val").value;
+    const body    = document.getElementById("pds-review-body").value.trim();
+
+    if (!rating || rating === "0") {
+      alert("Please select a star rating.");
+      return;
+    }
+    if (!body) {
+      alert("Please write a short review.");
+      return;
+    }
+
+    const btn = this.querySelector(".pds-submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Submitting…";
+
+    try {
+      const res = await fetch("/reviews/create", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: new URLSearchParams({place_id: placeId, rating, body})
+      });
+
+      if (res.ok) {
+        btn.textContent = "✓ Submitted!";
+        setTimeout(() => {
+          document.getElementById("pds-write-form").classList.remove("is-open");
+          document.getElementById("pds-write-toggle").textContent = "+ Write a review";
+          loadReviews(placeId);
+          btn.disabled = false;
+          btn.textContent = "Submit review";
+        }, 1200);
+      } else {
+        throw new Error("Submit failed");
+      }
+    } catch {
+      alert("Could not submit your review. Please try again.");
+      btn.disabled = false;
+      btn.textContent = "Submit review";
+    }
+  });
+
+})();
+
+
+/* ================================================================
+   UPDATED buildResultRow — cards now open the detail sheet on click
+   Replace your existing buildResultRow() function with this one
+   ================================================================ */
+
+function buildResultRow(item, isInternal, index = 0) {
+  const name     = item.name     || "Untitled";
+  const category = item.category ? item.category.replaceAll("_", " ") : "Place";
+  const address  = item.address  || "";
+  const website  = item.website  || "";
+  const rating   = item.rating   ? parseFloat(item.rating) : null;
+  const reviewCount = item.review_count || 0;
+
+  const photo =
+    item.photo_url  ||
+    item.image_url  ||
+    item.thumbnail  || "";
+
+  // Serialize the full item so the card click can open the detail sheet
+  const encoded = encodeURIComponent(JSON.stringify(item));
+
+  // Stars
+  function stars(r) {
+    if (!r) return "";
+    return `<div class="ai-rec-stars">
+      ${Array.from({length:5}, (_,i) =>
+        `<span class="${i < Math.round(r) ? "ai-rec-star" : "ai-rec-star-empty"}">★</span>`
+      ).join("")}
+      <span class="ai-rec-rating-num">${r.toFixed(1)}</span>
+      ${reviewCount ? `<span class="ai-rec-review-count">(${reviewCount})</span>` : ""}
+    </div>`;
+  }
+
+  return `
+    <article
+      class="ai-rec-row"
+      role="button"
+      tabindex="0"
+      style="cursor:pointer;"
+      onclick="openPlaceDetail(JSON.parse(decodeURIComponent('${encoded}')))"
+      onkeydown="if(event.key==='Enter')openPlaceDetail(JSON.parse(decodeURIComponent('${encoded}')))"
+    >
+      <div style="position:relative;">
+        ${photo
+          ? `<img class="ai-rec-photo" src="${photo}" alt="${name}" loading="lazy">`
+          : `<div class="ai-rec-photo-placeholder"><span style="font-size:36px;opacity:0.5;">🏠</span></div>`
+        }
+      </div>
+
+      <div class="ai-rec-body">
+        <div class="ai-rec-title-row">
+          <h3>${name}</h3>
+          ${rating ? stars(rating) : ""}
+        </div>
+        <p class="ai-rec-meta">${category}${isInternal ? " · Local AI" : ""}</p>
+        ${address ? `<p class="ai-rec-address">${address}</p>` : ""}
+        <p style="font-size:12px;color:rgba(157,232,200,0.6);margin-top:8px;font-weight:600;">
+          Tap to view details & reviews →
+        </p>
+      </div>
+    </article>
+  `;
+}
+</script>
+
+
+
 </body>
 </html>

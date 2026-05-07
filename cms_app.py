@@ -12,6 +12,7 @@ from functools import wraps
 from flask import redirect
 from models import UserSavedList
 import base64
+from datetime import datetime, timezone
 
 
 
@@ -2647,6 +2648,7 @@ def ai_chat():
 
         featured_internal, regular_internal, external_results, results = bucket_results(
             internal_results=internal_results,
+            internal_results = enrich_internal_results_with_ratings(internal_results),
             external_results=external_results,
             query=internal_query or google_query,
             searched_city=searched_city
@@ -4255,6 +4257,434 @@ def listing_page(slug):
         listing_photos=listing_photos,
         rating_summary=rating_summary
     )
+    
+    
+    
+    
+    
+    
+  # =============================================================
+#  ADD THESE ROUTES TO cms_app.py
+#
+#  1. GET  /api/places/<place_id>/reviews  — fetches reviews + rating summary
+#  2. POST /reviews/create                 — submits a new review
+#
+#  These power the place detail popup sheet.
+#  Place them near your existing listing_comments routes.
+# =============================================================
+
+
+# ------------------------------------------------------------------
+# GET /api/places/<place_id>/reviews
+#
+# Called by the popup JS to load ratings + reviews for any place.
+# Works for both internal listings (looked up by slug or place_id)
+# and external Google results (looked up by Google place_id).
+#
+# Returns JSON:
+# {
+#   "average_rating": 4.2,
+#   "total_reviews": 38,
+#   "breakdown": {"5": 52, "4": 28, "3": 12, "2": 5, "1": 3},
+#   "reviews": [
+#     {
+#       "user_name": "Jane D.",
+#       "rating": 5,
+#       "body": "Great spot!",
+#       "created_at_relative": "2 days ago"
+#     }
+#   ]
+# }
+# ------------------------------------------------------------------
+
+from datetime import datetime, timezone
+
+def relative_time(dt_value):
+    """
+    Convert a datetime or ISO string to a human-readable relative string.
+    e.g. '2 days ago', '1 week ago', 'just now'
+    """
+    if not dt_value:
+        return ""
+
+    if isinstance(dt_value, str):
+        try:
+            # Handle both 'Z' suffix and offset-naive strings
+            dt_value = dt_value.replace("Z", "+00:00")
+            dt_value = datetime.fromisoformat(dt_value)
+        except Exception:
+            return ""
+
+    # Make both offset-aware for comparison
+    now = datetime.now(timezone.utc)
+    if dt_value.tzinfo is None:
+        dt_value = dt_value.replace(tzinfo=timezone.utc)
+
+    diff = now - dt_value
+    seconds = int(diff.total_seconds())
+
+    if seconds < 60:
+        return "just now"
+    if seconds < 3600:
+        mins = seconds // 60
+        return f"{mins} minute{'s' if mins != 1 else ''} ago"
+    if seconds < 86400:
+        hours = seconds // 3600
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    if seconds < 604800:
+        days = seconds // 86400
+        return f"{days} day{'s' if days != 1 else ''} ago"
+    if seconds < 2592000:
+        weeks = seconds // 604800
+        return f"{weeks} week{'s' if weeks != 1 else ''} ago"
+    if seconds < 31536000:
+        months = seconds // 2592000
+        return f"{months} month{'s' if months != 1 else ''} ago"
+
+    years = seconds // 31536000
+    return f"{years} year{'s' if years != 1 else ''} ago"
+
+
+@app.get("/api/places/<place_identifier>/reviews")
+def api_place_reviews(place_identifier):
+    """
+    place_identifier can be:
+      - A numeric listing id            e.g. "42"
+      - A listing slug                  e.g. "cultivar-coffee"
+      - A Google place_id               e.g. "ChIJN1t_tDeuEmsRUsoyG83frY4"
+
+    Resolution order:
+      1. Try numeric id
+      2. Try place_id column (covers Google-imported listings)
+      3. Try slug
+    """
+    listing = None
+
+    # 1. Numeric id
+    if place_identifier.isdigit():
+        listing = query_one(
+            "SELECT id, name FROM listings WHERE id = :id AND status = 'published'",
+            {"id": int(place_identifier)}
+        )
+
+    # 2. Google place_id or internal place_id column
+    if not listing:
+        listing = query_one(
+            "SELECT id, name FROM listings WHERE place_id = :pid AND status = 'published'",
+            {"pid": place_identifier}
+        )
+
+    # 3. Slug
+    if not listing:
+        listing = query_one(
+            "SELECT id, name FROM listings WHERE slug = :slug AND status = 'published'",
+            {"slug": place_identifier}
+        )
+
+    if not listing:
+        # Return empty structure — the popup handles "no reviews yet" gracefully
+        return jsonify({
+            "average_rating": None,
+            "total_reviews": 0,
+            "breakdown": {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0},
+            "reviews": []
+        })
+
+    listing_id = listing["id"]
+
+    # ── Rating summary ──────────────────────────────────────────
+    summary = query_one(
+        """
+        SELECT
+            COUNT(*)                                    AS total_reviews,
+            COALESCE(
+                ROUND(AVG(NULLIF(rating, 0))::numeric, 1),
+                0
+            )                                           AS average_rating
+        FROM listing_comments
+        WHERE listing_id = :listing_id
+          AND is_approved = 1
+        """,
+        {"listing_id": listing_id}
+    ) or {"total_reviews": 0, "average_rating": 0}
+
+    # ── Star breakdown (returns % weight for the bar chart) ─────
+    breakdown_rows = query_all(
+        """
+        SELECT
+            rating,
+            COUNT(*) AS count
+        FROM listing_comments
+        WHERE listing_id = :listing_id
+          AND is_approved = 1
+          AND rating BETWEEN 1 AND 5
+        GROUP BY rating
+        """,
+        {"listing_id": listing_id}
+    )
+
+    total = int(summary["total_reviews"]) or 1  # avoid div-by-zero
+    breakdown = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
+
+    for row in breakdown_rows:
+        star = str(int(row["rating"]))
+        if star in breakdown:
+            # Store as percentage (0-100) for the CSS bar widths
+            breakdown[star] = round((int(row["count"]) / total) * 100)
+
+    # ── Individual reviews ───────────────────────────────────────
+    raw_reviews = query_all(
+        """
+        SELECT
+            author_name,
+            rating,
+            body,
+            created_at
+        FROM listing_comments
+        WHERE listing_id = :listing_id
+          AND is_approved = 1
+        ORDER BY id DESC
+        LIMIT 20
+        """,
+        {"listing_id": listing_id}
+    )
+
+    reviews = [
+        {
+            "user_name": r["author_name"] or "Anonymous",
+            "rating": int(r["rating"] or 0),
+            "body": r["body"] or "",
+            "created_at_relative": relative_time(r.get("created_at"))
+        }
+        for r in raw_reviews
+    ]
+
+    return jsonify({
+        "average_rating": float(summary["average_rating"]),
+        "total_reviews": int(summary["total_reviews"]),
+        "breakdown": breakdown,
+        "reviews": reviews
+    })
+
+
+# ------------------------------------------------------------------
+# POST /reviews/create
+#
+# Submits a new review from the popup write-a-review form.
+# Accepts both form-encoded and JSON bodies so it works with
+# the fetch() call in the popup JS.
+#
+# Required fields: place_id, rating, body
+# Optional: author_name (falls back to logged-in user's name/email)
+# ------------------------------------------------------------------
+
+@app.post("/reviews/create")
+def create_review():
+    # Accept both JSON and form-encoded payloads
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form
+
+    place_identifier = (data.get("place_id") or "").strip()
+    body             = (data.get("body") or "").strip()
+
+    try:
+        rating = int(data.get("rating") or 0)
+    except (ValueError, TypeError):
+        rating = 0
+
+    # ── Validation ───────────────────────────────────────────────
+    if not place_identifier:
+        return jsonify({"error": "place_id is required."}), 400
+    if not body:
+        return jsonify({"error": "Review body is required."}), 400
+    if not (1 <= rating <= 5):
+        return jsonify({"error": "Rating must be between 1 and 5."}), 400
+
+    # ── Resolve listing id (same order as the GET route) ─────────
+    listing = None
+
+    if place_identifier.isdigit():
+        listing = query_one(
+            "SELECT id FROM listings WHERE id = :id AND status = 'published'",
+            {"id": int(place_identifier)}
+        )
+
+    if not listing:
+        listing = query_one(
+            "SELECT id FROM listings WHERE place_id = :pid AND status = 'published'",
+            {"pid": place_identifier}
+        )
+
+    if not listing:
+        listing = query_one(
+            "SELECT id FROM listings WHERE slug = :slug AND status = 'published'",
+            {"slug": place_identifier}
+        )
+
+    # ── If no internal listing exists yet, auto-import it ────────
+    # (handles the case where the popup is showing a pure Google result
+    #  that hasn't been imported into your listings table yet)
+    if not listing and place_identifier.startswith("Ch"):
+        # Looks like a Google place_id — redirect to your importer
+        try:
+            import_url = url_for(
+                "import_google_place",
+                place_id=place_identifier,
+                _external=False
+            )
+            # Fire-and-forget: import runs synchronously but we
+            # don't block the review on it
+            with app.test_client() as c:
+                c.get(import_url)
+        except Exception as import_err:
+            print("[REVIEW_AUTO_IMPORT_ERROR]", str(import_err), flush=True)
+
+        # Try again after import attempt
+        listing = query_one(
+            "SELECT id FROM listings WHERE place_id = :pid AND status = 'published'",
+            {"pid": place_identifier}
+        )
+
+    if not listing:
+        return jsonify({"error": "Place not found."}), 404
+
+    listing_id = listing["id"]
+
+    # ── Author name ───────────────────────────────────────────────
+    if current_user.is_authenticated:
+        author_name = (
+            getattr(current_user, "name", None)
+            or current_user.email.split("@")[0]
+        ).strip()
+        author_email = current_user.email
+    else:
+        author_name  = (data.get("author_name") or "Anonymous").strip()
+        author_email = (data.get("author_email") or "").strip()
+
+    # ── Rate limiting: one review per user per listing ────────────
+    if current_user.is_authenticated:
+        existing = query_one(
+            """
+            SELECT id
+            FROM listing_comments
+            WHERE listing_id  = :listing_id
+              AND author_email = :email
+            LIMIT 1
+            """,
+            {"listing_id": listing_id, "email": author_email}
+        )
+        if existing:
+            return jsonify({"error": "You have already reviewed this place."}), 409
+
+    # ── Insert ────────────────────────────────────────────────────
+    execute(
+        """
+        INSERT INTO listing_comments (
+            listing_id,
+            author_name,
+            author_email,
+            body,
+            rating,
+            is_approved,
+            created_at
+        )
+        VALUES (
+            :listing_id,
+            :author_name,
+            :author_email,
+            :body,
+            :rating,
+            1,
+            CURRENT_TIMESTAMP
+        )
+        """,
+        {
+            "listing_id":   listing_id,
+            "author_name":  author_name,
+            "author_email": author_email,
+            "body":         body,
+            "rating":       rating,
+        }
+    )
+
+    return jsonify({"ok": True, "message": "Review submitted. Thank you!"})
+
+
+# ------------------------------------------------------------------
+# ALSO: update your /ai-chat response to include review data
+#
+# In google_places_text_search(), the item dict already has:
+#   "rating":       p.get("rating"),        <- Google's rating
+#   "review_count": p.get("userRatingCount"),
+#
+# For INTERNAL results in search_internal_listings(), add this
+# enrichment step so popup cards show real review counts.
+# Call this function after fetching internal results:
+# ------------------------------------------------------------------
+
+def enrich_internal_results_with_ratings(results: list) -> list:
+    """
+    For each internal listing result, attach its average rating
+    and review count from listing_comments.
+    Call this before returning internal results from /ai-chat.
+
+    Usage in ai_chat():
+        internal_results = enrich_internal_results_with_ratings(internal_results)
+    """
+    if not results:
+        return results
+
+    ids = [r["id"] for r in results if r.get("id")]
+    if not ids:
+        return results
+
+    # Build a parameterized IN clause
+    placeholders = ", ".join(f":id_{i}" for i in range(len(ids)))
+    params = {f"id_{i}": id_val for i, id_val in enumerate(ids)}
+
+    ratings = query_all(
+        f"""
+        SELECT
+            listing_id,
+            COUNT(*)                                    AS review_count,
+            COALESCE(
+                ROUND(AVG(NULLIF(rating, 0))::numeric, 1),
+                0
+            )                                           AS avg_rating
+        FROM listing_comments
+        WHERE listing_id IN ({placeholders})
+          AND is_approved = 1
+        GROUP BY listing_id
+        """,
+        params
+    )
+
+    rating_map = {
+        row["listing_id"]: {
+            "rating":       float(row["avg_rating"]),
+            "review_count": int(row["review_count"])
+        }
+        for row in ratings
+    }
+
+    for result in results:
+        lid = result.get("id")
+        if lid and lid in rating_map:
+            result["rating"]       = rating_map[lid]["rating"]
+            result["review_count"] = rating_map[lid]["review_count"]
+        else:
+            # Keep None so the popup knows there are no reviews yet
+            result.setdefault("rating", None)
+            result.setdefault("review_count", 0)
+
+    return results  
+    
+    
+    
+    
+    
     
     
     
