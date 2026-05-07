@@ -2619,6 +2619,7 @@ def ai_chat():
 
         try:
             internal_results = search_internal_listings(
+                internal_results = enrich_internal_results_with_ratings(internal_results),
                 q=internal_query,
                 lat=user_lat,
                 lng=user_lng,
@@ -2648,7 +2649,6 @@ def ai_chat():
 
         featured_internal, regular_internal, external_results, results = bucket_results(
             internal_results=internal_results,
-            internal_results = enrich_internal_results_with_ratings(internal_results),
             external_results=external_results,
             query=internal_query or google_query,
             searched_city=searched_city
