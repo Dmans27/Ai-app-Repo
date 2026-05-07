@@ -2,916 +2,1059 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Community Feed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Feed · Local AI</title>
+
+  <link rel="stylesheet" href="/static/css/styles.css">
 
   <style>
-    :root{
-      --bg:#0b0b0c;
-      --card:#151619;
-      --card-2:#1a1c20;
-      --line:#26282d;
-      --text:#f5f5f7;
-      --muted:#9a9ca3;
-      --pill:#202228;
-      --accent:#19c38a;
-      --accent-dark:#10392e;
-      --shadow:0 18px 40px rgba(0,0,0,.35);
-      --radius-xl:28px;
-      --radius-lg:22px;
-      --radius-md:18px;
-      --radius-sm:14px;
+    /* ═══════════════════════════════════════
+       FEED PAGE — SCOPED STYLES
+       Tokens stay consistent with the rest of
+       the app (green accent, dark surfaces)
+    ═══════════════════════════════════════ */
+
+    :root {
+      --feed-bg:        #0b0b0c;
+      --feed-card:      #111318;
+      --feed-card-2:    #13151b;
+      --feed-line:      rgba(255,255,255,0.07);
+      --feed-line-2:    rgba(255,255,255,0.05);
+      --feed-text:      #f5f5f7;
+      --feed-muted:     rgba(255,255,255,0.38);
+      --feed-pill:      rgba(255,255,255,0.06);
+      --feed-accent:    #19c38a;
+      --feed-accent-bg: rgba(25,195,138,0.12);
+      --feed-accent-bd: rgba(25,195,138,0.28);
+      --feed-avatar-bg: rgba(25,195,138,0.15);
+      --feed-avatar-c:  #7ee2bf;
     }
 
-    *{ box-sizing:border-box; }
-    html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif; }
-    body.page-feed{ overflow-x:hidden; }
+    *, *::before, *::after { box-sizing: border-box; }
 
-    /* =========================
-       APP FRAME
-    ========================= */
-    .feed-shell{
-      width:100%;
-      min-height:100vh;
-      max-width:760px;
-      margin:0 auto;
-      padding:18px 16px 120px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--feed-bg);
+      color: var(--feed-text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+      overflow-x: hidden;
     }
 
-    .feed-page{
-      width:100%;
+    /* ── Shell ── */
+    .feed-shell {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      padding-bottom: 100px;
     }
 
-    .feed-list{
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-      width:100%;
+    /* ═══════════════════════════════════════
+       MOBILE DRAWER (preserved from original)
+    ═══════════════════════════════════════ */
+    .mobile-drawer {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: min(84vw, 300px);
+      background: #17181a;
+      z-index: 9999;
+      padding: 22px 18px;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      border-right: 0.5px solid rgba(255,255,255,0.08);
+      overflow-y: auto;
+    }
+    .mobile-drawer.is-open { transform: translateX(0); }
+
+    .mobile-drawer-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.48);
+      z-index: 9998;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .mobile-drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+    .mobile-drawer__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 0.5px solid rgba(255,255,255,0.07);
+    }
+    .mobile-drawer__title { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .mobile-drawer__close { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: center; }
+
+    .mobile-drawer__nav { display: flex; flex-direction: column; gap: 4px; }
+
+    .mobile-drawer__link {
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+    }
+    .mobile-drawer__link:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .mobile-drawer__link.is-active { background: var(--feed-accent-bg); color: var(--feed-accent); border: 0.5px solid var(--feed-accent-bd); }
+
+    /* ═══════════════════════════════════════
+       STICKY HEADER
+    ═══════════════════════════════════════ */
+    .feed-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+      background: rgba(11,11,12,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 0.5px solid var(--feed-line);
     }
 
-    /* =========================
-       DRAWER
-    ========================= */
-    .mobile-drawer{
-      position:fixed;
-      top:0;
-      left:0;
-      bottom:0;
-      width:min(84vw,320px);
-      background:#17181a;
-      z-index:9999;
-      padding:22px;
-      transform:translateX(-100%);
-      transition:.25s ease;
-      border-right:1px solid #2a2b2f;
+    .feed-header__brand { min-width: 0; }
+    .feed-header__title { font-size: 18px; font-weight: 900; line-height: 1.1; letter-spacing: -0.03em; }
+    .feed-header__sub   { font-size: 11px; color: var(--feed-muted); margin-top: 1px; }
+
+    .feed-header__actions { display: flex; gap: 8px; align-items: center; }
+
+    .feed-hdr-btn {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      color: var(--feed-text);
+      font-size: 17px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .feed-hdr-btn:hover { background: rgba(255,255,255,0.1); }
+    .feed-hdr-btn:active { transform: scale(0.94); }
+    .feed-hdr-btn--green {
+      background: var(--feed-accent);
+      border-color: transparent;
+      color: #07110d;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .feed-hdr-btn--green:hover { background: #16ad7b; }
+
+    .feed-menu-btn {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: var(--feed-text);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      transition: background 0.15s;
+    }
+    .feed-menu-btn:hover { background: rgba(255,255,255,0.1); }
+
+    /* ═══════════════════════════════════════
+       INLINE COMPOSE TRIGGER BAR
+    ═══════════════════════════════════════ */
+    .feed-compose-trigger {
+      margin: 14px 16px 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--feed-card);
+      border: 0.5px solid rgba(255,255,255,0.09);
+      border-radius: 18px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .feed-compose-trigger:hover {
+      border-color: rgba(255,255,255,0.16);
+      background: var(--feed-card-2);
     }
 
-    .mobile-drawer.is-open{
-      transform:translateX(0);
+    .feed-compose-trigger__avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--feed-avatar-bg);
+      border: 1px solid var(--feed-accent-bd);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: var(--feed-avatar-c);
+      flex-shrink: 0;
     }
 
-    .mobile-drawer-backdrop{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.45);
-      z-index:9998;
-      opacity:0;
-      pointer-events:none;
-      transition:.25s ease;
+    .feed-compose-trigger__placeholder {
+      flex: 1;
+      font-size: 14px;
+      color: rgba(255,255,255,0.28);
     }
 
-    .mobile-drawer-backdrop.is-open{
-      opacity:1;
-      pointer-events:auto;
+    .feed-compose-trigger__photo {
+      width: 32px; height: 32px;
+      border-radius: 9px;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+      color: rgba(255,255,255,0.45);
     }
 
-    .mobile-drawer__header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:28px;
+    /* ═══════════════════════════════════════
+       COMPOSE SHEET (bottom sheet modal)
+    ═══════════════════════════════════════ */
+    .feed-compose-sheet[hidden] { display: none !important; }
+
+    .feed-compose-sheet {
+      position: fixed; inset: 0;
+      z-index: 11000;
     }
 
-    .mobile-drawer__title{
-      color:#fff;
-      font-size:22px;
-      font-weight:700;
+    .feed-compose-sheet__backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(5px);
     }
 
-    .mobile-drawer__close{
-      background:none;
-      border:none;
-      color:#fff;
-      font-size:24px;
-      cursor:pointer;
+    .feed-compose-sheet__panel {
+      position: absolute;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      width: min(680px, calc(100vw - 24px));
+      background: #1a1c21;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 26px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      padding: 18px;
+      animation: sheetUp 0.26s cubic-bezier(0.22,1,0.36,1) both;
     }
 
-    .mobile-drawer__nav{
-      display:grid;
-      gap:12px;
+    @keyframes sheetUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    .mobile-drawer__link{
-      color:#fff;
-      text-decoration:none;
-      padding:14px 16px;
-      border-radius:14px;
-      background:#232428;
+    .feed-compose-sheet__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
     }
 
-    .mobile-drawer__link.is-active{
-      background:var(--accent);
-      color:#08130f;
-      font-weight:700;
+    .feed-compose-sheet__title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
     }
 
-    /* =========================
-       HEADER
-    ========================= */
-    .mobile-app-header{
-      position:sticky;
-      top:0;
-      z-index:50;
-      display:grid;
-      grid-template-columns:56px 1fr auto;
-      align-items:center;
-      gap:12px;
-      padding:10px 0 18px;
-      background:linear-gradient(to bottom, rgba(11,11,12,.98), rgba(11,11,12,.92) 78%, rgba(11,11,12,0));
-      backdrop-filter:blur(12px);
+    .feed-compose-sheet__close {
+      width: 36px; height: 36px;
+      border: none; border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: #fff; font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .feed-compose-sheet__close:hover { background: rgba(255,255,255,0.14); }
+
+    /* Compose form */
+    .feed-compose-form { display: flex; flex-direction: column; gap: 12px; }
+
+    .compose-user-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
     }
 
-    .mobile-app-header__actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
+    .compose-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--feed-avatar-bg);
+      border: 1px solid var(--feed-accent-bd);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: var(--feed-avatar-c);
+      flex-shrink: 0;
     }
 
-    .mobile-app-header__icon{
-      width:52px;
-      height:52px;
-      border:none;
-      border-radius:18px;
-      background:#17191e;
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:24px;
-      text-decoration:none;
-      cursor:pointer;
+    .compose-body-input {
+      flex: 1;
+      min-height: 72px;
+      padding: 12px 14px;
+      border: 0.5px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      color: var(--feed-text);
+      font-size: 15px;
+      line-height: 1.5;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      transition: border-color 0.18s;
+    }
+    .compose-body-input:focus { border-color: rgba(25,195,138,0.45); }
+    .compose-body-input::placeholder { color: rgba(255,255,255,0.25); }
+
+    .compose-extras { display: flex; flex-direction: column; gap: 10px; }
+
+    .compose-city-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      border: 0.5px solid rgba(255,255,255,0.09);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      color: var(--feed-text);
+      font-size: 14px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.18s;
+    }
+    .compose-city-input:focus { border-color: rgba(25,195,138,0.45); }
+    .compose-city-input::placeholder { color: rgba(255,255,255,0.25); }
+
+    .compose-file-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border: 0.5px dashed rgba(255,255,255,0.14);
+      border-radius: 12px;
+      color: rgba(255,255,255,0.45);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .compose-file-label:hover { border-color: rgba(25,195,138,0.4); color: var(--feed-avatar-c); }
+    .compose-file-input { display: none; }
+
+    .compose-submit-btn {
+      width: 100%;
+      height: 48px;
+      border: none;
+      border-radius: 14px;
+      background: var(--feed-accent);
+      color: #07110d;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .compose-submit-btn:hover { background: #16ad7b; }
+    .compose-submit-btn:active { transform: scale(0.97); }
+
+    /* ═══════════════════════════════════════
+       SECTION LABEL
+    ═══════════════════════════════════════ */
+    .feed-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      color: rgba(255,255,255,0.26);
+      padding: 16px 16px 8px;
     }
 
-    .mobile-app-header__icon--primary{
-      background:var(--accent);
-      color:#fff;
-      font-weight:800;
+    /* ═══════════════════════════════════════
+       POST CARD
+    ═══════════════════════════════════════ */
+    .feed-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .post {
+      margin: 0 16px;
+      background: var(--feed-card);
+      border: 0.5px solid var(--feed-line);
+      border-radius: 22px;
+      overflow: hidden;
+      transition: border-color 0.18s;
+      animation: postIn 0.22s ease both;
+    }
+    .post:hover { border-color: rgba(255,255,255,0.13); }
+
+    @keyframes postIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .mobile-app-header__center{
-      min-width:0;
+    /* Stagger post entrance */
+    .post:nth-child(1) { animation-delay: 0.04s; }
+    .post:nth-child(2) { animation-delay: 0.08s; }
+    .post:nth-child(3) { animation-delay: 0.12s; }
+    .post:nth-child(4) { animation-delay: 0.16s; }
+    .post:nth-child(n+5) { animation-delay: 0.19s; }
+
+    /* ── Post header ── */
+    .post-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 14px 0;
     }
 
-    .mobile-app-header__title{
-      font-size:1.55rem;
-      font-weight:800;
-      line-height:1.05;
+    .post-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.07);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800;
+      color: rgba(255,255,255,0.7);
+      flex-shrink: 0;
     }
 
-    .mobile-app-header__subtitle{
-      font-size:.96rem;
-      opacity:.72;
-      margin-top:2px;
+    .post-avatar--accent {
+      background: var(--feed-avatar-bg);
+      border-color: var(--feed-accent-bd);
+      color: var(--feed-avatar-c);
     }
 
-    /* =========================
-       COMPOSER
-    ========================= */
-    .feed-compose-sheet[hidden]{
-      display:none !important;
+    .post-meta { flex: 1; min-width: 0; }
+
+    .post-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .feed-compose-sheet{
-      position:fixed;
-      inset:0;
-      z-index:11000;
+    .post-time {
+      font-size: 11px;
+      color: var(--feed-muted);
+      margin-top: 2px;
     }
 
-    .feed-compose-sheet__backdrop{
-      position:absolute;
-      inset:0;
-      background:rgba(0,0,0,.56);
-      backdrop-filter:blur(4px);
+    .post-overflow {
+      border: none; background: none;
+      color: rgba(255,255,255,0.25);
+      font-size: 20px; cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .post-overflow:hover { color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.06); }
+
+    /* ── Post body text ── */
+    .post-body {
+      padding: 10px 14px 12px;
+      font-size: 16px;
+      line-height: 1.55;
+      color: rgba(255,255,255,0.9);
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
-    .feed-compose-sheet__panel{
-      position:absolute;
-      left:50%;
-      bottom:18px;
-      transform:translateX(-50%);
-      width:min(720px, calc(100vw - 24px));
-      background:linear-gradient(180deg,#1a1c20,#15171b);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:28px;
-      box-shadow:0 30px 80px rgba(0,0,0,.45);
-      padding:18px;
+    /* ── Post image ── */
+    .post-image {
+      width: 100%;
+      display: block;
+      max-height: 380px;
+      object-fit: cover;
+      background: #0f1013;
     }
 
-    .feed-compose-sheet__header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:16px;
+    /* ── Place pill ── */
+    .post-place-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 14px 12px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--feed-accent-bg);
+      border: 0.5px solid var(--feed-accent-bd);
+      color: var(--feed-avatar-c);
+      font-size: 12px;
+      font-weight: 700;
     }
 
-    .feed-compose-sheet__header h2{
-      margin:0;
-      font-size:1.2rem;
-      font-weight:800;
+    /* ── Action bar ── */
+    .post-actions {
+      display: flex;
+      border-top: 0.5px solid var(--feed-line-2);
     }
 
-    .feed-compose-sheet__close{
-      width:40px;
-      height:40px;
-      border:none;
-      border-radius:14px;
-      background:#23252b;
-      color:#fff;
-      font-size:20px;
-      cursor:pointer;
+    .post-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.38);
+      transition: color 0.15s, background 0.15s;
+    }
+    .post-action-btn + .post-action-btn {
+      border-left: 0.5px solid var(--feed-line-2);
+    }
+    .post-action-btn:hover {
+      color: rgba(255,255,255,0.78);
+      background: rgba(255,255,255,0.03);
+    }
+    .post-action-btn:active { transform: scale(0.96); }
+
+    .post-action-btn--liked { color: #e84040; }
+    .post-action-btn--liked:hover { color: #f05252; }
+
+    .post-action-icon { font-size: 15px; line-height: 1; }
+
+    /* ── Comments section ── */
+    .post-comments {
+      background: rgba(0,0,0,0.18);
+      border-top: 0.5px solid var(--feed-line-2);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .feed-compose-form{
-      display:grid;
-      gap:14px;
+    /* Comment list header (only shows when there are comments) */
+    .post-comments__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
     }
 
-    .compose-row{
-      display:flex;
-      align-items:flex-start;
-      gap:12px;
+    .post-comments__label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: rgba(255,255,255,0.28);
     }
 
-    .compose-input{
-      flex:1;
-      min-width:0;
-      padding:14px 16px;
-      border:none;
-      border-radius:18px;
-      background:var(--pill);
-      color:var(--text);
-      outline:none;
-      font-size:15px;
+    .post-comments__count {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.06);
+      border-radius: 999px;
+      padding: 2px 8px;
     }
 
-    .compose-input::placeholder{
-      color:var(--muted);
+    /* Individual comment row */
+    .post-comment {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
     }
 
-    .compose-input--small{
-      min-height:46px;
+    .post-comment__avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.07);
+      border: 0.5px solid rgba(255,255,255,0.09);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800;
+      color: rgba(255,255,255,0.65);
+      flex-shrink: 0;
     }
 
-    .feed-compose__extras{
-      display:grid;
-      gap:12px;
+    .post-comment__bubble {
+      flex: 1;
+      min-width: 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px 14px 14px 14px;
+      padding: 8px 11px;
     }
 
-    .compose-file{
-      padding:12px 14px;
-      border-radius:16px;
-      border:1px solid var(--line);
-      background:#1d1f24;
-      color:var(--muted);
+    .post-comment__name {
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 3px;
+      line-height: 1.2;
     }
 
-    .compose-btn{
-      height:48px;
-      border:none;
-      border-radius:18px;
-      background:var(--accent);
-      color:#08130f;
-      font-size:15px;
-      font-weight:800;
-      cursor:pointer;
+    .post-comment__text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.68);
+      line-height: 1.45;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      display: block;
     }
 
-    /* =========================
-       AVATAR
-    ========================= */
-    .avatar{
-      width:44px;
-      height:44px;
-      border-radius:999px;
-      background:#111;
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:700;
-      font-size:15px;
-      flex-shrink:0;
-      border:1px solid rgba(255,255,255,.06);
+    /* Comment input row */
+    .comment-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 2px;
     }
 
-    /* =========================
-       POSTS
-    ========================= */
-    .post{
-      width:100%;
-      padding:18px;
-      border-radius:var(--radius-xl);
-      background:linear-gradient(180deg,var(--card),var(--card-2));
-      border:1px solid var(--line);
-      box-shadow:var(--shadow);
+    .comment-input-row form {
+      display: contents;
     }
 
-    .post-top{
-      display:flex;
-      align-items:center;
-      gap:12px;
+    .comment-text-input {
+      flex: 1;
+      height: 36px;
+      padding: 0 14px;
+      border: 0.5px solid rgba(255,255,255,0.09);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--feed-text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .comment-text-input:focus { border-color: rgba(25,195,138,0.45); }
+    .comment-text-input::placeholder { color: rgba(255,255,255,0.24); }
+
+    .comment-send-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--feed-accent);
+      color: #07110d;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .comment-send-btn:hover { background: #16ad7b; }
+    .comment-send-btn:active { transform: scale(0.92); }
+
+    /* ── Empty feed state ── */
+    .feed-empty {
+      margin: 24px 16px;
+      padding: 40px 24px;
+      background: var(--feed-card);
+      border: 0.5px solid var(--feed-line);
+      border-radius: 22px;
+      text-align: center;
     }
 
-    .post-meta{
-      flex:1;
-      min-width:0;
+    .feed-empty__icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+      opacity: 0.45;
     }
 
-    .post-name{
-      font-size:15px;
-      font-weight:700;
-      color:var(--text);
-      line-height:1.2;
-      word-break:break-word;
+    .feed-empty h2 {
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.025em;
+      margin: 0 0 8px;
     }
 
-    .post-time{
-      font-size:13px;
-      color:var(--muted);
-      margin-top:4px;
+    .feed-empty p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.5;
+      margin: 0;
     }
 
-    .post-body{
-      margin-top:14px;
-      font-size:20px;
-      line-height:1.45;
-      color:var(--text);
-      word-break:break-word;
+    /* ── Mobile bottom nav ── */
+    .feed-tabbar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+      background: rgba(11,11,12,0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 0.5px solid var(--feed-line);
+      z-index: 960;
     }
 
-    .post-image{
-      width:100%;
-      display:block;
-      margin-top:14px;
-      border-radius:22px;
-      max-height:460px;
-      object-fit:cover;
-      background:#0f1013;
+    .feed-tabbar__item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      text-decoration: none;
+      color: rgba(255,255,255,0.35);
+      font-size: 10px;
+      min-height: 52px;
+      transition: color 0.15s;
+    }
+    .feed-tabbar__item.is-active { color: #fff; font-weight: 700; }
+    .feed-tabbar__icon { font-size: 20px; line-height: 1; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .post { margin: 0 12px; border-radius: 20px; }
+      .post-body { font-size: 15px; }
+      .feed-compose-sheet__panel { width: calc(100vw - 16px); border-radius: 22px; }
     }
 
-    .place-pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      margin-top:14px;
-      padding:10px 14px;
-      border-radius:999px;
-      background:rgba(25,195,138,.14);
-      color:#7ee2bf;
-      font-size:14px;
-      font-weight:700;
-    }
-
-    /* =========================
-       ACTIONS
-    ========================= */
-    .post-actions-inline{
-      display:flex;
-      align-items:center;
-      gap:22px;
-      flex-wrap:wrap;
-      margin-top:16px;
-      margin-bottom:10px;
-      padding-top:2px;
-    }
-
-    .post-action-btn{
-      border:none;
-      background:none;
-      padding:0;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      color:var(--muted);
-      font-size:15px;
-      cursor:pointer;
-    }
-
-    .post-action-btn:hover{
-      color:var(--text);
-    }
-
-    .post-action-btn__icon{
-      font-size:16px;
-    }
-
-    .post-action-btn__count{
-      font-weight:700;
-    }
-
-/* =========================
-   COMMENTS — UPGRADED
-========================= */
-
-.post-comments{
-  display:grid;
-  gap:10px;
-  margin-top:16px;
-  padding-top:14px;
-  border-top:1px solid rgba(255,255,255,.06);
-}
-
-.post-comments__header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:2px;
-}
-
-.post-comments__title{
-  font-size:13px;
-  font-weight:700;
-  letter-spacing:.02em;
-  text-transform:uppercase;
-  color:rgba(255,255,255,.52);
-}
-
-.post-comments__count{
-  min-width:24px;
-  height:24px;
-  padding:0 8px;
-  border-radius:999px;
-  background:rgba(255,255,255,.06);
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:700;
-  color:rgba(255,255,255,.72);
-}
-
-.post-comment{
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-  padding:12px;
-  border-radius:18px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.05);
-  color:var(--text);
-  word-break:break-word;
-  overflow-wrap:anywhere;
-}
-
-.post-comment__avatar{
-  width:30px;
-  height:30px;
-  border-radius:999px;
-  background:#0d0f12;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:700;
-  flex-shrink:0;
-  border:1px solid rgba(255,255,255,.06);
-}
-
-.post-comment__content{
-  flex:1;
-  min-width:0;
-}
-
-.post-comment__topline{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-bottom:4px;
-}
-
-.post-comment__name{
-  font-size:13px;
-  font-weight:700;
-  color:#fff;
-  line-height:1.2;
-}
-
-.post-comment__text{
-  display:block;
-  font-size:14px;
-  line-height:1.5;
-  color:rgba(255,255,255,.82);
-}
-
-.post-comment-form{
-  display:flex;
-  gap:10px;
-  margin-top:14px;
-}
-
-.post-comment-form .compose-input{
-  flex:1;
-  min-width:0;
-  min-height:46px;
-}
-
-.post-comment-submit{
-  border:none;
-  background:#ffffff;
-  color:#111111;
-  border-radius:16px;
-  padding:0 18px;
-  min-height:46px;
-  font-weight:700;
-  cursor:pointer;
-  white-space:nowrap;
-  transition:transform .15s ease, opacity .15s ease;
-}
-
-.post-comment-submit:hover{
-  transform:translateY(-1px);
-  opacity:.96;
-}
-
-@media (max-width:600px){
-  .post-comments{
-    gap:8px;
-  }
-
-  .post-comment{
-    padding:10px 11px;
-    border-radius:16px;
-  }
-
-  .post-comment__text{
-    font-size:13.5px;
-  }
-
-  .post-comment-form{
-    flex-direction:column;
-  }
-
-  .post-comment-submit{
-    width:100%;
-  }
-}
-
-    /* =========================
-       EMPTY
-    ========================= */
-    .empty{
-      padding:46px 22px;
-      border:1px solid var(--line);
-      border-radius:28px;
-      background:linear-gradient(180deg,var(--card),var(--card-2));
-      color:var(--muted);
-      text-align:center;
-      font-size:1.05rem;
-      box-shadow:var(--shadow);
-    }
-
-    /* =========================
-       MOBILE
-    ========================= */
-    @media (max-width:600px){
-      .feed-shell,
-      .feed-page{
-        padding:14px 12px 120px;
-      }
-
-      .mobile-app-header{
-        grid-template-columns:48px 1fr auto;
-        gap:10px;
-      }
-
-      .mobile-app-header__icon{
-        width:46px;
-        height:46px;
-        border-radius:14px;
-        font-size:20px;
-      }
-
-      .mobile-app-header__actions{
-        gap:8px;
-      }
-
-      .mobile-app-header__title{
-        font-size:1.25rem;
-      }
-
-      .mobile-app-header__subtitle{
-        font-size:.88rem;
-      }
-
-      .post{
-        padding:16px;
-        border-radius:24px;
-      }
-
-      .post-body{
-        font-size:18px;
-      }
-
-      .post-comment-form{
-        flex-direction:column;
-      }
-
-      .post-comment-submit{
-        width:100%;
-      }
-
-      .feed-compose-sheet__panel{
-        bottom:12px;
-        width:calc(100vw - 16px);
-        border-radius:24px;
-      }
+    @media (min-width: 681px) {
+      .feed-tabbar { display: none; }
+      .feed-shell { padding-bottom: 60px; }
     }
   </style>
 </head>
 
 <body class="page-feed">
-  <div class="feed-shell">
+<div class="feed-shell">
 
-    <!-- SIDEBAR DRAWER -->
-    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
-      <div class="mobile-drawer__header">
-        <div class="mobile-drawer__title">Local AI</div>
+  <!-- ════════════════════════════════
+       MOBILE DRAWER
+  ════════════════════════════════ -->
+  <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+    <div class="mobile-drawer__header">
+      <div class="mobile-drawer__title">Local AI</div>
+      <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
+    </div>
+    <nav class="mobile-drawer__nav">
+      <a href="/"                                      class="mobile-drawer__link">🏠 Home</a>
+      <a href="{{ url_for('feed') }}"                  class="mobile-drawer__link is-active">📰 Feed</a>
+      <a href="/discover"                              class="mobile-drawer__link">🗺️ Discover</a>
+      <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
+                                                       class="mobile-drawer__link">👤 Account</a>
+    </nav>
+  </aside>
 
-        <button
-          class="mobile-drawer__close"
-          id="app-sidebar-close"
-          type="button"
-          aria-label="Close menu"
-        >
-          ✕
-        </button>
+  <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+
+  <!-- ════════════════════════════════
+       STICKY HEADER
+  ════════════════════════════════ -->
+  <header class="feed-header">
+    <button class="feed-menu-btn" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
+
+    <div class="feed-header__brand">
+      <div class="feed-header__title">Feed</div>
+      <div class="feed-header__sub">Local AI community</div>
+    </div>
+
+    <div class="feed-header__actions">
+      {% if current_user.is_authenticated %}
+        <button class="feed-hdr-btn feed-hdr-btn--green" id="feed-compose-toggle" type="button" aria-label="Create post">+</button>
+        <a href="{{ url_for('account') }}" class="feed-hdr-btn" aria-label="Account">👤</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="feed-hdr-btn" aria-label="Log in">👤</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════
+       INLINE COMPOSE TRIGGER
+       (only shown to logged-in users)
+  ════════════════════════════════ -->
+  {% if current_user.is_authenticated %}
+  <div class="feed-compose-trigger" id="feed-compose-trigger" role="button" tabindex="0" aria-label="Create a post">
+    <div class="feed-compose-trigger__avatar">
+      {{ (current_user.name or current_user.email or "U")[0]|upper }}
+    </div>
+    <div class="feed-compose-trigger__placeholder">Share a place or thought…</div>
+    <div class="feed-compose-trigger__photo" aria-hidden="true">📷</div>
+  </div>
+  {% endif %}
+
+  <!-- ════════════════════════════════
+       COMPOSE SHEET (bottom sheet)
+  ════════════════════════════════ -->
+  {% if current_user.is_authenticated %}
+  <div class="feed-compose-sheet" id="feed-compose-sheet" hidden>
+    <div class="feed-compose-sheet__backdrop" id="feed-compose-close"></div>
+
+    <div class="feed-compose-sheet__panel">
+      <div class="feed-compose-sheet__header">
+        <span class="feed-compose-sheet__title">Create post</span>
+        <button class="feed-compose-sheet__close" id="feed-compose-close-btn" type="button" aria-label="Close">✕</button>
       </div>
 
-      <nav class="mobile-drawer__nav">
-        <a href="/" class="mobile-drawer__link">Home</a>
-        <a href="{{ url_for('feed') }}" class="mobile-drawer__link is-active">Feed</a>
-        <a href="/discover" class="mobile-drawer__link">Discover</a>
-        <a href="{{ url_for('account') }}" class="mobile-drawer__link">Account</a>
-      </nav>
-    </aside>
-
-    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
-
-    <header class="mobile-app-header">
-      <button
-        class="mobile-app-header__icon"
-        id="app-sidebar-toggle"
-        type="button"
-        aria-label="Open menu"
+      <form
+        action="{{ url_for('create_feed_post') }}"
+        method="post"
+        enctype="multipart/form-data"
+        class="feed-compose-form"
       >
-        ☰
-      </button>
+        <div class="compose-user-row">
+          <div class="compose-avatar">
+            {{ (current_user.name or current_user.email or "U")[0]|upper }}
+          </div>
+          <textarea
+            class="compose-body-input"
+            name="body"
+            placeholder="Share something with the community…"
+            rows="3"
+          ></textarea>
+        </div>
 
-      <div class="mobile-app-header__center">
-        <div class="mobile-app-header__title">Local AI</div>
-        <div class="mobile-app-header__subtitle">Recommendations near you</div>
-      </div>
-
-      <div class="mobile-app-header__actions">
-        {% if current_user.is_authenticated %}
-          <button
-            class="mobile-app-header__icon mobile-app-header__icon--primary"
-            id="feed-compose-toggle"
-            type="button"
-            aria-label="Create post"
+        <div class="compose-extras">
+          <input
+            type="text"
+            name="city"
+            placeholder="📍 City (optional)"
+            class="compose-city-input"
           >
-            +
-          </button>
 
-          <a
-            href="{{ url_for('account') }}"
-            class="mobile-app-header__icon mobile-app-header__icon--link"
-            aria-label="Account"
+          <label class="compose-file-label">
+            📷 Add a photo
+            <input type="file" name="photo" accept="image/*" class="compose-file-input">
+          </label>
+        </div>
+
+        <button class="compose-submit-btn" type="submit">Post</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ════════════════════════════════
+       FEED POSTS
+  ════════════════════════════════ -->
+  <main>
+    {% if posts %}
+      <div class="feed-section-label">Recent posts</div>
+
+      <section class="feed-list">
+        {% for post in posts %}
+        <article class="post">
+
+          <!-- Post header -->
+          <div class="post-head">
+            <div class="post-avatar {% if post.user_id == current_user.id %}post-avatar--accent{% endif %}">
+              {{ post.user_name[0]|upper if post.user_name else "U" }}
+            </div>
+
+            <div class="post-meta">
+              <div class="post-name">{{ post.user_name.split(' ')[0] if post.user_name else "User" }}</div>
+              <div class="post-time">
+                {{ post.created_at }}{% if post.city %} · {{ post.city }}{% endif %}
+              </div>
+            </div>
+
+            <button class="post-overflow" type="button" aria-label="More options">···</button>
+          </div>
+
+          <!-- Body text -->
+          {% if post.body %}
+          <div class="post-body">{{ post.body }}</div>
+          {% endif %}
+
+          <!-- Image -->
+          {% if post.image_url %}
+          <img
+            class="post-image"
+            src="{{ post.image_url }}"
+            alt="Post image"
+            loading="lazy"
+            onerror="this.style.display='none';"
           >
-            👤
-          </a>
-        {% else %}
-          <a
-            href="{{ url_for('login') }}"
-            class="mobile-app-header__icon mobile-app-header__icon--link"
-            aria-label="Log in"
-          >
-            👤
-          </a>
-        {% endif %}
-      </div>
-    </header>
+          {% endif %}
 
-    {% if current_user.is_authenticated %}
-      <div class="feed-compose-sheet" id="feed-compose-sheet" hidden>
-        <div class="feed-compose-sheet__backdrop" id="feed-compose-close"></div>
+          <!-- Place pill -->
+          {% if post.listing_name %}
+          <div class="post-place-pill">📍 {{ post.listing_name }}</div>
+          {% endif %}
 
-        <div class="feed-compose-sheet__panel">
-          <div class="feed-compose-sheet__header">
-            <h2>Create post</h2>
-            <button
-              type="button"
-              class="feed-compose-sheet__close"
-              id="feed-compose-close-btn"
-              aria-label="Close"
-            >
-              ✕
+          <!-- Action bar: like / comment / share -->
+          <div class="post-actions">
+            <button class="post-action-btn" type="button" aria-label="Like">
+              <span class="post-action-icon">♡</span>
+              {{ post.like_count }}
+            </button>
+            <button class="post-action-btn" type="button" aria-label="Comment">
+              <span class="post-action-icon">💬</span>
+              {{ post.comment_count }}
+            </button>
+            <button class="post-action-btn" type="button" aria-label="Share">
+              <span class="post-action-icon">↗</span>
+              Share
             </button>
           </div>
 
-          <form
-            action="{{ url_for('create_feed_post') }}"
-            method="post"
-            enctype="multipart/form-data"
-            class="feed-compose-form"
-          >
-            <div class="compose-row">
-              <div class="avatar">
-                {{ (current_user.name or current_user.email or "U")[0]|upper }}
+          <!-- Comments section -->
+          <div class="post-comments">
+
+            {% if post.comments %}
+            <div class="post-comments__header">
+              <span class="post-comments__label">Comments</span>
+              <span class="post-comments__count">{{ post.comment_count }}</span>
+            </div>
+
+            {% for comment in post.comments %}
+            <div class="post-comment">
+              <div class="post-comment__avatar">
+                {{ comment.user_name[0]|upper if comment.user_name else "U" }}
               </div>
-
-              <input
-                class="compose-input"
-                type="text"
-                name="body"
-                placeholder="Share something..."
-              >
+              <div class="post-comment__bubble">
+                <div class="post-comment__name">
+                  {{ comment.user_name.split(' ')[0] if comment.user_name else "User" }}
+                </div>
+                <span class="post-comment__text">{{ comment.body }}</span>
+              </div>
             </div>
+            {% endfor %}
+            {% endif %}
 
-            <div class="feed-compose__extras">
-              <input
-                type="text"
-                name="city"
-                placeholder="City (optional)"
-                class="compose-input compose-input--small"
+            <!-- Comment input (auth only) -->
+            {% if current_user.is_authenticated %}
+            <div class="comment-input-row">
+              <form
+                action="{{ url_for('comment_feed_post', post_id=post.id) }}"
+                method="post"
+                style="display:contents;"
               >
-
-              <input
-                type="file"
-                name="photo"
-                accept="image/*"
-                class="compose-file"
-              >
+                <input
+                  type="text"
+                  name="body"
+                  placeholder="Add a comment…"
+                  required
+                  class="comment-text-input"
+                >
+                <button type="submit" class="comment-send-btn" aria-label="Post comment">↑</button>
+              </form>
             </div>
+            {% endif %}
 
-            <button class="compose-btn" type="submit">Post</button>
-          </form>
-        </div>
+          </div><!-- /.post-comments -->
+
+        </article>
+        {% endfor %}
+      </section>
+
+    {% else %}
+      <!-- Empty state -->
+      <div class="feed-empty">
+        <div class="feed-empty__icon">🌆</div>
+        <h2>Nothing here yet</h2>
+        <p>Be the first to share a place, tip, or local discovery with the community.</p>
       </div>
     {% endif %}
+  </main>
 
-    <main class="feed-page">
-      {% if posts %}
-        <section class="feed-list">
-          {% for post in posts %}
-            <article class="post">
-              <div class="post-top">
-                <div class="avatar">
-                  {{ post.user_name[0]|upper if post.user_name else "U" }}
-                </div>
+  <!-- ════════════════════════════════
+       MOBILE TAB BAR
+  ════════════════════════════════ -->
+  <nav class="feed-tabbar">
+    <a href="/" class="feed-tabbar__item">
+      <span class="feed-tabbar__icon">🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="/discover" class="feed-tabbar__item">
+      <span class="feed-tabbar__icon">🗺️</span>
+      <span>Discover</span>
+    </a>
+    <a href="/" class="feed-tabbar__item">
+      <span class="feed-tabbar__icon">🔎</span>
+      <span>Search</span>
+    </a>
+    <a href="{{ url_for('feed') }}" class="feed-tabbar__item is-active">
+      <span class="feed-tabbar__icon">📰</span>
+      <span>Feed</span>
+    </a>
+    <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="feed-tabbar__item">
+      <span class="feed-tabbar__icon">👤</span>
+      <span>Account</span>
+    </a>
+  </nav>
 
-                <div class="post-meta">
-                  <div class="post-name">{{ post.user_name.split(' ')[0] if post.user_name else "User" }}</div>
-                  <div class="post-time">{{ post.created_at }}</div>
-                </div>
-              </div>
+</div><!-- /.feed-shell -->
 
-              {% if post.body %}
-                <div class="post-body">
-                  {{ post.body }}
-                </div>
-              {% endif %}
 
-              {% if post.image_url %}
-                <img
-                  class="post-image"
-                  src="{{ post.image_url }}"
-                  alt="Post image"
-                  onerror="this.style.display='none'; console.log('bad image:', this.src);"
-                >
-              {% endif %}
+<!-- ════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-              {% if post.listing_name %}
-                <div class="place-pill">
-                  📍 {{ post.listing_name }}
-                </div>
-              {% endif %}
+  /* ── Drawer ── */
+  const drawer   = document.getElementById("app-sidebar");
+  const dOpen    = document.getElementById("app-sidebar-toggle");
+  const dClose   = document.getElementById("app-sidebar-close");
+  const dBackdrop = document.getElementById("app-sidebar-backdrop");
 
-              <div class="post-actions-inline">
-                <button class="post-action-btn" type="button">
-                  <span class="post-action-btn__icon">♡</span>
-                  <span class="post-action-btn__count">{{ post.like_count }}</span>
-                </button>
+  function openDrawer()  { drawer?.classList.add("is-open");    dBackdrop?.classList.add("is-open"); }
+  function closeDrawer() { drawer?.classList.remove("is-open"); dBackdrop?.classList.remove("is-open"); }
 
-                <button class="post-action-btn" type="button">
-                  <span class="post-action-btn__icon">💬</span>
-                  <span class="post-action-btn__count">{{ post.comment_count }}</span>
-                </button>
-              </div>
+  dOpen?.addEventListener("click", openDrawer);
+  dClose?.addEventListener("click", closeDrawer);
+  dBackdrop?.addEventListener("click", closeDrawer);
 
-{% if post.comments %}
-  <div class="post-comments">
-    <div class="post-comments__header">
-      <span class="post-comments__title">Comments</span>
-      <span class="post-comments__count">{{ post.comment_count }}</span>
-    </div>
+  /* ── Compose sheet ── */
+  const sheet        = document.getElementById("feed-compose-sheet");
+  const openBtnHdr   = document.getElementById("feed-compose-toggle");
+  const openBtnBar   = document.getElementById("feed-compose-trigger");
+  const closeBackdrop = document.getElementById("feed-compose-close");
+  const closeBtn     = document.getElementById("feed-compose-close-btn");
 
-    {% for comment in post.comments %}
-      <div class="post-comment">
-        <div class="post-comment__avatar">
-          {{ comment.user_name[0]|upper if comment.user_name else "U" }}
-        </div>
+  function openSheet() {
+    if (!sheet) return;
+    sheet.hidden = false;
+    /* focus the textarea after animation */
+    setTimeout(() => sheet.querySelector("textarea")?.focus(), 60);
+  }
 
-        <div class="post-comment__content">
-          <div class="post-comment__topline">
-            <span class="post-comment__name">
-              {{ comment.user_name.split(' ')[0] if comment.user_name else "User" }}
-            </span>
-          </div>
+  function closeSheet() {
+    if (!sheet) return;
+    sheet.hidden = true;
+  }
 
-          <span class="post-comment__text">{{ comment.body }}</span>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
+  openBtnHdr?.addEventListener("click", openSheet);
+  openBtnBar?.addEventListener("click", openSheet);
+  openBtnBar?.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSheet(); } });
+  closeBackdrop?.addEventListener("click", closeSheet);
+  closeBtn?.addEventListener("click", closeSheet);
 
-              {% if current_user.is_authenticated %}
-                <form
-                  action="{{ url_for('comment_feed_post', post_id=post.id) }}"
-                  method="post"
-                  class="post-comment-form"
-                >
-                  <input
-                    type="text"
-                    name="body"
-                    placeholder="Write a comment..."
-                    required
-                    class="compose-input compose-input--small"
-                  >
-                  <button type="submit" class="post-comment-submit">Post</button>
-                </form>
-              {% endif %}
-            </article>
-          {% endfor %}
-        </section>
-      {% else %}
-        <div class="empty">
-          No posts yet. Be the first to share a place.
-        </div>
-      {% endif %}
-    </main>
-  </div>
+  /* close sheet on Escape */
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && sheet && !sheet.hidden) closeSheet();
+  });
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const openBtn = document.getElementById("feed-compose-toggle");
-      const sheet = document.getElementById("feed-compose-sheet");
-      const closeBackdrop = document.getElementById("feed-compose-close");
-      const closeBtn = document.getElementById("feed-compose-close-btn");
+  /* ── Like button: optimistic toggle ── */
+  document.querySelectorAll(".post-action-btn").forEach(btn => {
+    if (btn.getAttribute("aria-label") !== "Like") return;
 
-      function openSheet() {
-        if (sheet) sheet.hidden = false;
+    btn.addEventListener("click", function () {
+      const icon  = btn.querySelector(".post-action-icon");
+      const liked = btn.classList.toggle("post-action-btn--liked");
+      const countEl = btn.childNodes[btn.childNodes.length - 1];
+      if (icon) icon.textContent = liked ? "♥" : "♡";
+      /* optimistic count bump */
+      const current = parseInt(countEl?.textContent?.trim() || "0", 10);
+      if (countEl && countEl.nodeType === 3) {
+        countEl.textContent = " " + (liked ? current + 1 : Math.max(0, current - 1));
       }
-
-      function closeSheet() {
-        if (sheet) sheet.hidden = true;
-      }
-
-      openBtn?.addEventListener("click", openSheet);
-      closeBackdrop?.addEventListener("click", closeSheet);
-      closeBtn?.addEventListener("click", closeSheet);
-
-      const drawer = document.getElementById("app-sidebar");
-      const drawerOpen = document.getElementById("app-sidebar-toggle");
-      const drawerClose = document.getElementById("app-sidebar-close");
-      const drawerBackdrop = document.getElementById("app-sidebar-backdrop");
-
-      function openDrawer() {
-        drawer?.classList.add("is-open");
-        drawerBackdrop?.classList.add("is-open");
-      }
-
-      function closeDrawer() {
-        drawer?.classList.remove("is-open");
-        drawerBackdrop?.classList.remove("is-open");
-      }
-
-      drawerOpen?.addEventListener("click", openDrawer);
-      drawerClose?.addEventListener("click", closeDrawer);
-      drawerBackdrop?.addEventListener("click", closeDrawer);
     });
-  </script>
+  });
+
+  /* ── File input label update ── */
+  document.querySelectorAll(".compose-file-input").forEach(input => {
+    const label = input.closest(".compose-file-label");
+    input.addEventListener("change", function () {
+      if (!label) return;
+      const filename = input.files?.[0]?.name;
+      if (filename) {
+        const textNode = label.childNodes[0];
+        if (textNode && textNode.nodeType === 3) {
+          textNode.textContent = "📷 " + filename;
+        }
+      }
+    });
+  });
+
+});
+</script>
+
 </body>
 </html>
