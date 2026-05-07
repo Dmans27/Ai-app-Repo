@@ -6,39 +6,31 @@
    ========================================================= */
 
 :root {
-  --bg-main: #050505;
-  --bg-surface: #111214;
-  --bg-elevated: #181a1f;
-  --bg-soft: #22252b;
-
-  --text-primary: #f5f5f7;
-  --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-muted: rgba(255, 255, 255, 0.55);
-
-  --line-subtle: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.14);
-
-  --brand: #10a37f;
-  --brand-strong: #0d8a6c;
-  --brand-warm: #f5b301;
-
-  --sidebar-w: 280px;
-  --header-h: 76px;
-  --tabbar-h: 78px;
-  --content-max: 1400px;
+  --color-bg-base: #0a0a0b;
+  --color-bg-surface: #111113;
+  --color-border: rgba(255,255,255,0.07);
+  --color-text-primary: #f2f0ec;
+  --color-text-muted: rgba(242,240,236,0.4);
+  --color-accent: #d4a853;    /* warm gold — swap for teal/coral if preferred */
+  --color-success: #5dca8a;
 }
 
+.app-body { background: var(--color-bg-base); }
+.app-sidebar, .mobile-drawer { background: var(--color-bg-surface); border-right: 0.5px solid var(--color-border); }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(
-    600px circle at 20% 20%,
-    rgba(120,255,200,0.08),
-    transparent 60%
-  );
-  pointer-events: none;
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+body { font-family: var(--font-body); }
+.app-brand__title, .desktop-page-header__title, .mobile-home-hero__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.4px;
 }
 
 *,
@@ -2311,24 +2303,19 @@ select {
 }
 
 .quick-chip {
-  flex: 0 0 auto;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(18,22,28,.92);
-  color: #fff;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: .18s ease;
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  color: rgba(242,240,236,0.6);
+  padding: 7px 15px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-
-.quick-chip:hover,
-.quick-chip:active {
-  transform: translateY(-1px);
-  border-color: rgba(255,255,255,.16);
-  background: rgba(28,32,40,.98);
+.quick-chip:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--color-text-primary);
+  border-color: rgba(255,255,255,0.2);
 }
 
 
@@ -2399,26 +2386,19 @@ select {
 }
 
 .quick-chip {
-  flex: 0 0 auto;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(18,22,28,.92);
-  color: #fff;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: .18s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  color: rgba(242,240,236,0.6);
+  padding: 7px 15px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-
-.quick-chip:hover,
-.quick-chip:active {
-  transform: translateY(-1px);
-  border-color: rgba(255,255,255,.16);
-  background: rgba(28,32,40,.98);
+.quick-chip:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--color-text-primary);
+  border-color: rgba(255,255,255,0.2);
 }
 
 /* subtle fade edges */
@@ -2459,13 +2439,14 @@ select {
 
 
 .ai-rec-row {
-  display: grid;
-  grid-template-columns: 30px 74px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: var(--color-bg-surface);
+  border: 0.5px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px;
+  transition: border-color 0.15s;
 }
+.ai-rec-row:hover { border-color: rgba(255,255,255,0.14); }
+.ai-rec-image { border-radius: 8px; }
 
 .ai-rec-rank {
   width: 26px;
@@ -3337,17 +3318,11 @@ select {
   gap: 10px;
 }
 
-.app-sidebar__link,
-.app-sidebar__footer-link,
-.app-sidebar__footer-button {
-  display: block;
-  width: 100%;
-  padding: 13px 14px;
-  border: none;
-  border-radius: 16px;
-  color: #fff;
-  text-decoration: none;
-  text-align: left;
+.app-sidebar__link.is-active, .mobile-drawer__link.is-active {
+  color: var(--color-text-primary);
+  border-left: 2px solid var(--color-accent);
+  background: rgba(255,255,255,0.04);
+  padding-left: calc(1rem - 2px);  /* compensate for border */
 }
 
 .app-sidebar__link.is-active {
@@ -3665,6 +3640,19 @@ padding-bottom: 0;
   justify-content: flex-end;
 }
 
+.ai-chat-bubble--loading {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+  height: 36px;
+  width: 180px;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .ai-chat-bubble {
   width: fit-content;
   max-width: min(84%, 680px);
@@ -3719,11 +3707,19 @@ margin: 10px 10px -86px 10px;
 
 }
 
-.ai-chat-status {
-  min-height: 18px;
-  margin: 0 4px 6px;
-  color: var(--text-secondary);
-  font-size: 0.84rem;
+.ai-chat-status::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  background: var(--color-success);
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 
@@ -3735,15 +3731,28 @@ margin: 10px 10px -86px 10px;
 ========================= */
 
 .ai-input-bar {
-  position: relative;
-  border-radius: 28px;
-  overflow: hidden;
-  box-shadow:
-  0 0 0 1px rgba(255,255,255,0.05),
-  0 10px 40px rgba(16,185,129,0.08);
-    background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(14px);
+  background: var(--color-bg-surface);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: border-color 0.2s;
+}
+.ai-input-bar:focus-within {
+  border-color: rgba(212, 168, 83, 0.45);
+  box-shadow: 0 0 0 3px rgba(212,168,83,0.07);
+}
+.ai-input-bar__input {
+  background: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+}
+.ai-input-bar__send {
+  background: var(--color-accent);
+  color: #0a0a0b;
+  border: none;
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  font-weight: 700;
 }
 
 
@@ -3785,9 +3794,8 @@ margin: 10px 10px -86px 10px;
 
 
 .ai-input-bar:focus-within {
-  box-shadow:
-    0 0 0 1px rgba(157,232,200,0.35),
-    0 0 50px rgba(16,185,129,0.25);
+  border-color: rgba(212, 168, 83, 0.45);
+  box-shadow: 0 0 0 3px rgba(212,168,83,0.07);
 }
 
 /* animated border glow */
@@ -3843,16 +3851,28 @@ margin: 10px 10px -86px 10px;
 }
 
 .ai-input-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 6px 8px 6px 14px;
-  border: 1px solid var(--line-subtle);
-  border-radius: 999px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(14px);
+  background: var(--color-bg-surface);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: border-color 0.2s;
+}
+.ai-input-bar:focus-within {
+  border-color: rgba(212, 168, 83, 0.45);
+  box-shadow: 0 0 0 3px rgba(212,168,83,0.07);
+}
+.ai-input-bar__input {
+  background: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+}
+.ai-input-bar__send {
+  background: var(--color-accent);
+  color: #0a0a0b;
+  border: none;
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  font-weight: 700;
 }
 
 .ai-input-bar__input {
@@ -4091,9 +4111,18 @@ margin: 10px 10px -86px 10px;
     gap: 16px;
   }
 
-  .ai-chat-bubble {
-    max-width: 90%;
-  }
+.ai-chat-bubble--loading {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+  height: 36px;
+  width: 180px;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 
   .app-composer-wrap {
     position: fixed;
