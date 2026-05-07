@@ -5273,3 +5273,812 @@ body:not(.page-discover):not(.page-account) .app-main {
   background: #2bd4a9;
   color: #07100d;
 }
+
+
+/* =============================================================
+   LOCAL AI — FEATURES & POLISH
+   Append to the bottom of styles.css
+   Covers:
+   1. Upgraded result cards (photo, open/closed, distance)
+   2. Star ratings display
+   3. Filter chips with active state
+   4. Reviews sheet
+   5. Hover / press interaction system
+   6. Page transitions
+   ============================================================= */
+
+
+/* ─────────────────────────────────────────────
+   1. UPGRADED RESULT CARDS
+────────────────────────────────────────────── */
+
+/* Replace .ai-rec-row with a richer card layout */
+.ai-rec-row {
+  display: flex;
+  flex-direction: column;
+  background: #15171c;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+  /* Remove the old 3-column grid */
+  grid-template-columns: unset;
+  gap: 0;
+  align-items: unset;
+}
+
+.ai-rec-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(157,232,200,0.28);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+}
+
+.ai-rec-row:active {
+  transform: scale(0.985);
+}
+
+/* Photo banner at the top of each card */
+.ai-rec-photo {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+  background: #1b1d22;
+  position: relative;
+}
+
+/* Fallback placeholder when no photo is present */
+.ai-rec-photo-placeholder {
+  width: 100%;
+  height: 140px;
+  background: linear-gradient(135deg, #1a2420 0%, #0f1a14 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  position: relative;
+}
+
+/* Badge overlay container sits on top of the photo */
+.ai-rec-badges {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+/* Open / Closed badges */
+.ai-rec-badge-open {
+  background: rgba(16,163,127,0.9);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  letter-spacing: 0.2px;
+}
+
+.ai-rec-badge-closed {
+  background: rgba(40,42,50,0.88);
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Distance pill */
+.ai-rec-badge-dist {
+  background: rgba(0,0,0,0.52);
+  color: rgba(255,255,255,0.88);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Card body */
+.ai-rec-body {
+  padding: 14px;
+  min-width: 0;
+}
+
+/* Title row: name + stars side by side */
+.ai-rec-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.ai-rec-body h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Star rating inline */
+.ai-rec-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.ai-rec-star { font-size: 12px; color: #f5b301; line-height: 1; }
+.ai-rec-star-empty { font-size: 12px; color: rgba(255,255,255,0.18); line-height: 1; }
+
+.ai-rec-rating-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  margin-left: 3px;
+}
+
+.ai-rec-review-count {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  margin-left: 1px;
+}
+
+/* Meta: category + address */
+.ai-rec-meta {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  text-transform: capitalize;
+  line-height: 1.35;
+}
+
+.ai-rec-address {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: rgba(255,255,255,0.38);
+  line-height: 1.35;
+}
+
+/* Action row */
+.ai-rec-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* Remove old rank circle */
+.ai-rec-rank { display: none; }
+
+/* Old thumbnail — hidden when using photo banner */
+.ai-rec-image { display: none; }
+
+
+/* ─────────────────────────────────────────────
+   2. STAR RATINGS (reusable anywhere)
+────────────────────────────────────────────── */
+
+.star-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star-filled { color: #f5b301; font-size: 14px; line-height: 1; }
+.star-half   { color: #f5b301; font-size: 14px; line-height: 1; opacity: 0.6; }
+.star-empty  { color: rgba(255,255,255,0.18); font-size: 14px; line-height: 1; }
+
+/* Large variant for the review sheet header */
+.star-row--lg .star-filled,
+.star-row--lg .star-empty { font-size: 20px; }
+
+/* Interactive star picker (for write-a-review form) */
+.star-picker {
+  display: flex;
+  gap: 6px;
+}
+
+.star-picker__star {
+  font-size: 28px;
+  color: rgba(255,255,255,0.18);
+  cursor: pointer;
+  transition: color 0.12s, transform 0.12s;
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 1;
+}
+
+.star-picker__star.is-selected,
+.star-picker__star:hover {
+  color: #f5b301;
+  transform: scale(1.15);
+}
+
+
+/* ─────────────────────────────────────────────
+   3. FILTER / SORT CHIPS
+────────────────────────────────────────────── */
+
+/* Horizontal scrolling filter bar above results */
+.results-filter-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 4px 0 8px;
+  margin-bottom: 4px;
+}
+
+.results-filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.62);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    transform 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.filter-chip:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-1px);
+}
+
+.filter-chip:active {
+  transform: scale(0.95);
+}
+
+.filter-chip.is-active {
+  background: rgba(16,163,127,0.18);
+  border-color: rgba(16,163,127,0.45);
+  color: #7ee2bf;
+}
+
+.filter-chip.is-active:hover {
+  background: rgba(16,163,127,0.25);
+}
+
+
+/* ─────────────────────────────────────────────
+   4. REVIEWS SHEET
+────────────────────────────────────────────── */
+
+.reviews-sheet {
+  background: #15171c;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+/* Summary header: big number + bar chart */
+.reviews-sheet__header {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.reviews-sheet__place-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 14px;
+  letter-spacing: -0.02em;
+}
+
+.reviews-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.reviews-summary__score {
+  font-size: 48px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.reviews-summary__breakdown {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rating-bar-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  width: 9px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.rating-bar-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  background: #f5b301;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* Individual review rows */
+.review-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.15s;
+}
+
+.review-item:last-of-type { border-bottom: none; }
+
+.review-item:hover { background: rgba(255,255,255,0.02); }
+
+.review-item__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.review-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(16,163,127,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #7ee2bf;
+  flex-shrink: 0;
+  border: 1px solid rgba(16,163,127,0.22);
+}
+
+.review-item__meta { flex: 1; min-width: 0; }
+
+.review-item__name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.review-item__date {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 1px;
+}
+
+.review-item__stars {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.review-item__text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Write-a-review CTA */
+.reviews-sheet__write-btn {
+  display: block;
+  width: calc(100% - 36px);
+  margin: 12px 18px 18px;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(16,163,127,0.35);
+  background: rgba(16,163,127,0.1);
+  color: #7ee2bf;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+}
+
+.reviews-sheet__write-btn:hover { background: rgba(16,163,127,0.18); }
+.reviews-sheet__write-btn:active { transform: scale(0.97); }
+
+/* ── Write review form (shown inline when write-btn is clicked) ── */
+.write-review-form {
+  padding: 0 18px 18px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeSlideUp 0.22s ease;
+}
+
+.write-review-form.is-open { display: flex; }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.write-review-form label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.write-review-form textarea {
+  width: 100%;
+  min-height: 90px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  padding: 12px 14px;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.18s;
+  font-family: inherit;
+}
+
+.write-review-form textarea:focus {
+  border-color: rgba(16,163,127,0.45);
+}
+
+.write-review-form textarea::placeholder {
+  color: rgba(255,255,255,0.25);
+}
+
+.write-review-form__submit {
+  height: 46px;
+  border-radius: 14px;
+  border: none;
+  background: #10a37f;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+}
+
+.write-review-form__submit:hover { background: #0d8a6c; }
+.write-review-form__submit:active { transform: scale(0.97); }
+
+
+/* ─────────────────────────────────────────────
+   5. INTERACTION SYSTEM — hover / press states
+────────────────────────────────────────────── */
+
+/* ── Buttons ── */
+
+/* Primary (teal filled) */
+.btn-primary,
+.directory-card__btn--primary,
+.directory-search__button,
+.saved-list-qr-btn,
+.profile-action-btn {
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.btn-primary:hover,
+.directory-card__btn--primary:hover,
+.directory-search__button:hover,
+.saved-list-qr-btn:hover {
+  background: #0d8a6c;
+  box-shadow: 0 4px 16px rgba(16,163,127,0.28);
+}
+
+.btn-primary:active,
+.directory-card__btn--primary:active,
+.directory-search__button:active,
+.saved-list-qr-btn:active {
+  transform: scale(0.96);
+  box-shadow: none;
+}
+
+/* Ghost / secondary buttons */
+.directory-card__btn,
+.place-popup__btn,
+.saved-place-row__button,
+.saved-list-share-btn,
+.account-quick-action {
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.directory-card__btn:hover,
+.place-popup__btn:hover,
+.saved-place-row__button:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+.directory-card__btn:active,
+.place-popup__btn:active,
+.saved-place-row__button:active {
+  transform: scale(0.96);
+}
+
+/* Account quick action tiles */
+.account-quick-action {
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+}
+
+.account-quick-action:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.14);
+}
+
+.account-quick-action:active {
+  transform: scale(0.95);
+}
+
+/* ── Cards ── */
+
+.directory-card,
+.place-card,
+.saved-list-card,
+.saved-place-row,
+.search-quick-picks {
+  transition: border-color 0.18s, transform 0.18s;
+}
+
+.directory-card:hover {
+  border-color: rgba(157,232,200,0.22);
+  transform: translateY(-2px);
+}
+
+.saved-place-row:hover {
+  border-color: rgba(255,255,255,0.1);
+}
+
+/* ── Nav links ── */
+
+.app-sidebar__link,
+.mobile-drawer__link {
+  transition: background 0.14s, color 0.14s, padding-left 0.14s;
+}
+
+.app-sidebar__link:not(.is-active):hover {
+  background: rgba(255,255,255,0.05);
+  color: #f5f5f7;
+  padding-left: 18px;
+}
+
+/* ── Save / pin button ── */
+
+.save-place-btn,
+.place-card__action {
+  transition: color 0.15s, background 0.15s, transform 0.12s;
+}
+
+.save-place-btn:hover,
+.place-card__action:hover {
+  color: #7ee2bf;
+  background: rgba(16,163,127,0.12);
+}
+
+.save-place-btn:active,
+.place-card__action:active {
+  transform: scale(0.88);
+}
+
+/* Saved confirmation flash */
+.save-place-btn.is-saved {
+  color: #7ee2bf;
+  background: rgba(16,163,127,0.14);
+  animation: savedPop 0.28s ease;
+}
+
+@keyframes savedPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+/* ── Chip press ── */
+.quick-chip {
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+}
+
+.quick-chip:hover {
+  background: rgba(28,32,40,0.98);
+  border-color: rgba(255,255,255,0.16);
+  color: #f5f5f7;
+  transform: translateY(-1px);
+}
+
+.quick-chip:active {
+  transform: scale(0.94) translateY(0);
+}
+
+/* ── Send button pulse while loading ── */
+.chat-composer.is-loading .ai-input-bar__send {
+  animation: sendPulse 1s ease-in-out infinite;
+}
+
+@keyframes sendPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.08); opacity: 0.75; }
+}
+
+
+/* ─────────────────────────────────────────────
+   6. PAGE TRANSITIONS
+────────────────────────────────────────────── */
+
+/* Wrap your <main> or page content in .page-transition to get
+   a fade+slide on every navigation. If you're using Flask/Jinja
+   just add class="page-transition" to your <main> tag. */
+
+.page-transition {
+  animation: pageEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Exit — add .is-leaving via JS before navigating */
+.page-transition.is-leaving {
+  animation: pageLeave 0.18s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes pageLeave {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Chat results fade in */
+.ai-results-inner {
+  animation: pageEnter 0.24s ease both;
+}
+
+/* Each result card staggers in */
+.ai-rec-row:nth-child(1) { animation: pageEnter 0.22s ease 0.04s both; }
+.ai-rec-row:nth-child(2) { animation: pageEnter 0.22s ease 0.09s both; }
+.ai-rec-row:nth-child(3) { animation: pageEnter 0.22s ease 0.14s both; }
+.ai-rec-row:nth-child(4) { animation: pageEnter 0.22s ease 0.18s both; }
+.ai-rec-row:nth-child(5) { animation: pageEnter 0.22s ease 0.22s both; }
+
+/* Assistant message bubble types in with a subtle entrance */
+.ai-chat-message--assistant .ai-chat-bubble {
+  animation: bubbleIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* User bubble */
+.ai-chat-message--user .ai-chat-bubble {
+  animation: bubbleInRight 0.18s ease both;
+}
+
+@keyframes bubbleInRight {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Loading skeleton shimmer for images while they load */
+.ai-rec-photo[data-loading="true"],
+.ai-rec-photo-placeholder {
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Tab / view toggle transitions */
+.search-view-section.is-active {
+  animation: pageEnter 0.2s ease both;
+}
+
+
+/* ─────────────────────────────────────────────
+   UTILITY: Open Now / Distance helpers
+   (add these data attrs to .ai-rec-row in JS)
+────────────────────────────────────────────── */
+
+/* Usage in buildResultRow():
+   Add <div class="ai-rec-badges">
+         <span class="ai-rec-badge-open">Open now</span>
+         <span class="ai-rec-badge-dist">📍 0.4 mi</span>
+       </div>
+   inside the photo wrapper */
+
+/* Open status dot for list view (smaller contexts) */
+.open-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10a37f;
+  margin-right: 5px;
+  vertical-align: middle;
+  animation: dotPulse 2.5s ease-in-out infinite;
+}
+
+.closed-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
