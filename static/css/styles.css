@@ -6,31 +6,39 @@
    ========================================================= */
 
 :root {
-  --color-bg-base: #0a0a0b;
-  --color-bg-surface: #111113;
-  --color-border: rgba(255,255,255,0.07);
-  --color-text-primary: #f2f0ec;
-  --color-text-muted: rgba(242,240,236,0.4);
-  --color-accent: #d4a853;    /* warm gold — swap for teal/coral if preferred */
-  --color-success: #5dca8a;
+  --bg-main: #050505;
+  --bg-surface: #111214;
+  --bg-elevated: #181a1f;
+  --bg-soft: #22252b;
+
+  --text-primary: #f5f5f7;
+  --text-secondary: rgba(255, 255, 255, 0.72);
+  --text-muted: rgba(255, 255, 255, 0.55);
+
+  --line-subtle: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  --brand: #10a37f;
+  --brand-strong: #0d8a6c;
+  --brand-warm: #f5b301;
+
+  --sidebar-w: 280px;
+  --header-h: 76px;
+  --tabbar-h: 78px;
+  --content-max: 1400px;
 }
 
-.app-body { background: var(--color-bg-base); }
-.app-sidebar, .mobile-drawer { background: var(--color-bg-surface); border-right: 0.5px solid var(--color-border); }
 
-
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
-
-:root {
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
-}
-
-body { font-family: var(--font-body); }
-.app-brand__title, .desktop-page-header__title, .mobile-home-hero__title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.4px;
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    600px circle at 20% 20%,
+    rgba(120,255,200,0.08),
+    transparent 60%
+  );
+  pointer-events: none;
 }
 
 *,
@@ -2303,19 +2311,24 @@ select {
 }
 
 .quick-chip {
-  background: rgba(255,255,255,0.04);
-  border: 0.5px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  color: rgba(242,240,236,0.6);
-  padding: 7px 15px;
-  font-size: 13px;
-  font-family: var(--font-body);
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(18,22,28,.92);
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: .18s ease;
 }
-.quick-chip:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--color-text-primary);
-  border-color: rgba(255,255,255,0.2);
+
+.quick-chip:hover,
+.quick-chip:active {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.16);
+  background: rgba(28,32,40,.98);
 }
 
 
@@ -2386,19 +2399,26 @@ select {
 }
 
 .quick-chip {
-  background: rgba(255,255,255,0.04);
-  border: 0.5px solid rgba(255,255,255,0.1);
-  border-radius: 20px;
-  color: rgba(242,240,236,0.6);
-  padding: 7px 15px;
-  font-size: 13px;
-  font-family: var(--font-body);
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(18,22,28,.92);
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: .18s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
-.quick-chip:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--color-text-primary);
-  border-color: rgba(255,255,255,0.2);
+
+.quick-chip:hover,
+.quick-chip:active {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.16);
+  background: rgba(28,32,40,.98);
 }
 
 /* subtle fade edges */
@@ -2439,14 +2459,13 @@ select {
 
 
 .ai-rec-row {
-  background: var(--color-bg-surface);
-  border: 0.5px solid var(--color-border);
-  border-radius: 12px;
-  padding: 14px;
-  transition: border-color 0.15s;
+  display: grid;
+  grid-template-columns: 30px 74px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,.07);
 }
-.ai-rec-row:hover { border-color: rgba(255,255,255,0.14); }
-.ai-rec-image { border-radius: 8px; }
 
 .ai-rec-rank {
   width: 26px;
@@ -3318,11 +3337,17 @@ select {
   gap: 10px;
 }
 
-.app-sidebar__link.is-active, .mobile-drawer__link.is-active {
-  color: var(--color-text-primary);
-  border-left: 2px solid var(--color-accent);
-  background: rgba(255,255,255,0.04);
-  padding-left: calc(1rem - 2px);  /* compensate for border */
+.app-sidebar__link,
+.app-sidebar__footer-link,
+.app-sidebar__footer-button {
+  display: block;
+  width: 100%;
+  padding: 13px 14px;
+  border: none;
+  border-radius: 16px;
+  color: #fff;
+  text-decoration: none;
+  text-align: left;
 }
 
 .app-sidebar__link.is-active {
@@ -3640,19 +3665,6 @@ padding-bottom: 0;
   justify-content: flex-end;
 }
 
-.ai-chat-bubble--loading {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: 8px;
-  height: 36px;
-  width: 180px;
-}
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
 .ai-chat-bubble {
   width: fit-content;
   max-width: min(84%, 680px);
@@ -3707,19 +3719,11 @@ margin: 10px 10px -86px 10px;
 
 }
 
-.ai-chat-status::before {
-  content: '';
-  display: inline-block;
-  width: 5px; height: 5px;
-  background: var(--color-success);
-  border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+.ai-chat-status {
+  min-height: 18px;
+  margin: 0 4px 6px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
 }
 
 
@@ -3731,28 +3735,15 @@ margin: 10px 10px -86px 10px;
 ========================= */
 
 .ai-input-bar {
-  background: var(--color-bg-surface);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  padding: 10px 14px;
-  transition: border-color 0.2s;
-}
-.ai-input-bar:focus-within {
-  border-color: rgba(212, 168, 83, 0.45);
-  box-shadow: 0 0 0 3px rgba(212,168,83,0.07);
-}
-.ai-input-bar__input {
-  background: none;
-  color: var(--color-text-primary);
-  font-family: var(--font-body);
-}
-.ai-input-bar__send {
-  background: var(--color-accent);
-  color: #0a0a0b;
-  border: none;
-  border-radius: 8px;
-  width: 32px; height: 32px;
-  font-weight: 700;
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow:
+  0 0 0 1px rgba(255,255,255,0.05),
+  0 10px 40px rgba(16,185,129,0.08);
+    background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
 }
 
 
@@ -3794,8 +3785,9 @@ margin: 10px 10px -86px 10px;
 
 
 .ai-input-bar:focus-within {
-  border-color: rgba(212, 168, 83, 0.45);
-  box-shadow: 0 0 0 3px rgba(212,168,83,0.07);
+  box-shadow:
+    0 0 0 1px rgba(157,232,200,0.35),
+    0 0 50px rgba(16,185,129,0.25);
 }
 
 /* animated border glow */
@@ -3851,28 +3843,16 @@ margin: 10px 10px -86px 10px;
 }
 
 .ai-input-bar {
-  background: var(--color-bg-surface);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  padding: 10px 14px;
-  transition: border-color 0.2s;
-}
-.ai-input-bar:focus-within {
-  border-color: rgba(212, 168, 83, 0.45);
-  box-shadow: 0 0 0 3px rgba(212,168,83,0.07);
-}
-.ai-input-bar__input {
-  background: none;
-  color: var(--color-text-primary);
-  font-family: var(--font-body);
-}
-.ai-input-bar__send {
-  background: var(--color-accent);
-  color: #0a0a0b;
-  border: none;
-  border-radius: 8px;
-  width: 32px; height: 32px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
 }
 
 .ai-input-bar__input {
@@ -4111,18 +4091,9 @@ margin: 10px 10px -86px 10px;
     gap: 16px;
   }
 
-.ai-chat-bubble--loading {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: 8px;
-  height: 36px;
-  width: 180px;
-}
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+  .ai-chat-bubble {
+    max-width: 90%;
+  }
 
   .app-composer-wrap {
     position: fixed;
@@ -5301,375 +5272,4 @@ body:not(.page-discover):not(.page-account) .app-main {
 .share-user-row:has(input:checked) .share-user-check {
   background: #2bd4a9;
   color: #07100d;
-}
-
-
-
-.profile-notifications-tab {
-  margin-top: 14px;
-  border: 1px solid rgba(255,255,255,.1);
-  background: #15181c;
-  color: #fff;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 900;
-}
-
-.profile-notifications-tab span {
-  margin-left: 8px;
-  background: #9de8c8;
-  color: #06110d;
-  border-radius: 999px;
-  padding: 3px 8px;
-}
-
-.notifications-panel {
-  display: none;
-  max-width: 760px;
-  margin: 18px auto 0;
-  padding: 18px;
-  border-radius: 24px;
-  background: rgba(255,255,255,.045);
-  border: 1px solid rgba(255,255,255,.08);
-}
-
-.notifications-panel.is-open {
-  display: block;
-}
-
-.notification-card {
-  padding: 16px;
-  border-radius: 18px;
-  background: #111418;
-  margin-bottom: 12px;
-}
-
-.notification-card p {
-  color: rgba(255,255,255,.65);
-  margin: 0 0 8px;
-}
-
-.notification-card h3 {
-  margin: 0 0 12px;
-}
-
-.notification-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.notification-actions a,
-.notification-actions button {
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: #9de8c8;
-  color: #06110d;
-  font-weight: 900;
-  text-decoration: none;
-}
-
-
-/* =============================================================
-   LOCAL AI — MOBILE FIX PATCH
-   Paste this at the very bottom of your styles.css
-   ============================================================= */
-
-/* ── 1. MOBILE HOME: vertically distribute the hero content ── */
-@media (max-width: 768px) {
-
-  /* Full-height layout so content isn't crammed at the top */
-  .chat-page.is-empty {
-    display: flex;
-    flex-direction: column;
-    min-height: calc(100dvh - var(--header-h));
-    overflow: hidden;
-  }
-
-  /* Hero takes up available space and centres vertically */
-  .mobile-home-hero {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    padding: 32px 22px 24px;
-  }
-
-  .mobile-home-hero__content {
-    max-width: 100%;
-  }
-
-  /* Bigger, bolder headline on mobile */
-  .mobile-home-hero__title {
-    font-size: clamp(2.6rem, 11vw, 3.6rem);
-    line-height: 0.92;
-    letter-spacing: -0.045em;
-  }
-
-  .mobile-home-hero__eyebrow {
-    font-size: 12px;
-    letter-spacing: 1.5px;
-    margin-bottom: 14px;
-  }
-
-  .mobile-home-hero__subtitle {
-    font-size: 1rem;
-    max-width: 100%;
-    margin-top: 14px;
-    color: rgba(242, 240, 236, 0.55);
-  }
-}
-
-
-/* ── 2. CHIP RAIL: sits just above the composer, fully visible ── */
-@media (max-width: 768px) {
-
-  .quick-scroll-wrap {
-    /* Sits above the composer — composer is ~76px tall, give 8px gap */
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(76px + 12px);   /* composer height + gap */
-    z-index: 938;
-    padding: 0 16px;
-    pointer-events: none;
-
-    /* Fade edges */
-    -webkit-mask-image: linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%);
-  }
-
-  .quick-scroll {
-    pointer-events: auto;
-    gap: 8px;
-    /* No bottom padding needed – mask handles edges */
-    padding-bottom: 2px;
-  }
-
-  /* Chips */
-  .quick-chip {
-    padding: 9px 15px;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 999px;
-    background: rgba(14, 14, 16, 0.94);
-    border: 0.5px solid rgba(255, 255, 255, 0.12);
-    color: rgba(242, 240, 236, 0.72);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    /* Remove conflicting ::before/::after from parent */
-    box-shadow: 0 2px 12px rgba(0,0,0,0.35);
-  }
-
-  .quick-chip:active {
-    transform: scale(0.96);
-    background: rgba(22, 22, 26, 0.98);
-    border-color: rgba(212, 168, 83, 0.35);
-    color: #f2f0ec;
-  }
-
-  /* Remove the gradient overlays — the mask handles it now */
-  .quick-scroll-wrap::before,
-  .quick-scroll-wrap::after {
-    display: none;
-  }
-}
-
-
-/* ── 3. COMPOSER / INPUT BAR: proper card treatment ── */
-@media (max-width: 768px) {
-
-  /* Wrap sits at bottom, no tab bar */
-  .app-composer-wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 950;
-    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-    /* Blurred backdrop so content behind doesn't bleed */
-    background: rgba(10, 10, 11, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 0.5px solid rgba(255, 255, 255, 0.07);
-  }
-
-  /* Reset the strange negative margin from desktop */
-  .chat-composer {
-    margin: 0 !important;
-  }
-
-  /* The inner card */
-  .chat-composer__inner {
-    border-radius: 18px;
-    background: rgba(22, 22, 26, 0.96);
-    border: 0.5px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    overflow: hidden;
-    box-shadow:
-      0 0 0 0.5px rgba(255,255,255,0.05) inset,
-      0 8px 32px rgba(0,0,0,0.4);
-  }
-
-  /* Input bar row */
-  .ai-input-bar {
-    min-height: 54px;
-    padding: 8px 10px 8px 16px;
-    border: none !important;          /* border is on the outer card */
-    border-radius: 0;
-    background: transparent !important;
-    box-shadow: none !important;
-    /* Kill the conic glow on mobile – too heavy */
-    overflow: visible;
-  }
-
-  .ai-input-bar::before,
-  .ai-input-bar::after {
-    display: none !important;
-  }
-
-  .ai-input-bar__input {
-    font-size: 16px;           /* prevents iOS zoom on focus */
-    color: #f2f0ec;
-    padding: 8px 0;
-    line-height: 1.4;
-  }
-
-  .ai-input-bar__input::placeholder {
-    color: rgba(242, 240, 236, 0.28);
-  }
-
-  /* Send button — solid gold pill */
-  .ai-input-bar__send {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: #d4a853;
-    color: #0a0a0b;
-    font-size: 15px;
-    font-weight: 800;
-    border: none;
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.15s, transform 0.1s;
-  }
-
-  .ai-input-bar__send:active {
-    opacity: 0.82;
-    transform: scale(0.94);
-  }
-
-  /* Hide status text on mobile */
-  .ai-chat-status {
-    display: none !important;
-  }
-
-  /* Loading state — pulse the border */
-  .chat-composer.is-loading .chat-composer__inner {
-    border-color: rgba(212, 168, 83, 0.45) !important;
-    box-shadow:
-      0 0 0 3px rgba(212, 168, 83, 0.08),
-      0 8px 32px rgba(0,0,0,0.4) !important;
-  }
-
-  .chat-composer.is-loading .ai-input-bar__send {
-    animation: mobileGoldPulse 1s ease-in-out infinite;
-  }
-
-  @keyframes mobileGoldPulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.7; transform: scale(1.06); }
-  }
-}
-
-
-/* ── 4. MOBILE HEADER: tighten up the top bar ── */
-@media (max-width: 768px) {
-
-  .mobile-app-header {
-    min-height: 60px;
-    padding: max(14px, env(safe-area-inset-top)) 14px 10px;
-    background: rgba(10, 10, 11, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
-  }
-
-  /* Hamburger + account icon buttons */
-  .mobile-app-header__icon,
-  .mobile-app-header__icon--link {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 0.5px solid rgba(255, 255, 255, 0.08);
-    font-size: 16px;
-  }
-
-  .mobile-app-header__title {
-    font-size: 0.98rem;
-    font-weight: 700;
-  }
-
-  .mobile-app-header__subtitle {
-    font-size: 0.76rem;
-    color: rgba(242, 240, 236, 0.38);
-  }
-}
-
-
-/* ── 5. CHAT THREAD (after search): proper spacing above composer ── */
-@media (max-width: 768px) {
-
-  .chat-thread {
-    /* composer (~76px) + chip rail (~48px) + gap = ~148px */
-    padding-bottom: 160px !important;
-  }
-
-  /* Result rows look better full-width on mobile */
-  .ai-rec-row {
-    border-radius: 14px;
-    padding: 12px;
-  }
-
-  .ai-rec-image {
-    width: 62px;
-    height: 62px;
-    border-radius: 10px;
-  }
-
-  .ai-rec-body h3 {
-    font-size: 16px;
-  }
-
-  /* User message bubble */
-  .ai-chat-message--user .ai-chat-bubble {
-    background: #f2f0ec;
-    color: #0a0a0b;
-    border-radius: 20px 20px 6px 20px;
-  }
-
-  /* Assistant message bubble */
-  .ai-chat-message--assistant .ai-chat-bubble {
-    background: rgba(22, 22, 26, 0.96);
-    border: 0.5px solid rgba(255,255,255,0.08);
-    border-radius: 20px 20px 20px 6px;
-  }
-
-  .ai-chat-bubble {
-    font-size: 15px;
-    padding: 12px 15px;
-  }
-}
-
-
-/* ── 6. SAFE AREA / NOTCH: ensure nothing hides behind the home bar ── */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  @media (max-width: 768px) {
-    .app-composer-wrap {
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
-    }
-  }
 }
