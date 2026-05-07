@@ -3,531 +3,1108 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{{ page_title or "Discover" }}</title>
+  <title>{{ page_title or "Discover" }} · Local AI</title>
   <link rel="stylesheet" href="/static/css/styles.css">
+
+  <style>
+    /* ═══════════════════════════════════════
+       DISCOVER PAGE — SCOPED STYLES
+    ═══════════════════════════════════════ */
+
+    /* ── Hero ── */
+    .disc-hero {
+      padding: 24px 20px 18px;
+    }
+
+    .disc-hero__eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.3px;
+      color: #10a37f;
+      margin: 0 0 8px;
+    }
+
+    .disc-hero__title {
+      font-size: clamp(2rem, 6vw, 3.4rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      color: #fff;
+      margin: 0 0 10px;
+    }
+
+    .disc-hero__sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+      margin: 0 0 18px;
+      max-width: 420px;
+    }
+
+    /* ── Search bar (matches home page composer style) ── */
+    .disc-search-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 8px 8px 8px 14px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .disc-search-form:focus-within {
+      border-color: rgba(16,163,127,0.45);
+      box-shadow: 0 0 0 3px rgba(16,163,127,0.07);
+    }
+
+    .disc-search-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 15px;
+      line-height: 1.4;
+      padding: 6px 0;
+      min-width: 0;
+    }
+
+    .disc-search-input::placeholder { color: rgba(255,255,255,0.28); }
+
+    .disc-search-btn {
+      height: 36px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 10px;
+      background: #10a37f;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .disc-search-btn:hover { background: #0d8a6c; }
+    .disc-search-btn:active { transform: scale(0.95); }
+
+    /* ── Filter chips ── */
+    .disc-filters {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+      margin-bottom: 4px;
+    }
+    .disc-filters::-webkit-scrollbar { display: none; }
+
+    .disc-chip {
+      flex-shrink: 0;
+      height: 32px;
+      padding: 0 13px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.58);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .disc-chip:hover {
+      background: rgba(255,255,255,0.09);
+      color: rgba(255,255,255,0.85);
+    }
+    .disc-chip.is-active {
+      background: rgba(16,163,127,0.18);
+      border-color: rgba(16,163,127,0.42);
+      color: #7ee2bf;
+    }
+
+    /* ── Results count ── */
+    .disc-results-meta {
+      font-size: 12px;
+      color: rgba(255,255,255,0.32);
+      padding: 14px 20px 10px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Card grid ── */
+    .disc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 0 16px 120px;
+    }
+
+    @media (min-width: 600px) and (max-width: 1024px) {
+      .disc-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* On desktop the grid lives inside the list panel */
+    @media (min-width: 1025px) {
+      .disc-grid {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0 0 40px;
+      }
+    }
+
+    /* ── Place card ── */
+    .disc-card {
+      background: #13151a;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.18s, transform 0.18s;
+      position: relative;
+    }
+    .disc-card:hover {
+      border-color: rgba(157,232,200,0.28);
+      transform: translateY(-2px);
+    }
+    .disc-card:active { transform: scale(0.97); }
+    .disc-card.is-selected {
+      border-color: rgba(16,163,127,0.55);
+      box-shadow: 0 0 0 1px rgba(16,163,127,0.25);
+    }
+
+    /* Card photo */
+    .disc-card__img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      display: block;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .disc-card__img-placeholder {
+      width: 100%;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      background: linear-gradient(135deg, #131a16 0%, #0d1510 100%);
+    }
+
+    /* Card body */
+    .disc-card__body { padding: 10px 10px 11px; }
+
+    .disc-card__name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin: 0 0 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .disc-card__meta {
+      font-size: 11px;
+      color: rgba(255,255,255,0.38);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0 0 9px;
+      text-transform: capitalize;
+    }
+
+    /* Card action row */
+    .disc-card__actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .disc-card__btn {
+      flex: 1;
+      height: 24px;
+      border-radius: 999px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.55);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .disc-card__btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .disc-card__btn--primary {
+      background: rgba(16,163,127,0.15);
+      border-color: rgba(16,163,127,0.35);
+      color: #7ee2bf;
+    }
+    .disc-card__btn--primary:hover { background: rgba(16,163,127,0.25); }
+
+    /* Save button as a form inside the card */
+    .disc-card__save-form { flex: 1; display: contents; }
+    .disc-card__save-form .disc-card__btn { width: 100%; }
+
+    /* ── Desktop two-column layout ── */
+    @media (min-width: 1025px) {
+      .discover-desktop-layout {
+        display: grid;
+        grid-template-columns: minmax(380px, 520px) minmax(400px, 1fr);
+        gap: 24px;
+        align-items: start;
+        padding: 0 24px 40px;
+      }
+
+      .disc-list-panel {
+        min-width: 0;
+      }
+
+      .directory-detail-panel {
+        position: sticky;
+        top: 32px;
+        border-radius: 22px;
+        background: #111214;
+        border: 0.5px solid rgba(255,255,255,0.08);
+        overflow: hidden;
+        min-height: 560px;
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+        transition: border-color 0.18s;
+      }
+
+      .directory-detail-empty {
+        min-height: 560px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+        text-align: center;
+        color: rgba(255,255,255,0.35);
+      }
+
+      .directory-detail-empty__eyebrow {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #10a37f;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .directory-detail-empty h2 {
+        font-size: 22px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.65);
+        margin: 0 0 8px;
+        letter-spacing: -0.02em;
+      }
+
+      .directory-detail-empty p {
+        font-size: 13px;
+        color: rgba(255,255,255,0.32);
+        line-height: 1.5;
+      }
+    }
+
+    /* ── Desktop detail card content ── */
+    .directory-detail-hero {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .directory-detail-body { padding: 20px; }
+
+    .directory-detail-category {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #10a37f;
+      margin: 0 0 8px;
+    }
+
+    .directory-detail-body h2 {
+      font-size: clamp(22px, 3vw, 32px);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin: 0 0 8px;
+    }
+
+    .directory-detail-address {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      margin: 0 0 16px;
+      line-height: 1.4;
+    }
+
+    .directory-detail-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .directory-detail-btn {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 0.5px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.72);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .directory-detail-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .directory-detail-btn:active { transform: scale(0.95); }
+    .directory-detail-btn--primary {
+      background: #10a37f;
+      color: #fff;
+      border-color: transparent;
+    }
+    .directory-detail-btn--primary:hover { background: #0d8a6c; }
+
+    /* detail gallery section */
+    .directory-detail-gallery-section h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: rgba(255,255,255,0.32);
+      margin: 0 0 12px;
+    }
+
+    .directory-detail-loading {
+      padding: 40px 24px;
+      text-align: center;
+      color: rgba(255,255,255,0.35);
+      font-size: 14px;
+    }
+
+    /* ── Empty state ── */
+    .disc-empty {
+      margin: 40px 20px;
+      padding: 32px 24px;
+      background: #111214;
+      border: 0.5px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      text-align: center;
+    }
+
+    .disc-empty h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .disc-empty p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.42);
+      line-height: 1.5;
+    }
+
+    /* ── Mobile popup (keep existing styles, minor tweak) ── */
+    .place-popup__muted {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      padding: 16px 0;
+    }
+
+    /* ── Selected row highlight for compact list (desktop fallback) ── */
+    .js-place-popup.is-selected .directory-row__title {
+      color: #7ee2bf;
+    }
+
+    /* ── Stagger animation on card load ── */
+    .disc-card {
+      animation: cardFadeIn 0.22s ease both;
+    }
+
+    .disc-card:nth-child(1)  { animation-delay: 0.02s; }
+    .disc-card:nth-child(2)  { animation-delay: 0.05s; }
+    .disc-card:nth-child(3)  { animation-delay: 0.08s; }
+    .disc-card:nth-child(4)  { animation-delay: 0.11s; }
+    .disc-card:nth-child(5)  { animation-delay: 0.14s; }
+    .disc-card:nth-child(6)  { animation-delay: 0.17s; }
+    .disc-card:nth-child(7)  { animation-delay: 0.20s; }
+    .disc-card:nth-child(8)  { animation-delay: 0.23s; }
+    .disc-card:nth-child(n+9) { animation-delay: 0.25s; }
+
+    @keyframes cardFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Mobile content padding fix ── */
+    @media (max-width: 1024px) {
+      .discover-page-content { padding: 0 0 80px; }
+    }
+
+    @media (min-width: 1025px) {
+      .disc-hero { padding: 28px 24px 20px; }
+      .disc-results-meta { padding: 0 0 10px; }
+    }
+  </style>
 </head>
 
 <body class="app-body page-discover">
-  <div class="app-shell">
-    <aside class="app-sidebar desktop-sidebar">
-      <div class="app-sidebar__top">
-        <div class="app-brand">
-          <div class="app-brand__title">Local AI</div>
-          <div class="app-brand__subtitle">Recommendations near you</div>
-        </div>
+<div class="app-shell">
 
-        {% if current_user.is_authenticated %}
-          <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">👤</a>
-        {% else %}
-          <a href="{{ url_for('login') }}" class="app-sidebar__account" aria-label="Log in">👤</a>
-        {% endif %}
+  <!-- ════════════════════════════════
+       DESKTOP SIDEBAR (unchanged)
+  ════════════════════════════════ -->
+  <aside class="app-sidebar desktop-sidebar">
+    <div class="app-sidebar__top">
+      <div class="app-brand">
+        <div class="app-brand__title">Local AI</div>
+        <div class="app-brand__subtitle">Recommendations near you</div>
+      </div>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">👤</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="app-sidebar__account" aria-label="Log in">👤</a>
+      {% endif %}
+    </div>
+
+    <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">
+      + New search
+    </button>
+
+    <nav class="app-sidebar__nav">
+      <a href="/" class="app-sidebar__link">AI Search</a>
+      <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
+      <a href="/search?q=restaurant near me" class="app-sidebar__link">Restaurants</a>
+      <a href="/search?q=bars near me" class="app-sidebar__link">Bars</a>
+      <a href="/search?q=shopping near me" class="app-sidebar__link">Shopping</a>
+      <a href="/discover" class="app-sidebar__link is-active">Discover</a>
+      <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
+    </nav>
+
+    <div class="app-sidebar__section-label">Account</div>
+
+    <div class="app-sidebar__footer">
+      <a href="/" class="app-sidebar__footer-link">Home</a>
+      <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}" class="app-sidebar__footer-link">Account</a>
+        <form method="post" action="{{ url_for('logout') }}">
+          <button type="submit" class="app-sidebar__footer-button">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="app-sidebar__footer-link">Log in</a>
+        <a href="{{ url_for('signup') }}" class="app-sidebar__footer-link">Sign up</a>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- ════════════════════════════════
+       MOBILE SHELL
+  ════════════════════════════════ -->
+  <div class="mobile-app-shell">
+
+    <!-- Mobile drawer (unchanged) -->
+    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+      <div class="mobile-drawer__header">
+        <div class="mobile-drawer__title">Local AI</div>
+        <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
       </div>
 
-      <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">
+      <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">
         + New search
       </button>
 
-      <nav class="app-sidebar__nav">
-        <a href="/" class="app-sidebar__link">AI Search</a>
-        <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
-        <a href="/search?q=restaurant near me" class="app-sidebar__link">Restaurants</a>
-        <a href="/search?q=bars near me" class="app-sidebar__link">Bars</a>
-        <a href="/search?q=shopping near me" class="app-sidebar__link">Shopping</a>
-        <a href="/discover" class="app-sidebar__link is-active">Discover</a>
-        <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
+      <nav class="mobile-drawer__nav">
+        <a href="/" class="mobile-drawer__link">AI Search</a>
+        <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
+        <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
+        <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
+        <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
+        <a href="/discover" class="mobile-drawer__link is-active">Discover</a>
+        <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
       </nav>
 
-      <div class="app-sidebar__section-label">Account</div>
+      <div class="mobile-drawer__section-label">Account</div>
 
-      <div class="app-sidebar__footer">
-        <a href="/" class="app-sidebar__footer-link">Home</a>
-        <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
-
+      <div class="mobile-drawer__footer">
+        <a href="/" class="mobile-drawer__footer-link">Home</a>
+        <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('account') }}" class="app-sidebar__footer-link">Account</a>
+          <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link">Account</a>
           <form method="post" action="{{ url_for('logout') }}">
-            <button type="submit" class="app-sidebar__footer-button">Log out</button>
+            <button type="submit" class="mobile-drawer__footer-button">Log out</button>
           </form>
         {% else %}
-          <a href="{{ url_for('login') }}" class="app-sidebar__footer-link">Log in</a>
-          <a href="{{ url_for('signup') }}" class="app-sidebar__footer-link">Sign up</a>
+          <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
+          <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
         {% endif %}
       </div>
     </aside>
 
-    <div class="mobile-app-shell">
-      <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
-        <div class="mobile-drawer__header">
-          <div class="mobile-drawer__title">Local AI</div>
-          <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
+    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+
+    <!-- ════════════════════════════════
+         MAIN SCREEN
+    ════════════════════════════════ -->
+    <main class="mobile-screen">
+
+      <!-- Mobile header -->
+      <header class="mobile-app-header mobile-only">
+        <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
+
+        <div class="mobile-app-header__center">
+          <div class="mobile-app-header__title">Discover</div>
+          <div class="mobile-app-header__subtitle">Local directory</div>
         </div>
 
-        <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">
-          + New search
-        </button>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Account">👤</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Log in">👤</a>
+        {% endif %}
+      </header>
 
-        <nav class="mobile-drawer__nav">
-          <a href="/" class="mobile-drawer__link">AI Search</a>
-          <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
-          <a href="/search?q=restaurant near me" class="mobile-drawer__link">Restaurants</a>
-          <a href="/search?q=bars near me" class="mobile-drawer__link">Bars</a>
-          <a href="/search?q=shopping near me" class="mobile-drawer__link">Shopping</a>
-          <a href="/discover" class="mobile-drawer__link is-active">Discover</a>
-          <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
-        </nav>
+      <section class="mobile-content discover-page-content">
+        <div class="discover-shell">
 
-        <div class="mobile-drawer__section-label">Account</div>
+          <!-- ── Hero: eyebrow, title, search, chips ── -->
+          <section class="disc-hero">
+            <p class="disc-hero__eyebrow">Local directory</p>
+            <h1 class="disc-hero__title">Find local places</h1>
+            <p class="disc-hero__sub">
+              Restaurants, coffee shops, bars, and local businesses near you.
+            </p>
 
-        <div class="mobile-drawer__footer">
-          <a href="/" class="mobile-drawer__footer-link">Home</a>
-          <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
-
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link">Account</a>
-            <form method="post" action="{{ url_for('logout') }}">
-              <button type="submit" class="mobile-drawer__footer-button">Log out</button>
+            <!-- Search bar (unified composer style) -->
+            <form class="disc-search-form" method="get" action="{{ url_for('discover_page') }}">
+              <input
+                type="search"
+                name="q"
+                value="{{ q or '' }}"
+                placeholder="Search places, cuisines, or locations…"
+                class="disc-search-input"
+                autocomplete="off"
+              >
+              <button type="submit" class="disc-search-btn">Search</button>
             </form>
-          {% else %}
-            <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
-            <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
-          {% endif %}
-        </div>
-      </aside>
 
-      <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
-
-      <main class="mobile-screen">
-        <header class="mobile-app-header mobile-only">
-          <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
-
-          <div class="mobile-app-header__center">
-            <div class="mobile-app-header__title">Discover</div>
-            <div class="mobile-app-header__subtitle">Local directory</div>
-          </div>
-
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('account') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Account">👤</a>
-          {% else %}
-            <a href="{{ url_for('login') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Log in">👤</a>
-          {% endif %}
-        </header>
-
-        <section class="mobile-content discover-page-content">
-          <div class="discover-shell">
-            <section class="discover-hero discover-hero--directory">
-              <p class="discover-hero__eyebrow">Naperville directory</p>
-              <h1 class="discover-hero__title">Find local places</h1>
-              <p class="discover-hero__subtitle">
-                Browse restaurants, coffee shops, bars, and local businesses imported into Local AI.
-              </p>
-
-              <form class="directory-search" method="get" action="{{ url_for('discover_page') }}">
-                <input type="search" name="q" value="{{ q or '' }}" placeholder="Search places, cuisines, or locations" class="directory-search__input">
-                <button type="submit" class="directory-search__button">Search</button>
-              </form>
-
-              <div class="directory-filters">
-                <a href="{{ url_for('discover_page') }}" class="directory-filter {% if not active_category %}is-active{% endif %}">All</a>
-                <a href="{{ url_for('discover_page', category='coffee') }}" class="directory-filter {% if active_category == 'coffee' %}is-active{% endif %}">Coffee</a>
-                <a href="{{ url_for('discover_page', category='restaurant') }}" class="directory-filter {% if active_category == 'restaurant' %}is-active{% endif %}">Restaurants</a>
-                <a href="{{ url_for('discover_page', category='bar') }}" class="directory-filter {% if active_category == 'bar' %}is-active{% endif %}">Bars</a>
-              </div>
-            </section>
-
-            {% if listings and listings|length > 0 %}
-              <div class="discover-desktop-layout">
-                <section class="directory-list directory-list--compact" aria-label="Local directory places">
-                  {% for place in listings %}
-                    <div class="directory-row">
-                      <button
-                        type="button"
-                        class="directory-row__link js-place-popup"
-                        data-slug="{{ place.slug }}"
-                        data-name="{{ place.name }}"
-                        data-category="{{ place.category or 'Local business' }}"
-                        data-address="{{ place.address or '' }}"
-                        data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-                        data-website="{{ place.website or '' }}"
-                        data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
-                      >
-                        <div class="directory-row__main">
-                          <h2 class="directory-row__title">{{ place.name }}</h2>
-                          <p class="directory-row__meta">
-                            {{ (place.category or "Local business").replace("_", " ").title() }}
-                            {% if place.city %} · {{ place.city }}{% endif %}
-                          </p>
-                          <p class="directory-row__address">{{ place.address or "Naperville, IL" }}</p>
-                        </div>
-                        <div class="directory-row__arrow" aria-hidden="true">›</div>
-                      </button>
-
-                      {% if current_user.is_authenticated and default_list_id %}
-                        <form method="post" action="{{ url_for('save_place_to_list', list_id=default_list_id) }}" class="directory-row__save">
-                          <input type="hidden" name="name" value="{{ place.name }}">
-                          <input type="hidden" name="address" value="{{ place.address or '' }}">
-                          <input type="hidden" name="website" value="{{ place.website or '' }}">
-                          <input type="hidden" name="category" value="{{ place.category or '' }}">
-                          <input type="hidden" name="latitude" value="{{ place.latitude or '' }}">
-                          <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
-                          <input type="hidden" name="listing_id" value="{{ place.id }}">
-                          <input type="hidden" name="place_id" value="{{ place.place_id or '' }}">
-                          <button type="submit" class="directory-row__save-btn" aria-label="Save {{ place.name }}">+</button>
-                        </form>
-                      {% elif not current_user.is_authenticated %}
-                        <a href="{{ url_for('login') }}" class="directory-row__save-btn directory-row__save-btn--link" aria-label="Log in to save {{ place.name }}">+</a>
-                      {% endif %}
-                    </div>
-                  {% endfor %}
-                </section>
-
-                <aside class="directory-detail-panel" id="directory-detail-panel" aria-live="polite">
-                  <div class="directory-detail-empty">
-                    <div>
-                      <p class="directory-detail-empty__eyebrow">Preview</p>
-                      <h2>Select a place</h2>
-                      <p>Click a business from the directory to see photos, details, and actions here.</p>
-                    </div>
-                  </div>
-                </aside>
-              </div>
-            {% else %}
-              <section class="discover-empty">
-                <h2>No places found</h2>
-                <p>Try another search or import more places into your directory.</p>
-              </section>
-            {% endif %}
-          </div>
-        </section>
-
-        <nav class="mobile-tabbar mobile-only">
-          <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🏠</span><span class="mobile-tabbar__label">Home</span></a>
-          <a href="/discover" class="mobile-tabbar__item is-active"><span class="mobile-tabbar__icon">🗺️</span><span class="mobile-tabbar__label">Discover</span></a>
-          <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🔎</span><span class="mobile-tabbar__label">Search</span></a>
-          <a href="{{ url_for('feed') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">📰</span><span class="mobile-tabbar__label">Feed</span></a>
-          <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">👤</span><span class="mobile-tabbar__label">Account</span></a>
-        </nav>
-      </main>
-    </div>
-  </div>
-
-  <div class="place-popup" id="place-popup" hidden>
-    <div class="place-popup__backdrop" data-close-place-popup></div>
-
-    <div class="place-popup__card">
-      <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
-
-      <img id="place-popup-photo" class="place-popup__image" src="" alt="">
-
-      <div class="place-popup__body">
-        <p id="place-popup-category" class="place-popup__category"></p>
-        <h2 id="place-popup-name"></h2>
-        <p id="place-popup-address" class="place-popup__address"></p>
-
-        <div class="place-popup__actions">
-          <a id="place-popup-website" class="place-popup__btn" target="_blank" rel="noopener">Website</a>
-          <a id="place-popup-directions" class="place-popup__btn" target="_blank" rel="noopener">Directions</a>
-          <a id="place-popup-listing" class="place-popup__btn place-popup__btn--primary">View listing</a>
-        </div>
-
-        <section class="place-popup__section">
-          <h3>Photo gallery</h3>
-
-          <div class="photo-slider" id="popup-slider">
-            <div class="photo-slider__viewport">
-              <button type="button" class="slider-btn slider-btn--left" data-slider-prev>‹</button>
-              <div class="slider-track" id="popup-slider-track"></div>
-              <button type="button" class="slider-btn slider-btn--right" data-slider-next>›</button>
+            <!-- Category filter chips -->
+            <div class="disc-filters">
+              <a href="{{ url_for('discover_page') }}"
+                 class="disc-chip {% if not active_category %}is-active{% endif %}">
+                All
+              </a>
+              <a href="{{ url_for('discover_page', category='coffee') }}"
+                 class="disc-chip {% if active_category == 'coffee' %}is-active{% endif %}">
+                ☕ Coffee
+              </a>
+              <a href="{{ url_for('discover_page', category='restaurant') }}"
+                 class="disc-chip {% if active_category == 'restaurant' %}is-active{% endif %}">
+                🍽 Restaurants
+              </a>
+              <a href="{{ url_for('discover_page', category='bar') }}"
+                 class="disc-chip {% if active_category == 'bar' %}is-active{% endif %}">
+                🍸 Bars
+              </a>
+              <a href="{{ url_for('discover_page', category='shopping') }}"
+                 class="disc-chip {% if active_category == 'shopping' %}is-active{% endif %}">
+                🛍 Shopping
+              </a>
+              <a href="{{ url_for('discover_page', category='gym') }}"
+                 class="disc-chip {% if active_category == 'gym' %}is-active{% endif %}">
+                💪 Gyms
+              </a>
             </div>
-          </div>
+          </section>
 
-          <div class="slider-thumbs" id="popup-slider-thumbs"></div>
-        </section>
-      </div>
-    </div>
-  </div>
+          <!-- ── Results ── -->
+          {% if listings and listings|length > 0 %}
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const sidebar = document.getElementById("app-sidebar");
-      const toggle = document.getElementById("app-sidebar-toggle");
-      const closeBtn = document.getElementById("app-sidebar-close");
-      const backdrop = document.getElementById("app-sidebar-backdrop");
+            <p class="disc-results-meta">
+              {{ listings|length }} place{{ 's' if listings|length != 1 else '' }} found
+            </p>
 
-      function openDrawer() {
-        sidebar?.classList.add("is-open");
-        backdrop?.classList.add("is-open");
-      }
+            <!-- Desktop: left list panel + right sticky detail panel -->
+            <div class="discover-desktop-layout">
 
-      function closeDrawer() {
-        sidebar?.classList.remove("is-open");
-        backdrop?.classList.remove("is-open");
-      }
+              <!-- Left: card grid -->
+              <section class="disc-list-panel" aria-label="Local directory places">
+                <div class="disc-grid">
+                  {% for place in listings %}
 
-      toggle?.addEventListener("click", openDrawer);
-      closeBtn?.addEventListener("click", closeDrawer);
-      backdrop?.addEventListener("click", closeDrawer);
-    });
-  </script>
+                    {# ── Category emoji fallback ── #}
+                    {% set cat = (place.category or '')|lower %}
+                    {% if 'coffee' in cat or 'cafe' in cat %}
+                      {% set cat_emoji = '☕' %}
+                    {% elif 'bar' in cat or 'cocktail' in cat or 'pub' in cat %}
+                      {% set cat_emoji = '🍸' %}
+                    {% elif 'restaurant' in cat or 'food' in cat or 'pizza' in cat or 'burger' in cat %}
+                      {% set cat_emoji = '🍽️' %}
+                    {% elif 'sushi' in cat or 'japanese' in cat %}
+                      {% set cat_emoji = '🍱' %}
+                    {% elif 'brunch' in cat or 'breakfast' in cat %}
+                      {% set cat_emoji = '🍳' %}
+                    {% elif 'shopping' in cat or 'boutique' in cat or 'store' in cat %}
+                      {% set cat_emoji = '🛍️' %}
+                    {% elif 'gym' in cat or 'fitness' in cat %}
+                      {% set cat_emoji = '💪' %}
+                    {% elif 'spa' in cat or 'salon' in cat %}
+                      {% set cat_emoji = '💅' %}
+                    {% elif 'hotel' in cat %}
+                      {% set cat_emoji = '🏨' %}
+                    {% else %}
+                      {% set cat_emoji = '📍' %}
+                    {% endif %}
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const popup = document.getElementById("place-popup");
-      const photo = document.getElementById("place-popup-photo");
-      const name = document.getElementById("place-popup-name");
-      const category = document.getElementById("place-popup-category");
-      const address = document.getElementById("place-popup-address");
-      const website = document.getElementById("place-popup-website");
-      const directions = document.getElementById("place-popup-directions");
-      const listing = document.getElementById("place-popup-listing");
+                    <div
+                      class="disc-card js-place-popup"
+                      data-slug="{{ place.slug }}"
+                      data-name="{{ place.name }}"
+                      data-category="{{ place.category or 'Local business' }}"
+                      data-address="{{ place.address or '' }}"
+                      data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                      data-website="{{ place.website or '' }}"
+                      data-listing-url="{{ url_for('listing_page', slug=place.slug) }}"
+                      role="button"
+                      tabindex="0"
+                    >
+                      <!-- Photo or emoji placeholder -->
+                      {% if place.photo_url %}
+                        <img
+                          class="disc-card__img"
+                          src="{{ place.photo_url }}"
+                          alt="{{ place.name }}"
+                          loading="lazy"
+                        >
+                      {% else %}
+                        <div class="disc-card__img-placeholder">{{ cat_emoji }}</div>
+                      {% endif %}
 
-      const slider = document.getElementById("popup-slider");
-      const track = document.getElementById("popup-slider-track");
-      const thumbs = document.getElementById("popup-slider-thumbs");
-      const prevBtn = slider?.querySelector("[data-slider-prev]");
-      const nextBtn = slider?.querySelector("[data-slider-next]");
-      const detailPanel = document.getElementById("directory-detail-panel");
+                      <div class="disc-card__body">
+                        <div class="disc-card__name">{{ place.name }}</div>
+                        <div class="disc-card__meta">
+                          {{ (place.category or 'Local business').replace('_', ' ') }}{% if place.city %} · {{ place.city }}{% endif %}
+                        </div>
 
-      let popupPhotos = [];
-      let currentIndex = 0;
+                        <div class="disc-card__actions">
+                          <!-- View listing -->
+                          <a
+                            href="{{ url_for('listing_page', slug=place.slug) }}"
+                            class="disc-card__btn disc-card__btn--primary"
+                            onclick="event.stopPropagation();"
+                          >View</a>
 
-      function isDesktopDirectory() {
-        return window.matchMedia("(min-width: 1025px)").matches;
-      }
+                          <!-- Save to list -->
+                          {% if current_user.is_authenticated and default_list_id %}
+                            <form
+                              method="post"
+                              action="{{ url_for('save_place_to_list', list_id=default_list_id) }}"
+                              class="disc-card__save-form"
+                              onclick="event.stopPropagation();"
+                            >
+                              <input type="hidden" name="name"      value="{{ place.name }}">
+                              <input type="hidden" name="address"   value="{{ place.address or '' }}">
+                              <input type="hidden" name="website"   value="{{ place.website or '' }}">
+                              <input type="hidden" name="category"  value="{{ place.category or '' }}">
+                              <input type="hidden" name="latitude"  value="{{ place.latitude or '' }}">
+                              <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
+                              <input type="hidden" name="listing_id" value="{{ place.id }}">
+                              <input type="hidden" name="place_id"  value="{{ place.place_id or '' }}">
+                              <button type="submit" class="disc-card__btn" aria-label="Save {{ place.name }}">
+                                + Save
+                              </button>
+                            </form>
+                          {% elif not current_user.is_authenticated %}
+                            <a
+                              href="{{ url_for('login') }}"
+                              class="disc-card__btn"
+                              onclick="event.stopPropagation();"
+                              aria-label="Log in to save {{ place.name }}"
+                            >+ Save</a>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
 
-      function escapeHtml(value) {
-        return String(value || "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
-
-      function getDirectionsUrl(addressText) {
-        return addressText
-          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`
-          : "#";
-      }
-
-      function setActiveDirectoryRow(card) {
-        document.querySelectorAll(".js-place-popup.is-selected").forEach((el) => {
-          el.classList.remove("is-selected");
-        });
-        card?.classList.add("is-selected");
-      }
-
-      async function loadListingPhotos(slug) {
-        if (!slug) return [];
-
-        try {
-          const res = await fetch(`/listing-data/${slug}`);
-          if (!res.ok) return [];
-
-          const data = await res.json();
-          const photos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
-
-          if (data.photo_url && !photos.includes(data.photo_url)) {
-            photos.unshift(data.photo_url);
-          }
-
-          return photos;
-        } catch (err) {
-          return [];
-        }
-      }
-
-      function renderSlider(index = 0) {
-        if (!track || !thumbs) return;
-
-        if (!popupPhotos.length) {
-          track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
-          thumbs.innerHTML = "";
-          if (prevBtn) prevBtn.style.display = "none";
-          if (nextBtn) nextBtn.style.display = "none";
-          return;
-        }
-
-        currentIndex = (index + popupPhotos.length) % popupPhotos.length;
-
-        if (prevBtn) prevBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
-        if (nextBtn) nextBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
-
-        track.innerHTML = `
-          <img src="${escapeHtml(popupPhotos[currentIndex])}" class="popup-slider__image" alt="">
-        `;
-
-        thumbs.innerHTML = popupPhotos.map((url, i) => `
-          <button
-            type="button"
-            class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}"
-            data-thumb="${i}"
-          >
-            <img src="${escapeHtml(url)}" alt="">
-          </button>
-        `).join("");
-
-        thumbs.querySelectorAll("[data-thumb]").forEach((btn) => {
-          btn.addEventListener("click", function () {
-            renderSlider(Number(btn.dataset.thumb));
-          });
-        });
-      }
-
-      function renderDesktopDetail(card, photos = []) {
-        if (!detailPanel) return;
-
-        const displayPhotos = photos.length
-          ? photos
-          : [card.dataset.photo || "/static/img/default-business.jpg"].filter(Boolean);
-
-        const primaryPhoto = displayPhotos[0] || card.dataset.photo || "/static/img/default-business.jpg";
-        const websiteHtml = card.dataset.website
-          ? `<a class="directory-detail-btn" href="${escapeHtml(card.dataset.website)}" target="_blank" rel="noopener">Website</a>`
-          : "";
-        const directionsHtml = card.dataset.address
-          ? `<a class="directory-detail-btn" href="${escapeHtml(getDirectionsUrl(card.dataset.address))}" target="_blank" rel="noopener">Directions</a>`
-          : "";
-        const listingHtml = card.dataset.listingUrl
-          ? `<a class="directory-detail-btn directory-detail-btn--primary" href="${escapeHtml(card.dataset.listingUrl)}">View listing</a>`
-          : "";
-
-        detailPanel.innerHTML = `
-          <article class="directory-detail-card">
-            <img class="directory-detail-hero" src="${escapeHtml(primaryPhoto)}" alt="${escapeHtml(card.dataset.name || "Local business")}">
-
-            <div class="directory-detail-body">
-              <p class="directory-detail-category">${escapeHtml(card.dataset.category || "Local business")}</p>
-              <h2>${escapeHtml(card.dataset.name || "Local business")}</h2>
-              <p class="directory-detail-address">${escapeHtml(card.dataset.address || "")}</p>
-
-              <div class="directory-detail-actions">
-                ${websiteHtml}
-                ${directionsHtml}
-                ${listingHtml}
-              </div>
-
-              <section class="directory-detail-gallery-section">
-                <h3>Photo gallery</h3>
-                <div class="directory-detail-gallery">
-                  <div class="photo-slider__viewport">
-                    <button type="button" class="slider-btn slider-btn--left" data-detail-prev>‹</button>
-                    <div id="directory-detail-slider-track"></div>
-                    <button type="button" class="slider-btn slider-btn--right" data-detail-next>›</button>
-                  </div>
-
-                  <div class="slider-thumbs" id="directory-detail-slider-thumbs"></div>
+                  {% endfor %}
                 </div>
               </section>
+
+              <!-- Right: sticky detail panel (desktop only) -->
+              <aside class="directory-detail-panel" id="directory-detail-panel" aria-live="polite">
+                <div class="directory-detail-empty">
+                  <div>
+                    <p class="directory-detail-empty__eyebrow">Preview</p>
+                    <h2>Select a place</h2>
+                    <p>Click any card to see photos, details, and actions here.</p>
+                  </div>
+                </div>
+              </aside>
+
+            </div><!-- /.discover-desktop-layout -->
+
+          {% else %}
+            <div class="disc-empty">
+              <h2>No places found</h2>
+              <p>Try a different search or category filter.</p>
             </div>
-          </article>
-        `;
-      }
+          {% endif %}
 
-      async function openDesktopDetail(card) {
-        setActiveDirectoryRow(card);
+        </div><!-- /.discover-shell -->
+      </section>
 
-        if (detailPanel) {
-          detailPanel.innerHTML = `
-            <div class="directory-detail-loading">
-              Loading ${escapeHtml(card.dataset.name || "place")}...
-            </div>
-          `;
-        }
+      <!-- Mobile tab bar (unchanged) -->
+      <nav class="mobile-tabbar mobile-only">
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🏠</span>
+          <span class="mobile-tabbar__label">Home</span>
+        </a>
+        <a href="/discover" class="mobile-tabbar__item is-active">
+          <span class="mobile-tabbar__icon">🗺️</span>
+          <span class="mobile-tabbar__label">Discover</span>
+        </a>
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🔎</span>
+          <span class="mobile-tabbar__label">Search</span>
+        </a>
+        <a href="{{ url_for('feed') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">📰</span>
+          <span class="mobile-tabbar__label">Feed</span>
+        </a>
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">👤</span>
+          <span class="mobile-tabbar__label">Account</span>
+        </a>
+      </nav>
 
-        const photos = await loadListingPhotos(card.dataset.slug);
-        renderDesktopDetail(card, photos);
-      }
+    </main>
+  </div>
+</div>
 
-      async function openMobilePopup(card) {
-        const slug = card.dataset.slug;
 
-        photo.src = card.dataset.photo || "/static/img/default-business.jpg";
-        name.textContent = card.dataset.name || "Local business";
-        category.textContent = card.dataset.category || "Local business";
-        address.textContent = card.dataset.address || "";
+<!-- ════════════════════════════════
+     MOBILE PLACE POPUP (unchanged structure, all same IDs)
+════════════════════════════════ -->
+<div class="place-popup" id="place-popup" hidden>
+  <div class="place-popup__backdrop" data-close-place-popup></div>
 
-        website.style.display = card.dataset.website ? "flex" : "none";
-        website.href = card.dataset.website || "#";
+  <div class="place-popup__card">
+    <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
 
-        listing.style.display = card.dataset.listingUrl ? "flex" : "none";
-        listing.href = card.dataset.listingUrl || "#";
+    <img id="place-popup-photo" class="place-popup__image" src="" alt="">
 
-        directions.href = getDirectionsUrl(card.dataset.address || "");
+    <div class="place-popup__body">
+      <p id="place-popup-category" class="place-popup__category"></p>
+      <h2 id="place-popup-name"></h2>
+      <p id="place-popup-address" class="place-popup__address"></p>
 
-        popup.hidden = false;
-        popupPhotos = [];
-        currentIndex = 0;
+      <div class="place-popup__actions">
+        <a id="place-popup-website"    class="place-popup__btn" target="_blank" rel="noopener">Website</a>
+        <a id="place-popup-directions" class="place-popup__btn" target="_blank" rel="noopener">Directions</a>
+        <a id="place-popup-listing"    class="place-popup__btn place-popup__btn--primary">View listing</a>
+      </div>
 
-        track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
-        thumbs.innerHTML = "";
+      <section class="place-popup__section">
+        <h3>Photo gallery</h3>
 
-        if (prevBtn) prevBtn.style.display = "none";
-        if (nextBtn) nextBtn.style.display = "none";
+        <div class="photo-slider" id="popup-slider">
+          <div class="photo-slider__viewport">
+            <button type="button" class="slider-btn slider-btn--left" data-slider-prev>‹</button>
+            <div class="slider-track" id="popup-slider-track"></div>
+            <button type="button" class="slider-btn slider-btn--right" data-slider-next>›</button>
+          </div>
+        </div>
 
-        if (!slug) {
-          track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
-          return;
-        }
+        <div class="slider-thumbs" id="popup-slider-thumbs"></div>
+      </section>
+    </div>
+  </div>
+</div>
 
-        popupPhotos = await loadListingPhotos(slug);
-        renderSlider(0);
-      }
 
-      prevBtn?.addEventListener("click", function (e) {
-        e.stopPropagation();
-        renderSlider(currentIndex - 1);
-      });
+<!-- ════════════════════════════════
+     JAVASCRIPT (all original logic preserved + card grid wiring)
+════════════════════════════════ -->
 
-      nextBtn?.addEventListener("click", function (e) {
-        e.stopPropagation();
-        renderSlider(currentIndex + 1);
-      });
+<script>
+/* ── Drawer ── */
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebar  = document.getElementById("app-sidebar");
+  const toggle   = document.getElementById("app-sidebar-toggle");
+  const closeBtn = document.getElementById("app-sidebar-close");
+  const backdrop = document.getElementById("app-sidebar-backdrop");
 
-      document.querySelectorAll(".js-place-popup").forEach((card) => {
-        card.addEventListener("click", async function (e) {
-          if (e.target.closest("a, button:not(.js-place-popup), form")) return;
+  function openDrawer()  { sidebar?.classList.add("is-open");    backdrop?.classList.add("is-open"); }
+  function closeDrawer() { sidebar?.classList.remove("is-open"); backdrop?.classList.remove("is-open"); }
 
-          if (isDesktopDirectory()) {
-            await openDesktopDetail(card);
-            return;
-          }
-
-          await openMobilePopup(card);
-        });
-      });
-
-      document.querySelectorAll("[data-close-place-popup]").forEach((el) => {
-        el.addEventListener("click", function () {
-          popup.hidden = true;
-          popupPhotos = [];
-          currentIndex = 0;
-          track.innerHTML = "";
-          thumbs.innerHTML = "";
-        });
-      });
-
-      const firstPlace = document.querySelector(".js-place-popup");
-      if (firstPlace && isDesktopDirectory()) {
-        openDesktopDetail(firstPlace);
-      }
-    });
-  </script>
+  toggle?.addEventListener("click", openDrawer);
+  closeBtn?.addEventListener("click", closeDrawer);
+  backdrop?.addEventListener("click", closeDrawer);
+});
+</script>
 
 
 <script>
+/* ── Place popup + desktop detail panel (all original logic) ── */
+document.addEventListener("DOMContentLoaded", function () {
+
+  const popup      = document.getElementById("place-popup");
+  const photo      = document.getElementById("place-popup-photo");
+  const name       = document.getElementById("place-popup-name");
+  const category   = document.getElementById("place-popup-category");
+  const address    = document.getElementById("place-popup-address");
+  const website    = document.getElementById("place-popup-website");
+  const directions = document.getElementById("place-popup-directions");
+  const listing    = document.getElementById("place-popup-listing");
+  const slider     = document.getElementById("popup-slider");
+  const track      = document.getElementById("popup-slider-track");
+  const thumbs     = document.getElementById("popup-slider-thumbs");
+  const prevBtn    = slider?.querySelector("[data-slider-prev]");
+  const nextBtn    = slider?.querySelector("[data-slider-next]");
+  const detailPanel = document.getElementById("directory-detail-panel");
+
+  let popupPhotos  = [];
+  let currentIndex = 0;
+
+  /* ── Helpers ── */
+  function isDesktop() { return window.matchMedia("(min-width: 1025px)").matches; }
+
+  function escapeHtml(v) {
+    return String(v || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function directionsUrl(addr) {
+    return addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : "#";
+  }
+
+  function setSelected(card) {
+    document.querySelectorAll(".js-place-popup.is-selected").forEach(el => el.classList.remove("is-selected"));
+    card?.classList.add("is-selected");
+  }
+
+  async function loadPhotos(slug) {
+    if (!slug) return [];
+    try {
+      const res  = await fetch(`/listing-data/${slug}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const arr  = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
+      if (data.photo_url && !arr.includes(data.photo_url)) arr.unshift(data.photo_url);
+      return arr;
+    } catch { return []; }
+  }
+
+  /* ── Mobile slider ── */
+  function renderSlider(index = 0) {
+    if (!track || !thumbs) return;
+
+    if (!popupPhotos.length) {
+      track.innerHTML  = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+      thumbs.innerHTML = "";
+      if (prevBtn) prevBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
+      return;
+    }
+
+    currentIndex = (index + popupPhotos.length) % popupPhotos.length;
+    if (prevBtn) prevBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
+    if (nextBtn) nextBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
+
+    track.innerHTML = `<img src="${escapeHtml(popupPhotos[currentIndex])}" class="popup-slider__image" alt="">`;
+
+    thumbs.innerHTML = popupPhotos.map((url, i) => `
+      <button type="button" class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}" data-thumb="${i}">
+        <img src="${escapeHtml(url)}" alt="">
+      </button>
+    `).join("");
+
+    thumbs.querySelectorAll("[data-thumb]").forEach(btn => {
+      btn.addEventListener("click", () => renderSlider(Number(btn.dataset.thumb)));
+    });
+  }
+
+  prevBtn?.addEventListener("click", e => { e.stopPropagation(); renderSlider(currentIndex - 1); });
+  nextBtn?.addEventListener("click", e => { e.stopPropagation(); renderSlider(currentIndex + 1); });
+
+  /* ── Desktop detail panel ── */
+  function renderDesktopDetail(card, photos = []) {
+    if (!detailPanel) return;
+
+    const displayPhotos = photos.length
+      ? photos
+      : [card.dataset.photo || "/static/img/default-business.jpg"].filter(Boolean);
+
+    const primaryPhoto = displayPhotos[0] || "/static/img/default-business.jpg";
+
+    const websiteHtml = card.dataset.website
+      ? `<a class="directory-detail-btn" href="${escapeHtml(card.dataset.website)}" target="_blank" rel="noopener">🌐 Website</a>`
+      : "";
+
+    const directionsHtml = card.dataset.address
+      ? `<a class="directory-detail-btn" href="${escapeHtml(directionsUrl(card.dataset.address))}" target="_blank" rel="noopener">📍 Directions</a>`
+      : "";
+
+    const listingHtml = card.dataset.listingUrl
+      ? `<a class="directory-detail-btn directory-detail-btn--primary" href="${escapeHtml(card.dataset.listingUrl)}">View listing</a>`
+      : "";
+
+    detailPanel.innerHTML = `
+      <article>
+        <img class="directory-detail-hero" src="${escapeHtml(primaryPhoto)}" alt="${escapeHtml(card.dataset.name || '')}">
+
+        <div class="directory-detail-body">
+          <p class="directory-detail-category">${escapeHtml((card.dataset.category || '').replace(/_/g, ' '))}</p>
+          <h2>${escapeHtml(card.dataset.name || 'Local business')}</h2>
+          <p class="directory-detail-address">${escapeHtml(card.dataset.address || '')}</p>
+
+          <div class="directory-detail-actions">
+            ${websiteHtml}
+            ${directionsHtml}
+            ${listingHtml}
+          </div>
+
+          <section class="directory-detail-gallery-section">
+            <h3>Photo gallery</h3>
+            <div>
+              <div class="photo-slider__viewport">
+                <button type="button" class="slider-btn slider-btn--left" data-detail-prev>‹</button>
+                <div id="directory-detail-slider-track"></div>
+                <button type="button" class="slider-btn slider-btn--right" data-detail-next>›</button>
+              </div>
+              <div class="slider-thumbs" id="directory-detail-slider-thumbs"></div>
+            </div>
+          </section>
+        </div>
+      </article>
+    `;
+
+    /* wire the detail panel slider */
+    detailPhotos = displayPhotos;
+    detailIndex  = 0;
+    renderDetailSlider(0);
+  }
+
+  async function openDesktopDetail(card) {
+    setSelected(card);
+    if (detailPanel) {
+      detailPanel.innerHTML = `<div class="directory-detail-loading">Loading ${escapeHtml(card.dataset.name || 'place')}…</div>`;
+    }
+    const photos = await loadPhotos(card.dataset.slug);
+    renderDesktopDetail(card, photos);
+  }
+
+  /* ── Mobile popup ── */
+  async function openMobilePopup(card) {
+    const slug     = card.dataset.slug;
+    photo.src      = card.dataset.photo || "/static/img/default-business.jpg";
+    name.textContent     = card.dataset.name || "Local business";
+    category.textContent = card.dataset.category || "Local business";
+    address.textContent  = card.dataset.address || "";
+
+    website.style.display  = card.dataset.website ? "flex" : "none";
+    website.href           = card.dataset.website || "#";
+    listing.style.display  = card.dataset.listingUrl ? "flex" : "none";
+    listing.href           = card.dataset.listingUrl || "#";
+    directions.href        = directionsUrl(card.dataset.address || "");
+
+    popup.hidden = false;
+    popupPhotos  = [];
+    currentIndex = 0;
+    track.innerHTML  = `<p class="place-popup__muted">Loading photos…</p>`;
+    thumbs.innerHTML = "";
+    if (prevBtn) prevBtn.style.display = "none";
+    if (nextBtn) nextBtn.style.display = "none";
+
+    if (!slug) {
+      track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
+      return;
+    }
+
+    popupPhotos = await loadPhotos(slug);
+    renderSlider(0);
+  }
+
+  /* ── Wire card clicks ── */
+  document.querySelectorAll(".js-place-popup").forEach(card => {
+    card.addEventListener("click", async function (e) {
+      /* don't intercept clicks on links/buttons/forms inside the card */
+      if (e.target.closest("a, button:not(.disc-card), form")) return;
+
+      if (isDesktop()) {
+        await openDesktopDetail(card);
+        return;
+      }
+      await openMobilePopup(card);
+    });
+
+    /* keyboard accessibility */
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        card.click();
+      }
+    });
+  });
+
+  /* Close popup */
+  document.querySelectorAll("[data-close-place-popup]").forEach(el => {
+    el.addEventListener("click", function () {
+      popup.hidden = true;
+      popupPhotos  = [];
+      currentIndex = 0;
+      if (track)  track.innerHTML  = "";
+      if (thumbs) thumbs.innerHTML = "";
+    });
+  });
+
+  /* Auto-open first card on desktop */
+  const firstCard = document.querySelector(".js-place-popup");
+  if (firstCard && isDesktop()) {
+    openDesktopDetail(firstCard);
+  }
+});
+</script>
+
+
+<script>
+/* ── Desktop detail panel photo slider ── */
 let detailPhotos = [];
-let detailIndex = 0;
+let detailIndex  = 0;
 
 function renderDetailSlider(index = 0) {
-  const track = document.getElementById("directory-detail-slider-track");
+  const track  = document.getElementById("directory-detail-slider-track");
   const thumbs = document.getElementById("directory-detail-slider-thumbs");
-  const prev = document.querySelector("[data-detail-prev]");
-  const next = document.querySelector("[data-detail-next]");
+  const prev   = document.querySelector("[data-detail-prev]");
+  const next   = document.querySelector("[data-detail-next]");
 
   if (!track || !thumbs) return;
 
   if (!detailPhotos.length) {
-    track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
+    track.innerHTML  = `<p class="place-popup__muted">No gallery photos yet.</p>`;
     thumbs.innerHTML = "";
     if (prev) prev.style.display = "none";
     if (next) next.style.display = "none";
@@ -536,9 +1113,7 @@ function renderDetailSlider(index = 0) {
 
   detailIndex = (index + detailPhotos.length) % detailPhotos.length;
 
-  track.innerHTML = `
-    <img src="${detailPhotos[detailIndex]}" class="popup-slider__image" alt="">
-  `;
+  track.innerHTML = `<img src="${detailPhotos[detailIndex]}" class="popup-slider__image" alt="">`;
 
   thumbs.innerHTML = detailPhotos.map((url, i) => `
     <button type="button" class="popup-slider__thumb ${i === detailIndex ? "is-active" : ""}" data-detail-thumb="${i}">
@@ -549,16 +1124,14 @@ function renderDetailSlider(index = 0) {
   if (prev) prev.style.display = detailPhotos.length > 1 ? "flex" : "none";
   if (next) next.style.display = detailPhotos.length > 1 ? "flex" : "none";
 
-  thumbs.querySelectorAll("[data-detail-thumb]").forEach((btn) => {
+  thumbs.querySelectorAll("[data-detail-thumb]").forEach(btn => {
     btn.onclick = () => renderDetailSlider(Number(btn.dataset.detailThumb));
   });
 
-  prev.onclick = () => renderDetailSlider(detailIndex - 1);
-  next.onclick = () => renderDetailSlider(detailIndex + 1);
+  if (prev) prev.onclick = () => renderDetailSlider(detailIndex - 1);
+  if (next) next.onclick = () => renderDetailSlider(detailIndex + 1);
 }
 </script>
-
-
 
 </body>
 </html>
