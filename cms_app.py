@@ -46,7 +46,7 @@ from flask_login import LoginManager
 from flask import request, render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, SavedList, SavedPlace, BusinessClaim, UserSavedList
+from models import db, User, SavedList, SavedPlace, BusinessClaim, UserSavedList, SharedList
 
 
 
@@ -155,6 +155,21 @@ def create_core_tables():
             );
         """))
         
+        
+        # ---------------------------------------------------
+        # friendships
+        # ---------------------------------------------------
+        
+        conn.execute(sql_text("""
+            CREATE TABLE friendships (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                requester_id INTEGER REFERENCES users(id),
+                addressee_id INTEGER REFERENCES users(id),
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(requester_id, addressee_id)
+);
+        """))
         
         # ---------------------------------------------------
         # Social Section
@@ -4680,9 +4695,124 @@ def enrich_internal_results_with_ratings(results: list) -> list:
             result.setdefault("review_count", 0)
 
     return results  
+
+
+
+# ─────────────────────────────────────────────
+# FRIENDSHIP MODEL
+# Add this near your other model definitions
+# (wherever User, SavedList, etc. are defined)
+# ─────────────────────────────────────────────
+
+class Friendship(db.Model):
+    __tablename__ = 'friendships'
+
+    id            = db.Column(db.Integer, primary_key=True)
+    requester_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    addressee_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status        = db.Column(db.String(20), default='pending', nullable=False)
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships — lets you do friendship.requester.name etc.
+    requester = db.relationship('User', foreign_keys=[requester_id], backref='sent_requests')
+    addressee = db.relationship('User', foreign_keys=[addressee_id], backref='received_requests')
+
+    # Prevent duplicate rows in both directions
+    __table_args__ = (
+        db.UniqueConstraint('requester_id', 'addressee_id', name='unique_friendship'),
+    )
+
+    def to_dict(self, current_user_id):
+        """Return the *other* person's info from the perspective of current_user."""
+        if self.requester_id == current_user_id:
+            other = self.addressee
+        else:
+            other = self.requester
+        return {
+            'friendship_id': self.id,
+            'status':        self.status,
+            'user_id':       other.id,
+            'name':          other.name or other.email.split('@')[0],
+            'email':         other.email,
+            'photo_url':     getattr(other, 'photo_url', None),
+        }
     
     
-    
+  # Search users to add as friends
+@app.route('/friends/search')
+@login_required
+def friends_search():
+    q = request.args.get('q', '').strip()
+    users = User.query.filter(
+        User.email.ilike(f'%{q}%'),
+        User.id != current_user.id
+    ).limit(8).all()
+    return jsonify([{'id': u.id, 'name': u.name, 'email': u.email} for u in users])
+
+# Send a friend request
+@app.route('/friends/request', methods=['POST'])
+@login_required
+def friends_request():
+    addressee_id = request.json.get('user_id')
+    existing = Friendship.query.filter_by(
+        requester_id=current_user.id, addressee_id=addressee_id
+    ).first()
+    if existing:
+        return jsonify({'error': 'Already sent'}), 400
+    f = Friendship(requester_id=current_user.id, addressee_id=addressee_id)
+    db.session.add(f)
+    db.session.commit()
+    return jsonify({'ok': True})
+
+# Accept or decline
+@app.route('/friends/respond', methods=['POST'])
+@login_required
+def friends_respond():
+    friendship_id = request.json.get('friendship_id')
+    action = request.json.get('action')  # 'accept' or 'decline'
+    f = Friendship.query.get(friendship_id)
+    if f.addressee_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    if action == 'accept':
+        f.status = 'accepted'
+        db.session.commit()
+    else:
+        db.session.delete(f)
+        db.session.commit()
+    return jsonify({'ok': True})
+
+# List all accepted friends
+@app.route('/friends')
+@login_required
+def friends_list():
+    friends = Friendship.query.filter(
+        ((Friendship.requester_id == current_user.id) |
+         (Friendship.addressee_id == current_user.id)),
+        Friendship.status == 'accepted'
+    ).all()
+    return jsonify([...])  # serialize friend user objects
+
+# Get pending incoming requests
+@app.route('/friends/requests')
+@login_required
+def friends_requests():
+    pending = Friendship.query.filter_by(
+        addressee_id=current_user.id, status='pending'
+    ).all()
+    return jsonify([...])
+
+# Share a list directly to a friend (extends your existing shared_lists)
+@app.route('/lists/share/friend', methods=['POST'])
+@login_required
+def share_list_to_friend():
+    list_id = request.json.get('list_id')
+    friend_id = request.json.get('friend_id')
+    # reuse your existing SharedList model
+    share = SharedList(list_id=list_id, shared_by=current_user.id,
+                       shared_with=friend_id)
+    db.session.add(share)
+    db.session.commit()
+    return jsonify({'ok': True})  
     
     
     

@@ -4,532 +4,184 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Account · Local AI</title>
-
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
-
   <style>
-    /* ── Account page scoped styles ── */
+    .acct-hero{display:flex;align-items:center;gap:16px;padding:20px 16px 16px}
+    .acct-avatar-form{flex-shrink:0;margin:0;padding:0}
+    .acct-avatar-label{position:relative;display:block;width:72px;height:72px;border-radius:50%;overflow:hidden;cursor:pointer;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);transition:border-color 0.18s}
+    .acct-avatar-label:hover{border-color:rgba(157,232,200,0.6)}
+    .acct-avatar-label img,.acct-avatar-fallback{width:100%;height:100%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#7ee2bf}
+    .acct-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#10a37f;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #050505;pointer-events:none}
+    .acct-profile-info{flex:1;min-width:0}
+    .acct-profile-name{font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.03em;line-height:1.1;margin:0 0 3px}
+    .acct-profile-city{font-size:13px;color:rgba(255,255,255,0.45);margin:0 0 10px}
+    .acct-profile-btns{display:flex;gap:8px}
+    .acct-btn{height:34px;padding:0 14px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s}
+    .acct-btn:active{transform:scale(0.95)}
+    .acct-btn--primary{background:#10a37f;color:#fff}
+    .acct-btn--primary:hover{background:#0d8a6c}
+    .acct-btn--ghost{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.72);border:0.5px solid rgba(255,255,255,0.12)}
+    .acct-btn--ghost:hover{background:rgba(255,255,255,0.12);color:#fff}
+    .acct-stats{display:flex;gap:8px;padding:0 16px 16px}
+    .acct-stat{flex:1;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:11px 8px;display:flex;flex-direction:column;align-items:center;text-decoration:none;transition:background 0.15s}
+    .acct-stat--cta{background:rgba(16,163,127,0.1);border-color:rgba(16,163,127,0.28);cursor:pointer;justify-content:center}
+    .acct-stat--cta:hover{background:rgba(16,163,127,0.18)}
+    .acct-stat__num{font-size:22px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+    .acct-stat__lbl{font-size:10px;color:rgba(255,255,255,0.38);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+    .acct-stat--cta .acct-stat__lbl{font-size:13px;font-weight:800;color:#7ee2bf;margin:0;text-transform:none;letter-spacing:0}
+    .acct-notif-banner{margin:0 16px 14px;padding:11px 14px;background:rgba(16,163,127,0.08);border:0.5px solid rgba(16,163,127,0.28);border-radius:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.15s}
+    .acct-notif-banner:hover{background:rgba(16,163,127,0.14)}
+    .acct-notif-banner__left{display:flex;align-items:center;gap:9px}
+    .acct-notif-live-dot{width:8px;height:8px;border-radius:50%;background:#10a37f;flex-shrink:0;animation:liveDocPulse 2.2s ease-in-out infinite}
+    @keyframes liveDocPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+    .acct-notif-banner__text{font-size:13px;font-weight:700;color:#7ee2bf}
+    .acct-notif-banner__badge{width:22px;height:22px;border-radius:50%;background:#10a37f;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+    .notifications-panel{display:none;margin:-6px 16px 14px;padding:14px;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.07);border-top:none;border-radius:0 0 14px 14px}
+    .notifications-panel.is-open{display:block}
+    .acct-header-icon-wrap{position:relative;display:inline-flex}
+    .acct-bell-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#10a37f;border:1.5px solid #050505;pointer-events:none}
+    .acct-map-card{margin:0 16px 16px;border-radius:20px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.08);background:#111214}
+    .acct-map-card .account-map{width:100%;height:210px;min-height:0;border-radius:0}
+    .acct-map-chips{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:10px 12px;border-top:0.5px solid rgba(255,255,255,0.07)}
+    .acct-map-chips::-webkit-scrollbar{display:none}
+    .acct-map-chip{flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;font-size:11.5px;font-weight:600;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.55);cursor:pointer;white-space:nowrap;transition:all 0.15s}
+    .acct-map-chip:hover{background:rgba(255,255,255,0.09);color:rgba(255,255,255,0.85)}
+    .acct-map-chip.is-active{background:rgba(16,163,127,0.18);border-color:rgba(16,163,127,0.42);color:#7ee2bf}
+    .acct-map-chip-divider{color:rgba(255,255,255,0.15);font-size:13px;flex-shrink:0;padding:0 2px;pointer-events:none}
+    .acct-section-header{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 10px}
+    .acct-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.3)}
+    .acct-section-action{font-size:13px;font-weight:700;color:#7ee2bf;text-decoration:none}
+    .acct-section-action:hover{opacity:0.75}
+    .acct-lists-stack{display:flex;flex-direction:column;gap:12px}
+    .acct-list-card{margin:0 16px;background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;transition:border-color 0.18s}
+    .acct-list-card:hover{border-color:rgba(157,232,200,0.2)}
+    .acct-list-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 14px 10px}
+    .acct-list-card__name{font-size:17px;font-weight:900;color:#fff;letter-spacing:-0.025em;line-height:1.15;margin:0 0 3px}
+    .acct-list-card__meta{font-size:12px;color:rgba(255,255,255,0.38);margin:0}
+    .acct-list-badge{flex-shrink:0;height:24px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;margin-top:2px;background:rgba(16,163,127,0.14);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.3)}
+    .acct-list-badge--private{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);border-color:rgba(255,255,255,0.1)}
+    .acct-thumb-strip{display:flex;gap:8px;padding:0 14px 14px;overflow-x:auto;scrollbar-width:none}
+    .acct-thumb-strip::-webkit-scrollbar{display:none}
+    .acct-place-thumb{flex-shrink:0;width:92px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;transition:border-color 0.15s,transform 0.15s}
+    .acct-place-thumb:hover{border-color:rgba(255,255,255,0.18);transform:translateY(-2px)}
+    .acct-place-thumb:active{transform:scale(0.95)}
+    .acct-place-thumb__img{width:100%;height:62px;overflow:hidden;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
+    .acct-place-thumb__img img{width:100%;height:100%;object-fit:cover;display:block}
+    .acct-place-thumb__emoji{font-size:22px}
+    .acct-place-thumb__body{padding:7px 8px 8px}
+    .acct-place-thumb__name{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+    .acct-place-thumb__cat{font-size:10px;color:rgba(255,255,255,0.38);margin-top:1px;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-place-thumb--add{border-style:dashed;border-color:rgba(255,255,255,0.12);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px;gap:4px}
+    .acct-place-thumb--add:hover{border-color:rgba(157,232,200,0.3);background:rgba(16,163,127,0.06)}
+    .acct-place-thumb--add span:first-child{font-size:18px;color:rgba(255,255,255,0.28);line-height:1}
+    .acct-place-thumb--add span:last-child{font-size:10px;font-weight:700;color:rgba(255,255,255,0.3)}
+    .acct-list-empty{padding:0 14px 14px;font-size:13px;color:rgba(255,255,255,0.38)}
+    .acct-list-empty a{color:#7ee2bf;font-weight:700;text-decoration:none}
+    .acct-list-card__foot{border-top:0.5px solid rgba(255,255,255,0.07);padding:10px 14px;display:flex;gap:8px}
+    .acct-foot-btn{height:30px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.65);font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;transition:all 0.15s}
+    .acct-foot-btn:hover{background:rgba(255,255,255,0.11);color:#fff}
+    .acct-foot-btn:active{transform:scale(0.95)}
+    .acct-foot-btn--share{background:rgba(16,163,127,0.1);border-color:rgba(16,163,127,0.3);color:#7ee2bf}
+    .acct-foot-btn--share:hover{background:rgba(16,163,127,0.18)}
+    .acct-info-panel{margin:20px 16px 0}
 
-    /* Profile hero: left-aligned */
-    .acct-hero {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 20px 16px 16px;
-    }
+    /* FRIENDS */
+    .acct-friends-section{margin:0 16px 24px}
+    .friends-add-bar{display:flex;gap:8px;margin-bottom:14px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.09);border-radius:16px;padding:8px 8px 8px 14px;transition:border-color 0.18s}
+    .friends-add-bar:focus-within{border-color:rgba(16,163,127,0.45);box-shadow:0 0 0 3px rgba(16,163,127,0.07)}
+    .friends-add-input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px;padding:4px 0}
+    .friends-add-input::placeholder{color:rgba(255,255,255,0.28)}
+    .friends-add-btn{height:34px;padding:0 14px;border:none;border-radius:10px;background:#10a37f;color:#fff;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background 0.15s;white-space:nowrap}
+    .friends-add-btn:hover{background:#0d8a6c}
+    .friends-add-btn:active{transform:scale(0.95)}
+    .friends-search-results{background:#13151a;border:0.5px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;margin-bottom:14px;display:none}
+    .friends-search-results.is-open{display:block}
+    .friends-search-result{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:0.5px solid rgba(255,255,255,0.05);transition:background 0.15s}
+    .friends-search-result:last-child{border-bottom:none}
+    .friends-search-result:hover{background:rgba(255,255,255,0.03)}
+    .friends-result-avatar{width:36px;height:36px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
+    .friends-result-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .friends-result-info{flex:1;min-width:0}
+    .friends-result-name{font-size:14px;font-weight:700;color:#fff}
+    .friends-result-email{font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px}
+    .friends-result-action{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .friends-result-action--add{background:rgba(16,163,127,0.15);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.35)}
+    .friends-result-action--add:hover{background:rgba(16,163,127,0.25)}
+    .friends-result-action--pending,.friends-result-action--friends{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.42);border:0.5px solid rgba(255,255,255,0.1);cursor:default}
+    .friends-pending-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(245,179,1,0.08);border:0.5px solid rgba(245,179,1,0.28);border-radius:14px;margin-bottom:12px;cursor:pointer;transition:background 0.15s}
+    .friends-pending-banner:hover{background:rgba(245,179,1,0.14)}
+    .friends-pending-dot{width:8px;height:8px;border-radius:50%;background:#f5b301;flex-shrink:0}
+    .friends-pending-text{flex:1;font-size:13px;font-weight:700;color:#f5d87a}
+    .friends-pending-count{width:22px;height:22px;border-radius:50%;background:#f5b301;color:#07110d;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+    .friends-pending-panel{display:none;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;margin-bottom:12px}
+    .friends-pending-panel.is-open{display:block}
+    .friends-list{display:flex;flex-direction:column;gap:8px}
+    .friend-row{display:flex;align-items:center;gap:12px;background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px 14px;transition:border-color 0.15s}
+    .friend-row:hover{border-color:rgba(255,255,255,0.13)}
+    .friend-avatar{width:40px;height:40px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
+    .friend-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .friend-info{flex:1;min-width:0}
+    .friend-name{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .friend-meta{font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px}
+    .friend-actions{display:flex;gap:6px;flex-shrink:0}
+    .friend-action-btn{height:28px;padding:0 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.58);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .friend-action-btn:hover{background:rgba(255,255,255,0.11);color:#fff}
+    .friend-action-btn--accept{background:rgba(16,163,127,0.15);border-color:rgba(16,163,127,0.35);color:#7ee2bf}
+    .friend-action-btn--accept:hover{background:rgba(16,163,127,0.25)}
+    .friend-action-btn--decline{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);color:#f87171}
+    .friend-action-btn--decline:hover{background:rgba(239,68,68,0.18)}
+    .friends-empty{text-align:center;padding:24px 16px;color:rgba(255,255,255,0.35);font-size:13px}
+    .friends-empty-icon{font-size:32px;margin-bottom:10px;opacity:0.45}
+    .friends-loading{text-align:center;padding:20px;color:rgba(255,255,255,0.32);font-size:13px}
 
-    .acct-avatar-form { flex-shrink: 0; margin: 0; padding: 0; }
-
-    .acct-avatar-label {
-      position: relative;
-      display: block;
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      overflow: hidden;
-      cursor: pointer;
-      background: rgba(16,163,127,0.18);
-      border: 2px solid rgba(157,232,200,0.28);
-      transition: border-color 0.18s;
-    }
-    .acct-avatar-label:hover { border-color: rgba(157,232,200,0.6); }
-
-    .acct-avatar-label img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .acct-avatar-fallback {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      font-weight: 800;
-      color: #7ee2bf;
-    }
-
-    .acct-avatar-edit {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #10a37f;
-      color: #fff;
-      font-size: 11px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #050505;
-      pointer-events: none;
-    }
-
-    .acct-profile-info { flex: 1; min-width: 0; }
-
-    .acct-profile-name {
-      font-size: 22px;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin: 0 0 3px;
-    }
-
-    .acct-profile-city {
-      font-size: 13px;
-      color: rgba(255,255,255,0.45);
-      margin: 0 0 10px;
-    }
-
-    .acct-profile-btns { display: flex; gap: 8px; }
-
-    .acct-btn {
-      height: 34px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: none;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      transition: all 0.15s;
-    }
-    .acct-btn:active { transform: scale(0.95); }
-    .acct-btn--primary { background: #10a37f; color: #fff; }
-    .acct-btn--primary:hover { background: #0d8a6c; }
-    .acct-btn--ghost {
-      background: rgba(255,255,255,0.07);
-      color: rgba(255,255,255,0.72);
-      border: 0.5px solid rgba(255,255,255,0.12);
-    }
-    .acct-btn--ghost:hover { background: rgba(255,255,255,0.12); color: #fff; }
-
-    /* Stats row */
-    .acct-stats {
-      display: flex;
-      gap: 8px;
-      padding: 0 16px 16px;
-    }
-
-    .acct-stat {
-      flex: 1;
-      background: rgba(255,255,255,0.04);
-      border: 0.5px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 11px 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-decoration: none;
-      cursor: default;
-      transition: background 0.15s;
-    }
-    .acct-stat--cta {
-      background: rgba(16,163,127,0.1);
-      border-color: rgba(16,163,127,0.28);
-      cursor: pointer;
-      justify-content: center;
-    }
-    .acct-stat--cta:hover { background: rgba(16,163,127,0.18); }
-
-    .acct-stat__num {
-      font-size: 22px;
-      font-weight: 900;
-      color: #fff;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-    .acct-stat__lbl {
-      font-size: 10px;
-      color: rgba(255,255,255,0.38);
-      margin-top: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-    .acct-stat--cta .acct-stat__lbl {
-      font-size: 13px;
-      font-weight: 800;
-      color: #7ee2bf;
-      margin: 0;
-      text-transform: none;
-      letter-spacing: 0;
-    }
-
-    /* Notification banner */
-    .acct-notif-banner {
-      margin: 0 16px 14px;
-      padding: 11px 14px;
-      background: rgba(16,163,127,0.08);
-      border: 0.5px solid rgba(16,163,127,0.28);
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .acct-notif-banner:hover { background: rgba(16,163,127,0.14); }
-
-    .acct-notif-banner__left {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .acct-notif-live-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10a37f;
-      flex-shrink: 0;
-      animation: liveDocPulse 2.2s ease-in-out infinite;
-    }
-
-    @keyframes liveDocPulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.7); }
-    }
-
-    .acct-notif-banner__text {
-      font-size: 13px;
-      font-weight: 700;
-      color: #7ee2bf;
-    }
-
-    .acct-notif-banner__badge {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #10a37f;
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Notifications panel */
-    .notifications-panel {
-      display: none;
-      margin: -6px 16px 14px;
-      padding: 14px;
-      background: rgba(255,255,255,0.03);
-      border: 0.5px solid rgba(255,255,255,0.07);
-      border-top: none;
-      border-radius: 0 0 14px 14px;
-    }
-    .notifications-panel.is-open { display: block; }
-
-    /* Bell dot on header */
-    .acct-header-icon-wrap {
-      position: relative;
-      display: inline-flex;
-    }
-    .acct-bell-dot {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10a37f;
-      border: 1.5px solid #050505;
-      pointer-events: none;
-    }
-
-    /* Map card with inline chip filters */
-    .acct-map-card {
-      margin: 0 16px 16px;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 0.5px solid rgba(255,255,255,0.08);
-      background: #111214;
-    }
-
-    .acct-map-card .account-map {
-      width: 100%;
-      height: 210px;
-      min-height: 0;
-      border-radius: 0;
-    }
-
-    .acct-map-chips {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding: 10px 12px;
-      border-top: 0.5px solid rgba(255,255,255,0.07);
-    }
-    .acct-map-chips::-webkit-scrollbar { display: none; }
-
-    .acct-map-chip {
-      flex-shrink: 0;
-      height: 28px;
-      padding: 0 11px;
-      border-radius: 999px;
-      font-size: 11.5px;
-      font-weight: 600;
-      border: 0.5px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.55);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .acct-map-chip:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.85); }
-    .acct-map-chip.is-active {
-      background: rgba(16,163,127,0.18);
-      border-color: rgba(16,163,127,0.42);
-      color: #7ee2bf;
-    }
-
-    .acct-map-chip-divider {
-      color: rgba(255,255,255,0.15);
-      font-size: 13px;
-      flex-shrink: 0;
-      padding: 0 2px;
-      pointer-events: none;
-    }
-
-    /* Section header */
-    .acct-section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 16px 10px;
-    }
-    .acct-section-lbl {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: rgba(255,255,255,0.3);
-    }
-    .acct-section-action {
-      font-size: 13px;
-      font-weight: 700;
-      color: #7ee2bf;
-      text-decoration: none;
-    }
-    .acct-section-action:hover { opacity: 0.75; }
-
-    /* List cards */
-    .acct-lists-stack { display: flex; flex-direction: column; gap: 12px; }
-
-    .acct-list-card {
-      margin: 0 16px;
-      background: #13151a;
-      border: 0.5px solid rgba(255,255,255,0.08);
-      border-radius: 20px;
-      overflow: hidden;
-      transition: border-color 0.18s;
-    }
-    .acct-list-card:hover { border-color: rgba(157,232,200,0.2); }
-
-    .acct-list-card__head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 14px 14px 10px;
-    }
-
-    .acct-list-card__name {
-      font-size: 17px;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: -0.025em;
-      line-height: 1.15;
-      margin: 0 0 3px;
-    }
-
-    .acct-list-card__meta {
-      font-size: 12px;
-      color: rgba(255,255,255,0.38);
-      margin: 0;
-    }
-
-    .acct-list-badge {
-      flex-shrink: 0;
-      height: 24px;
-      padding: 0 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      margin-top: 2px;
-      background: rgba(16,163,127,0.14);
-      color: #7ee2bf;
-      border: 0.5px solid rgba(16,163,127,0.3);
-    }
-    .acct-list-badge--private {
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.4);
-      border-color: rgba(255,255,255,0.1);
-    }
-
-    /* Place thumbnail strip */
-    .acct-thumb-strip {
-      display: flex;
-      gap: 8px;
-      padding: 0 14px 14px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .acct-thumb-strip::-webkit-scrollbar { display: none; }
-
-    .acct-place-thumb {
-      flex-shrink: 0;
-      width: 92px;
-      background: rgba(255,255,255,0.04);
-      border: 0.5px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      overflow: hidden;
-      cursor: pointer;
-      text-decoration: none;
-      transition: border-color 0.15s, transform 0.15s;
-    }
-    .acct-place-thumb:hover {
-      border-color: rgba(255,255,255,0.18);
-      transform: translateY(-2px);
-    }
-    .acct-place-thumb:active { transform: scale(0.95); }
-
-    .acct-place-thumb__img {
-      width: 100%;
-      height: 62px;
-      overflow: hidden;
-      background: rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .acct-place-thumb__img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .acct-place-thumb__emoji { font-size: 22px; }
-
-    .acct-place-thumb__body { padding: 7px 8px 8px; }
-    .acct-place-thumb__name {
-      font-size: 11px;
-      font-weight: 700;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.2;
-    }
-    .acct-place-thumb__cat {
-      font-size: 10px;
-      color: rgba(255,255,255,0.38);
-      margin-top: 1px;
-      text-transform: capitalize;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Add-place dashed thumb */
-    .acct-place-thumb--add {
-      border-style: dashed;
-      border-color: rgba(255,255,255,0.12);
-      background: transparent;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 90px;
-      gap: 4px;
-    }
-    .acct-place-thumb--add:hover {
-      border-color: rgba(157,232,200,0.3);
-      background: rgba(16,163,127,0.06);
-    }
-    .acct-place-thumb--add .acct-thumb-add-icon {
-      font-size: 18px;
-      color: rgba(255,255,255,0.28);
-      line-height: 1;
-    }
-    .acct-place-thumb--add .acct-thumb-add-lbl {
-      font-size: 10px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.3);
-    }
-
-    /* Empty list state */
-    .acct-list-empty {
-      padding: 0 14px 14px;
-      font-size: 13px;
-      color: rgba(255,255,255,0.38);
-    }
-    .acct-list-empty a { color: #7ee2bf; font-weight: 700; text-decoration: none; }
-
-    /* Card footer */
-    .acct-list-card__foot {
-      border-top: 0.5px solid rgba(255,255,255,0.07);
-      padding: 10px 14px;
-      display: flex;
-      gap: 8px;
-    }
-
-    .acct-foot-btn {
-      height: 30px;
-      padding: 0 12px;
-      border-radius: 999px;
-      border: 0.5px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.65);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      transition: all 0.15s;
-    }
-    .acct-foot-btn:hover { background: rgba(255,255,255,0.11); color: #fff; }
-    .acct-foot-btn:active { transform: scale(0.95); }
-    .acct-foot-btn--share {
-      background: rgba(16,163,127,0.1);
-      border-color: rgba(16,163,127,0.3);
-      color: #7ee2bf;
-    }
-    .acct-foot-btn--share:hover { background: rgba(16,163,127,0.18); }
-
-    /* Account panel spacing */
-    .acct-info-panel { margin: 20px 16px 0; }
-
-    @media (min-width: 1025px) {
-      .mobile-tabbar { display: none !important; }
-    }
+    /* SHARE MODAL V2 */
+    .share-modal-v2[hidden]{display:none !important}
+    .share-modal-v2{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center}
+    .share-modal-v2__backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.58);backdrop-filter:blur(5px)}
+    .share-modal-v2__panel{position:relative;z-index:1;width:min(560px,calc(100vw - 16px));background:#13151a;border:0.5px solid rgba(255,255,255,0.1);border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:85dvh;overflow-y:auto;animation:shareSlideUp 0.28s cubic-bezier(0.22,1,0.36,1) both}
+    @keyframes shareSlideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+    .share-modal-v2__handle-wrap{display:flex;justify-content:center;margin-bottom:16px}
+    .share-modal-v2__handle{width:36px;height:4px;background:rgba(255,255,255,0.14);border-radius:2px}
+    .share-modal-v2__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    .share-modal-v2__title{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.02em}
+    .share-modal-v2__close{width:34px;height:34px;border:none;border-radius:10px;background:rgba(255,255,255,0.08);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .share-modal-v2__close:hover{background:rgba(255,255,255,0.13)}
+    .share-modal-v2__list-name{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:18px}
+    .share-tabs{display:flex;gap:4px;padding:2px;background:rgba(255,255,255,0.05);border-radius:12px;margin-bottom:16px}
+    .share-tab{flex:1;height:34px;border:none;border-radius:10px;background:transparent;color:rgba(255,255,255,0.45);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .share-tab.is-active{background:#fff;color:#111}
+    .share-tab-panel{display:none}
+    .share-tab-panel.is-active{display:block}
+    .share-friend-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(255,255,255,0.05)}
+    .share-friend-row:last-child{border-bottom:none}
+    .share-friend-avatar{width:36px;height:36px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.22);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
+    .share-friend-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .share-friend-name{flex:1;font-size:14px;font-weight:700;color:#fff;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .share-friend-btn{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(16,163,127,0.35);background:rgba(16,163,127,0.12);color:#7ee2bf;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .share-friend-btn:hover{background:rgba(16,163,127,0.22)}
+    .share-friend-btn:active{transform:scale(0.95)}
+    .share-friend-btn--sent{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);cursor:default}
+    .share-no-friends{text-align:center;padding:20px;color:rgba(255,255,255,0.35);font-size:13px}
+    .share-search-input{width:100%;height:42px;padding:0 14px;border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.05);color:#fff;font-size:14px;outline:none;transition:border-color 0.18s;margin-bottom:12px;box-sizing:border-box}
+    .share-search-input:focus{border-color:rgba(16,163,127,0.45)}
+    .share-search-input::placeholder{color:rgba(255,255,255,0.28)}
+    .share-user-results-v2{display:flex;flex-direction:column;max-height:260px;overflow-y:auto}
+    .share-user-row-v2{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.15s;border-radius:10px}
+    .share-user-row-v2:last-child{border-bottom:none}
+    .share-user-row-v2 input[type="radio"]{display:none}
+    .share-user-check-v2{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:transparent;font-size:13px;flex-shrink:0;transition:all 0.15s}
+    .share-user-name-v2{flex:1;font-size:14px;font-weight:600;color:#fff}
+    .share-submit-btn{width:100%;height:46px;border-radius:14px;border:none;background:#10a37f;color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:14px;transition:background 0.15s,transform 0.1s}
+    .share-submit-btn:hover{background:#0d8a6c}
+    .share-submit-btn:active{transform:scale(0.97)}
+    @media(min-width:1025px){.mobile-tabbar{display:none !important}}
   </style>
 </head>
-
 <body class="app-body page-account">
 <div class="app-shell">
 
-  <!-- ════════════════════════════════
-       DESKTOP SIDEBAR
-  ════════════════════════════════ -->
   <aside class="app-sidebar desktop-sidebar">
     <div class="app-sidebar__top">
       <div class="app-brand">
@@ -537,18 +189,10 @@
         <div class="app-brand__subtitle">Recommendations near you</div>
       </div>
       <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">
-        {% if user.profile_image_url %}
-          <img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
-        {% else %}
-          {{ (user.name or user.email or "U")[0]|upper }}
-        {% endif %}
+        {% if user.profile_image_url %}<img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}{{ (user.name or user.email or "U")[0]|upper }}{% endif %}
       </a>
     </div>
-
-    <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">
-      + New search
-    </button>
-
+    <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">+ New search</button>
     <nav class="app-sidebar__nav">
       <a href="/" class="app-sidebar__link">AI Search</a>
       <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
@@ -560,35 +204,22 @@
       <a href="{{ url_for('account') }}" class="app-sidebar__link is-active">Account</a>
       <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
     </nav>
-
     <div class="app-sidebar__section-label">Account</div>
-
     <div class="app-sidebar__footer">
       <a href="/" class="app-sidebar__footer-link">Home</a>
       <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
       <a href="{{ url_for('account') }}" class="app-sidebar__footer-link is-active">Account</a>
-      <form method="post" action="{{ url_for('logout') }}">
-        <button type="submit" class="app-sidebar__footer-button">Log out</button>
-      </form>
+      <form method="post" action="{{ url_for('logout') }}"><button type="submit" class="app-sidebar__footer-button">Log out</button></form>
     </div>
   </aside>
 
-  <!-- ════════════════════════════════
-       MOBILE SHELL
-  ════════════════════════════════ -->
   <div class="mobile-app-shell">
-
-    <!-- Mobile drawer -->
     <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
       <div class="mobile-drawer__header">
         <div class="mobile-drawer__title">Local AI</div>
         <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
       </div>
-
-      <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">
-        + New search
-      </button>
-
+      <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">+ New search</button>
       <nav class="mobile-drawer__nav">
         <a href="/" class="mobile-drawer__link">AI Search</a>
         <a href="/search?q=coffee near me" class="mobile-drawer__link">Coffee</a>
@@ -599,41 +230,29 @@
         <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
         <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active">Account</a>
       </nav>
-
       <div class="mobile-drawer__section-label">Account</div>
-
       <div class="mobile-drawer__footer">
         <a href="/" class="mobile-drawer__footer-link">Home</a>
         <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
         {% if current_user.is_authenticated %}
           <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link is-active">Account</a>
           <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
-          <form method="post" action="{{ url_for('logout') }}">
-            <button type="submit" class="mobile-drawer__footer-button">Log out</button>
-          </form>
+          <form method="post" action="{{ url_for('logout') }}"><button type="submit" class="mobile-drawer__footer-button">Log out</button></form>
         {% else %}
           <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
           <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
         {% endif %}
       </div>
     </aside>
-
     <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
 
-    <!-- ════════════════════════════════
-         MAIN SCREEN
-    ════════════════════════════════ -->
     <main class="mobile-screen">
-
-      <!-- Mobile header: bell + settings in top-right -->
       <header class="mobile-app-header">
         <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
-
         <div class="mobile-app-header__center">
           <div class="mobile-app-header__title">My Account</div>
           <div class="mobile-app-header__subtitle">Local AI</div>
         </div>
-
         <div style="display:flex;align-items:center;gap:6px;">
           {% if current_user.is_authenticated %}
             <div class="acct-header-icon-wrap">
@@ -651,73 +270,39 @@
         <div class="account-desktop-wrap">
           <div class="account-ios-shell">
 
-            <!-- ── Notification banner (only renders when notifications exist) ── -->
             {% if shared_with_me %}
             <div class="acct-notif-banner" id="notifications-panel-trigger">
               <div class="acct-notif-banner__left">
                 <span class="acct-notif-live-dot"></span>
-                <span class="acct-notif-banner__text">
-                  {{ shared_with_me|length }} new shared list{{ 's' if shared_with_me|length != 1 else '' }}
-                </span>
+                <span class="acct-notif-banner__text">{{ shared_with_me|length }} new shared list{{ 's' if shared_with_me|length != 1 else '' }}</span>
               </div>
               <span class="acct-notif-banner__badge">{{ shared_with_me|length }}</span>
             </div>
+            <section class="notifications-panel" id="notifications-panel">
+              {% for shared in shared_with_me %}
+              <article class="notification-card">
+                <p><strong>{{ shared.sender_name or shared.sender_email or "Someone" }}</strong> shared a list with you</p>
+                <h3>{{ shared.title }}</h3>
+                <div class="notification-actions">
+                  <a href="{{ url_for('view_public_list', slug=shared.slug) }}">View list</a>
+                  <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}"><button type="submit">Save</button></form>
+                </div>
+              </article>
+              {% endfor %}
+            </section>
             {% endif %}
 
-            <!-- Notifications panel (same cards as original) -->
-            <section class="notifications-panel" id="notifications-panel">
-              {% if shared_with_me %}
-                {% for shared in shared_with_me %}
-                  <article class="notification-card">
-                    <p><strong>{{ shared.sender_name or shared.sender_email or "Someone" }}</strong> shared a list with you</p>
-                    <h3>{{ shared.title }}</h3>
-                    <div class="notification-actions">
-                      <a href="{{ url_for('view_public_list', slug=shared.slug) }}">View list</a>
-                      <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}">
-                        <button type="submit">Save</button>
-                      </form>
-                    </div>
-                  </article>
-                {% endfor %}
-              {% else %}
-                <p class="notifications-empty">No notifications yet.</p>
-              {% endif %}
-              {% if unread_shared_count %}
-                <span id="notification-badge-panel">{{ unread_shared_count }}</span>
-              {% endif %}
-            </section>
-
-            <!-- ── Profile hero: LEFT-ALIGNED (replaces centered stacked) ── -->
             <section class="acct-hero">
-              <form
-                method="post"
-                action="{{ url_for('update_profile_photo') }}"
-                enctype="multipart/form-data"
-                class="acct-avatar-form"
-              >
+              <form method="post" action="{{ url_for('update_profile_photo') }}" enctype="multipart/form-data" class="acct-avatar-form">
                 <label class="acct-avatar-label" for="account-profile-photo" aria-label="Change profile photo">
-                  {% if user.profile_image_url %}
-                    <img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}">
-                  {% else %}
-                    <span class="acct-avatar-fallback">{{ (user.name or user.email or "U")[0]|upper }}</span>
-                  {% endif %}
+                  {% if user.profile_image_url %}<img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}">{% else %}<span class="acct-avatar-fallback">{{ (user.name or user.email or "U")[0]|upper }}</span>{% endif %}
                   <span class="acct-avatar-edit" aria-hidden="true">✎</span>
                 </label>
-                <input
-                  id="account-profile-photo"
-                  type="file"
-                  name="profile_photo"
-                  accept="image/*"
-                  hidden
-                  onchange="this.form.submit()"
-                >
+                <input id="account-profile-photo" type="file" name="profile_photo" accept="image/*" hidden onchange="this.form.submit()">
               </form>
-
               <div class="acct-profile-info">
                 <h1 class="acct-profile-name">{{ user.name or "Your Profile" }}</h1>
-                <p class="acct-profile-city">
-                  {% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}
-                </p>
+                <p class="acct-profile-city">{% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}</p>
                 <div class="acct-profile-btns">
                   <a href="{{ url_for('settings') }}" class="acct-btn acct-btn--primary">Edit profile</a>
                   <a href="{{ url_for('messages_with_user', user_id=user.id) }}" class="acct-btn acct-btn--ghost">💬</a>
@@ -725,29 +310,15 @@
               </div>
             </section>
 
-            <!-- ── Stats row ── -->
             <div class="acct-stats">
-              <div class="acct-stat">
-                <span class="acct-stat__num">{{ lists|length }}</span>
-                <span class="acct-stat__lbl">Lists</span>
-              </div>
-              <div class="acct-stat">
-                <span class="acct-stat__num">{{ lists | map(attribute='places') | map('length') | sum }}</span>
-                <span class="acct-stat__lbl">Places</span>
-              </div>
-              <div class="acct-stat">
-                <span class="acct-stat__num">{{ lists | selectattr('is_public') | list | length }}</span>
-                <span class="acct-stat__lbl">Public</span>
-              </div>
-              <a href="{{ url_for('create_list') }}" class="acct-stat acct-stat--cta">
-                <span class="acct-stat__lbl">+ New</span>
-              </a>
+              <div class="acct-stat"><span class="acct-stat__num">{{ lists|length }}</span><span class="acct-stat__lbl">Lists</span></div>
+              <div class="acct-stat"><span class="acct-stat__num">{{ lists | map(attribute='places') | map('length') | sum }}</span><span class="acct-stat__lbl">Places</span></div>
+              <div class="acct-stat"><span class="acct-stat__num" id="friends-count">–</span><span class="acct-stat__lbl">Friends</span></div>
+              <a href="{{ url_for('create_list') }}" class="acct-stat acct-stat--cta"><span class="acct-stat__lbl">+ New</span></a>
             </div>
 
-            <!-- ── Map card with inline filter chips (replaces two dropdowns) ── -->
             <section class="acct-map-card">
               <div id="account-map" class="account-map"></div>
-
               <div class="acct-map-chips" id="acct-map-chips">
                 <button class="acct-map-chip is-active" data-cat="all" type="button">All</button>
                 <button class="acct-map-chip" data-cat="coffee" type="button">☕ Coffee</button>
@@ -762,137 +333,102 @@
               </div>
             </section>
 
-            <!-- ── Saved lists ── -->
             {% if lists %}
-              <div class="acct-section-header">
-                <span class="acct-section-lbl">Your lists</span>
-                <a href="{{ url_for('create_list') }}" class="acct-section-action">+ New list</a>
-              </div>
-
-              <div class="acct-lists-stack">
-                {% for saved_list in lists %}
-                <div class="acct-list-card">
-
-                  <div class="acct-list-card__head">
-                    <div>
-                      <h2 class="acct-list-card__name">{{ saved_list.title }}</h2>
-                      <p class="acct-list-card__meta">
-                        {{ saved_list.places|length }} place{{ 's' if saved_list.places|length != 1 else '' }}
-                      </p>
+            <div class="acct-section-header">
+              <span class="acct-section-lbl">Your lists</span>
+              <a href="{{ url_for('create_list') }}" class="acct-section-action">+ New list</a>
+            </div>
+            <div class="acct-lists-stack">
+              {% for saved_list in lists %}
+              <div class="acct-list-card">
+                <div class="acct-list-card__head">
+                  <div>
+                    <h2 class="acct-list-card__name">{{ saved_list.title }}</h2>
+                    <p class="acct-list-card__meta">{{ saved_list.places|length }} place{{ 's' if saved_list.places|length != 1 else '' }}</p>
+                  </div>
+                  <span class="acct-list-badge {% if not saved_list.is_public %}acct-list-badge--private{% endif %}">{{ "Public" if saved_list.is_public else "Private" }}</span>
+                </div>
+                {% if saved_list.places %}
+                <div class="acct-thumb-strip">
+                  {% for place in saved_list.places %}
+                  <article class="acct-place-thumb js-place-popup"
+                    data-slug="{{ place.slug }}"
+                    data-name="{{ place.name }}"
+                    data-category="{{ place.category or 'Local business' }}"
+                    data-address="{{ place.address or '' }}"
+                    data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                    data-website="{{ place.website or '' }}"
+                    data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% endif %}"
+                    data-category-filter="{{ (place.category or '')|lower }}"
+                    data-name-filter="{{ (place.name or '')|lower }}"
+                    data-address-filter="{{ (place.address or '')|lower }}"
+                    data-city-filter="{{ (place.city or '')|lower }}"
+                  >
+                    <div class="acct-place-thumb__img">
+                      {% if place.photo_url %}<img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">{% else %}<span class="acct-place-thumb__emoji">📍</span>{% endif %}
                     </div>
-                    <span class="acct-list-badge {% if not saved_list.is_public %}acct-list-badge--private{% endif %}">
-                      {{ "Public" if saved_list.is_public else "Private" }}
-                    </span>
-                  </div>
-
-                  <!-- Thumbnail strip (same data-* attrs as original saved-place-slide) -->
-                  {% if saved_list.places %}
-                  <div class="acct-thumb-strip">
-                    {% for place in saved_list.places %}
-                    <article
-                      class="acct-place-thumb js-place-popup"
-                      data-slug="{{ place.slug }}"
-                      data-name="{{ place.name }}"
-                      data-category="{{ place.category or 'Local business' }}"
-                      data-address="{{ place.address or '' }}"
-                      data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-                      data-website="{{ place.website or '' }}"
-                      data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% endif %}"
-                      data-category-filter="{{ (place.category or '')|lower }}"
-                      data-name-filter="{{ (place.name or '')|lower }}"
-                      data-address-filter="{{ (place.address or '')|lower }}"
-                      data-city-filter="{{ (place.city or '')|lower }}"
-                    >
-                      <div class="acct-place-thumb__img">
-                        {% if place.photo_url %}
-                          <img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">
-                        {% else %}
-                          <span class="acct-place-thumb__emoji">📍</span>
-                        {% endif %}
-                      </div>
-                      <div class="acct-place-thumb__body">
-                        <div class="acct-place-thumb__name">{{ place.name }}</div>
-                        <div class="acct-place-thumb__cat">{{ place.category or '' }}</div>
-                      </div>
-                    </article>
-                    {% endfor %}
-
-                    <!-- Dashed add-place thumb -->
-                    <a href="{{ url_for('discover_page') }}" class="acct-place-thumb acct-place-thumb--add">
-                      <span class="acct-thumb-add-icon">+</span>
-                      <span class="acct-thumb-add-lbl">Add place</span>
-                    </a>
-                  </div>
-                  {% else %}
-                  <div class="acct-list-empty">
-                    No saved places yet. <a href="{{ url_for('discover_page') }}">Browse places →</a>
-                  </div>
-                  {% endif %}
-
-                  <!-- Card footer: preserves all original share/QR route calls -->
-                  <div class="acct-list-card__foot">
-                    {% if saved_list.is_public %}
-                      <button
-                        type="button"
-                        class="acct-foot-btn acct-foot-btn--share"
-                        data-open-share-modal
-                        data-list-id="{{ saved_list.id }}"
-                        data-list-title="{{ saved_list.title }}"
-                      >⌘ Share</button>
-                      <button
-                        type="button"
-                        class="acct-foot-btn"
-                        onclick="openQrModal('{{ saved_list.slug }}', '{{ saved_list.title }}')"
-                      >QR Code</button>
-                    {% else %}
-                      <button
-                        type="button"
-                        class="acct-foot-btn"
-                        data-open-share-modal
-                        data-list-id="{{ saved_list.id }}"
-                        data-list-title="{{ saved_list.title }}"
-                      >Share</button>
-                    {% endif %}
-                    <a href="{{ url_for('settings') }}" class="acct-foot-btn">Edit</a>
-                  </div>
-
-                </div><!-- /.acct-list-card -->
-                {% endfor %}
-              </div><!-- /.acct-lists-stack -->
-
+                    <div class="acct-place-thumb__body">
+                      <div class="acct-place-thumb__name">{{ place.name }}</div>
+                      <div class="acct-place-thumb__cat">{{ place.category or '' }}</div>
+                    </div>
+                  </article>
+                  {% endfor %}
+                  <a href="{{ url_for('discover_page') }}" class="acct-place-thumb acct-place-thumb--add"><span>+</span><span>Add place</span></a>
+                </div>
+                {% else %}
+                <div class="acct-list-empty">No saved places yet. <a href="{{ url_for('discover_page') }}">Browse places →</a></div>
+                {% endif %}
+                <div class="acct-list-card__foot">
+                  <button type="button" class="acct-foot-btn acct-foot-btn--share js-open-share-v2" data-list-id="{{ saved_list.id }}" data-list-title="{{ saved_list.title }}">⇧ Share</button>
+                  {% if saved_list.is_public %}<button type="button" class="acct-foot-btn" onclick="openQrModal('{{ saved_list.slug }}','{{ saved_list.title }}')">QR Code</button>{% endif %}
+                  <a href="{{ url_for('settings') }}" class="acct-foot-btn">Edit</a>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
             {% else %}
-              <section class="account-ios-empty">
-                <h2>No lists yet</h2>
-                <p>Create your first list to start saving favorite places.</p>
-                <a href="{{ url_for('create_list') }}" class="acct-btn acct-btn--primary" style="display:inline-flex;margin-top:14px;">
-                  + Create a list
-                </a>
-              </section>
+            <section class="account-ios-empty">
+              <h2>No lists yet</h2>
+              <p>Create your first list to start saving favorite places.</p>
+              <a href="{{ url_for('create_list') }}" class="acct-btn acct-btn--primary" style="display:inline-flex;margin-top:14px;">+ Create a list</a>
+            </section>
             {% endif %}
 
-            <!-- ── Account info panel (original content, unchanged) ── -->
-            <section class="account-ios-account-panel acct-info-panel" style="display: none;">
+            <!-- FRIENDS SECTION -->
+            <div class="acct-section-header" style="margin-top:24px;">
+              <span class="acct-section-lbl">Friends</span>
+            </div>
+            <div class="acct-friends-section">
+              <div class="friends-add-bar">
+                <input id="friends-search-input" class="friends-add-input" type="search" placeholder="Search by name or email…" autocomplete="off">
+                <button class="friends-add-btn" type="button" id="friends-search-btn">Search</button>
+              </div>
+              <div class="friends-search-results" id="friends-search-results"></div>
+              <div class="friends-pending-banner" id="friends-pending-banner" style="display:none;" onclick="togglePendingPanel()">
+                <span class="friends-pending-dot"></span>
+                <span class="friends-pending-text" id="friends-pending-text">Friend requests</span>
+                <span class="friends-pending-count" id="friends-pending-count">0</span>
+              </div>
+              <div class="friends-pending-panel" id="friends-pending-panel"></div>
+              <div class="friends-list" id="friends-list"><div class="friends-loading">Loading friends…</div></div>
+            </div>
+
+            <section class="account-ios-account-panel acct-info-panel">
               <h2>Your account</h2>
               <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
               <p><strong>Email:</strong> {{ user.email }}</p>
-              <form method="post" action="{{ url_for('logout') }}" class="account-logout-form" style="margin-top:14px;">
-                <button type="submit" class="acct-foot-btn">Log out</button>
-              </form>
+              <form method="post" action="{{ url_for('logout') }}" style="margin-top:14px;"><button type="submit" class="acct-foot-btn">Log out</button></form>
             </section>
 
-          </div><!-- /.account-ios-shell -->
-        </div><!-- /.account-desktop-wrap -->
-      </section><!-- /.mobile-content -->
+          </div>
+        </div>
+      </section>
 
-      <!-- ════════════════════════════════
-           PLACE POPUP (100% unchanged — same IDs, classes, structure)
-      ════════════════════════════════ -->
+      <!-- Place popup (unchanged) -->
       <div class="place-popup" id="place-popup" hidden>
         <div class="place-popup__backdrop" data-close-place-popup></div>
-
         <div class="place-popup__card place-popup__card--large">
           <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
-
           <section class="place-popup__hero">
             <img id="place-popup-photo" class="place-popup__image" src="" alt="">
             <div class="place-popup__body">
@@ -907,7 +443,6 @@
               </div>
             </div>
           </section>
-
           <div class="photo-slider" id="popup-slider">
             <div class="photo-slider__viewport">
               <button type="button" class="slider-btn slider-btn--left" data-slider-prev>‹</button>
@@ -916,12 +451,9 @@
             </div>
           </div>
           <div class="slider-thumbs" id="popup-slider-thumbs"></div>
-
           <section class="place-popup__section place-popup__comments">
             <h3>Comments</h3>
-            <div id="popup-comments-list" class="place-popup__comments-list">
-              <p class="place-popup__muted">No comments yet. Be the first to leave one.</p>
-            </div>
+            <div id="popup-comments-list" class="place-popup__comments-list"><p class="place-popup__muted">No comments yet. Be the first to leave one.</p></div>
             <form id="popup-comment-form" class="place-popup__comment-form">
               <input type="text" name="author_name" placeholder="Your name">
               <textarea name="body" placeholder="Share your experience or thoughts about this business"></textarea>
@@ -931,38 +463,18 @@
         </div>
       </div>
 
-      <!-- Mobile tab bar (unchanged) -->
       <nav class="mobile-tabbar">
-        <a href="/" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🏠</span>
-          <span class="mobile-tabbar__label">Home</span>
-        </a>
-        <a href="/discover" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🗺️</span>
-          <span class="mobile-tabbar__label">Discover</span>
-        </a>
-        <a href="/" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">🔎</span>
-          <span class="mobile-tabbar__label">Search</span>
-        </a>
-        <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active">
-          <span class="mobile-tabbar__icon">📌</span>
-          <span class="mobile-tabbar__label">Saved</span>
-        </a>
-        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon">👤</span>
-          <span class="mobile-tabbar__label">Account</span>
-        </a>
+        <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🏠</span><span class="mobile-tabbar__label">Home</span></a>
+        <a href="/discover" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🗺️</span><span class="mobile-tabbar__label">Discover</span></a>
+        <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🔎</span><span class="mobile-tabbar__label">Search</span></a>
+        <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active"><span class="mobile-tabbar__icon">📌</span><span class="mobile-tabbar__label">Saved</span></a>
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">👤</span><span class="mobile-tabbar__label">Account</span></a>
       </nav>
-
     </main>
   </div>
 </div>
 
-
-<!-- ════════════════════════════════
-     QR MODAL (unchanged)
-════════════════════════════════ -->
+<!-- QR Modal (unchanged) -->
 <div class="qr-modal" id="qrModal">
   <div class="qr-modal__backdrop" onclick="closeQrModal()"></div>
   <div class="qr-modal__card">
@@ -970,17 +482,48 @@
     <h3 id="qrTitle">Share List</h3>
     <p>Scan to open this list</p>
     <img id="qrImage" src="" alt="QR Code">
-    <div class="qr-actions">
-      <button onclick="copyQrLink()">Copy Link</button>
-      <button onclick="nativeShareQr()">Share</button>
+    <div class="qr-actions"><button onclick="copyQrLink()">Copy Link</button><button onclick="nativeShareQr()">Share</button></div>
+  </div>
+</div>
+
+<!-- Share Modal V2 -->
+<div class="share-modal-v2" id="share-modal-v2" hidden>
+  <div class="share-modal-v2__backdrop" id="share-modal-v2-backdrop"></div>
+  <div class="share-modal-v2__panel">
+    <div class="share-modal-v2__handle-wrap"><div class="share-modal-v2__handle"></div></div>
+    <div class="share-modal-v2__header">
+      <span class="share-modal-v2__title">Share list</span>
+      <button type="button" class="share-modal-v2__close" id="share-modal-v2-close-btn">✕</button>
+    </div>
+    <p class="share-modal-v2__list-name" id="share-modal-v2-list-name"></p>
+    <div class="share-tabs">
+      <button class="share-tab is-active" data-tab="friends" type="button">👥 Friends</button>
+      <button class="share-tab" data-tab="everyone" type="button">🔍 Search everyone</button>
+    </div>
+    <div class="share-tab-panel is-active" id="share-tab-friends">
+      <div id="share-friends-list"><div class="share-no-friends">Loading friends…</div></div>
+    </div>
+    <div class="share-tab-panel" id="share-tab-everyone">
+      <input type="search" class="share-search-input" id="share-everyone-search" placeholder="Search by name or email…">
+      <form method="post" id="share-everyone-form">
+        <div class="share-user-results-v2" id="share-everyone-results">
+          {% for user_option in users %}
+            {% if user_option.id != current_user.id %}
+            <label class="share-user-row-v2" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
+              <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
+              <span class="share-user-check-v2">✓</span>
+              <span class="share-user-name-v2">{{ user_option.name or user_option.email }}</span>
+            </label>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <button type="submit" class="share-submit-btn">Send list</button>
+      </form>
     </div>
   </div>
 </div>
 
-
-<!-- ════════════════════════════════
-     SHARE USER MODAL (unchanged)
-════════════════════════════════ -->
+<!-- Legacy share modal (preserved for backward compat) -->
 <div class="share-user-modal" id="share-user-modal" hidden>
   <div class="share-user-modal__backdrop" data-close-share-modal></div>
   <div class="share-user-modal__card">
@@ -990,388 +533,229 @@
     <input id="share-user-search" class="share-user-search" type="search" placeholder="Search users">
     <form method="post" id="share-user-form">
       <div class="share-user-results">
-        {% for user_option in users %}
-          {% if user_option.id != current_user.id %}
-          <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
-            <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
-            <span class="share-user-check">✓</span>
-            <span class="share-user-name">{{ user_option.name or user_option.email }}</span>
-          </label>
-          {% endif %}
-        {% endfor %}
+        {% for user_option in users %}{% if user_option.id != current_user.id %}
+        <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
+          <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
+          <span class="share-user-check">✓</span>
+          <span class="share-user-name">{{ user_option.name or user_option.email }}</span>
+        </label>
+        {% endif %}{% endfor %}
       </div>
       <button type="submit" class="share-user-submit">Send list</button>
     </form>
   </div>
 </div>
 
-
-<!-- ════════════════════════════════
-     MAP DATA (unchanged)
-════════════════════════════════ -->
-<script id="map-data" type="application/json">
-{{ map_places|tojson|safe }}
-</script>
-
-
-<!-- ════════════════════════════════
-     JAVASCRIPT
-════════════════════════════════ -->
+<script id="map-data" type="application/json">{{ map_places|tojson|safe }}</script>
 
 <script>
-/* ── Drawer ── */
-document.addEventListener("DOMContentLoaded", function () {
-  const sidebar  = document.getElementById("app-sidebar");
-  const toggle   = document.getElementById("app-sidebar-toggle");
-  const closeBtn = document.getElementById("app-sidebar-close");
-  const backdrop = document.getElementById("app-sidebar-backdrop");
+function escapeHtml(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
 
-  function openDrawer()  { sidebar?.classList.add("is-open");    backdrop?.classList.add("is-open"); }
-  function closeDrawer() { sidebar?.classList.remove("is-open"); backdrop?.classList.remove("is-open"); }
-
-  toggle?.addEventListener("click", openDrawer);
-  closeBtn?.addEventListener("click", closeDrawer);
-  backdrop?.addEventListener("click", closeDrawer);
+/* Drawer */
+document.addEventListener("DOMContentLoaded",function(){
+  const s=document.getElementById("app-sidebar"),t=document.getElementById("app-sidebar-toggle"),c=document.getElementById("app-sidebar-close"),b=document.getElementById("app-sidebar-backdrop");
+  function o(){s?.classList.add("is-open");b?.classList.add("is-open");}
+  function cl(){s?.classList.remove("is-open");b?.classList.remove("is-open");}
+  t?.addEventListener("click",o);c?.addEventListener("click",cl);b?.addEventListener("click",cl);
 });
-</script>
 
-
-<script>
-/* ── Notifications: banner + header bell both toggle the panel ── */
-document.addEventListener("DOMContentLoaded", function () {
-  const banner  = document.getElementById("notifications-panel-trigger");
-  const panel   = document.getElementById("notifications-panel");
-  const badge   = document.getElementById("notification-badge");
-  const bellBtn = document.getElementById("notifications-toggle");
-
-  function markSeen() {
-    if (badge) badge.style.display = "none";
-    fetch("/notifications/mark-seen", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" }
-    }).catch(() => {});
-  }
-
-  function togglePanel() {
-    if (!panel) return;
-    const opening = !panel.classList.contains("is-open");
-    panel.classList.toggle("is-open");
-    if (opening) markSeen();
-  }
-
-  banner?.addEventListener("click", togglePanel);
-  bellBtn?.addEventListener("click", togglePanel);
+/* Notifications */
+document.addEventListener("DOMContentLoaded",function(){
+  const bn=document.getElementById("notifications-panel-trigger"),pn=document.getElementById("notifications-panel"),bd=document.getElementById("notification-badge"),bl=document.getElementById("notifications-toggle");
+  function ms(){if(bd)bd.style.display="none";fetch("/notifications/mark-seen",{method:"POST",headers:{"Content-Type":"application/json"}}).catch(()=>{});}
+  function tp(){if(!pn)return;const op=!pn.classList.contains("is-open");pn.classList.toggle("is-open");if(op)ms();}
+  bn?.addEventListener("click",tp);bl?.addEventListener("click",tp);
 });
-</script>
 
-
-<script>
-/* ── Mapbox + chip filters (replaces original select-based filters) ── */
-document.addEventListener("DOMContentLoaded", function () {
-  const mapEl = document.getElementById("account-map");
-  if (!mapEl || typeof mapboxgl === "undefined") return;
-
-  const token    = "{{ mapbox_token }}";
-  const styleUrl = "{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}";
-  const places   = JSON.parse(document.getElementById("map-data").textContent || "[]");
-
-  if (!token) return;
-
-  let activeCat = "all";
-  let activeLoc = "all";
-  let markers   = [];
-
-  function norm(v) { return String(v || "").trim().toLowerCase(); }
-
-  function locationLabel(place) {
-    if (place.city && place.city.trim()) return place.city.trim();
-    const parts = (place.address || "").split(",").map(p => p.trim());
-    return parts.length >= 2 ? parts[1] : "";
-  }
-
-  function matches(place) {
-    const catTxt = [place.name, place.category, place.cuisine, place.address].join(" ").toLowerCase();
-    const locTxt = norm(locationLabel(place));
-    return (activeCat === "all" || catTxt.includes(activeCat))
-        && (activeLoc === "all" || locTxt.includes(activeLoc));
-  }
-
-  function clearMarkers() { markers.forEach(m => m.remove()); markers = []; }
-
-  function render() {
-    clearMarkers();
-    const filtered = places.filter(matches);
-    const bounds   = new mapboxgl.LngLatBounds();
-    let n = 0;
-
-    filtered.forEach(place => {
-      if (place.lng == null || place.lat == null) return;
-      const m = new mapboxgl.Marker()
-        .setLngLat([place.lng, place.lat])
-        .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(`
-          <div style="max-width:200px;">
-            <strong style="font-size:14px;">${place.name || ""}</strong>
-            ${place.category ? `<div style="font-size:12px;color:#888;margin-top:2px;">${place.category}</div>` : ""}
-            ${place.address  ? `<div style="font-size:12px;color:#aaa;margin-top:4px;">${place.address}</div>` : ""}
-          </div>
-        `))
-        .addTo(map);
-      markers.push(m);
-      bounds.extend([place.lng, place.lat]);
-      n++;
+/* Mapbox */
+document.addEventListener("DOMContentLoaded",function(){
+  const mel=document.getElementById("account-map");
+  if(!mel||typeof mapboxgl==="undefined")return;
+  const token="{{ mapbox_token }}",styleUrl="{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}",places=JSON.parse(document.getElementById("map-data").textContent||"[]");
+  if(!token)return;
+  let aC="all",aL="all",mk=[];
+  function nm(v){return String(v||"").trim().toLowerCase();}
+  function ll(p){if(p.city&&p.city.trim())return p.city.trim();const pts=(p.address||"").split(",").map(s=>s.trim());return pts.length>=2?pts[1]:"";}
+  function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p));return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL));}
+  function cm(){mk.forEach(m=>m.remove());mk=[];}
+  function rn(){
+    cm();const fl=places.filter(mt),bd=new mapboxgl.LngLatBounds();let n=0;
+    fl.forEach(p=>{if(p.lng==null||p.lat==null)return;
+      const m=new mapboxgl.Marker().setLngLat([p.lng,p.lat]).setPopup(new mapboxgl.Popup({offset:18}).setHTML(`<div style="max-width:200px;"><strong style="font-size:14px;">${p.name||""}</strong>${p.category?`<div style="font-size:12px;color:#888;margin-top:2px;">${p.category}</div>`:""}${p.address?`<div style="font-size:12px;color:#aaa;margin-top:4px;">${p.address}</div>`:""}</div>`)).addTo(map);
+      mk.push(m);bd.extend([p.lng,p.lat]);n++;
     });
-
-    if (n > 1)      map.fitBounds(bounds, { padding: 50, maxZoom: 13 });
-    else if (n === 1) map.flyTo({ center: [filtered[0].lng, filtered[0].lat], zoom: 13 });
-
-    /* also filter the place thumb cards */
-    document.querySelectorAll(".acct-place-thumb.js-place-popup").forEach(card => {
-      const cat = [card.dataset.categoryFilter, card.dataset.nameFilter, card.dataset.addressFilter].join(" ").toLowerCase();
-      const loc = norm(card.dataset.cityFilter || card.dataset.addressFilter || "");
-      card.style.display =
-        (activeCat === "all" || cat.includes(activeCat)) &&
-        (activeLoc === "all" || loc.includes(activeLoc))
-          ? "" : "none";
+    if(n>1)map.fitBounds(bd,{padding:50,maxZoom:13});else if(n===1)map.flyTo({center:[fl[0].lng,fl[0].lat],zoom:13});
+    document.querySelectorAll(".acct-place-thumb.js-place-popup").forEach(card=>{
+      const ct=[card.dataset.categoryFilter,card.dataset.nameFilter,card.dataset.addressFilter].join(" ").toLowerCase(),lt=nm(card.dataset.cityFilter||card.dataset.addressFilter||"");
+      card.style.display=(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))?"":"none";
     });
   }
-
-  /* Build location chips dynamically from real place data */
-  function buildLocChips() {
-    const container = document.getElementById("acct-loc-chips");
-    if (!container) return;
-    const locs = [...new Set(places.map(locationLabel).filter(Boolean))].sort();
-    container.innerHTML = locs.map(city => `
-      <button class="acct-map-chip" data-loc="${city.toLowerCase()}" type="button">${city}</button>
-    `).join("");
+  function blc(){
+    const c=document.getElementById("acct-loc-chips");if(!c)return;
+    const locs=[...new Set(places.map(ll).filter(Boolean))].sort();
+    c.innerHTML=locs.map(city=>`<button class="acct-map-chip" data-loc="${city.toLowerCase()}" type="button">${city}</button>`).join("");
   }
-
-  /* Wire chip clicks */
-  function wireChips() {
-    document.querySelectorAll("#acct-map-chips [data-cat]").forEach(chip => {
-      chip.addEventListener("click", function () {
-        document.querySelectorAll("#acct-map-chips [data-cat]").forEach(c => c.classList.remove("is-active"));
-        chip.classList.add("is-active");
-        activeCat = chip.dataset.cat;
-        render();
-      });
-    });
-    document.querySelectorAll("#acct-map-chips [data-loc]").forEach(chip => {
-      chip.addEventListener("click", function () {
-        document.querySelectorAll("#acct-map-chips [data-loc]").forEach(c => c.classList.remove("is-active"));
-        chip.classList.add("is-active");
-        activeLoc = chip.dataset.loc;
-        render();
-      });
-    });
+  function wc(){
+    document.querySelectorAll("#acct-map-chips [data-cat]").forEach(chip=>{chip.addEventListener("click",function(){document.querySelectorAll("#acct-map-chips [data-cat]").forEach(c=>c.classList.remove("is-active"));chip.classList.add("is-active");aC=chip.dataset.cat;rn();});});
+    document.querySelectorAll("#acct-map-chips [data-loc]").forEach(chip=>{chip.addEventListener("click",function(){document.querySelectorAll("#acct-map-chips [data-loc]").forEach(c=>c.classList.remove("is-active"));chip.classList.add("is-active");aL=chip.dataset.loc;rn();});});
   }
+  mapboxgl.accessToken=token;
+  const dc=places.length?[places[0].lng,places[0].lat]:[-87.6298,41.8781];
+  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:places.length?11:9,projection:"mercator",pitch:0,bearing:0,antialias:true});
+  map.addControl(new mapboxgl.NavigationControl(),"top-right");
+  blc();wc();map.on("load",rn);
+});
 
-  mapboxgl.accessToken = token;
-  const defaultCenter = places.length ? [places[0].lng, places[0].lat] : [-87.6298, 41.8781];
-
-  const map = new mapboxgl.Map({
-    container: "account-map",
-    style: styleUrl,
-    center: defaultCenter,
-    zoom: places.length ? 11 : 9,
-    projection: "mercator",
-    pitch: 0,
-    bearing: 0,
-    antialias: true
+/* Place popup */
+document.addEventListener("DOMContentLoaded",function(){
+  const popup=document.getElementById("place-popup"),photo=document.getElementById("place-popup-photo"),name=document.getElementById("place-popup-name"),category=document.getElementById("place-popup-category"),address=document.getElementById("place-popup-address"),website=document.getElementById("place-popup-website"),directions=document.getElementById("place-popup-directions"),listing=document.getElementById("place-popup-listing"),slider=document.getElementById("popup-slider"),track=document.getElementById("popup-slider-track"),thumbs=document.getElementById("popup-slider-thumbs"),prevBtn=slider?.querySelector("[data-slider-prev]"),nextBtn=slider?.querySelector("[data-slider-next]");
+  let pp=[],ci=0;
+  function rs(i=0){if(!track||!thumbs)return;if(!pp.length){track.innerHTML=`<p class="place-popup__muted">No gallery photos yet.</p>`;thumbs.innerHTML="";if(prevBtn)prevBtn.style.display="none";if(nextBtn)nextBtn.style.display="none";return;}ci=(i+pp.length)%pp.length;if(prevBtn)prevBtn.style.display=pp.length>1?"flex":"none";if(nextBtn)nextBtn.style.display=pp.length>1?"flex":"none";track.innerHTML=`<img src="${pp[ci]}" class="popup-slider__image" alt="">`;thumbs.innerHTML=pp.map((u,j)=>`<button type="button" class="popup-slider__thumb ${j===ci?"is-active":""}" data-thumb="${j}"><img src="${u}" alt=""></button>`).join("");thumbs.querySelectorAll("[data-thumb]").forEach(btn=>{btn.addEventListener("click",()=>rs(Number(btn.dataset.thumb)));});}
+  prevBtn?.addEventListener("click",e=>{e.stopPropagation();rs(ci-1);});
+  nextBtn?.addEventListener("click",e=>{e.stopPropagation();rs(ci+1);});
+  document.querySelectorAll(".js-place-popup").forEach(card=>{
+    card.addEventListener("click",async function(e){
+      if(e.target.closest("a, button, form"))return;
+      const slug=card.dataset.slug;
+      photo.src=card.dataset.photo||"/static/img/default-business.jpg";name.textContent=card.dataset.name||"Local business";category.textContent=card.dataset.category||"Local business";address.textContent=card.dataset.address||"";
+      website.style.display=card.dataset.website?"flex":"none";website.href=card.dataset.website||"#";listing.style.display=card.dataset.listingUrl?"flex":"none";listing.href=card.dataset.listingUrl||"#";directions.href=card.dataset.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`:"#";
+      popup.hidden=false;pp=[];ci=0;track.innerHTML=`<p class="place-popup__muted">Loading photos...</p>`;thumbs.innerHTML="";if(prevBtn)prevBtn.style.display="none";if(nextBtn)nextBtn.style.display="none";
+      if(!slug){track.innerHTML=`<p class="place-popup__muted">No directory listing connected yet.</p>`;return;}
+      try{const res=await fetch(`/listing-data/${slug}`),data=await res.json();if(data.photo_url)photo.src=data.photo_url;pp=Array.isArray(data.photos)?data.photos.filter(Boolean):[];rs(0);}catch{track.innerHTML=`<p class="place-popup__muted">Could not load photos.</p>`;}
+    });
   });
-
-  map.addControl(new mapboxgl.NavigationControl(), "top-right");
-  buildLocChips();
-  wireChips();
-  map.on("load", render);
+  document.querySelectorAll("[data-close-place-popup]").forEach(el=>{el.addEventListener("click",function(){popup.hidden=true;pp=[];ci=0;if(track)track.innerHTML="";if(thumbs)thumbs.innerHTML="";});});
 });
 </script>
 
-
 <script>
-/* ── Share actions (unchanged) ── */
-function showComingSoon(message) { alert(message); }
+/* FRIENDS SYSTEM */
+let friendsData={friends:[],pending_in:[],pending_out:[]};
 
-function copyShareLink(url) {
-  if (!url) { showComingSoon("Create a public list first."); return; }
-  navigator.clipboard.writeText(url)
-    .then(() => alert("Share link copied."))
-    .catch(() => alert("Could not copy link."));
+async function loadFriends(){
+  try{const res=await fetch('/friends');friendsData=await res.json();renderFriends();}
+  catch{document.getElementById("friends-list").innerHTML=`<div class="friends-empty"><div class="friends-empty-icon">👥</div>Could not load friends.</div>`;}
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll("[data-share-action]").forEach(button => {
-    button.addEventListener("click", function () {
-      const action = button.dataset.shareAction;
-      if (action === "qr")         showComingSoon("QR sharing is coming next.");
-      if (action === "invite")     showComingSoon("Email and phone invites are coming next.");
-      if (action === "find-users") showComingSoon("User search is coming next.");
-      if (action === "copy-link")  copyShareLink(button.dataset.shareUrl);
-    });
-  });
-});
-</script>
-
-
-<script>
-/* ── QR modal (unchanged) ── */
-let currentQrUrl = "";
-
-function openQrModal(slug, title) {
-  currentQrUrl = `/lists/${slug}`;
-  document.getElementById("qrTitle").innerText = title;
-  document.getElementById("qrImage").src = `/lists/${slug}/qr.png`;
-  document.getElementById("qrModal").classList.add("is-open");
+function renderFriends(){
+  const{friends,pending_in}=friendsData;
+  const ce=document.getElementById("friends-count");if(ce)ce.textContent=friends.length;
+  const bn=document.getElementById("friends-pending-banner"),pt=document.getElementById("friends-pending-text"),pc=document.getElementById("friends-pending-count");
+  if(pending_in.length>0){bn.style.display="flex";pt.textContent=`${pending_in.length} friend request${pending_in.length!==1?"s":""}`;pc.textContent=pending_in.length;renderPendingPanel();}
+  else{bn.style.display="none";}
+  const list=document.getElementById("friends-list");
+  if(!friends.length){list.innerHTML=`<div class="friends-empty"><div class="friends-empty-icon">👥</div>No friends yet. Search above to add someone.</div>`;return;}
+  list.innerHTML=friends.map(f=>`<div class="friend-row" data-friend-id="${f.user_id}"><div class="friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div><div class="friend-info"><div class="friend-name">${escapeHtml(f.name)}</div><div class="friend-meta">${escapeHtml(f.email)}</div></div><div class="friend-actions"><button class="friend-action-btn" onclick="removeFriend(${f.user_id},this)">Remove</button></div></div>`).join("");
 }
-function closeQrModal() { document.getElementById("qrModal").classList.remove("is-open"); }
-function copyQrLink() {
-  navigator.clipboard.writeText(window.location.origin + currentQrUrl)
-    .then(() => alert("Link copied!"))
-    .catch(() => alert("Could not copy link."));
+
+function renderPendingPanel(){
+  const panel=document.getElementById("friends-pending-panel");
+  panel.innerHTML=friendsData.pending_in.map(f=>`<div class="friend-row" style="border-radius:0;border-left:none;border-right:none;margin:0;"><div class="friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div><div class="friend-info"><div class="friend-name">${escapeHtml(f.name)}</div><div class="friend-meta">Wants to be friends</div></div><div class="friend-actions"><button class="friend-action-btn friend-action-btn--accept" onclick="respondFriend(${f.friendship_id},'accept',this)">Accept</button><button class="friend-action-btn friend-action-btn--decline" onclick="respondFriend(${f.friendship_id},'decline',this)">Decline</button></div></div>`).join("");
 }
-function nativeShareQr() {
-  if (navigator.share) navigator.share({ title: "Shared List", url: window.location.origin + currentQrUrl });
-}
-</script>
 
+function togglePendingPanel(){document.getElementById("friends-pending-panel").classList.toggle("is-open");}
 
-<script>
-/* ── Place popup (logic unchanged; selector updated to .acct-place-thumb) ── */
-document.addEventListener("DOMContentLoaded", function () {
-  const popup      = document.getElementById("place-popup");
-  const photo      = document.getElementById("place-popup-photo");
-  const name       = document.getElementById("place-popup-name");
-  const category   = document.getElementById("place-popup-category");
-  const address    = document.getElementById("place-popup-address");
-  const website    = document.getElementById("place-popup-website");
-  const directions = document.getElementById("place-popup-directions");
-  const listing    = document.getElementById("place-popup-listing");
-  const slider     = document.getElementById("popup-slider");
-  const track      = document.getElementById("popup-slider-track");
-  const thumbs     = document.getElementById("popup-slider-thumbs");
-  const prevBtn    = slider?.querySelector("[data-slider-prev]");
-  const nextBtn    = slider?.querySelector("[data-slider-next]");
-
-  let popupPhotos  = [];
-  let currentIndex = 0;
-
-  function renderSlider(index = 0) {
-    if (!track || !thumbs) return;
-    if (!popupPhotos.length) {
-      track.innerHTML = `<p class="place-popup__muted">No gallery photos yet.</p>`;
-      thumbs.innerHTML = "";
-      if (prevBtn) prevBtn.style.display = "none";
-      if (nextBtn) nextBtn.style.display = "none";
-      return;
-    }
-    currentIndex = (index + popupPhotos.length) % popupPhotos.length;
-    if (prevBtn) prevBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
-    if (nextBtn) nextBtn.style.display = popupPhotos.length > 1 ? "flex" : "none";
-    track.innerHTML = `<img src="${popupPhotos[currentIndex]}" class="popup-slider__image" alt="">`;
-    thumbs.innerHTML = popupPhotos.map((url, i) => `
-      <button type="button" class="popup-slider__thumb ${i === currentIndex ? "is-active" : ""}" data-thumb="${i}">
-        <img src="${url}" alt="">
-      </button>
-    `).join("");
-    thumbs.querySelectorAll("[data-thumb]").forEach(btn => {
-      btn.addEventListener("click", () => renderSlider(Number(btn.dataset.thumb)));
-    });
+let srch=null;
+document.addEventListener("DOMContentLoaded",function(){
+  const inp=document.getElementById("friends-search-input"),res=document.getElementById("friends-search-results"),btn=document.getElementById("friends-search-btn");
+  async function run(){
+    const q=inp.value.trim();if(q.length<2){res.classList.remove("is-open");return;}
+    res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Searching…</div>`;res.classList.add("is-open");
+    try{
+      const r=await fetch(`/friends/search?q=${encodeURIComponent(q)}`),data=await r.json();
+      if(!data.length){res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">No users found</div>`;return;}
+      res.innerHTML=data.map(u=>{
+        let a;
+        if(u.status==="friends")a=`<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
+        else if(u.status==="pending_out")a=`<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
+        else if(u.status==="pending_in")a=`<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}">Accept</button>`;
+        else a=`<button class="friends-result-action friends-result-action--add" onclick="addFriendFromSearch(event,this)" data-user-id="${u.id}">+ Add</button>`;
+        return `<div class="friends-search-result"><div class="friends-result-avatar">${u.photo?`<img src="${escapeHtml(u.photo)}" alt="${escapeHtml(u.name)}">`:escapeHtml((u.name||"?")[0].toUpperCase())}</div><div class="friends-result-info"><div class="friends-result-name">${escapeHtml(u.name)}</div><div class="friends-result-email">${escapeHtml(u.email)}</div></div>${a}</div>`;
+      }).join("");
+    }catch{res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Search failed</div>`;}
   }
-
-  prevBtn?.addEventListener("click", e => { e.stopPropagation(); renderSlider(currentIndex - 1); });
-  nextBtn?.addEventListener("click", e => { e.stopPropagation(); renderSlider(currentIndex + 1); });
-
-  document.querySelectorAll(".js-place-popup").forEach(card => {
-    card.addEventListener("click", async function (e) {
-      if (e.target.closest("a, button, form")) return;
-
-      const slug = card.dataset.slug;
-      photo.src            = card.dataset.photo || "/static/img/default-business.jpg";
-      name.textContent     = card.dataset.name || "Local business";
-      category.textContent = card.dataset.category || "Local business";
-      address.textContent  = card.dataset.address || "";
-      website.style.display  = card.dataset.website ? "flex" : "none";
-      website.href           = card.dataset.website || "#";
-      listing.style.display  = card.dataset.listingUrl ? "flex" : "none";
-      listing.href           = card.dataset.listingUrl || "#";
-      directions.href        = card.dataset.address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`
-        : "#";
-
-      popup.hidden = false;
-      popupPhotos  = [];
-      currentIndex = 0;
-      track.innerHTML = `<p class="place-popup__muted">Loading photos...</p>`;
-      thumbs.innerHTML = "";
-      if (prevBtn) prevBtn.style.display = "none";
-      if (nextBtn) nextBtn.style.display = "none";
-
-      if (!slug) {
-        track.innerHTML = `<p class="place-popup__muted">No directory listing connected yet.</p>`;
-        return;
-      }
-
-      try {
-        const res  = await fetch(`/listing-data/${slug}`);
-        const data = await res.json();
-        if (data.photo_url) photo.src = data.photo_url;
-        popupPhotos = Array.isArray(data.photos) ? data.photos.filter(Boolean) : [];
-        renderSlider(0);
-      } catch {
-        track.innerHTML = `<p class="place-popup__muted">Could not load photos.</p>`;
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-close-place-popup]").forEach(el => {
-    el.addEventListener("click", function () {
-      popup.hidden = true;
-      popupPhotos  = [];
-      currentIndex = 0;
-      if (track)  track.innerHTML  = "";
-      if (thumbs) thumbs.innerHTML = "";
-    });
-  });
+  inp.addEventListener("input",function(){clearTimeout(srch);srch=setTimeout(run,350);});
+  btn.addEventListener("click",run);
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();run();}if(e.key==="Escape"){res.classList.remove("is-open");inp.blur();}});
+  document.addEventListener("click",function(e){if(!e.target.closest("#friends-search-input,#friends-search-btn,#friends-search-results"))res.classList.remove("is-open");});
 });
+
+async function addFriendFromSearch(e,btn){
+  e.stopPropagation();const uid=Number(btn.dataset.userId);btn.disabled=true;btn.textContent="Sending…";
+  try{const r=await fetch('/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})}),data=await r.json();
+    if(data.ok){btn.textContent="Sent ✓";btn.className="friends-result-action friends-result-action--pending";}
+    else{btn.textContent=data.error||"Error";btn.disabled=false;}}
+  catch{btn.textContent="Failed";btn.disabled=false;}
+}
+
+async function acceptFromSearch(e,btn){
+  e.stopPropagation();const uid=Number(btn.dataset.userId);
+  const f=friendsData.pending_in.find(x=>x.user_id===uid);if(!f)return;
+  await respondFriend(f.friendship_id,'accept',btn);
+}
+
+async function respondFriend(fid,action,btn){
+  btn.disabled=true;btn.textContent=action==='accept'?'Accepting…':'Declining…';
+  try{const r=await fetch('/friends/respond',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friendship_id:fid,action})});const d=await r.json();if(d.ok)await loadFriends();}
+  catch{btn.disabled=false;btn.textContent='Error';}
+}
+
+async function removeFriend(uid,btn){
+  if(!confirm('Remove this friend?'))return;btn.disabled=true;
+  try{await fetch('/friends/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});await loadFriends();}
+  catch{btn.disabled=false;}
+}
+
+document.addEventListener("DOMContentLoaded",loadFriends);
 </script>
 
-
 <script>
-/* ── Share user modal (unchanged) ── */
-document.addEventListener("DOMContentLoaded", function () {
-  const modal  = document.getElementById("share-user-modal");
-  const form   = document.getElementById("share-user-form");
-  const title  = document.getElementById("share-list-title");
-  const search = document.getElementById("share-user-search");
+/* SHARE MODAL V2 */
+let shareModalListId=null;
 
-  document.querySelectorAll("[data-open-share-modal]").forEach(btn => {
-    btn.addEventListener("click", function () {
-      form.action = `/lists/${btn.dataset.listId}/share`;
-      title.textContent = btn.dataset.listTitle || "Choose a user";
-      modal.hidden = false;
-      search.value = "";
-      search.focus();
-      document.querySelectorAll(".share-user-row").forEach(row => { row.hidden = false; });
-    });
-  });
+function openShareModal(lid,ltitle){
+  shareModalListId=lid;
+  document.getElementById("share-modal-v2-list-name").textContent=ltitle||"";
+  document.getElementById("share-modal-v2").hidden=false;
+  document.querySelectorAll(".share-tab").forEach(t=>t.classList.remove("is-active"));
+  document.querySelectorAll(".share-tab-panel").forEach(p=>p.classList.remove("is-active"));
+  document.querySelector('[data-tab="friends"]').classList.add("is-active");
+  document.getElementById("share-tab-friends").classList.add("is-active");
+  renderShareFriendsList();
+}
 
-  document.querySelectorAll("[data-close-share-modal]").forEach(el => {
-    el.addEventListener("click", () => { modal.hidden = true; });
-  });
+function renderShareFriendsList(){
+  const c=document.getElementById("share-friends-list"),{friends}=friendsData;
+  if(!friends.length){c.innerHTML=`<div class="share-no-friends">No friends yet. Add friends using the section below.</div>`;return;}
+  c.innerHTML=friends.map(f=>`<div class="share-friend-row"><div class="share-friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div><span class="share-friend-name">${escapeHtml(f.name)}</span><button class="share-friend-btn" onclick="shareListToFriend(${f.user_id},this)" data-friend-id="${f.user_id}">Send</button></div>`).join("");
+}
 
-  search?.addEventListener("input", function () {
-    const q = search.value.trim().toLowerCase();
-    document.querySelectorAll(".share-user-row").forEach(row => {
-      row.hidden = q && !row.dataset.userSearch.includes(q);
-    });
-  });
+async function shareListToFriend(fid,btn){
+  if(!shareModalListId)return;btn.disabled=true;btn.textContent="Sending…";
+  try{const r=await fetch('/lists/share/friend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_id:shareModalListId,friend_id:fid})}),d=await r.json();
+    if(d.ok){btn.textContent="Sent ✓";btn.className="share-friend-btn share-friend-btn--sent";}
+    else{btn.textContent=d.error||"Error";btn.disabled=false;}}
+  catch{btn.textContent="Failed";btn.disabled=false;}
+}
 
-  form?.addEventListener("submit", function () {
-    const btn = form.querySelector(".share-user-submit");
-    if (!btn) return;
-    btn.disabled = true;
-    btn.textContent = "Sending...";
-  });
+document.addEventListener("DOMContentLoaded",function(){
+  document.querySelectorAll(".js-open-share-v2").forEach(btn=>{btn.addEventListener("click",function(){openShareModal(btn.dataset.listId,btn.dataset.listTitle);});});
+  document.querySelectorAll(".share-tab").forEach(tab=>{tab.addEventListener("click",function(){document.querySelectorAll(".share-tab").forEach(t=>t.classList.remove("is-active"));document.querySelectorAll(".share-tab-panel").forEach(p=>p.classList.remove("is-active"));tab.classList.add("is-active");document.getElementById(`share-tab-${tab.dataset.tab}`).classList.add("is-active");});});
+  function closeShare(){document.getElementById("share-modal-v2").hidden=true;}
+  document.getElementById("share-modal-v2-backdrop")?.addEventListener("click",closeShare);
+  document.getElementById("share-modal-v2-close-btn")?.addEventListener("click",closeShare);
+  const es=document.getElementById("share-everyone-search");
+  es?.addEventListener("input",function(){const q=es.value.trim().toLowerCase();document.querySelectorAll(".share-user-row-v2").forEach(row=>{row.style.display=q&&!row.dataset.userSearch.includes(q)?"none":"";});});
+  const ef=document.getElementById("share-everyone-form");
+  ef?.addEventListener("submit",function(e){e.preventDefault();if(!shareModalListId)return;ef.action=`/lists/${shareModalListId}/share`;const b=ef.querySelector(".share-submit-btn");if(b){b.disabled=true;b.textContent="Sending…";}ef.submit();});
 });
+
+/* QR Modal */
+let currentQrUrl="";
+function openQrModal(slug,title){currentQrUrl=`/lists/${slug}`;document.getElementById("qrTitle").innerText=title;document.getElementById("qrImage").src=`/lists/${slug}/qr.png`;document.getElementById("qrModal").classList.add("is-open");}
+function closeQrModal(){document.getElementById("qrModal").classList.remove("is-open");}
+function copyQrLink(){navigator.clipboard.writeText(window.location.origin+currentQrUrl).then(()=>alert("Link copied!")).catch(()=>alert("Could not copy link."));}
+function nativeShareQr(){if(navigator.share)navigator.share({title:"Shared List",url:window.location.origin+currentQrUrl});}
 </script>
 
 </body>
