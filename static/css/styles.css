@@ -6417,251 +6417,237 @@ body:not(.page-discover):not(.page-account) .app-main {
 
 
 /* =============================================================
-   ACCOUNT PAGE — CAROUSEL FIX (FINAL)
-   
-   HOW TO APPLY:
-   1. Search styles.css for every block that mentions
-      "saved-place-slide" and DELETE all of them.
-      There are 3 separate blocks — remove all 3.
-   2. Also delete any previous "MOBILE LIST SIZE PATCH" blocks.
-   3. Paste this entire block at the very bottom of styles.css.
+   ACCOUNT PAGE — BIGGER CARDS (REPLACE previous carousel block)
+   Delete everything from the previous carousel-fix block and
+   paste this at the very bottom of styles.css instead.
    ============================================================= */
 
-/* ── Base slide card ── */
-.saved-place-slide {
-  flex: 0 0 auto;
+/* ── Force wider, taller cards on ALL screens ── */
+.saved-place-slide,
+.saved-place-slide--full {
+  flex: 0 0 auto !important;
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  background: #171a20 !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: 0 18px 50px rgba(0,0,0,.28) !important;
+  /* kill the grid layout that was fighting us */
+  grid-template-columns: unset !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  min-height: unset !important;
   scroll-snap-align: start;
-  border-radius: 22px;
-  overflow: hidden;
-  background: #171a20;
-  border: 1px solid rgba(255,255,255,.08);
-  box-shadow: 0 18px 50px rgba(0,0,0,.28);
-  display: flex;
-  flex-direction: column;
-  min-width: 220px;
-  max-width: 220px;
 }
 
-/* ── Photo: taller, edge-to-edge ── */
+/* ── Taller photo ── */
 .saved-place-slide__image,
 .saved-place-slide__thumb,
-.saved-place-slide__thumb img {
-  width: 100%;
-  height: 148px;
-  object-fit: cover;
-  display: block;
-  border-radius: 0;
-  flex-shrink: 0;
+.saved-place-slide__thumb img,
+.saved-place-slide--full .saved-place-slide__thumb,
+.saved-place-slide--full .saved-place-slide__thumb img {
+  width: 100% !important;
+  height: 160px !important;
+  min-height: 160px !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 0 !important;
+  flex-shrink: 0 !important;
+  max-width: 100% !important;
 }
 
-/* emoji placeholder (no photo) */
+/* emoji placeholder when no photo */
 .saved-place-slide__placeholder {
-  width: 100%;
-  height: 148px;
-  display: grid;
-  place-items: center;
-  font-size: 2.4rem;
-  background: linear-gradient(135deg, #1a2420 0%, #0f1a14 100%);
+  width: 100% !important;
+  height: 160px !important;
+  min-height: 160px !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 2.8rem !important;
+  background: linear-gradient(135deg, #1a2420 0%, #0f1a14 100%) !important;
+  flex-shrink: 0 !important;
 }
 
 /* ── Text body ── */
 .saved-place-slide__body {
-  padding: 12px 14px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
+  padding: 13px 14px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  flex: 1 !important;
+  /* kill any grid from --full variant */
+  grid-column: unset !important;
+  grid-row: unset !important;
 }
 
+/* ── Place name — bigger, 2-line wrap ── */
 .saved-place-slide__body h3 {
-  margin: 0;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.02em !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  line-clamp: 2 !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  text-overflow: unset !important;
 }
 
+/* ── Category ── */
 .saved-place-slide__category {
-  margin: 0;
-  color: rgba(255,255,255,0.52);
-  font-size: 12px;
-  line-height: 1.3;
+  margin: 0 !important;
+  color: rgba(255,255,255,0.52) !important;
+  font-size: 13px !important;
+  line-height: 1.3 !important;
 }
 
+/* ── Address ── */
 .saved-place-slide__address {
-  margin: 0;
-  color: rgba(255,255,255,0.38);
-  font-size: 11.5px;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0 !important;
+  color: rgba(255,255,255,0.38) !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
 }
 
+/* ── Action buttons ── */
 .saved-place-slide__actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
+  display: flex !important;
+  gap: 7px !important;
+  margin-top: 11px !important;
+  flex-wrap: nowrap !important;
 }
 
 .saved-place-slide__actions a {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 34px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,0.08) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
   transition: background 0.15s;
 }
 
-.saved-place-slide__actions a:hover {
-  background: rgba(255,255,255,0.14);
-}
-
 .saved-place-slide__actions a.is-primary {
-  background: rgba(23,179,132,0.18);
-  color: #7ee2bf;
-}
-
-.saved-place-slide__actions a.is-primary:hover {
-  background: rgba(23,179,132,0.28);
-}
-
-/* ── Full variant (used in some list views) ── */
-/* Keep it column layout on ALL screen sizes — no grid */
-.saved-place-slide--full {
-  min-width: 220px;
-  max-width: 220px;
-  display: flex;
-  flex-direction: column;
-  grid-template-columns: unset;
-  gap: 0;
-  padding: 0;
-  min-height: unset;
+  background: rgba(23,179,132,0.18) !important;
+  color: #7ee2bf !important;
 }
 
 /* ── Carousel strip ── */
 .saved-place-carousel {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0 16px 12px;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  display: flex !important;
+  gap: 12px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0 16px 14px !important;
+  scroll-snap-type: x mandatory !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-.saved-place-carousel::-webkit-scrollbar { display: none; }
+.saved-place-carousel::-webkit-scrollbar { display: none !important; }
 
-/* ── List section spacing ── */
-.saved-list-section {
-  margin: 20px 0;
-}
-
+/* ── List header ── */
 .saved-list-header {
-  padding: 0 16px 12px;
+  padding: 0 16px 10px !important;
 }
 
 .saved-list-header h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: #fff;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1 !important;
+  color: #fff !important;
+  margin: 0 !important;
 }
 
 .saved-list-header p {
-  margin: 6px 0 0;
-  color: rgba(255,255,255,0.52);
-  font-size: 13px;
+  margin: 5px 0 0 !important;
+  color: rgba(255,255,255,0.50) !important;
+  font-size: 13px !important;
 }
 
 /* ── Share / QR / Edit buttons ── */
 .saved-list-share-actions {
-  display: flex;
-  gap: 10px;
-  padding: 8px 16px 4px;
-  flex-wrap: wrap;
+  display: flex !important;
+  gap: 10px !important;
+  padding: 10px 16px 6px !important;
+  flex-wrap: wrap !important;
 }
 
 .saved-list-share-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 38px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 13.5px;
-  transition: background 0.15s, transform 0.1s;
-  border: none;
-  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 40px !important;
+  padding: 0 20px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,0.08) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  border: none !important;
+  cursor: pointer !important;
 }
 
-.saved-list-share-btn:hover { background: rgba(255,255,255,0.13); }
-.saved-list-share-btn:active { transform: scale(0.95); }
-.saved-list-share-btn.is-primary { background: #7ee2bf; color: #06100c; }
-.saved-list-share-btn.is-primary:hover { background: #5ed4a8; }
+.saved-list-share-btn.is-primary {
+  background: #7ee2bf !important;
+  color: #06100c !important;
+}
 
-/* ── acct- classes (new account.html if deployed) ── */
+/* ── NEW account.html acct- classes ── */
 .acct-place-thumb {
-  width: 120px;
-  border-radius: 16px;
-  overflow: hidden;
-  flex-shrink: 0;
+  width: 130px !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
 }
 
 .acct-place-thumb__img {
-  width: 100%;
-  height: 90px;
-  object-fit: cover;
-  display: block;
+  width: 100% !important;
+  height: 100px !important;
+  object-fit: cover !important;
+  display: block !important;
 }
 
 .acct-place-thumb__name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  padding: 8px 10px 4px;
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.3;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  padding: 8px 10px 3px !important;
+  white-space: normal !important;
+  display: -webkit-box !important;
+  line-clamp: 2 !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  line-height: 1.3 !important;
 }
 
 .acct-place-thumb__cat {
-  font-size: 11px;
-  color: rgba(255,255,255,0.42);
-  padding: 0 10px 10px;
+  font-size: 11.5px !important;
+  color: rgba(255,255,255,0.42) !important;
+  padding: 0 10px 10px !important;
 }
 
-.acct-place-thumb--add {
-  width: 120px;
-  min-height: 120px;
-}
-
-.acct-list-card__name { font-size: 22px; font-weight: 900; }
-.acct-list-card__meta { font-size: 13px; color: rgba(255,255,255,0.52); }
-.acct-foot-btn { height: 36px; padding: 0 16px; font-size: 13px; border-radius: 999px; }
+.acct-list-card__name  { font-size: 22px !important; font-weight: 900 !important; }
+.acct-list-card__meta  { font-size: 13px !important; }
+.acct-foot-btn         { height: 38px !important; padding: 0 18px !important; font-size: 13.5px !important; border-radius: 999px !important; }
