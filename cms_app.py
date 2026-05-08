@@ -156,22 +156,7 @@ def create_core_tables():
         """))
         
         
-        # ---------------------------------------------------
-        # friendships
-        # ---------------------------------------------------
-        
-        conn.execute(sql_text("""
-            CREATE TABLE IF NOT EXISTS friendships (
-                id            SERIAL PRIMARY KEY,
-                requester_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                addressee_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                status        VARCHAR(20) NOT NULL DEFAULT 'pending',
-                created_at    TIMESTAMP DEFAULT NOW(),
-                CONSTRAINT uq_friendship UNIQUE (requester_id, addressee_id)
-            );
-            CREATE INDEX IF NOT EXISTS idx_fr_req ON friendships(requester_id);
-            CREATE INDEX IF NOT EXISTS idx_fr_add ON friendships(addressee_id);
-        """))
+
         
         # ---------------------------------------------------
         # Social Section
@@ -429,6 +414,24 @@ def ensure_user_profile_columns():
         """))
 
     print("user profile columns checked", flush=True)
+    
+    
+            # ---------------------------------------------------
+        # friendships
+        # ---------------------------------------------------
+        
+    conn.execute(sql_text("""
+        CREATE TABLE IF NOT EXISTS friendships (
+            id            SERIAL PRIMARY KEY,
+            requester_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            addressee_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            status        VARCHAR(20) NOT NULL DEFAULT 'pending',
+            created_at    TIMESTAMP DEFAULT NOW(),
+            CONSTRAINT uq_friendship UNIQUE (requester_id, addressee_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_fr_req ON friendships(requester_id);
+        CREATE INDEX IF NOT EXISTS idx_fr_add ON friendships(addressee_id);
+    """))
 
 
 def init_db():
