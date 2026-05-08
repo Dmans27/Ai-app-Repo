@@ -161,14 +161,16 @@ def create_core_tables():
         # ---------------------------------------------------
         
         conn.execute(sql_text("""
-            CREATE TABLE friendships (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                requester_id INTEGER REFERENCES users(id),
-                addressee_id INTEGER REFERENCES users(id),
-                status VARCHAR(20) DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT NOW(),
-                UNIQUE(requester_id, addressee_id)
-);
+            CREATE TABLE IF NOT EXISTS friendships (
+                id            SERIAL PRIMARY KEY,
+                requester_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                addressee_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                status        VARCHAR(20) NOT NULL DEFAULT 'pending',
+                created_at    TIMESTAMP DEFAULT NOW(),
+                CONSTRAINT uq_friendship UNIQUE (requester_id, addressee_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_fr_req ON friendships(requester_id);
+            CREATE INDEX IF NOT EXISTS idx_fr_add ON friendships(addressee_id);
         """))
         
         # ---------------------------------------------------
