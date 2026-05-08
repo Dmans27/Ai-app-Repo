@@ -4704,6 +4704,9 @@ def enrich_internal_results_with_ratings(results: list) -> list:
 # (wherever User, SavedList, etc. are defined)
 # ─────────────────────────────────────────────
 
+
+from models import SharedList
+
 class Friendship(db.Model):
     __tablename__ = 'friendships'
 
