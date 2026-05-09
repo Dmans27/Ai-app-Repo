@@ -4731,19 +4731,17 @@ def enrich_internal_results_with_ratings(results: list) -> list:
 class Friendship(db.Model):
     __tablename__ = 'friendships'
 
-    id            = db.Column(db.Integer, primary_key=True)
-    requester_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    addressee_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    status        = db.Column(db.String(20), default='pending', nullable=False)
-    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # Relationships — lets you do friendship.requester.name etc.
+    id           = db.Column(db.Integer, primary_key=True)
     requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     addressee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status       = db.Column(db.String(20), default='pending', nullable=False)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Prevent duplicate rows in both directions
+    requester = db.relationship('User', foreign_keys=[requester_id], backref='sent_requests')
+    addressee = db.relationship('User', foreign_keys=[addressee_id], backref='received_requests')
+
     __table_args__ = (
-        db.UniqueConstraint('requester_id', 'addressee_id', name='unique_friendship'),
+        db.UniqueConstraint('requester_id', 'addressee_id', name='uq_friendship'),
     )
 
     def to_dict(self, current_user_id):
