@@ -369,33 +369,17 @@ def create_core_tables():
         
         
         conn.execute(sql_text("""
-    CREATE TABLE IF NOT EXISTS user_saved_lists (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-        saved_list_id INTEGER NOT NULL REFERENCES saved_list(id) ON DELETE CASCADE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT uq_user_saved_list UNIQUE (user_id, saved_list_id)
-    );
-"""))
-        
-        
-        
-        # ---------------------------------------------------
-        # friendships
-        # ---------------------------------------------------
-        
-    conn.execute(sql_text("""
-        CREATE TABLE IF NOT EXISTS friendships (
-            id            SERIAL PRIMARY KEY,
-            requester_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            addressee_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            status        VARCHAR(20) NOT NULL DEFAULT 'pending',
-            created_at    TIMESTAMP DEFAULT NOW(),
-            CONSTRAINT uq_friendship UNIQUE (requester_id, addressee_id)
+        CREATE TABLE IF NOT EXISTS user_saved_lists (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+            saved_list_id INTEGER NOT NULL REFERENCES saved_list(id) ON DELETE CASCADE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT uq_user_saved_list UNIQUE (user_id, saved_list_id)
         );
-        CREATE INDEX IF NOT EXISTS idx_fr_req ON friendships(requester_id);
-        CREATE INDEX IF NOT EXISTS idx_fr_add ON friendships(addressee_id);
     """))
+            
+            
+            
 
 
 
@@ -435,6 +419,33 @@ def ensure_user_profile_columns():
     print("user profile columns checked", flush=True)
     
     
+    
+    
+    
+def create_friendships_table():
+    try:
+        with engine.connect() as conn:
+            conn.execute(sql_text("""
+                CREATE TABLE IF NOT EXISTS friendships (
+                    id            SERIAL PRIMARY KEY,
+                    requester_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    addressee_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    status        VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    created_at    TIMESTAMP DEFAULT NOW(),
+                    CONSTRAINT uq_friendship UNIQUE requester_id  INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, addressee_id  INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                );
+            """))
+            conn.execute(sql_text("""
+                CREATE INDEX IF NOT EXISTS idx_fr_req ON friendships(requester_id);
+            """))
+            conn.execute(sql_text("""
+                CREATE INDEX IF NOT EXISTS idx_fr_add ON friendships(addressee_id);
+            """))
+            conn.commit()
+    except Exception as e:
+        print(f"[friendships table] {e}")
+    
+    
 
 
 
@@ -442,6 +453,7 @@ def init_db():
     with app.app_context():
         db.create_all()
         create_core_tables()
+        create_friendships_table()   # ← add this line
         ensure_user_profile_columns()
         print("[SQLALCHEMY DB URL]", db.engine.url, flush=True)
 
@@ -4726,8 +4738,8 @@ class Friendship(db.Model):
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships — lets you do friendship.requester.name etc.
-    requester = db.relationship('User', foreign_keys=[requester_id], backref='sent_requests')
-    addressee = db.relationship('User', foreign_keys=[addressee_id], backref='received_requests')
+    requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    addressee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     # Prevent duplicate rows in both directions
     __table_args__ = (
