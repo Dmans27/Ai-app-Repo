@@ -668,7 +668,7 @@ document.addEventListener("DOMContentLoaded",function(){
         let a;
         if(u.status==="friends")a=`<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
         else if(u.status==="pending_out")a=`<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
-        else if(u.status==="pending_in")a=`<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}">Accept</button>`;
+        else if(u.status==="pending_in") a=`<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}" data-friendship-id="${u.friendship_id}">Accept</button>`;
         else a=`<button class="friends-result-action friends-result-action--add" onclick="addFriendFromSearch(event,this)" data-user-id="${u.id}">+ Add</button>`;
         return `<div class="friends-search-result"><div class="friends-result-avatar">${u.photo?`<img src="${escapeHtml(u.photo)}" alt="${escapeHtml(u.name)}">`:escapeHtml((u.name||"?")[0].toUpperCase())}</div><div class="friends-result-info"><div class="friends-result-name">${escapeHtml(u.name)}</div><div class="friends-result-email">${escapeHtml(u.email)}</div></div>${a}</div>`;
       }).join("");
@@ -688,10 +688,18 @@ async function addFriendFromSearch(e,btn){
   catch{btn.textContent="Failed";btn.disabled=false;}
 }
 
-async function acceptFromSearch(e,btn){
-  e.stopPropagation();const uid=Number(btn.dataset.userId);
-  const f=friendsData.pending_in.find(x=>x.user_id===uid);if(!f)return;
-  await respondFriend(f.friendship_id,'accept',btn);
+async function acceptFromSearch(e, btn) {
+  e.stopPropagation();
+  const fid = Number(btn.dataset.friendshipId);
+  if (!fid) {
+    // fallback: try to find it in loaded friendsData
+    const uid = Number(btn.dataset.userId);
+    const f = friendsData.pending_in.find(x => x.user_id === uid);
+    if (!f) { btn.textContent = 'Error'; return; }
+    await respondFriend(f.friendship_id, 'accept', btn);
+    return;
+  }
+  await respondFriend(fid, 'accept', btn);
 }
 
 async function respondFriend(fid,action,btn){

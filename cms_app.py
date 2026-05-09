@@ -4779,25 +4779,30 @@ def friends_search():
         User.id != uid
     ).limit(10).all()
 
-    def friendship_status(other_id):
+    def get_friendship_info(other_id):
         f = Friendship.query.filter(
             db.or_(
                 db.and_(Friendship.requester_id == uid,      Friendship.addressee_id == other_id),
                 db.and_(Friendship.requester_id == other_id, Friendship.addressee_id == uid)
             )
         ).first()
-        if not f:                      return 'none'
-        if f.status == 'accepted':     return 'friends'
-        if f.requester_id == uid:      return 'pending_out'
-        return 'pending_in'
+        if not f:                      return 'none', None
+        if f.status == 'accepted':     return 'friends', f.id
+        if f.requester_id == uid:      return 'pending_out', f.id
+        return 'pending_in', f.id
 
-    return jsonify([{
-        'id':     u.id,
-        'name':   u.name or u.email.split('@')[0],
-        'email':  u.email,
-        'photo':  getattr(u, 'profile_image_url', None),
-        'status': friendship_status(u.id),
-    } for u in results])
+    output = []
+    for u in results:
+        status, fid = get_friendship_info(u.id)
+        output.append({
+            'id':            u.id,
+            'name':          u.name or u.email.split('@')[0],
+            'email':         u.email,
+            'photo':         getattr(u, 'profile_image_url', None),
+            'status':        status,
+            'friendship_id': fid,
+        })
+    return jsonify(output)
 
 # Send a friend request
 @app.route('/friends/request', methods=['POST'])
