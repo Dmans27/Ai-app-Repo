@@ -692,20 +692,32 @@ async function acceptFromSearch(e, btn) {
   e.stopPropagation();
   const fid = Number(btn.dataset.friendshipId);
   if (!fid) {
-    // fallback: try to find it in loaded friendsData
     const uid = Number(btn.dataset.userId);
     const f = friendsData.pending_in.find(x => x.user_id === uid);
     if (!f) { btn.textContent = 'Error'; return; }
     await respondFriend(f.friendship_id, 'accept', btn);
-    return;
+  } else {
+    await respondFriend(fid, 'accept', btn);
   }
-  await respondFriend(fid, 'accept', btn);
+  // Reload friends data so the count pill updates immediately
+  await loadFriends();
 }
 
-async function respondFriend(fid,action,btn){
-  btn.disabled=true;btn.textContent=action==='accept'?'Accepting…':'Declining…';
-  try{const r=await fetch('/friends/respond',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friendship_id:fid,action})});const d=await r.json();if(d.ok)await loadFriends();}
-  catch{btn.disabled=false;btn.textContent='Error';}
+async function respondFriend(fid, action, btn) {
+  btn.disabled = true;
+  btn.textContent = action === 'accept' ? 'Accepting…' : 'Declining…';
+  try {
+    const r = await fetch('/friends/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendship_id: fid, action })
+    });
+    const d = await r.json();
+    if (d.ok) await loadFriends();  // ← this line must be here
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Error';
+  }
 }
 
 async function removeFriend(uid,btn){
