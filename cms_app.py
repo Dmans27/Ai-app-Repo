@@ -4767,11 +4767,37 @@ class Friendship(db.Model):
 @login_required
 def friends_search():
     q = request.args.get('q', '').strip()
-    users = User.query.filter(
-        User.email.ilike(f'%{q}%'),
-        User.id != current_user.id
-    ).limit(8).all()
-    return jsonify([{'id': u.id, 'name': u.name, 'email': u.email} for u in users])
+    if len(q) < 2:
+        return jsonify([])
+
+    uid = current_user.id
+    results = User.query.filter(
+        db.or_(
+            User.name.ilike(f'%{q}%'),
+            User.email.ilike(f'%{q}%')
+        ),
+        User.id != uid
+    ).limit(10).all()
+
+    def friendship_status(other_id):
+        f = Friendship.query.filter(
+            db.or_(
+                db.and_(Friendship.requester_id == uid,      Friendship.addressee_id == other_id),
+                db.and_(Friendship.requester_id == other_id, Friendship.addressee_id == uid)
+            )
+        ).first()
+        if not f:                      return 'none'
+        if f.status == 'accepted':     return 'friends'
+        if f.requester_id == uid:      return 'pending_out'
+        return 'pending_in'
+
+    return jsonify([{
+        'id':     u.id,
+        'name':   u.name or u.email.split('@')[0],
+        'email':  u.email,
+        'photo':  getattr(u, 'profile_image_url', None),
+        'status': friendship_status(u.id),
+    } for u in results])
 
 # Send a friend request
 @app.route('/friends/request', methods=['POST'])
@@ -4809,21 +4835,58 @@ def friends_respond():
 @app.route('/friends')
 @login_required
 def friends_list():
-    friends = Friendship.query.filter(
-        ((Friendship.requester_id == current_user.id) |
-         (Friendship.addressee_id == current_user.id)),
+    uid = current_user.id
+
+    accepted = Friendship.query.filter(
+        db.or_(
+            Friendship.requester_id == uid,
+            Friendship.addressee_id == uid
+        ),
         Friendship.status == 'accepted'
     ).all()
-    return jsonify([...])  # serialize friend user objects
+
+    pending_in = Friendship.query.filter_by(
+        addressee_id=uid, status='pending'
+    ).all()
+
+    pending_out = Friendship.query.filter_by(
+        requester_id=uid, status='pending'
+    ).all()
+
+    def serialize(f):
+        other = f.addressee if f.requester_id == uid else f.requester
+        return {
+            'friendship_id':   f.id,
+            'status':          f.status,
+            'user_id':         other.id,
+            'name':            other.name or other.email.split('@')[0],
+            'email':           other.email,
+            'photo_url':       getattr(other, 'profile_image_url', None),
+            'initiated_by_me': f.requester_id == uid,
+        }
+
+    return jsonify({
+        'friends':     [serialize(f) for f in accepted],
+        'pending_in':  [serialize(f) for f in pending_in],
+        'pending_out': [serialize(f) for f in pending_out],
+    })
 
 # Get pending incoming requests
 @app.route('/friends/requests')
 @login_required
 def friends_requests():
+    uid     = current_user.id
     pending = Friendship.query.filter_by(
-        addressee_id=current_user.id, status='pending'
+        addressee_id=uid, status='pending'
     ).all()
-    return jsonify([...])
+
+    return jsonify([{
+        'friendship_id': f.id,
+        'user_id':       f.requester.id,
+        'name':          f.requester.name or f.requester.email.split('@')[0],
+        'email':         f.requester.email,
+        'photo_url':     getattr(f.requester, 'profile_image_url', None),
+    } for f in pending])
 
 @app.route('/lists/share/friend', methods=['POST'])
 @login_required
@@ -4844,7 +4907,33 @@ def share_list_to_friend():
         'sender_id':    current_user.id,
         'recipient_id': int(friend_id),
     })
-    return jsonify({'ok': True})  
+    return jsonify({'ok': True})
+
+
+
+
+
+
+@app.route('/friends/remove', methods=['POST'])
+@login_required
+def friends_remove():
+    data    = request.get_json(silent=True) or {}
+    user_id = int(data.get('user_id', 0))
+    uid     = current_user.id
+
+    f = Friendship.query.filter(
+        db.or_(
+            db.and_(Friendship.requester_id == uid,     Friendship.addressee_id == user_id),
+            db.and_(Friendship.requester_id == user_id, Friendship.addressee_id == uid)
+        )
+    ).first()
+
+    if not f:
+        return jsonify({'error': 'Not found'}), 404
+
+    db.session.delete(f)
+    db.session.commit()
+    return jsonify({'ok': True}) 
     
     
     
