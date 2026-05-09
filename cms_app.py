@@ -428,11 +428,11 @@ def create_friendships_table():
             conn.execute(sql_text("""
                 CREATE TABLE IF NOT EXISTS friendships (
                     id            SERIAL PRIMARY KEY,
-                    requester_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                    addressee_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    requester_id  INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                    addressee_id  INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
                     status        VARCHAR(20) NOT NULL DEFAULT 'pending',
                     created_at    TIMESTAMP DEFAULT NOW(),
-                    CONSTRAINT uq_friendship UNIQUE requester_id  INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE, addressee_id  INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+                    CONSTRAINT uq_friendship UNIQUE (requester_id, addressee_id)
                 );
             """))
             conn.execute(sql_text("""
@@ -4726,7 +4726,7 @@ def enrich_internal_results_with_ratings(results: list) -> list:
 # ─────────────────────────────────────────────
 
 
-from models import SharedList
+
 
 class Friendship(db.Model):
     __tablename__ = 'friendships'
@@ -4825,17 +4825,25 @@ def friends_requests():
     ).all()
     return jsonify([...])
 
-# Share a list directly to a friend (extends your existing shared_lists)
 @app.route('/lists/share/friend', methods=['POST'])
 @login_required
 def share_list_to_friend():
-    list_id = request.json.get('list_id')
-    friend_id = request.json.get('friend_id')
-    # reuse your existing SharedList model
-    share = SharedList(list_id=list_id, shared_by=current_user.id,
-                       shared_with=friend_id)
-    db.session.add(share)
-    db.session.commit()
+    data      = request.get_json(silent=True) or {}
+    list_id   = data.get('list_id')
+    friend_id = data.get('friend_id')
+
+    if not list_id or not friend_id:
+        return jsonify({'error': 'Missing list_id or friend_id'}), 400
+
+    execute("""
+        INSERT INTO shared_lists (list_id, sender_id, recipient_id, status)
+        VALUES (:list_id, :sender_id, :recipient_id, 'pending')
+        ON CONFLICT (list_id, sender_id, recipient_id) DO NOTHING
+    """, {
+        'list_id':      int(list_id),
+        'sender_id':    current_user.id,
+        'recipient_id': int(friend_id),
+    })
     return jsonify({'ok': True})  
     
     
