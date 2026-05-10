@@ -4818,36 +4818,50 @@ def friends_search():
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return jsonify([])
- 
-    uid     = current_user.id
-    results = User.query.filter(
+
+    uid = current_user.id
+
+    # Search by name and email — username added only if column exists
+    filters = [
         db.or_(
-            User.username.ilike(f'%{q}%'),
             User.name.ilike(f'%{q}%'),
             User.email.ilike(f'%{q}%'),
         ),
         User.id != uid
-    ).limit(10).all()
- 
+    ]
+
+    # Only filter by username if the column exists on the model
+    if hasattr(User, 'username'):
+        filters = [
+            db.or_(
+                User.name.ilike(f'%{q}%'),
+                User.email.ilike(f'%{q}%'),
+                User.username.ilike(f'%{q}%'),
+            ),
+            User.id != uid
+        ]
+
+    results = User.query.filter(*filters).limit(10).all()
+
     def get_friendship_info(other_id):
         f = Friendship.query.filter(
             db.or_(
-                db.and_(Friendship.requester_id == uid,      Friendship.addressee_id == other_id),
+                db.and_(Friendship.requester_id == uid, Friendship.addressee_id == other_id),
                 db.and_(Friendship.requester_id == other_id, Friendship.addressee_id == uid)
             )
         ).first()
-        if not f:                      return 'none', None
-        if f.status == 'accepted':     return 'friends', f.id
-        if f.requester_id == uid:      return 'pending_out', f.id
+        if not f:                    return 'none', None
+        if f.status == 'accepted':   return 'friends', f.id
+        if f.requester_id == uid:    return 'pending_out', f.id
         return 'pending_in', f.id
- 
+
     output = []
     for u in results:
         status, fid = get_friendship_info(u.id)
         output.append({
             'id':            u.id,
             'name':          u.name or u.email.split('@')[0],
-            'username':      u.username or u.email.split('@')[0],
+            'username':      getattr(u, 'username', None) or u.email.split('@')[0],
             'email':         u.email,
             'photo':         getattr(u, 'profile_image_url', None),
             'status':        status,
