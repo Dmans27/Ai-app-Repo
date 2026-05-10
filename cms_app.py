@@ -325,6 +325,31 @@ def create_core_tables():
                 UNIQUE(post_id, user_id)
             );
         """))
+        
+        
+        
+        # ---------------------------------------------------
+        
+        # Usernames
+        
+        # ---------------------------------------------------
+        
+        
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS username VARCHAR(30) UNIQUE;
+        """))
+ 
+        # Backfill existing users who don't have a username yet
+        # Uses the part before @ in their email as a base
+        conn.execute(sql_text("""
+            UPDATE "user"
+            SET username = LOWER(REGEXP_REPLACE(
+                SPLIT_PART(email, '@', 1) || '_' || CAST(id AS TEXT),
+                '[^a-z0-9_]', '', 'g'
+            ))
+            WHERE username IS NULL;
+        """))
 
         # ---------------------------------------------------
         # Feed Comments
@@ -4759,6 +4784,33 @@ class Friendship(db.Model):
             'photo_url':     getattr(other, 'photo_url', None),
         }
     
+  
+  
+  
+@app.route('/check-username')
+def check_username():
+    username = request.args.get('u', '').strip().lower()
+    import re
+    if not username:
+        return jsonify({'available': False, 'error': 'Enter a username'})
+    if len(username) < 3:
+        return jsonify({'available': False, 'error': 'At least 3 characters'})
+    if len(username) > 30:
+        return jsonify({'available': False, 'error': 'Max 30 characters'})
+    if not re.match(r'^[a-z0-9_]+$', username):
+        return jsonify({'available': False, 'error': 'Letters, numbers, underscores only'})
+    taken = User.query.filter(
+        db.func.lower(User.username) == username,
+        User.id != (current_user.id if current_user.is_authenticated else -1)
+    ).first()
+    if taken:
+        return jsonify({'available': False, 'error': 'Username already taken'})
+    return jsonify({'available': True})
+  
+  
+  
+  
+  
     
   # Search users to add as friends
 @app.route('/friends/search')
@@ -4767,16 +4819,17 @@ def friends_search():
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return jsonify([])
-
-    uid = current_user.id
+ 
+    uid     = current_user.id
     results = User.query.filter(
         db.or_(
+            User.username.ilike(f'%{q}%'),
             User.name.ilike(f'%{q}%'),
-            User.email.ilike(f'%{q}%')
+            User.email.ilike(f'%{q}%'),
         ),
         User.id != uid
     ).limit(10).all()
-
+ 
     def get_friendship_info(other_id):
         f = Friendship.query.filter(
             db.or_(
@@ -4788,13 +4841,14 @@ def friends_search():
         if f.status == 'accepted':     return 'friends', f.id
         if f.requester_id == uid:      return 'pending_out', f.id
         return 'pending_in', f.id
-
+ 
     output = []
     for u in results:
         status, fid = get_friendship_info(u.id)
         output.append({
             'id':            u.id,
             'name':          u.name or u.email.split('@')[0],
+            'username':      u.username or u.email.split('@')[0],
             'email':         u.email,
             'photo':         getattr(u, 'profile_image_url', None),
             'status':        status,
@@ -4863,6 +4917,7 @@ def friends_list():
             'status':          f.status,
             'user_id':         other.id,
             'name':            other.name or other.email.split('@')[0],
+            'username':        other.username or other.email.split('@')[0],
             'email':           other.email,
             'photo_url':       getattr(other, 'profile_image_url', None),
             'initiated_by_me': f.requester_id == uid,
@@ -5049,23 +5104,37 @@ def discover_page():
 @login_required
 def settings():
     if request.method == "POST":
-        current_user.name = request.form.get("name", "").strip()
+        import re
+        new_username = request.form.get("username", "").strip().lower()
+ 
+        # Validate username if provided
+        if new_username:
+            if len(new_username) < 3 or len(new_username) > 30:
+                flash("Username must be 3–30 characters.")
+                return redirect(url_for("settings"))
+            if not re.match(r'^[a-z0-9_]+$', new_username):
+                flash("Username can only contain letters, numbers, and underscores.")
+                return redirect(url_for("settings"))
+            taken = User.query.filter(
+                db.func.lower(User.username) == new_username,
+                User.id != current_user.id
+            ).first()
+            if taken:
+                flash("That username is already taken.")
+                return redirect(url_for("settings"))
+            current_user.username = new_username
+ 
+        current_user.name      = request.form.get("name", "").strip()
         current_user.home_city = request.form.get("home_city", "").strip()
-
         db.session.commit()
-
         flash("Settings updated.")
         return redirect(url_for("settings"))
-
+ 
     lists = SavedList.query.filter_by(
         user_id=current_user.id
     ).order_by(SavedList.created_at.desc()).all()
-
-    return render_template(
-        "settings.html",
-        user=current_user,
-        lists=lists
-    )
+ 
+    return render_template("settings.html", user=current_user, lists=lists)
 
 
 @app.post("/settings/lists/<int:list_id>/delete")
@@ -5514,35 +5583,52 @@ def admin_new_listing():
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip().lower()
+        name     = request.form.get("name", "").strip()
+        username = request.form.get("username", "").strip().lower()
+        email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        
-
+ 
+        import re
+ 
+        # Validate required fields
         if not email or not password:
             flash("Email and password are required.")
             return redirect(url_for("signup"))
-
-        existing = User.query.filter_by(email=email).first()
-        if existing:
+ 
+        if not username:
+            flash("Username is required.")
+            return redirect(url_for("signup"))
+ 
+        if len(username) < 3 or len(username) > 30:
+            flash("Username must be 3–30 characters.")
+            return redirect(url_for("signup"))
+ 
+        if not re.match(r'^[a-z0-9_]+$', username):
+            flash("Username can only contain letters, numbers, and underscores.")
+            return redirect(url_for("signup"))
+ 
+        # Check uniqueness
+        if User.query.filter(db.func.lower(User.username) == username).first():
+            flash("That username is already taken. Please choose another.")
+            return redirect(url_for("signup"))
+ 
+        if User.query.filter_by(email=email).first():
             flash("That email is already registered.")
             return redirect(url_for("signup"))
-        
-        
+ 
         if request.form.get("privacy_agree") != "on":
             flash("You must agree to the Privacy Policy to create an account.")
             return redirect(url_for("signup"))
-
-        user = User(name=name, email=email)
+ 
+        user = User(name=name, email=email, username=username)
         user.set_password(password)
-
         db.session.add(user)
         db.session.commit()
-
+ 
         login_user(user)
         flash("Account created successfully.")
         return redirect(url_for("onboarding"))
-
+ 
     return render_template("signup.html")
 
 

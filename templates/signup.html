@@ -3,13 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Create account</title>
+  <title>Create account · Local AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
     body.signup-page-body {
@@ -24,148 +21,91 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
+      /* override the global overflow:hidden from sticky-nav css */
+      overflow-y: auto !important;
+      height: auto !important;
     }
 
-    .auth-shell {
-      width: 100%;
-      max-width: 560px;
-    }
+    .auth-shell { width: 100%; max-width: 560px; }
 
     .auth-card {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-radius: 32px;
       padding: 40px 32px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
     }
 
-    .auth-eyebrow {
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.72);
-      margin-bottom: 10px;
-      letter-spacing: 0.02em;
-    }
+    .auth-eyebrow { font-size:0.92rem; font-weight:600; color:rgba(255,255,255,0.72); margin-bottom:10px; letter-spacing:0.02em; }
+    .auth-title { margin:0 0 10px; font-size:clamp(2rem,5vw,3rem); line-height:1.02; font-weight:800; letter-spacing:-0.03em; }
+    .auth-subtitle { margin:0 0 28px; color:rgba(255,255,255,0.72); font-size:1rem; line-height:1.6; }
 
-    .auth-title {
-      margin: 0 0 10px;
-      font-size: clamp(2rem, 5vw, 3rem);
-      line-height: 1.02;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-    }
+    .flash-messages { display:grid; gap:10px; margin-bottom:20px; }
+    .flash-message { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08); color:#fff; border-radius:18px; padding:14px 16px; font-size:0.96rem; line-height:1.5; }
 
-    .auth-subtitle {
-      margin: 0 0 28px;
-      color: rgba(255,255,255,0.72);
-      font-size: 1rem;
-      line-height: 1.6;
-    }
-
-    .flash-messages {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .flash-message {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #fff;
-      border-radius: 18px;
-      padding: 14px 16px;
-      font-size: 0.96rem;
-      line-height: 1.5;
-    }
-
-    .auth-form {
-      display: grid;
-      gap: 16px;
-    }
-
-    .auth-field {
-      display: grid;
-      gap: 8px;
-    }
-
-    .auth-label {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.86);
-    }
+    .auth-form { display:grid; gap:16px; }
+    .auth-field { display:grid; gap:8px; }
+    .auth-label { font-size:0.95rem; font-weight:600; color:rgba(255,255,255,0.86); }
 
     .auth-input {
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.08);
-      color: #ffffff;
-      border-radius: 999px;
-      min-height: 58px;
-      padding: 0 20px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+      width:100%; box-sizing:border-box;
+      border:1px solid rgba(255,255,255,0.10);
+      background:rgba(255,255,255,0.08);
+      color:#ffffff; border-radius:999px;
+      min-height:58px; padding:0 20px;
+      font-size:1rem; outline:none;
+      transition:border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
     }
+    .auth-input::placeholder { color:rgba(255,255,255,0.48); }
+    .auth-input:focus { border-color:rgba(255,255,255,0.24); background:rgba(255,255,255,0.12); transform:translateY(-1px); }
+    .auth-input--valid   { border-color:rgba(16,163,127,0.7) !important; }
+    .auth-input--invalid { border-color:rgba(239,68,68,0.7) !important; }
 
-    .auth-input::placeholder {
-      color: rgba(255,255,255,0.48);
+    /* Username field wrapper */
+    .username-wrap { position:relative; }
+    .username-prefix {
+      position:absolute; left:20px; top:50%; transform:translateY(-50%);
+      color:rgba(255,255,255,0.38); font-size:1rem; font-weight:600;
+      pointer-events:none; user-select:none;
     }
+    .auth-input--username { padding-left:32px; }
 
-    .auth-input:focus {
-      border-color: rgba(255,255,255,0.24);
-      background: rgba(255,255,255,0.12);
-      transform: translateY(-1px);
+    /* Availability feedback */
+    .username-feedback {
+      display:none; font-size:12px; font-weight:600;
+      margin-top:4px; padding:0 8px;
     }
+    .username-feedback.show { display:block; }
+    .username-feedback--ok  { color:#7ee2bf; }
+    .username-feedback--err { color:#f87171; }
+    .username-feedback__spinner {
+      display:inline-block; width:10px; height:10px;
+      border:2px solid rgba(255,255,255,0.2);
+      border-top-color:rgba(255,255,255,0.7);
+      border-radius:50%; animation:spin 0.7s linear infinite;
+      vertical-align:middle; margin-right:4px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
     .auth-submit {
-      width: 100%;
-      min-height: 58px;
-      border: 0;
-      border-radius: 999px;
-      background: #ffffff;
-      color: #111111;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s ease, opacity 0.2s ease;
-      margin-top: 6px;
+      width:100%; min-height:58px; border:0; border-radius:999px;
+      background:#ffffff; color:#111111;
+      font-size:1rem; font-weight:700; cursor:pointer;
+      transition:transform 0.2s ease, opacity 0.2s ease;
+      margin-top:6px;
     }
+    .auth-submit:hover { transform:translateY(-1px); opacity:0.96; }
+    .auth-submit:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
 
-    .auth-submit:hover {
-      transform: translateY(-1px);
-      opacity: 0.96;
-    }
+    .auth-footer { margin-top:22px; text-align:center; color:rgba(255,255,255,0.72); font-size:0.98rem; }
+    .auth-footer a { color:#ffffff; font-weight:700; text-decoration:none; }
+    .auth-footer a:hover { text-decoration:underline; }
 
-    .auth-footer {
-      margin-top: 22px;
-      text-align: center;
-      color: rgba(255,255,255,0.72);
-      font-size: 0.98rem;
-    }
-
-    .auth-footer a {
-      color: #ffffff;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .auth-footer a:hover {
-      text-decoration: underline;
-    }
-
-    @media (max-width: 640px) {
-      .auth-card {
-        padding: 28px 20px;
-        border-radius: 24px;
-      }
-
-      .auth-input,
-      .auth-submit {
-        min-height: 54px;
-      }
+    @media (max-width:640px) {
+      .auth-card { padding:28px 20px; border-radius:24px; }
+      .auth-input, .auth-submit { min-height:54px; }
     }
   </style>
 </head>
@@ -174,9 +114,7 @@
     <section class="auth-card">
       <div class="auth-eyebrow">Join now</div>
       <h1 class="auth-title">Create account</h1>
-      <p class="auth-subtitle">
-        Save favorite places, build your own local lists, and share them with friends and family.
-      </p>
+      <p class="auth-subtitle">Save favorite places, build local lists, and share them with friends.</p>
 
       {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -188,140 +126,197 @@
         {% endif %}
       {% endwith %}
 
-      <form method="post" action="{{ url_for('signup') }}" class="auth-form">
+      <form method="post" action="{{ url_for('signup') }}" class="auth-form" id="signup-form">
+
+        <!-- Name -->
         <div class="auth-field">
           <label for="name" class="auth-label">Name</label>
-          <input
-            id="name"
-            type="text"
-            name="name"
-            class="auth-input"
-            placeholder="Enter your name"
-          >
+          <input id="name" type="text" name="name" class="auth-input" placeholder="Your full name">
         </div>
 
+        <!-- Username -->
+        <div class="auth-field">
+          <label for="username" class="auth-label">Username</label>
+          <div class="username-wrap">
+            <span class="username-prefix">@</span>
+            <input
+              id="username"
+              type="text"
+              name="username"
+              class="auth-input auth-input--username"
+              placeholder="choose_a_username"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              minlength="3"
+              maxlength="30"
+            >
+          </div>
+          <div class="username-feedback" id="username-feedback"></div>
+        </div>
+
+        <!-- Email -->
         <div class="auth-field">
           <label for="email" class="auth-label">Email</label>
-          <input
-            id="email"
-            type="email"
-            name="email"
-            class="auth-input"
-            placeholder="Enter your email"
-            required
-          >
+          <input id="email" type="email" name="email" class="auth-input" placeholder="your@email.com" required>
         </div>
 
+        <!-- Password -->
         <div class="auth-field">
           <label for="password" class="auth-label">Password</label>
-          <input
-            id="password"
-            type="password"
-            name="password"
-            class="auth-input"
-            placeholder="Create a password"
-            required
-          >
+          <input id="password" type="password" name="password" class="auth-input" placeholder="Create a password" required>
         </div>
 
-
+        <!-- Privacy -->
         <label class="signup-privacy-row">
-  <input
-    type="checkbox"
-    name="privacy_agree"
-    id="privacy-agree-checkbox"
-    required
-  >
-  <span>
-    I agree to the
-    <button type="button" class="privacy-link-button" id="privacy-open">
-      Privacy Policy
-    </button>
-  </span>
-</label>
+          <input type="checkbox" name="privacy_agree" id="privacy-agree-checkbox" required>
+          <span>
+            I agree to the
+            <button type="button" class="privacy-link-button" id="privacy-open">Privacy Policy</button>
+          </span>
+        </label>
 
-        <button type="submit" class="auth-submit">Create account</button>
+        <button type="submit" class="auth-submit" id="signup-submit">Create account</button>
       </form>
 
       <p class="auth-footer">
-        Already have an account?
-        <a href="{{ url_for('login') }}">Log in</a>
+        Already have an account? <a href="{{ url_for('login') }}">Log in</a>
       </p>
     </section>
   </main>
 
-
-<div class="privacy-popup" id="privacy-popup" hidden>
-  <div class="privacy-popup__backdrop"></div>
-
-  <div class="privacy-popup__card">
-    <button type="button" class="privacy-popup__close" id="privacy-close">✕</button>
-
-    <h2>Privacy Policy</h2>
-    <p class="privacy-updated">Effective Date: April 2026</p>
-
-    <div class="privacy-popup__content">
-      <p>Local AI collects account details, profile preferences, saved places, lists, and optional location data to personalize your experience.</p>
-
-      <p>Your public lists may be visible to others through shared links or QR codes.</p>
-
-      <p>You can update your profile, remove lists, or delete your account in Settings.</p>
-
-      <p>
-        Full policy:
-        <a href="{{ url_for('privacy_policy') }}" target="_blank">View Privacy Policy</a>
-      </p>
-    </div>
-
-    <div class="privacy-popup__actions">
-      <button type="button" class="privacy-btn-secondary" id="privacy-decline">
-        Decline
-      </button>
-
-      <button type="button" class="privacy-btn-primary" id="privacy-agree">
-        I Agree
-      </button>
+  <!-- Privacy popup (unchanged) -->
+  <div class="privacy-popup" id="privacy-popup" hidden>
+    <div class="privacy-popup__backdrop"></div>
+    <div class="privacy-popup__card">
+      <button type="button" class="privacy-popup__close" id="privacy-close">✕</button>
+      <h2>Privacy Policy</h2>
+      <p class="privacy-updated">Effective Date: April 2026</p>
+      <div class="privacy-popup__content">
+        <p>Local AI collects account details, profile preferences, saved places, lists, and optional location data to personalize your experience.</p>
+        <p>Your public lists may be visible to others through shared links or QR codes.</p>
+        <p>You can update your profile, remove lists, or delete your account in Settings.</p>
+        <p>Full policy: <a href="{{ url_for('privacy_policy') }}" target="_blank">View Privacy Policy</a></p>
+      </div>
+      <div class="privacy-popup__actions">
+        <button type="button" class="privacy-btn-secondary" id="privacy-decline">Decline</button>
+        <button type="button" class="privacy-btn-primary" id="privacy-agree">I Agree</button>
+      </div>
     </div>
   </div>
-</div>
 
-
-
-
-<script>
+  <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const popup = document.getElementById("privacy-popup");
-    const openBtn = document.getElementById("privacy-open");
-    const closeBtn = document.getElementById("privacy-close");
-    const agreeBtn = document.getElementById("privacy-agree");
+
+    /* ── Privacy popup ── */
+    const popup      = document.getElementById("privacy-popup");
+    const openBtn    = document.getElementById("privacy-open");
+    const closeBtn   = document.getElementById("privacy-close");
+    const agreeBtn   = document.getElementById("privacy-agree");
     const declineBtn = document.getElementById("privacy-decline");
-    const checkbox = document.getElementById("privacy-agree-checkbox");
+    const checkbox   = document.getElementById("privacy-agree-checkbox");
 
-    function openPrivacyPopup() {
-      popup.hidden = false;
-      document.body.classList.add("privacy-popup-open");
+    openBtn?.addEventListener("click",    () => { popup.hidden = false; });
+    closeBtn?.addEventListener("click",   () => { popup.hidden = true; });
+    declineBtn?.addEventListener("click", () => { checkbox.checked = false; popup.hidden = true; });
+    agreeBtn?.addEventListener("click",   () => { checkbox.checked = true;  popup.hidden = true; });
+
+    /* ── Username availability check ── */
+    const usernameInput = document.getElementById("username");
+    const feedback      = document.getElementById("username-feedback");
+    const submitBtn     = document.getElementById("signup-submit");
+    let usernameOk      = false;
+    let debounceTimer   = null;
+
+    function setFeedback(type, html) {
+      feedback.className = `username-feedback show username-feedback--${type}`;
+      feedback.innerHTML = html;
     }
 
-    function closePrivacyPopup() {
-      popup.hidden = true;
-      document.body.classList.remove("privacy-popup-open");
+    function validateLocal(val) {
+      if (!val) return "Enter a username";
+      if (val.length < 3) return "At least 3 characters";
+      if (val.length > 30) return "Max 30 characters";
+      if (!/^[a-z0-9_]+$/.test(val)) return "Letters, numbers, underscores only";
+      return null;
     }
 
-    openBtn?.addEventListener("click", openPrivacyPopup);
-    closeBtn?.addEventListener("click", closePrivacyPopup);
+    async function checkAvailability(val) {
+      const localError = validateLocal(val);
+      if (localError) {
+        usernameOk = false;
+        usernameInput.classList.remove("auth-input--valid");
+        usernameInput.classList.add("auth-input--invalid");
+        setFeedback("err", localError);
+        submitBtn.disabled = true;
+        return;
+      }
 
-    agreeBtn?.addEventListener("click", function () {
-      checkbox.checked = true;
-      closePrivacyPopup();
+      /* Show spinner while fetching */
+      setFeedback("ok", `<span class="username-feedback__spinner"></span> Checking…`);
+
+      try {
+        const res  = await fetch(`/check-username?u=${encodeURIComponent(val)}`);
+        const data = await res.json();
+
+        if (data.available) {
+          usernameOk = true;
+          usernameInput.classList.add("auth-input--valid");
+          usernameInput.classList.remove("auth-input--invalid");
+          setFeedback("ok", `✓ @${val} is available`);
+          submitBtn.disabled = false;
+        } else {
+          usernameOk = false;
+          usernameInput.classList.remove("auth-input--valid");
+          usernameInput.classList.add("auth-input--invalid");
+          setFeedback("err", data.error || "Username not available");
+          submitBtn.disabled = true;
+        }
+      } catch {
+        /* Network error — allow submit, server will validate */
+        usernameOk = true;
+        feedback.classList.remove("show");
+        submitBtn.disabled = false;
+      }
+    }
+
+    usernameInput?.addEventListener("input", function () {
+      /* Sanitise: lowercase, strip bad chars as user types */
+      const pos = this.selectionStart;
+      const clean = this.value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+      if (clean !== this.value) {
+        this.value = clean;
+        this.setSelectionRange(pos, pos);
+      }
+
+      clearTimeout(debounceTimer);
+      submitBtn.disabled = true;
+      usernameOk = false;
+
+      if (!this.value) {
+        feedback.classList.remove("show");
+        usernameInput.classList.remove("auth-input--valid", "auth-input--invalid");
+        return;
+      }
+
+      debounceTimer = setTimeout(() => checkAvailability(this.value), 450);
     });
 
-    declineBtn?.addEventListener("click", function () {
-      checkbox.checked = false;
-      closePrivacyPopup();
+    /* Block submit if username isn't verified */
+    document.getElementById("signup-form")?.addEventListener("submit", function (e) {
+      const val = usernameInput?.value.trim();
+      const localError = validateLocal(val);
+      if (localError) {
+        e.preventDefault();
+        setFeedback("err", localError);
+        usernameInput.focus();
+        return;
+      }
+      /* Allow submit — server validates too */
     });
+
   });
-</script>
-
-
+  </script>
 </body>
 </html>
