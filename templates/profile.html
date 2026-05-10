@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ profile_user.name or profile_user.username }} · Local AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    body.page-profile{overflow-y:auto !important;height:auto !important}
+    body.page-profile .mobile-app-shell,
+    body.page-profile .mobile-screen{height:auto !important;overflow:visible !important}
+    .profile-hero{display:flex;align-items:center;gap:16px;padding:24px 16px 16px}
+    .profile-avatar{width:80px;height:80px;border-radius:50%;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:#7ee2bf;flex-shrink:0;overflow:hidden}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover}
+    .profile-info{flex:1;min-width:0}
+    .profile-name{font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.03em;margin:0 0 2px}
+    .profile-username{font-size:14px;color:#7ee2bf;font-weight:600;margin:0 0 4px}
+    .profile-city{font-size:13px;color:rgba(255,255,255,0.45);margin:0 0 12px}
+    .profile-actions{display:flex;gap:8px}
+    .profile-btn{height:36px;padding:0 16px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all 0.15s}
+    .profile-btn--primary{background:#10a37f;color:#fff}
+    .profile-btn--primary:hover{background:#0d8a6c}
+    .profile-btn--ghost{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.72);border:0.5px solid rgba(255,255,255,0.12)}
+    .profile-btn--ghost:hover{background:rgba(255,255,255,0.12);color:#fff}
+    .profile-btn--pending{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.38);border:0.5px solid rgba(255,255,255,0.1);cursor:default}
+    .profile-stats{display:flex;gap:8px;padding:0 16px 20px}
+    .profile-stat{flex:1;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:11px 8px;display:flex;flex-direction:column;align-items:center}
+    .profile-stat__num{font-size:22px;font-weight:900;color:#fff;line-height:1}
+    .profile-stat__lbl{font-size:10px;color:rgba(255,255,255,0.38);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+    .profile-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.3);padding:0 16px 10px}
+    .profile-lists{display:flex;flex-direction:column;gap:12px;padding:0 0 40px}
+    .profile-list-card{margin:0 16px;background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden}
+    .profile-list-card__head{padding:14px 14px 10px}
+    .profile-list-card__name{font-size:17px;font-weight:900;color:#fff;letter-spacing:-0.025em;margin:0 0 3px}
+    .profile-list-card__meta{font-size:12px;color:rgba(255,255,255,0.38);margin:0}
+    .profile-empty{text-align:center;padding:48px 24px;color:rgba(255,255,255,0.35);font-size:14px}
+    .profile-empty-icon{font-size:36px;margin-bottom:12px;opacity:0.4}
+  </style>
+</head>
+<body class="app-body page-profile">
+<div class="app-shell">
+
+  <div class="mobile-app-shell">
+    <main class="mobile-screen">
+      <header class="mobile-app-header">
+        <button class="mobile-app-header__icon" onclick="history.back()" type="button" aria-label="Back">←</button>
+        <div class="mobile-app-header__center">
+          <div class="mobile-app-header__title">{{ profile_user.name or profile_user.username or 'Profile' }}</div>
+          <div class="mobile-app-header__subtitle">Local AI</div>
+        </div>
+        <a href="{{ url_for('account') }}" class="mobile-app-header__icon mobile-app-header__icon--link">👤</a>
+      </header>
+
+      <section class="mobile-content">
+
+        <!-- Hero -->
+        <div class="profile-hero">
+          <div class="profile-avatar">
+            {% if profile_user.profile_image_url %}
+              <img src="{{ profile_user.profile_image_url }}" alt="{{ profile_user.name }}">
+            {% else %}
+              {{ (profile_user.name or profile_user.username or 'U')[0]|upper }}
+            {% endif %}
+          </div>
+          <div class="profile-info">
+            <h1 class="profile-name">{{ profile_user.name or profile_user.username or 'Local AI User' }}</h1>
+            {% if profile_user.username %}
+            <p class="profile-username">@{{ profile_user.username }}</p>
+            {% endif %}
+            <p class="profile-city">{% if profile_user.home_city %}📍 {{ profile_user.home_city }}{% endif %}</p>
+            <div class="profile-actions">
+              {% if is_friend %}
+                <a href="{{ url_for('messages_with_user', user_id=profile_user.id) }}" class="profile-btn profile-btn--primary">💬 Message</a>
+                <button class="profile-btn profile-btn--ghost" onclick="removeFriendProfile({{ profile_user.id }}, {{ friendship_id }}, this)">Remove friend</button>
+              {% elif pending_out %}
+                <button class="profile-btn profile-btn--pending" disabled>Request sent</button>
+              {% else %}
+                <button class="profile-btn profile-btn--primary" onclick="addFriendProfile({{ profile_user.id }}, this)">+ Add friend</button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-stat__num">{{ lists|length }}</span>
+            <span class="profile-stat__lbl">Lists</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat__num">{{ lists | map(attribute='places') | map('length') | sum }}</span>
+            <span class="profile-stat__lbl">Places</span>
+          </div>
+        </div>
+
+        <!-- Public lists -->
+        {% if lists %}
+        <div class="profile-section-lbl">Public lists</div>
+        <div class="profile-lists">
+          {% for lst in lists %}
+          <a href="{{ url_for('view_public_list', slug=lst.slug) }}" class="profile-list-card" style="text-decoration:none;">
+            <div class="profile-list-card__head">
+              <h2 class="profile-list-card__name">{{ lst.title }}</h2>
+              <p class="profile-list-card__meta">{{ lst.places|length }} place{{ 's' if lst.places|length != 1 else '' }}</p>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="profile-empty">
+          <div class="profile-empty-icon">📋</div>
+          No public lists yet.
+        </div>
+        {% endif %}
+
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+async function addFriendProfile(uid, btn) {
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const r = await fetch('/friends/request', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: uid})
+    });
+    const d = await r.json();
+    if(d.ok) { btn.textContent = 'Request sent'; btn.className = 'profile-btn profile-btn--pending'; btn.disabled = true; }
+    else { btn.textContent = d.error || 'Error'; btn.disabled = false; }
+  } catch { btn.textContent = 'Failed'; btn.disabled = false; }
+}
+
+async function removeFriendProfile(uid, fid, btn) {
+  if(!confirm('Remove this friend?')) return;
+  btn.disabled = true;
+  try {
+    await fetch('/friends/remove', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: uid})
+    });
+    window.location.href = '/account';
+  } catch { btn.disabled = false; }
+}
+</script>
+</body>
+</html>
