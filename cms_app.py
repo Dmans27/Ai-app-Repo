@@ -4762,6 +4762,7 @@ class Friendship(db.Model):
     status       = db.Column(db.String(20), default='pending', nullable=False)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # These give you friendship.requester and friendship.addressee
     requester = db.relationship('User', foreign_keys=[requester_id], backref='sent_requests')
     addressee = db.relationship('User', foreign_keys=[addressee_id], backref='received_requests')
 
@@ -4769,19 +4770,17 @@ class Friendship(db.Model):
         db.UniqueConstraint('requester_id', 'addressee_id', name='uq_friendship'),
     )
 
-    def to_dict(self, current_user_id):
-        """Return the *other* person's info from the perspective of current_user."""
-        if self.requester_id == current_user_id:
-            other = self.addressee
-        else:
-            other = self.requester
+    def to_dict(self, viewer_id):
+        other = self.addressee if self.requester_id == viewer_id else self.requester
         return {
-            'friendship_id': self.id,
-            'status':        self.status,
-            'user_id':       other.id,
-            'name':          other.name or other.email.split('@')[0],
-            'email':         other.email,
-            'photo_url':     getattr(other, 'photo_url', None),
+            'friendship_id':   self.id,
+            'status':          self.status,
+            'user_id':         other.id,
+            'name':            other.name or other.email.split('@')[0],
+            'username':        getattr(other, 'username', None) or other.email.split('@')[0],
+            'email':           other.email,
+            'photo_url':       getattr(other, 'profile_image_url', None),
+            'initiated_by_me': self.requester_id == viewer_id,
         }
     
   
