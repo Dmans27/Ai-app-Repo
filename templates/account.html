@@ -639,11 +639,11 @@ document.addEventListener("DOMContentLoaded",function(){
 });
 </script>
 
+
 <script>
-
-
-
-/* FRIENDS SYSTEM */
+/* ═══════════════════════════════════════════
+   FRIENDS — single clean block, no duplicates
+═══════════════════════════════════════════ */
 let friendsData = {friends:[], pending_in:[], pending_out:[]};
 
 async function loadFriends() {
@@ -654,7 +654,7 @@ async function loadFriends() {
     try {
       friendsData = JSON.parse(text);
     } catch(e) {
-      if(list) list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>Server error — check logs.</div>`;
+      if(list) list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>Server error — please refresh.</div>`;
       console.error('Friends parse error:', text.substring(0,500));
       return;
     }
@@ -781,238 +781,97 @@ function togglePendingPanel() {
   document.getElementById("friends-pending-panel").classList.toggle("is-open");
 }
 
-document.addEventListener("DOMContentLoaded", loadFriends);
+let srch = null;
+document.addEventListener("DOMContentLoaded", function() {
+  const inp = document.getElementById("friends-search-input"),
+        res = document.getElementById("friends-search-results"),
+        btn = document.getElementById("friends-search-btn");
 
-
-
-
-
-  /* friends grid */
-  const list = document.getElementById("friends-list");
-  if (!friends.length) {
-    list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>No friends yet. Search above to add someone.</div>`;
-    return;
-  }
-
-  /* Avatar color palette — cycles through 6 tints */
-  const avatarColors = [
-    { bg:'rgba(16,163,127,0.15)',  color:'#0f6e56' },
-    { bg:'rgba(50,130,246,0.15)',  color:'#185fa5' },
-    { bg:'rgba(245,179,1,0.15)',   color:'#854f0b' },
-    { bg:'rgba(239,68,68,0.12)',   color:'#a32d2d' },
-    { bg:'rgba(168,85,247,0.14)', color:'#534ab7' },
-    { bg:'rgba(234,179,8,0.14)',   color:'#3b6d11' },
-  ];
-
-  const SHOW_LIMIT = 6;
-  const visible   = friends.slice(0, SHOW_LIMIT);
-  const remaining = friends.length - SHOW_LIMIT;
-
-  function cardHTML(f, i) {
-    const col      = avatarColors[i % avatarColors.length];
-    const initials = (f.name || f.username || '?').substring(0, 2).toUpperCase();
-    const avatar   = f.photo_url
-      ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="${escapeHtml(f.name)}">`
-      : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};flex-shrink:0;">${escapeHtml(initials)}</div>`;
-
-    return `
-      <div style="background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;">
-        ${avatar}
-        <div style="min-width:0;width:100%;">
-          <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || f.username || 'Friend')}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@${escapeHtml(f.username || f.email.split('@')[0])}</div>
-        </div>
-        <button
-          onclick="removeFriend(${f.user_id}, this)"
-          style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);cursor:pointer;width:100%;transition:all 0.15s;"
-          onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.color='#fff';"
-          onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.55)';"
-        >Remove</button>
-      </div>`;
-  }
-
-  const gridHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;">
-      ${visible.map((f, i) => cardHTML(f, i)).join('')}
-    </div>
-    ${remaining > 0 ? `
-      <button
-        id="show-more-friends-btn"
-        onclick="showMoreFriends()"
-        style="width:100%;padding:10px;border-radius:14px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;"
-        onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='#fff';"
-        onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.color='rgba(255,255,255,0.55)';"
-      >Show all ${friends.length} friends</button>` : ''}`;
-
-  list.innerHTML = gridHTML;
-
-  list.innerHTML=friends.map(f=>`
-    <div class="friend-row" data-friend-id="${f.user_id}">
-      <div class="friend-avatar">
-        ${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}
-      </div>
-      <div class="friend-info">
-        <div class="friend-name">${escapeHtml(f.name)}</div>
-        <div class="friend-meta">@${escapeHtml(f.username||f.email.split("@")[0])}</div>
-      </div>
-      <div class="friend-actions">
-        <button class="friend-action-btn" onclick="removeFriend(${f.user_id},this)">Remove</button>
-      </div>
-    </div>`).join("");
-
-
-
-function showMoreFriends() {
-  const { friends } = friendsData;
-  const list = document.getElementById("friends-list");
-  const grid = list.querySelector('div[style*="grid-template-columns"]');
-  const btn  = document.getElementById("show-more-friends-btn");
-  if (!grid || !btn) return;
-
-  const avatarColors = [
-    { bg:'rgba(16,163,127,0.15)',  color:'#0f6e56' },
-    { bg:'rgba(50,130,246,0.15)',  color:'#185fa5' },
-    { bg:'rgba(245,179,1,0.15)',   color:'#854f0b' },
-    { bg:'rgba(239,68,68,0.12)',   color:'#a32d2d' },
-    { bg:'rgba(168,85,247,0.14)', color:'#534ab7' },
-    { bg:'rgba(234,179,8,0.14)',   color:'#3b6d11' },
-  ];
-
-  /* Append remaining friends to the grid */
-  friends.slice(6).forEach((f, i) => {
-    const col      = avatarColors[(i + 6) % avatarColors.length];
-    const initials = (f.name || f.username || '?').substring(0, 2).toUpperCase();
-    const avatar   = f.photo_url
-      ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="${escapeHtml(f.name)}">`
-      : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};flex-shrink:0;">${escapeHtml(initials)}</div>`;
-
-    const card = document.createElement('div');
-    card.style.cssText = "background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;";
-    card.innerHTML = `
-      ${avatar}
-      <div style="min-width:0;width:100%;">
-        <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || f.username || 'Friend')}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px;">@${escapeHtml(f.username || f.email.split('@')[0])}</div>
-      </div>
-      <button onclick="removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);cursor:pointer;width:100%;">Remove</button>`;
-    grid.appendChild(card);
-  });
-
-  btn.remove();
-}
-
-
-
-function renderPendingPanel(){
-  const panel=document.getElementById("friends-pending-panel");
-  panel.innerHTML=friendsData.pending_in.map(f=>`
-    <div class="friend-row" style="border-radius:0;border-left:none;border-right:none;margin:0;">
-      <div class="friend-avatar">
-        ${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}
-      </div>
-      <div class="friend-info">
-        <div class="friend-name">${escapeHtml(f.name)}</div>
-        <div class="friend-meta">@${escapeHtml(f.username||f.email.split("@")[0])} · wants to be friends</div>
-      </div>
-      <div class="friend-actions">
-        <button class="friend-action-btn friend-action-btn--accept" onclick="respondFriend(${f.friendship_id},'accept',this)">Accept</button>
-        <button class="friend-action-btn friend-action-btn--decline" onclick="respondFriend(${f.friendship_id},'decline',this)">Decline</button>
-      </div>
-    </div>`).join("");
-}
-
-function togglePendingPanel(){document.getElementById("friends-pending-panel").classList.toggle("is-open");}
-
-let srch=null;
-document.addEventListener("DOMContentLoaded",function(){
-  const inp=document.getElementById("friends-search-input"),
-        res=document.getElementById("friends-search-results"),
-        btn=document.getElementById("friends-search-btn");
-
-  async function run(){
-    const q=inp.value.trim();
-    if(q.length<2){res.classList.remove("is-open");return;}
-    res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Searching…</div>`;
+  async function run() {
+    const q = inp.value.trim();
+    if(q.length < 2) { res.classList.remove("is-open"); return; }
+    res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Searching…</div>`;
     res.classList.add("is-open");
-    try{
-      const r=await fetch(`/friends/search?q=${encodeURIComponent(q)}`),data=await r.json();
-      if(!data.length){res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">No users found</div>`;return;}
-      res.innerHTML=data.map(u=>{
+    try {
+      const r = await fetch(`/friends/search?q=${encodeURIComponent(q)}`), data = await r.json();
+      if(!data.length) { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">No users found</div>`; return; }
+      res.innerHTML = data.map(u => {
         let a;
-        if(u.status==="friends")       a=`<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
-        else if(u.status==="pending_out") a=`<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
-        else if(u.status==="pending_in")  a=`<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}" data-friendship-id="${u.friendship_id||''}">Accept</button>`;
-        else a=`<button class="friends-result-action friends-result-action--add" onclick="addFriendFromSearch(event,this)" data-user-id="${u.id}">+ Add</button>`;
+        if(u.status === "friends")       a = `<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
+        else if(u.status === "pending_out") a = `<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
+        else if(u.status === "pending_in")  a = `<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}" data-friendship-id="${u.friendship_id||''}">Accept</button>`;
+        else a = `<button class="friends-result-action friends-result-action--add" onclick="addFriendFromSearch(event,this)" data-user-id="${u.id}">+ Add</button>`;
         return `<div class="friends-search-result">
-          <div class="friends-result-avatar">${u.photo?`<img src="${escapeHtml(u.photo)}" alt="${escapeHtml(u.name)}">`:escapeHtml((u.name||"?")[0].toUpperCase())}</div>
+          <div class="friends-result-avatar">${u.photo ? `<img src="${escapeHtml(u.photo)}" alt="">` : escapeHtml((u.name||'?')[0].toUpperCase())}</div>
           <div class="friends-result-info">
             <div class="friends-result-name">${escapeHtml(u.name)}</div>
-            <div class="friends-result-email">@${escapeHtml(u.username||u.email.split("@")[0])}</div>
+            <div class="friends-result-email">@${escapeHtml(u.username||u.email.split('@')[0])}</div>
           </div>
           ${a}
         </div>`;
-      }).join("");
-    }catch{res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Search failed</div>`;}
+      }).join('');
+    } catch { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Search failed</div>`; }
   }
 
-  inp.addEventListener("input",function(){clearTimeout(srch);srch=setTimeout(run,350);});
-  btn.addEventListener("click",run);
-  inp.addEventListener("keydown",function(e){
-    if(e.key==="Enter"){e.preventDefault();run();}
-    if(e.key==="Escape"){res.classList.remove("is-open");inp.blur();}
+  inp.addEventListener("input", function() { clearTimeout(srch); srch = setTimeout(run, 350); });
+  btn.addEventListener("click", run);
+  inp.addEventListener("keydown", function(e) {
+    if(e.key === "Enter") { e.preventDefault(); run(); }
+    if(e.key === "Escape") { res.classList.remove("is-open"); inp.blur(); }
   });
-  document.addEventListener("click",function(e){
+  document.addEventListener("click", function(e) {
     if(!e.target.closest("#friends-search-input,#friends-search-btn,#friends-search-results"))
       res.classList.remove("is-open");
   });
 });
 
-async function addFriendFromSearch(e,btn){
+async function addFriendFromSearch(e, btn) {
   e.stopPropagation();
-  const uid=Number(btn.dataset.userId);
-  btn.disabled=true;btn.textContent="Sending…";
-  try{
-    const r=await fetch('/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})}),data=await r.json();
-    if(data.ok){btn.textContent="Sent ✓";btn.className="friends-result-action friends-result-action--pending";}
-    else{btn.textContent=data.error||"Error";btn.disabled=false;}
-  }catch{btn.textContent="Failed";btn.disabled=false;}
+  const uid = Number(btn.dataset.userId);
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const r = await fetch('/friends/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})}), data = await r.json();
+    if(data.ok) { btn.textContent = "Sent ✓"; btn.className = "friends-result-action friends-result-action--pending"; }
+    else { btn.textContent = data.error||"Error"; btn.disabled = false; }
+  } catch { btn.textContent = "Failed"; btn.disabled = false; }
 }
 
-async function acceptFromSearch(e,btn){
+async function acceptFromSearch(e, btn) {
   e.stopPropagation();
-  const fid=Number(btn.dataset.friendshipId);
-  if(!fid){
-    const uid=Number(btn.dataset.userId);
-    const f=friendsData.pending_in.find(x=>x.user_id===uid);
-    if(!f){btn.textContent='Error';return;}
-    await respondFriend(f.friendship_id,'accept',btn);
-  }else{
-    await respondFriend(fid,'accept',btn);
+  const fid = Number(btn.dataset.friendshipId);
+  if(!fid) {
+    const uid = Number(btn.dataset.userId);
+    const f = friendsData.pending_in.find(x => x.user_id === uid);
+    if(!f) { btn.textContent = 'Error'; return; }
+    await respondFriend(f.friendship_id, 'accept', btn);
+  } else {
+    await respondFriend(fid, 'accept', btn);
   }
   await loadFriends();
 }
 
-async function respondFriend(fid,action,btn){
-  btn.disabled=true;
-  btn.textContent=action==='accept'?'Accepting…':'Declining…';
-  try{
-    const r=await fetch('/friends/respond',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friendship_id:fid,action})});
-    const d=await r.json();
-    if(d.ok)await loadFriends();
-  }catch{btn.disabled=false;btn.textContent='Error';}
+async function respondFriend(fid, action, btn) {
+  btn.disabled = true;
+  btn.textContent = action === 'accept' ? 'Accepting…' : 'Declining…';
+  try {
+    const r = await fetch('/friends/respond', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friendship_id:fid,action})});
+    const d = await r.json();
+    if(d.ok) await loadFriends();
+  } catch { btn.disabled = false; btn.textContent = 'Error'; }
 }
 
-async function removeFriend(uid,btn){
-  if(!confirm('Remove this friend?'))return;
-  btn.disabled=true;
-  try{
-    await fetch('/friends/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});
+async function removeFriend(uid, btn) {
+  if(!confirm('Remove this friend?')) return;
+  btn.disabled = true;
+  try {
+    await fetch('/friends/remove', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});
     await loadFriends();
-  }catch{btn.disabled=false;}
+  } catch { btn.disabled = false; }
 }
 
-document.addEventListener("DOMContentLoaded",loadFriends);
+document.addEventListener("DOMContentLoaded", loadFriends);
 </script>
+
 
 <script>
 /* Share Modal V2 */
