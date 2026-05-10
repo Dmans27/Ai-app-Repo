@@ -4755,16 +4755,16 @@ def enrich_internal_results_with_ratings(results: list) -> list:
 
 class Friendship(db.Model):
     __tablename__ = 'friendships'
-
+ 
     id           = db.Column(db.Integer, primary_key=True)
     requester_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     addressee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     status       = db.Column(db.String(20), default='pending', nullable=False)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
-
+ 
     requester = db.relationship('User', foreign_keys=[requester_id], backref='sent_requests')
     addressee = db.relationship('User', foreign_keys=[addressee_id], backref='received_requests')
-
+ 
     __table_args__ = (
         db.UniqueConstraint('requester_id', 'addressee_id', name='uq_friendship'),
     )
@@ -4804,43 +4804,32 @@ def friends_search():
     q = request.args.get('q', '').strip()
     if len(q) < 2:
         return jsonify([])
-
+ 
     uid = current_user.id
-
-    # Search by name and email — username added only if column exists
-    filters = [
+ 
+    search_filters = [
         db.or_(
             User.name.ilike(f'%{q}%'),
             User.email.ilike(f'%{q}%'),
+            *([User.username.ilike(f'%{q}%')] if hasattr(User, 'username') else [])
         ),
         User.id != uid
     ]
-
-    # Only filter by username if the column exists on the model
-    if hasattr(User, 'username'):
-        filters = [
-            db.or_(
-                User.name.ilike(f'%{q}%'),
-                User.email.ilike(f'%{q}%'),
-                User.username.ilike(f'%{q}%'),
-            ),
-            User.id != uid
-        ]
-
-    results = User.query.filter(*filters).limit(10).all()
-
+ 
+    results = User.query.filter(*search_filters).limit(10).all()
+ 
     def get_friendship_info(other_id):
         f = Friendship.query.filter(
             db.or_(
-                db.and_(Friendship.requester_id == uid, Friendship.addressee_id == other_id),
+                db.and_(Friendship.requester_id == uid,      Friendship.addressee_id == other_id),
                 db.and_(Friendship.requester_id == other_id, Friendship.addressee_id == uid)
             )
         ).first()
-        if not f:                    return 'none', None
-        if f.status == 'accepted':   return 'friends', f.id
-        if f.requester_id == uid:    return 'pending_out', f.id
+        if not f:                      return 'none', None
+        if f.status == 'accepted':     return 'friends', f.id
+        if f.requester_id == uid:      return 'pending_out', f.id
         return 'pending_in', f.id
-
+ 
     output = []
     for u in results:
         status, fid = get_friendship_info(u.id)
@@ -4892,20 +4881,23 @@ def friends_respond():
 @login_required
 def friends_list():
     uid = current_user.id
-
+ 
     accepted = Friendship.query.filter(
-        db.or_(Friendship.requester_id == uid, Friendship.addressee_id == uid),
+        db.or_(
+            Friendship.requester_id == uid,
+            Friendship.addressee_id == uid
+        ),
         Friendship.status == 'accepted'
     ).all()
-
+ 
     pending_in = Friendship.query.filter_by(
         addressee_id=uid, status='pending'
     ).all()
-
+ 
     pending_out = Friendship.query.filter_by(
         requester_id=uid, status='pending'
     ).all()
-
+ 
     def serialize(f):
         other = f.addressee if f.requester_id == uid else f.requester
         return {
@@ -4918,7 +4910,7 @@ def friends_list():
             'photo_url':       getattr(other, 'profile_image_url', None),
             'initiated_by_me': f.requester_id == uid,
         }
-
+ 
     return jsonify({
         'friends':     [serialize(f) for f in accepted],
         'pending_in':  [serialize(f) for f in pending_in],
@@ -4948,10 +4940,10 @@ def share_list_to_friend():
     data      = request.get_json(silent=True) or {}
     list_id   = data.get('list_id')
     friend_id = data.get('friend_id')
-
+ 
     if not list_id or not friend_id:
         return jsonify({'error': 'Missing list_id or friend_id'}), 400
-
+ 
     execute("""
         INSERT INTO shared_lists (list_id, sender_id, recipient_id, status)
         VALUES (:list_id, :sender_id, :recipient_id, 'pending')
