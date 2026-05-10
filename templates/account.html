@@ -646,14 +646,21 @@ document.addEventListener("DOMContentLoaded",function(){
 let friendsData={friends:[],pending_in:[],pending_out:[]};
 
 async function loadFriends(){
-  try{
-    const res=await fetch('/friends');
-    friendsData=await res.json();
-    renderFriends();
-  }catch{
-    document.getElementById("friends-list").innerHTML=`<div class="friends-empty"><div class="friends-empty-icon">👥</div>Could not load friends.</div>`;
+  const list = document.getElementById("friends-list");
+  try {
+    const res = await fetch('/friends');
+    const text = await res.text();
+    try {
+      friendsData = JSON.parse(text);
+      renderFriends();
+    } catch(e) {
+      list.innerHTML = `<div class="friends-empty" style="color:#f87171;font-size:12px;padding:16px;">JSON parse error: ${escapeHtml(text.substring(0, 300))}</div>`;
+    }
+  } catch(e) {
+    list.innerHTML = `<div class="friends-empty" style="color:#f87171;font-size:12px;padding:16px;">Fetch error: ${escapeHtml(String(e))}</div>`;
   }
 }
+
 
 function renderFriends() {
   const { friends, pending_in } = friendsData;
