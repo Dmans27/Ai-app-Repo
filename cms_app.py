@@ -4916,6 +4916,44 @@ def friends_list():
         'pending_in':  [serialize(f) for f in pending_in],
         'pending_out': [serialize(f) for f in pending_out],
     })
+    
+    
+  
+  
+  
+@app.route('/profile/<int:user_id>')
+@login_required
+def view_profile(user_id):
+    profile_user = User.query.get_or_404(user_id)
+    lists = SavedList.query.filter_by(
+        user_id=user_id, is_public=True
+    ).order_by(SavedList.created_at.desc()).all()
+
+    # Check friendship status
+    uid = current_user.id
+    friendship = Friendship.query.filter(
+        db.or_(
+            db.and_(Friendship.requester_id == uid,      Friendship.addressee_id == user_id),
+            db.and_(Friendship.requester_id == user_id,  Friendship.addressee_id == uid)
+        )
+    ).first()
+
+    is_friend     = friendship and friendship.status == 'accepted'
+    pending_out   = friendship and friendship.status == 'pending' and friendship.requester_id == uid
+    friendship_id = friendship.id if friendship else None
+
+    return render_template('profile.html',
+        profile_user = profile_user,
+        lists        = lists,
+        is_friend    = is_friend,
+        pending_out  = pending_out,
+        friendship_id = friendship_id,
+    )
+  
+  
+    
+    
+    
 
 # Get pending incoming requests
 @app.route('/friends/requests')
