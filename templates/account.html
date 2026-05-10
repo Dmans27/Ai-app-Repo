@@ -712,21 +712,21 @@ function renderFriends() {
       ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">`
       : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};">${escapeHtml(initials)}</div>`;
     return `
-        <a href="/profile/${f.user_id}" style="background:#13151a;...;text-decoration:none;cursor:pointer;">
+      <a href="/profile/${f.user_id}" style="background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(157,232,200,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
         ${avatar}
         <div style="width:100%;min-width:0;">
           <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || uname)}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px;">@${escapeHtml(uname)}</div>
         </div>
-        <button onclick="removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);cursor:pointer;width:100%;">Remove</button>
-      </div>`;
+        <button onclick="event.preventDefault();event.stopPropagation();removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);cursor:pointer;width:100%;">Remove</button>
+      </a>`;
   }
 
   list.innerHTML = `
-    <div id="friends-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;">
-      ${visible.map((f,i) => cardHTML(f,i)).join('')}
-    </div>
-    ${extra > 0 ? `<button id="show-more-friends-btn" onclick="showMoreFriends()" style="width:100%;padding:10px;border-radius:14px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);font-size:13px;font-weight:600;cursor:pointer;">Show all ${friends.length} friends</button>` : ''}`;
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;" id="friends-grid">
+    ${visible.map((f,i) => cardHTML(f,i)).join('')}
+  </div>
+  ${extra > 0 ? `<button id="show-more-friends-btn" onclick="showMoreFriends()" style="width:100%;padding:10px;border-radius:14px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);font-size:13px;font-weight:600;cursor:pointer;">Show all ${friends.length} friends</button>` : ''}`;
 }
 
 function showMoreFriends() {
