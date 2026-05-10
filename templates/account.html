@@ -8,6 +8,11 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
   <style>
+    /* Allow scroll on account page even if sticky-nav CSS locks body */
+    body.page-account{overflow-y:auto !important;height:auto !important}
+    body.page-account .mobile-app-shell,
+    body.page-account .mobile-screen{height:auto !important;overflow:visible !important}
+
     .acct-hero{display:flex;align-items:center;gap:16px;padding:20px 16px 16px}
     .acct-avatar-form{flex-shrink:0;margin:0;padding:0}
     .acct-avatar-label{position:relative;display:block;width:72px;height:72px;border-radius:50%;overflow:hidden;cursor:pointer;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);transition:border-color 0.18s}
@@ -15,7 +20,8 @@
     .acct-avatar-label img,.acct-avatar-fallback{width:100%;height:100%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#7ee2bf}
     .acct-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#10a37f;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #050505;pointer-events:none}
     .acct-profile-info{flex:1;min-width:0}
-    .acct-profile-name{font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.03em;line-height:1.1;margin:0 0 3px}
+    .acct-profile-name{font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.03em;line-height:1.1;margin:0 0 2px}
+    .acct-profile-username{font-size:13px;color:#7ee2bf;font-weight:600;margin:0 0 4px}
     .acct-profile-city{font-size:13px;color:rgba(255,255,255,0.45);margin:0 0 10px}
     .acct-profile-btns{display:flex;gap:8px}
     .acct-btn{height:34px;padding:0 14px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s}
@@ -85,7 +91,7 @@
     .acct-foot-btn:active{transform:scale(0.95)}
     .acct-foot-btn--share{background:rgba(16,163,127,0.1);border-color:rgba(16,163,127,0.3);color:#7ee2bf}
     .acct-foot-btn--share:hover{background:rgba(16,163,127,0.18)}
-    .acct-info-panel{margin:20px 16px 0}
+    .acct-info-panel{margin:20px 16px 40px}
 
     /* FRIENDS */
     .acct-friends-section{margin:0 16px 24px}
@@ -302,6 +308,7 @@
               </form>
               <div class="acct-profile-info">
                 <h1 class="acct-profile-name">{{ user.name or "Your Profile" }}</h1>
+                {% if user.username %}<p class="acct-profile-username">@{{ user.username }}</p>{% endif %}
                 <p class="acct-profile-city">{% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}</p>
                 <div class="acct-profile-btns">
                   <a href="{{ url_for('settings') }}" class="acct-btn acct-btn--primary">Edit profile</a>
@@ -400,7 +407,7 @@
             </div>
             <div class="acct-friends-section">
               <div class="friends-add-bar">
-                <input id="friends-search-input" class="friends-add-input" type="search" placeholder="Search by name or email…" autocomplete="off">
+                <input id="friends-search-input" class="friends-add-input" type="search" placeholder="Search by @username or name…" autocomplete="off">
                 <button class="friends-add-btn" type="button" id="friends-search-btn">Search</button>
               </div>
               <div class="friends-search-results" id="friends-search-results"></div>
@@ -413,9 +420,13 @@
               <div class="friends-list" id="friends-list"><div class="friends-loading">Loading friends…</div></div>
             </div>
 
+            <!-- Account info panel — FIXED: shows username not email -->
             <section class="account-ios-account-panel acct-info-panel">
               <h2>Your account</h2>
               <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
+              {% if user.username %}
+              <p><strong>Username:</strong> @{{ user.username }}</p>
+              {% endif %}
               <p><strong>Email:</strong> {{ user.email }}</p>
               <form method="post" action="{{ url_for('logout') }}" style="margin-top:14px;"><button type="submit" class="acct-foot-btn">Log out</button></form>
             </section>
@@ -424,7 +435,7 @@
         </div>
       </section>
 
-      <!-- Place popup (unchanged) -->
+      <!-- Place popup -->
       <div class="place-popup" id="place-popup" hidden>
         <div class="place-popup__backdrop" data-close-place-popup></div>
         <div class="place-popup__card place-popup__card--large">
@@ -474,7 +485,7 @@
   </div>
 </div>
 
-<!-- QR Modal (unchanged) -->
+<!-- QR Modal -->
 <div class="qr-modal" id="qrModal">
   <div class="qr-modal__backdrop" onclick="closeQrModal()"></div>
   <div class="qr-modal__card">
@@ -504,15 +515,15 @@
       <div id="share-friends-list"><div class="share-no-friends">Loading friends…</div></div>
     </div>
     <div class="share-tab-panel" id="share-tab-everyone">
-      <input type="search" class="share-search-input" id="share-everyone-search" placeholder="Search by name or email…">
+      <input type="search" class="share-search-input" id="share-everyone-search" placeholder="Search by name or @username…">
       <form method="post" id="share-everyone-form">
         <div class="share-user-results-v2" id="share-everyone-results">
           {% for user_option in users %}
             {% if user_option.id != current_user.id %}
-            <label class="share-user-row-v2" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
+            <label class="share-user-row-v2" data-user-search="{{ (user_option.name or user_option.email or '')|lower }} {{ (user_option.username or '')|lower }}">
               <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
               <span class="share-user-check-v2">✓</span>
-              <span class="share-user-name-v2">{{ user_option.name or user_option.email }}</span>
+              <span class="share-user-name-v2">{{ user_option.name or user_option.email }}{% if user_option.username %} <span style="color:rgba(255,255,255,0.38);font-weight:400;">@{{ user_option.username }}</span>{% endif %}</span>
             </label>
             {% endif %}
           {% endfor %}
@@ -523,7 +534,7 @@
   </div>
 </div>
 
-<!-- Legacy share modal (preserved for backward compat) -->
+<!-- Legacy share modal -->
 <div class="share-user-modal" id="share-user-modal" hidden>
   <div class="share-user-modal__backdrop" data-close-share-modal></div>
   <div class="share-user-modal__card">
@@ -629,108 +640,175 @@ document.addEventListener("DOMContentLoaded",function(){
 </script>
 
 <script>
-/* FRIENDS SYSTEM */
+/* ═══════════════════════════════════════════
+   FRIENDS — @username displayed everywhere
+═══════════════════════════════════════════ */
 let friendsData={friends:[],pending_in:[],pending_out:[]};
 
 async function loadFriends(){
-  try{const res=await fetch('/friends');friendsData=await res.json();renderFriends();}
-  catch{document.getElementById("friends-list").innerHTML=`<div class="friends-empty"><div class="friends-empty-icon">👥</div>Could not load friends.</div>`;}
+  try{
+    const res=await fetch('/friends');
+    friendsData=await res.json();
+    renderFriends();
+  }catch{
+    document.getElementById("friends-list").innerHTML=`<div class="friends-empty"><div class="friends-empty-icon">👥</div>Could not load friends.</div>`;
+  }
 }
 
 function renderFriends(){
   const{friends,pending_in}=friendsData;
-  const ce=document.getElementById("friends-count");if(ce)ce.textContent=friends.length;
-  const bn=document.getElementById("friends-pending-banner"),pt=document.getElementById("friends-pending-text"),pc=document.getElementById("friends-pending-count");
-  if(pending_in.length>0){bn.style.display="flex";pt.textContent=`${pending_in.length} friend request${pending_in.length!==1?"s":""}`;pc.textContent=pending_in.length;renderPendingPanel();}
-  else{bn.style.display="none";}
+
+  /* stat pill */
+  const ce=document.getElementById("friends-count");
+  if(ce)ce.textContent=friends.length;
+
+  /* pending banner */
+  const bn=document.getElementById("friends-pending-banner"),
+        pt=document.getElementById("friends-pending-text"),
+        pc=document.getElementById("friends-pending-count");
+  if(pending_in.length>0){
+    bn.style.display="flex";
+    pt.textContent=`${pending_in.length} friend request${pending_in.length!==1?"s":""}`;
+    pc.textContent=pending_in.length;
+    renderPendingPanel();
+  }else{
+    bn.style.display="none";
+  }
+
+  /* friends list */
   const list=document.getElementById("friends-list");
-  if(!friends.length){list.innerHTML=`<div class="friends-empty"><div class="friends-empty-icon">👥</div>No friends yet. Search above to add someone.</div>`;return;}
-  list.innerHTML=friends.map(f=>`<div class="friend-row" data-friend-id="${f.user_id}"><div class="friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div><div class="friend-info"><div class="friend-name">${escapeHtml(f.name)}</div><div class="friend-meta">${escapeHtml(f.email)}</div></div><div class="friend-actions"><button class="friend-action-btn" onclick="removeFriend(${f.user_id},this)">Remove</button></div></div>`).join("");
+  if(!friends.length){
+    list.innerHTML=`<div class="friends-empty"><div class="friends-empty-icon">👥</div>No friends yet. Search above to add someone.</div>`;
+    return;
+  }
+  list.innerHTML=friends.map(f=>`
+    <div class="friend-row" data-friend-id="${f.user_id}">
+      <div class="friend-avatar">
+        ${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}
+      </div>
+      <div class="friend-info">
+        <div class="friend-name">${escapeHtml(f.name)}</div>
+        <div class="friend-meta">@${escapeHtml(f.username||f.email.split("@")[0])}</div>
+      </div>
+      <div class="friend-actions">
+        <button class="friend-action-btn" onclick="removeFriend(${f.user_id},this)">Remove</button>
+      </div>
+    </div>`).join("");
 }
 
 function renderPendingPanel(){
   const panel=document.getElementById("friends-pending-panel");
-  panel.innerHTML=friendsData.pending_in.map(f=>`<div class="friend-row" style="border-radius:0;border-left:none;border-right:none;margin:0;"><div class="friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div><div class="friend-info"><div class="friend-name">${escapeHtml(f.name)}</div><div class="friend-meta">Wants to be friends</div></div><div class="friend-actions"><button class="friend-action-btn friend-action-btn--accept" onclick="respondFriend(${f.friendship_id},'accept',this)">Accept</button><button class="friend-action-btn friend-action-btn--decline" onclick="respondFriend(${f.friendship_id},'decline',this)">Decline</button></div></div>`).join("");
+  panel.innerHTML=friendsData.pending_in.map(f=>`
+    <div class="friend-row" style="border-radius:0;border-left:none;border-right:none;margin:0;">
+      <div class="friend-avatar">
+        ${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}
+      </div>
+      <div class="friend-info">
+        <div class="friend-name">${escapeHtml(f.name)}</div>
+        <div class="friend-meta">@${escapeHtml(f.username||f.email.split("@")[0])} · wants to be friends</div>
+      </div>
+      <div class="friend-actions">
+        <button class="friend-action-btn friend-action-btn--accept" onclick="respondFriend(${f.friendship_id},'accept',this)">Accept</button>
+        <button class="friend-action-btn friend-action-btn--decline" onclick="respondFriend(${f.friendship_id},'decline',this)">Decline</button>
+      </div>
+    </div>`).join("");
 }
 
 function togglePendingPanel(){document.getElementById("friends-pending-panel").classList.toggle("is-open");}
 
 let srch=null;
 document.addEventListener("DOMContentLoaded",function(){
-  const inp=document.getElementById("friends-search-input"),res=document.getElementById("friends-search-results"),btn=document.getElementById("friends-search-btn");
+  const inp=document.getElementById("friends-search-input"),
+        res=document.getElementById("friends-search-results"),
+        btn=document.getElementById("friends-search-btn");
+
   async function run(){
-    const q=inp.value.trim();if(q.length<2){res.classList.remove("is-open");return;}
-    res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Searching…</div>`;res.classList.add("is-open");
+    const q=inp.value.trim();
+    if(q.length<2){res.classList.remove("is-open");return;}
+    res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Searching…</div>`;
+    res.classList.add("is-open");
     try{
       const r=await fetch(`/friends/search?q=${encodeURIComponent(q)}`),data=await r.json();
       if(!data.length){res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">No users found</div>`;return;}
       res.innerHTML=data.map(u=>{
         let a;
-        if(u.status==="friends")a=`<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
-        else if(u.status==="pending_out")a=`<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
-        else if(u.status==="pending_in") a=`<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}" data-friendship-id="${u.friendship_id}">Accept</button>`;
+        if(u.status==="friends")       a=`<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
+        else if(u.status==="pending_out") a=`<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
+        else if(u.status==="pending_in")  a=`<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}" data-friendship-id="${u.friendship_id||''}">Accept</button>`;
         else a=`<button class="friends-result-action friends-result-action--add" onclick="addFriendFromSearch(event,this)" data-user-id="${u.id}">+ Add</button>`;
-        return `<div class="friends-search-result"><div class="friends-result-avatar">${u.photo?`<img src="${escapeHtml(u.photo)}" alt="${escapeHtml(u.name)}">`:escapeHtml((u.name||"?")[0].toUpperCase())}</div><div class="friends-result-info"><div class="friends-result-name">${escapeHtml(u.name)}</div><div class="friends-result-email">${escapeHtml(u.email)}</div></div>${a}</div>`;
+        return `<div class="friends-search-result">
+          <div class="friends-result-avatar">${u.photo?`<img src="${escapeHtml(u.photo)}" alt="${escapeHtml(u.name)}">`:escapeHtml((u.name||"?")[0].toUpperCase())}</div>
+          <div class="friends-result-info">
+            <div class="friends-result-name">${escapeHtml(u.name)}</div>
+            <div class="friends-result-email">@${escapeHtml(u.username||u.email.split("@")[0])}</div>
+          </div>
+          ${a}
+        </div>`;
       }).join("");
     }catch{res.innerHTML=`<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Search failed</div>`;}
   }
+
   inp.addEventListener("input",function(){clearTimeout(srch);srch=setTimeout(run,350);});
   btn.addEventListener("click",run);
-  inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();run();}if(e.key==="Escape"){res.classList.remove("is-open");inp.blur();}});
-  document.addEventListener("click",function(e){if(!e.target.closest("#friends-search-input,#friends-search-btn,#friends-search-results"))res.classList.remove("is-open");});
+  inp.addEventListener("keydown",function(e){
+    if(e.key==="Enter"){e.preventDefault();run();}
+    if(e.key==="Escape"){res.classList.remove("is-open");inp.blur();}
+  });
+  document.addEventListener("click",function(e){
+    if(!e.target.closest("#friends-search-input,#friends-search-btn,#friends-search-results"))
+      res.classList.remove("is-open");
+  });
 });
 
 async function addFriendFromSearch(e,btn){
-  e.stopPropagation();const uid=Number(btn.dataset.userId);btn.disabled=true;btn.textContent="Sending…";
-  try{const r=await fetch('/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})}),data=await r.json();
+  e.stopPropagation();
+  const uid=Number(btn.dataset.userId);
+  btn.disabled=true;btn.textContent="Sending…";
+  try{
+    const r=await fetch('/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})}),data=await r.json();
     if(data.ok){btn.textContent="Sent ✓";btn.className="friends-result-action friends-result-action--pending";}
-    else{btn.textContent=data.error||"Error";btn.disabled=false;}}
-  catch{btn.textContent="Failed";btn.disabled=false;}
+    else{btn.textContent=data.error||"Error";btn.disabled=false;}
+  }catch{btn.textContent="Failed";btn.disabled=false;}
 }
 
-async function acceptFromSearch(e, btn) {
+async function acceptFromSearch(e,btn){
   e.stopPropagation();
-  const fid = Number(btn.dataset.friendshipId);
-  if (!fid) {
-    const uid = Number(btn.dataset.userId);
-    const f = friendsData.pending_in.find(x => x.user_id === uid);
-    if (!f) { btn.textContent = 'Error'; return; }
-    await respondFriend(f.friendship_id, 'accept', btn);
-  } else {
-    await respondFriend(fid, 'accept', btn);
+  const fid=Number(btn.dataset.friendshipId);
+  if(!fid){
+    const uid=Number(btn.dataset.userId);
+    const f=friendsData.pending_in.find(x=>x.user_id===uid);
+    if(!f){btn.textContent='Error';return;}
+    await respondFriend(f.friendship_id,'accept',btn);
+  }else{
+    await respondFriend(fid,'accept',btn);
   }
-  // Reload friends data so the count pill updates immediately
   await loadFriends();
 }
 
-async function respondFriend(fid, action, btn) {
-  btn.disabled = true;
-  btn.textContent = action === 'accept' ? 'Accepting…' : 'Declining…';
-  try {
-    const r = await fetch('/friends/respond', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ friendship_id: fid, action })
-    });
-    const d = await r.json();
-    if (d.ok) await loadFriends();  // ← this line must be here
-  } catch {
-    btn.disabled = false;
-    btn.textContent = 'Error';
-  }
+async function respondFriend(fid,action,btn){
+  btn.disabled=true;
+  btn.textContent=action==='accept'?'Accepting…':'Declining…';
+  try{
+    const r=await fetch('/friends/respond',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friendship_id:fid,action})});
+    const d=await r.json();
+    if(d.ok)await loadFriends();
+  }catch{btn.disabled=false;btn.textContent='Error';}
 }
 
 async function removeFriend(uid,btn){
-  if(!confirm('Remove this friend?'))return;btn.disabled=true;
-  try{await fetch('/friends/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});await loadFriends();}
-  catch{btn.disabled=false;}
+  if(!confirm('Remove this friend?'))return;
+  btn.disabled=true;
+  try{
+    await fetch('/friends/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});
+    await loadFriends();
+  }catch{btn.disabled=false;}
 }
 
 document.addEventListener("DOMContentLoaded",loadFriends);
 </script>
 
 <script>
-/* SHARE MODAL V2 */
+/* Share Modal V2 */
 let shareModalListId=null;
 
 function openShareModal(lid,ltitle){
@@ -746,28 +824,62 @@ function openShareModal(lid,ltitle){
 
 function renderShareFriendsList(){
   const c=document.getElementById("share-friends-list"),{friends}=friendsData;
-  if(!friends.length){c.innerHTML=`<div class="share-no-friends">No friends yet. Add friends using the section below.</div>`;return;}
-  c.innerHTML=friends.map(f=>`<div class="share-friend-row"><div class="share-friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div><span class="share-friend-name">${escapeHtml(f.name)}</span><button class="share-friend-btn" onclick="shareListToFriend(${f.user_id},this)" data-friend-id="${f.user_id}">Send</button></div>`).join("");
+  if(!friends.length){
+    c.innerHTML=`<div class="share-no-friends">No friends yet. Add friends using the section below.</div>`;
+    return;
+  }
+  c.innerHTML=friends.map(f=>`
+    <div class="share-friend-row">
+      <div class="share-friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="share-friend-name">${escapeHtml(f.name)}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px;">@${escapeHtml(f.username||f.email.split("@")[0])}</div>
+      </div>
+      <button class="share-friend-btn" onclick="shareListToFriend(${f.user_id},this)">Send</button>
+    </div>`).join("");
 }
 
 async function shareListToFriend(fid,btn){
-  if(!shareModalListId)return;btn.disabled=true;btn.textContent="Sending…";
-  try{const r=await fetch('/lists/share/friend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_id:shareModalListId,friend_id:fid})}),d=await r.json();
+  if(!shareModalListId)return;
+  btn.disabled=true;btn.textContent="Sending…";
+  try{
+    const r=await fetch('/lists/share/friend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_id:shareModalListId,friend_id:fid})}),d=await r.json();
     if(d.ok){btn.textContent="Sent ✓";btn.className="share-friend-btn share-friend-btn--sent";}
-    else{btn.textContent=d.error||"Error";btn.disabled=false;}}
-  catch{btn.textContent="Failed";btn.disabled=false;}
+    else{btn.textContent=d.error||"Error";btn.disabled=false;}
+  }catch{btn.textContent="Failed";btn.disabled=false;}
 }
 
 document.addEventListener("DOMContentLoaded",function(){
-  document.querySelectorAll(".js-open-share-v2").forEach(btn=>{btn.addEventListener("click",function(){openShareModal(btn.dataset.listId,btn.dataset.listTitle);});});
-  document.querySelectorAll(".share-tab").forEach(tab=>{tab.addEventListener("click",function(){document.querySelectorAll(".share-tab").forEach(t=>t.classList.remove("is-active"));document.querySelectorAll(".share-tab-panel").forEach(p=>p.classList.remove("is-active"));tab.classList.add("is-active");document.getElementById(`share-tab-${tab.dataset.tab}`).classList.add("is-active");});});
+  document.querySelectorAll(".js-open-share-v2").forEach(btn=>{
+    btn.addEventListener("click",function(){openShareModal(btn.dataset.listId,btn.dataset.listTitle);});
+  });
+  document.querySelectorAll(".share-tab").forEach(tab=>{
+    tab.addEventListener("click",function(){
+      document.querySelectorAll(".share-tab").forEach(t=>t.classList.remove("is-active"));
+      document.querySelectorAll(".share-tab-panel").forEach(p=>p.classList.remove("is-active"));
+      tab.classList.add("is-active");
+      document.getElementById(`share-tab-${tab.dataset.tab}`).classList.add("is-active");
+    });
+  });
   function closeShare(){document.getElementById("share-modal-v2").hidden=true;}
   document.getElementById("share-modal-v2-backdrop")?.addEventListener("click",closeShare);
   document.getElementById("share-modal-v2-close-btn")?.addEventListener("click",closeShare);
   const es=document.getElementById("share-everyone-search");
-  es?.addEventListener("input",function(){const q=es.value.trim().toLowerCase();document.querySelectorAll(".share-user-row-v2").forEach(row=>{row.style.display=q&&!row.dataset.userSearch.includes(q)?"none":"";});});
+  es?.addEventListener("input",function(){
+    const q=es.value.trim().toLowerCase();
+    document.querySelectorAll(".share-user-row-v2").forEach(row=>{
+      row.style.display=q&&!row.dataset.userSearch.includes(q)?"none":"";
+    });
+  });
   const ef=document.getElementById("share-everyone-form");
-  ef?.addEventListener("submit",function(e){e.preventDefault();if(!shareModalListId)return;ef.action=`/lists/${shareModalListId}/share`;const b=ef.querySelector(".share-submit-btn");if(b){b.disabled=true;b.textContent="Sending…";}ef.submit();});
+  ef?.addEventListener("submit",function(e){
+    e.preventDefault();
+    if(!shareModalListId)return;
+    ef.action=`/lists/${shareModalListId}/share`;
+    const b=ef.querySelector(".share-submit-btn");
+    if(b){b.disabled=true;b.textContent="Sending…";}
+    ef.submit();
+  });
 });
 
 /* QR Modal */
