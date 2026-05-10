@@ -421,7 +421,7 @@
             </div>
 
             <!-- Account info panel — FIXED: shows username not email -->
-            <section class="account-ios-account-panel acct-info-panel">
+            <section class="account-ios-account-panel acct-info-panel" style="display: none;">
               <h2>Your account</h2>
               <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
               {% if user.username %}
