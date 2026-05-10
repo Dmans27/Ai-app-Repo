@@ -4762,26 +4762,12 @@ class Friendship(db.Model):
     status       = db.Column(db.String(20), default='pending', nullable=False)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # These give you friendship.requester and friendship.addressee
     requester = db.relationship('User', foreign_keys=[requester_id], backref='sent_requests')
     addressee = db.relationship('User', foreign_keys=[addressee_id], backref='received_requests')
 
     __table_args__ = (
         db.UniqueConstraint('requester_id', 'addressee_id', name='uq_friendship'),
     )
-
-    def to_dict(self, viewer_id):
-        other = self.addressee if self.requester_id == viewer_id else self.requester
-        return {
-            'friendship_id':   self.id,
-            'status':          self.status,
-            'user_id':         other.id,
-            'name':            other.name or other.email.split('@')[0],
-            'username':        getattr(other, 'username', None) or other.email.split('@')[0],
-            'email':           other.email,
-            'photo_url':       getattr(other, 'profile_image_url', None),
-            'initiated_by_me': self.requester_id == viewer_id,
-        }
     
   
   
@@ -4908,10 +4894,7 @@ def friends_list():
     uid = current_user.id
 
     accepted = Friendship.query.filter(
-        db.or_(
-            Friendship.requester_id == uid,
-            Friendship.addressee_id == uid
-        ),
+        db.or_(Friendship.requester_id == uid, Friendship.addressee_id == uid),
         Friendship.status == 'accepted'
     ).all()
 
@@ -4930,7 +4913,7 @@ def friends_list():
             'status':          f.status,
             'user_id':         other.id,
             'name':            other.name or other.email.split('@')[0],
-            'username':        other.username or other.email.split('@')[0],
+            'username':        getattr(other, 'username', None) or other.email.split('@')[0],
             'email':           other.email,
             'photo_url':       getattr(other, 'profile_image_url', None),
             'initiated_by_me': f.requester_id == uid,
@@ -4950,11 +4933,11 @@ def friends_requests():
     pending = Friendship.query.filter_by(
         addressee_id=uid, status='pending'
     ).all()
-
     return jsonify([{
         'friendship_id': f.id,
         'user_id':       f.requester.id,
         'name':          f.requester.name or f.requester.email.split('@')[0],
+        'username':      getattr(f.requester, 'username', None) or f.requester.email.split('@')[0],
         'email':         f.requester.email,
         'photo_url':     getattr(f.requester, 'profile_image_url', None),
     } for f in pending])
