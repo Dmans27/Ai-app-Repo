@@ -265,7 +265,7 @@
               <button type="button" class="mobile-app-header__icon" id="notifications-toggle" aria-label="Notifications">🔔</button>
               {% if shared_with_me %}<span class="acct-bell-dot" id="notification-badge"></span>{% endif %}
             </div>
-            <a href="{{ url_for('settings') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Settings" style="display: none;">⚙️</a>
+            <a href="{{ url_for('settings') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Settings"></a>
           {% else %}
             <a href="{{ url_for('login') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Log in">👤</a>
           {% endif %}
