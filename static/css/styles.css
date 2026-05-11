@@ -3241,52 +3241,71 @@ select {
   color: rgba(255,255,255,0.58);
 }
 
+
+
+@media (max-width: 1024px) {
+  .desktop-page-header__title {
+    font-size: clamp(2rem, 5vw, 3rem) !important;
+  }
+  .app-main__inner {
+    max-width: 100% !important;
+  }
+}
+
 /* =========================
    MAIN CONTENT
    ========================= */
+/* Make sure the main content area doesn't bleed under the sidebar */
 .app-main {
-  flex: 1;
-  min-width: 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: rgb(from var(--bg-base) r g b / var(--tw-bg-opacity));
+  padding-left: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
 }
 
 .app-main__inner {
-  flex: 1;
-  width: 100%;
-  max-width: var(--content-max);
-  margin: 0 auto;
-  padding: 18px 16px 32px;
+  width: 100% !important;
+  max-width: 860px !important;
+  margin: 0 auto !important;
+  padding: 0 24px !important;
+  box-sizing: border-box !important;
+}
+
+/* Composer bar centered */
+.app-composer-wrap {
+  max-width: 860px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  left: var(--sidebar-w, 260px) !important;
+  right: 0 !important;
 }
 
 .desktop-page-header {
-  padding: 30px 32px 0;
-}
-
-.desktop-page-header__eyebrow {
-  margin: 0 0 12px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-secondary);
+  text-align: center !important;
+  padding: 40px 40px 20px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .desktop-page-header__title {
-  margin: 0;
-  font-size: clamp(2.7rem, 4vw, 4.8rem);
-  line-height: 0.96;
-  letter-spacing: -0.04em;
-  font-weight: 800;
-  color: #fff;
+  font-size: clamp(2rem, 3.5vw, 3.8rem) !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  line-height: 1.05 !important;
+  max-width: 700px !important;
+  margin: 0 auto 12px !important;
+}
+
+.desktop-page-header__eyebrow {
+  text-align: center !important;
 }
 
 .desktop-page-header__subtitle {
-  margin-top: 14px;
-  max-width: 760px;
-  font-size: 1.12rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
+  text-align: center !important;
+  max-width: 500px !important;
+  margin: 0 auto !important;
 }
 
 /* =========================
