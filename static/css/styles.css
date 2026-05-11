@@ -11,6 +11,9 @@
   --bg-elevated: #181a1f;
   --bg-soft: #22252b;
 
+
+  --sidebar-w: 260px; /* match your actual sidebar width */
+
   --text-primary: #f5f5f7;
   --text-secondary: rgba(255, 255, 255, 0.72);
   --text-muted: rgba(255, 255, 255, 0.55);
@@ -3123,7 +3126,46 @@ select {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  z-index: 100 !important;
+  flex-shrink: 0 !important;
 }
+
+
+
+.app-sidebar.desktop-sidebar::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Push main content right so it doesn't hide under the fixed sidebar */
+/* Adjust the pixel value to match your sidebar's actual width */
+.app-shell {
+  display: flex !important;
+}
+
+.mobile-app-shell {
+  margin-left: var(--sidebar-w, 260px) !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+/* Only on desktop */
+@media (max-width: 1024px) {
+  .app-sidebar.desktop-sidebar {
+    display: none !important;
+  }
+  .mobile-app-shell {
+    margin-left: 0 !important;
+  }
+}
+
+
 
 .app-sidebar__top {
   display: flex;
