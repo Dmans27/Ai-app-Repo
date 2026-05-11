@@ -3243,12 +3243,37 @@ select {
 
 
 
-@media (max-width: 1024px) {
-  .desktop-page-header__title {
-    font-size: clamp(2rem, 5vw, 3rem) !important;
+/* ── Desktop: push content right of fixed sidebar ── */
+@media (min-width: 1025px) {
+  main.app-main {
+    margin-left: var(--sidebar-w, 260px) !important;
+    width: calc(100% - var(--sidebar-w, 260px)) !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
   }
-  .app-main__inner {
-    max-width: 100% !important;
+
+  .desktop-page-header {
+    padding: 48px 60px 24px !important;
+  }
+
+  .desktop-page-header__title {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    font-size: clamp(2.4rem, 4vw, 4rem) !important;
+    line-height: 1.05 !important;
+  }
+
+  .desktop-page-header__subtitle {
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+
+  .app-composer-wrap {
+    left: var(--sidebar-w, 260px) !important;
+    right: 0 !important;
+    padding: 0 48px !important;
+    box-sizing: border-box !important;
   }
 }
 
