@@ -3275,7 +3275,7 @@ select {
     left: 0 !important;
     right: 0 !important;
     bottom: calc(env(safe-area-inset-bottom) + 110px) !important;
-    padding: 0 12px !important;
+    padding: 1px 12px !important;
     box-sizing: border-box !important;
     z-index: 940 !important;
   }
