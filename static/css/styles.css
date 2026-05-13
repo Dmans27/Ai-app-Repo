@@ -6734,4 +6734,33 @@ body:not(.page-discover):not(.page-account) .app-main {
 .acct-foot-btn         { height: 38px !important; padding: 0 18px !important; font-size: 13.5px !important; border-radius: 999px !important; }
 
 
+/* ── Place detail sheet: hidden by default ── */
+#place-detail-sheet {
+  transform: translateY(100%) !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: transform 0.32s cubic-bezier(0.22,1,0.36,1), visibility 0.32s !important;
+}
 
+#place-detail-sheet.is-open {
+  transform: translateY(0) !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+#place-detail-overlay {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease !important;
+}
+
+#place-detail-overlay.is-open {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.place-detail-sheet--closed {
+  transform: translateY(100%) !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
