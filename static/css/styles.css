@@ -3313,12 +3313,6 @@ select {
     overflow: visible !important;
   }
 
-  .app-composer-wrap {
-    left: var(--sidebar-w, 260px) !important;
-    right: 0 !important;
-    padding: 0 48px !important;
-    box-sizing: border-box !important;
-  }
 }
 
 /* =========================
@@ -3340,14 +3334,7 @@ select {
   box-sizing: border-box !important;
 }
 
-/* Composer bar centered */
-.app-composer-wrap {
-  max-width: 860px !important;
-  margin: 0 auto !important;
-  width: 100% !important;
-  left: var(--sidebar-w, 260px) !important;
-  right: 0 !important;
-}
+
 
 .desktop-page-header {
   text-align: center !important;
@@ -3658,12 +3645,7 @@ padding-bottom: 0;
    COMPOSER
    ========================= */
 .app-composer-wrap {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(env(safe-area-inset-bottom) + 8px);
-  z-index: 950;
-  padding: 8px 14px;
+
   background: linear-gradient(to top, rgba(5,5,5,0.98) 65%, rgba(5,5,5,0));
 }
 
@@ -4058,10 +4040,7 @@ margin: 10px 10px -86px 10px;
   }
 
   .app-composer-wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: var(--tabbar-h);
+
     background: linear-gradient(to top, rgba(18,18,18,0.98) 68%, rgba(18,18,18,0));
   }
 
@@ -4696,13 +4675,6 @@ body:not(.page-discover):not(.page-account) .app-main {
   bottom: 75px;
 }
 
-.app-composer-wrap {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(72px + 104px + env(safe-area-inset-bottom));
-  z-index: 930;
-}
 
 .chat-composer {
   margin: 0 !important;
@@ -4737,14 +4709,7 @@ body:not(.page-discover):not(.page-account) .app-main {
     padding: 14px 0 150px;
   }
 
-  .app-composer-wrap {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 18px;
-    z-index: 950;
-    background: none;
-  }
+
 
   .chat-composer {
     margin: 0 !important;
@@ -4775,15 +4740,7 @@ body:not(.page-discover):not(.page-account) .app-main {
 
 /* Desktop home composer: center before search, bottom after search */
 @media (min-width: 1025px) {
-  body.ai-chat-empty .app-composer-wrap {
-    position: fixed;
-    left: var(--sidebar-w);
-    right: 0;
-    bottom: auto;
-    top: 58%;
-    transform: translateY(-50%);
-    background: none;
-  }
+
 
   body.ai-chat-active .app-composer-wrap {
     position: fixed;
