@@ -281,6 +281,19 @@ function buildResultRow(item, isInternal, index = 0) {
     item.image_url  ||
     item.thumbnail  || "";
 
+
+
+  // When opening the sheet
+  document.getElementById('place-detail-sheet').classList.remove('place-detail-sheet--closed');
+  document.getElementById('place-detail-sheet').removeAttribute('aria-hidden');
+
+  // When closing the sheet  
+  document.getElementById('place-detail-sheet').classList.add('place-detail-sheet--closed');
+  document.getElementById('place-detail-sheet').setAttribute('aria-hidden', 'true');
+
+
+  
+
   /* ── Open/closed badge ── */
   let openBadge = "";
   if (isOpen === true)  openBadge = `<span class="ai-rec-badge-open">Open now</span>`;
@@ -1716,7 +1729,7 @@ function setChatUiState(isActive) {
 
 <div id="place-detail-overlay" class="place-detail-overlay"></div>
 
-<div id="place-detail-sheet" class="place-detail-sheet" aria-modal="true" role="dialog" aria-label="Place details">
+<div id="place-detail-sheet" class="place-detail-sheet place-detail-sheet--closed" aria-modal="true" role="dialog" aria-label="Place details" aria-hidden="true">
 
   <!-- Drag handle -->
   <div class="place-detail-sheet__handle">

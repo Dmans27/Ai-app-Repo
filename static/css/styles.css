@@ -84,7 +84,10 @@ select {
   font: inherit;
 }
 
-
+.place-detail-sheet--closed {
+  display: none !important;
+  pointer-events: none !important;
+}
 
 
 .privacy-popup[hidden] {
