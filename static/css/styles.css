@@ -3993,11 +3993,6 @@ margin: 10px 10px -86px 10px;
     height: calc(100dvh - var(--header-h));
   }
 
-  .app-composer-wrap {
-    left: 0;
-    right: 0;
-    bottom: var(--tabbar-h);
-  }
 
   .desktop-only {
     display: none !important;
@@ -4063,7 +4058,6 @@ margin: 10px 10px -86px 10px;
     left: 0;
     right: 0;
     bottom: var(--tabbar-h);
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     background: linear-gradient(to top, rgba(18,18,18,0.98) 68%, rgba(18,18,18,0));
   }
 
@@ -4745,7 +4739,6 @@ body:not(.page-discover):not(.page-account) .app-main {
     right: 0;
     bottom: 18px;
     z-index: 950;
-    padding: 0 14px;
     background: none;
   }
 
@@ -4785,7 +4778,6 @@ body:not(.page-discover):not(.page-account) .app-main {
     bottom: auto;
     top: 58%;
     transform: translateY(-50%);
-    padding: 0 48px;
     background: none;
   }
 
@@ -4796,7 +4788,6 @@ body:not(.page-discover):not(.page-account) .app-main {
     bottom: 28px;
     top: auto;
     transform: none;
-    padding: 0 48px;
   }
 
 
