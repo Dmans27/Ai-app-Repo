@@ -1,0 +1,14 @@
+{
+  "appId": "com.mutualeats.app",
+  "appName": "Mutual Eats",
+  "webDir": "www",
+  "server": {
+    "url": "https://ai-app-repo.onrender.com",
+    "cleartext": false,
+    "allowNavigation": ["ai-app-repo.onrender.com"]
+  },
+  "ios": {
+    "allowsLinkPreview": false,
+    "scrollEnabled": true
+  }
+}

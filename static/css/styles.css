@@ -3243,6 +3243,46 @@ select {
 
 
 
+/* ── Mobile composer bar fix ── */
+@media (max-width: 1024px) {
+  .app-composer-wrap {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(env(safe-area-inset-bottom) + 60px) !important;
+    padding: 0 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    z-index: 950 !important;
+  }
+
+  .app-composer {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .app-composer__input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .quick-scroll-wrap {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(env(safe-area-inset-bottom) + 110px) !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+    z-index: 940 !important;
+  }
+}
+
+
+
 /* ── Desktop: push content right of fixed sidebar ── */
 @media (min-width: 1025px) {
   main.app-main {
