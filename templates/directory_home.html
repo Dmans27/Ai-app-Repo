@@ -1014,71 +1014,56 @@ function wireFilterBar() {
     }
 
 function buildResultRow(item, isInternal, index = 0) {
-  const name = item.name || "Untitled";
-  const category = item.category
-    ? item.category.replaceAll("_", " ")
-    : "Place";
+  const name     = item.name     || "Untitled";
+  const category = item.category ? item.category.replaceAll("_", " ") : "Place";
+  const address  = item.address  || "";
+  const website  = item.website  || "";
+  const rating   = item.rating   ? parseFloat(item.rating) : null;
+  const reviewCount = item.review_count || 0;
+  const photo    = item.photo_url || item.image_url || item.thumbnail || "";
 
-  const address = item.address || "";
-  const website = item.website || "";
+  // Store data safely — no inline JSON, use a data-index approach
+  const idx = window._placeCache ? window._placeCache.length : 0;
+  if (!window._placeCache) window._placeCache = [];
+  window._placeCache.push(item);
 
-  const photo =
-    item.photo_url ||
-    item.image_url ||
-    item.thumbnail ||
-    "/static/img/placeholder-business.jpg";
-
-  const directionsLink =
-    item.latitude && item.longitude
-      ? `https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`
-      : address
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
-        : "";
+  function stars(r) {
+    if (!r) return "";
+    return `<div class="ai-rec-stars">
+      ${Array.from({length:5}, (_,i) =>
+        `<span class="${i < Math.round(r) ? "ai-rec-star" : "ai-rec-star-empty"}">★</span>`
+      ).join("")}
+      <span class="ai-rec-rating-num">${r.toFixed(1)}</span>
+      ${reviewCount ? `<span class="ai-rec-review-count">(${reviewCount})</span>` : ""}
+    </div>`;
+  }
 
   return `
-    <article class="ai-rec-row">
-
-      <div class="ai-rec-rank">${index + 1}</div>
-
-      <img
-        class="ai-rec-image"
-        src="${photo}"
-        alt="${name}"
-        loading="lazy"
-      >
-
+    <article
+      class="ai-rec-row"
+      role="button"
+      tabindex="0"
+      style="cursor:pointer;"
+      data-place-index="${idx}"
+      onclick="openPlaceDetail(window._placeCache[${idx}])"
+      onkeydown="if(event.key==='Enter')openPlaceDetail(window._placeCache[${idx}])"
+    >
+      <div style="position:relative;">
+        ${photo
+          ? `<img class="ai-rec-photo" src="${photo}" alt="${name}" loading="lazy">`
+          : `<div class="ai-rec-photo-placeholder"><span style="font-size:36px;opacity:0.5;">🏠</span></div>`
+        }
+      </div>
       <div class="ai-rec-body">
-        <h3>${name}</h3>
-
-        <p class="ai-rec-meta">
-          ${category}
-          ${isInternal ? " · Local AI" : ""}
-        </p>
-
-        <p class="ai-rec-address">${address}</p>
-
-        <div class="ai-rec-actions">
-          ${website ? `
-            <a href="${website}" target="_blank">Website</a>
-          ` : ""}
-
-          ${directionsLink ? `
-            <a href="${directionsLink}" target="_blank">Directions</a>
-          ` : ""}
-
-          <button
-            class="save-place-btn"
-            data-place-name="${name}"
-            data-place-address="${address}"
-            data-place-category="${category}"
-            data-place-website="${website}"
-            data-place-photo="${photo}"
-            data-place-lat="${item.latitude || ""}"
-            data-place-lng="${item.longitude || ""}"
-          >
-            Save
-          </button>
+        <div class="ai-rec-title-row">
+          <h3>${name}</h3>
+          ${rating ? stars(rating) : ""}
         </div>
+        <p class="ai-rec-meta">${category}${isInternal ? " · Local AI" : ""}</p>
+        ${address ? `<p class="ai-rec-address">${address}</p>` : ""}
+        <p style="font-size:12px;color:rgba(157,232,200,0.6);margin-top:8px;font-weight:600;">
+          Tap to view details & reviews →
+        </p>
       </div>
     </article>
   `;
@@ -1319,7 +1304,8 @@ function buildResultRow(item, isInternal, index = 0) {
     ====================================================== */
 
     function renderAiResults(data) {
-      const resultsEl = document.getElementById("ai-results");
+    window._placeCache = []; // ← add this line at the top
+    const resultsEl = document.getElementById("ai-results");
       if (!resultsEl) return;
 
       const featured = data.featured_internal || [];
