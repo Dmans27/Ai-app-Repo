@@ -1855,27 +1855,32 @@ function setChatUiState(isActive) {
     return "📍";
   }
 
-  /* ── Open / close the sheet ── */
-  function openSheet() {
-    document.getElementById("place-detail-overlay").classList.add("is-open");
-    document.getElementById("place-detail-sheet").classList.add("is-open");
-    document.body.style.overflow = "hidden";
-  }
+function openSheet() {
+  const sheet = document.getElementById("place-detail-sheet");
+  const overlay = document.getElementById("place-detail-overlay");
+  sheet.classList.remove("place-detail-sheet--closed"); // ← ADD THIS
+  sheet.classList.add("is-open");
+  overlay.classList.add("is-open");
+  document.body.style.overflow = "hidden";
+}
 
-  function closeSheet() {
-    document.getElementById("place-detail-overlay").classList.remove("is-open");
-    document.getElementById("place-detail-sheet").classList.remove("is-open");
-    document.body.style.overflow = "";
+function closeSheet() {
+  const sheet = document.getElementById("place-detail-sheet");
+  const overlay = document.getElementById("place-detail-overlay");
+  sheet.classList.remove("is-open");
+  sheet.classList.add("place-detail-sheet--closed"); // ← ADD THIS
+  overlay.classList.remove("is-open");
+  document.body.style.overflow = "";
 
-    // Reset write form
-    document.getElementById("pds-write-form").classList.remove("is-open");
-    document.getElementById("pds-write-toggle").textContent = "+ Write a review";
-    document.getElementById("pds-review-body").value = "";
-    document.getElementById("pds-rating-val").value = "0";
-    document.querySelectorAll(".pds-star-picker__star")
-            .forEach(s => s.classList.remove("is-on"));
-    _selectedRating = 0;
-  }
+  // Reset write form
+  document.getElementById("pds-write-form").classList.remove("is-open");
+  document.getElementById("pds-write-toggle").textContent = "+ Write a review";
+  document.getElementById("pds-review-body").value = "";
+  document.getElementById("pds-rating-val").value = "0";
+  document.querySelectorAll(".pds-star-picker__star")
+          .forEach(s => s.classList.remove("is-on"));
+  _selectedRating = 0;
+}
 
   document.getElementById("pds-close")
           ?.addEventListener("click", closeSheet);
