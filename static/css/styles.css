@@ -3247,7 +3247,7 @@ select {
 
 
 /* ── Mobile composer fix ── */
-@media (max-width: 1024px) {
+@media (max-width: 1025px) {
   .app-composer-wrap {
     position: fixed !important;
     left: var(--sidebar-w, 260px) !important;
