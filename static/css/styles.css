@@ -3247,7 +3247,7 @@ select {
 
 
 /* ── Mobile composer fix ── */
-@media (max-width: 1025px) {
+@media (max-width: 1024px) {
   .app-composer-wrap {
     position: fixed !important;
     left: var(--sidebar-w, 260px) !important;
@@ -3289,6 +3289,53 @@ select {
 
   .ai-input-bar__send {
     flex-shrink: 0 !important;
+  }
+}
+
+
+
+
+/* ── Desktop composer — nuclear override ── */
+@media (min-width: 1025px) {
+  section.app-composer-wrap,
+  .app-composer-wrap {
+    position: fixed !important;
+    left: 260px !important;
+    right: 0 !important;
+    bottom: 32px !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 0 48px !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    margin: 0 !important;
+    display: block !important;
+    z-index: 950 !important;
+    background: none !important;
+  }
+
+  section.app-composer-wrap .chat-composer,
+  .app-composer-wrap .chat-composer {
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    display: block !important;
+  }
+
+  section.app-composer-wrap .ai-input-bar,
+  .app-composer-wrap .ai-input-bar {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+  }
+
+  section.app-composer-wrap .ai-input-bar__input,
+  .app-composer-wrap .ai-input-bar__input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: auto !important;
   }
 }
 
