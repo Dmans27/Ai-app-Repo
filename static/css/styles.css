@@ -3246,58 +3246,56 @@ select {
 
 
 
-/* ── Mobile composer fix ── */
+/* ══════════════════════════════════════════
+   COMPOSER BAR — MOBILE + DESKTOP FIXED
+   Remove any previous composer overrides
+   and replace with ONLY this block
+══════════════════════════════════════════ */
+
+/* MOBILE — full width pinned to bottom */
 @media (max-width: 1024px) {
   .app-composer-wrap {
     position: fixed !important;
-    left: var(--sidebar-w, 260px) !important;
+    left: 0 !important;
     right: 0 !important;
-    bottom: 32px !important;
-    padding: 0 48px !important;
+    bottom: calc(env(safe-area-inset-bottom) + 8px) !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 12px !important;
     box-sizing: border-box !important;
+    transform: none !important;
+    margin: 0 !important;
     z-index: 950 !important;
     background: none !important;
-    width: auto !important;
-    transform: none !important;
   }
 
   .chat-composer {
     width: 100% !important;
-    max-width: 760px !important;
-    margin: 0 auto !important;
     box-sizing: border-box !important;
-  }
-
-  .chat-composer__inner {
-    width: 100% !important;
-    box-sizing: border-box !important;
+    max-width: none !important;
   }
 
   .ai-input-bar {
     width: 100% !important;
     box-sizing: border-box !important;
     display: flex !important;
-    align-items: center !important;
   }
 
   .ai-input-bar__input {
     flex: 1 !important;
     min-width: 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
+    width: auto !important;
   }
 
-  .ai-input-bar__send {
-    flex-shrink: 0 !important;
+  /* Hide desktop scrollbar on mobile */
+  body {
+    overflow-x: hidden !important;
   }
 }
 
-
-
-
-/* ── Desktop composer — nuclear override ── */
+/* DESKTOP — spans content area right of sidebar */
 @media (min-width: 1025px) {
-  section.app-composer-wrap,
   .app-composer-wrap {
     position: fixed !important;
     left: 260px !important;
@@ -3310,29 +3308,24 @@ select {
     box-sizing: border-box !important;
     transform: none !important;
     margin: 0 !important;
-    display: block !important;
     z-index: 950 !important;
     background: none !important;
   }
 
-  section.app-composer-wrap .chat-composer,
-  .app-composer-wrap .chat-composer {
+  .chat-composer {
     width: 100% !important;
     max-width: 760px !important;
     margin: 0 auto !important;
     box-sizing: border-box !important;
-    display: block !important;
   }
 
-  section.app-composer-wrap .ai-input-bar,
-  .app-composer-wrap .ai-input-bar {
+  .ai-input-bar {
     width: 100% !important;
     box-sizing: border-box !important;
     display: flex !important;
   }
 
-  section.app-composer-wrap .ai-input-bar__input,
-  .app-composer-wrap .ai-input-bar__input {
+  .ai-input-bar__input {
     flex: 1 !important;
     min-width: 0 !important;
     width: auto !important;
