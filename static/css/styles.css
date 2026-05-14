@@ -3465,7 +3465,7 @@ select {
   display: grid;
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
-  gap: 12px;
+  gap: 95px;
   min-height: var(--header-h);
   padding: max(10px, env(safe-area-inset-top)) 16px 10px;
   background: rgba(18,18,18,0.82);
@@ -4069,7 +4069,7 @@ margin: 10px 10px -86px 10px;
   z-index: 900;
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
-  gap: 12px;
+  gap: 95px;
   min-height: var(--header-h);
   padding: max(10px, env(safe-area-inset-top)) 16px 10px;
   background: rgba(18,18,18,0.82);
