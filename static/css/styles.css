@@ -3319,6 +3319,12 @@ select {
     box-sizing: border-box !important;
   }
 
+
+  .ai-results {
+  padding-top: 16px;  /* reduce top padding */
+  margin-top: 0;
+}
+
   .app-composer {
   width: 100%;
   max-width: 680px;
