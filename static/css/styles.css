@@ -3304,7 +3304,7 @@ select {
     top: auto !important;
     width: auto !important;
     max-width: none !important;
-    padding: 0 48px !important;
+    padding: 0 40px !important;
     box-sizing: border-box !important;
     transform: none !important;
     margin: 0 !important;
@@ -3314,10 +3314,16 @@ select {
 
   .chat-composer {
     width: 100% !important;
-    max-width: 760px !important;
+    max-width: 680px !important;
     margin: 0 auto !important;
     box-sizing: border-box !important;
   }
+
+  .app-composer {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;  /* this centers it within the remaining space */
+}
 
   .ai-input-bar {
     width: 100% !important;
