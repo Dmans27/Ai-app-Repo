@@ -3298,7 +3298,7 @@ select {
 @media (min-width: 1025px) {
   .app-composer-wrap {
     position: fixed !important;
-    left: 260px !important;
+    left: 450px !important;
     right: 0 !important;
     bottom: 32px !important;
     top: auto !important;
