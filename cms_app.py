@@ -3615,14 +3615,15 @@ def home():
         default_saved_list_id = first_list.id if first_list else None
 
     return render_template(
-        "directory_home.html",
-        articles=articles,
-        article_style="spotlight",
-        homepage_top_ads=homepage_top_ads,
-        homepage_inline_ads=homepage_inline_ads,
-        default_saved_list_id=default_saved_list_id,
-        user_lists=user_lists
-    )
+    "directory_home.html",
+    articles=articles,
+    article_style="spotlight",
+    homepage_top_ads=homepage_top_ads,
+    homepage_inline_ads=homepage_inline_ads,
+    default_saved_list_id=default_saved_list_id,
+    user_lists=user_lists,
+    google_maps_api_key=GOOGLE_MAPS_API_KEY,   # <-- add this line
+)
 
 
 
