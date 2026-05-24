@@ -5097,7 +5097,7 @@ def discover_page():
 
     sql += """
         ORDER BY name ASC
-        LIMIT 100
+        LIMIT 1000
     """
 
     listings = query_all(sql, params)
