@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create User</title>
+
+  <!-- reuse your site styling if you have it -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+
+<body>
+  <div class="container" style="max-width: 720px; margin: 0 auto; padding: 28px;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <h1 style="margin:0;">Create User Account</h1>
+      <a class="btn" href="{{ url_for('login') }}">← Back to Login</a>
+    </div>
+
+    {% if error %}
+      <div class="divide" style="margin-top:14px; padding:14px; border:1px solid rgba(239,68,68,.45); border-radius:12px;">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('create_user') }}"
+          class="divide"
+          style="margin-top:16px; padding:16px; display:grid; gap:12px; border-radius:14px;">
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Email</div>
+        <input name="email" type="email" required
+               placeholder="you@example.com"
+               style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit;">
+      </label>
+
+      <label>
+        <div style="opacity:.85; margin-bottom:6px;">Password</div>
+        <input name="password" type="password" required
+               placeholder="Create a password"
+               style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.2); background:transparent; color:inherit;">
+      </label>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:6px;">
+        <a class="btn" href="{{ url_for('login') }}" style="text-decoration:none;">Cancel</a>
+        <button class="btn" type="submit">Create User Account</button>
+      </div>
+    </form>
+
+    <div style="margin-top:14px; opacity:.85;">
+      Already have an account?
+      <a href="{{ url_for('login') }}">Login</a>
+    </div>
+
+ 
+
+  </div>
+</body>
+</html>

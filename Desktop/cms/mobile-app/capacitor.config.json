@@ -1,0 +1,9 @@
+{
+  "appId": "com.danielmansfield.been",
+  "appName": "Been",
+  "webDir": "www",
+  "server": {
+    "url": "https://helpdesk.ngrok.app",
+    "cleartext": false
+  }
+}

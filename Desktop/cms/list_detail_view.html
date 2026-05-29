@@ -1,0 +1,169 @@
+<div class="list-view-toggle">
+  <button type="button" class="list-view-toggle__btn is-active" data-view-toggle="cards">
+    List view
+  </button>
+  <button type="button" class="list-view-toggle__btn" data-view-toggle="map">
+    Map view
+  </button>
+</div>
+
+
+<div id="cards-view" class="list-view-section is-active">
+  <div class="saved-places-grid">
+    {% for place in saved_list.places %}
+      <article class="saved-place-card">
+        <div class="saved-place-card__image-wrap">
+          <img
+            src="{{ place.photo_url or url_for('static', filename='img/default-business.jpg') }}"
+            alt="{{ place.name }}"
+            class="saved-place-card__image"
+          >
+        </div>
+
+        <div class="saved-place-card__body">
+          <h3 class="saved-place-card__title">{{ place.name }}</h3>
+          <div class="saved-place-card__meta">
+            {{ category_icon(place.category) }}
+            {{ (place.category or "Local business")|replace('_', ' ')|title }}
+          </div>
+
+          {% if place.address %}
+            <div class="saved-place-card__address">{{ place.address }}</div>
+          {% endif %}
+
+          {% if place.website %}
+            <div class="saved-place-card__actions">
+              <a href="{{ place.website }}" target="_blank" rel="noopener" class="btn-primary">
+                Visit website
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="map-view" class="list-view-section">
+  <div class="list-map-panel">
+    <div id="saved-list-map" class="list-map-frame"></div>
+  </div>
+</div>
+
+
+
+<script id="saved-list-map-data" type="application/json">
+  {{ map_places|tojson }}
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const toggleButtons = document.querySelectorAll("[data-view-toggle]");
+  const cardsView = document.getElementById("cards-view");
+  const mapView = document.getElementById("map-view");
+
+  toggleButtons.forEach((button) => {
+    button.addEventListener("click", function () {
+      const view = button.getAttribute("data-view-toggle");
+
+      toggleButtons.forEach((btn) => btn.classList.remove("is-active"));
+      button.classList.add("is-active");
+
+      if (view === "cards") {
+        cardsView.classList.add("is-active");
+        mapView.classList.remove("is-active");
+      } else {
+        cardsView.classList.remove("is-active");
+        mapView.classList.add("is-active");
+
+        if (window.savedListMap && window.google) {
+          google.maps.event.trigger(window.savedListMap, "resize");
+        }
+      }
+    });
+  });
+});
+
+function initSavedListMap() {
+  const mapEl = document.getElementById("saved-list-map");
+  if (!mapEl) return;
+
+  const raw = document.getElementById("saved-list-map-data");
+  if (!raw) return;
+
+  const places = JSON.parse(raw.textContent || "[]");
+
+  const fallbackCenter = { lat: 41.8781, lng: -87.6298 };
+
+  const map = new google.maps.Map(mapEl, {
+    zoom: 12,
+    center: fallbackCenter,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false
+  });
+
+  window.savedListMap = map;
+
+  const bounds = new google.maps.LatLngBounds();
+  let markerCount = 0;
+
+  places.forEach((place) => {
+    if (place.lat == null || place.lng == null) return;
+
+    const position = {
+      lat: Number(place.lat),
+      lng: Number(place.lng)
+    };
+
+    const marker = new google.maps.Marker({
+      position,
+      map,
+      title: place.name || ""
+    });
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="max-width:220px;">
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
+            ${place.name || ""}
+          </div>
+          <div style="font-size:13px;color:#666;margin-bottom:8px;">
+            ${place.category || ""}
+          </div>
+          <div style="font-size:13px;color:#444;margin-bottom:8px;">
+            ${place.address || ""}
+          </div>
+          ${place.website ? `<a href="${place.website}" target="_blank" rel="noopener" style="color:#111;font-weight:600;">Visit website</a>` : ""}
+        </div>
+      `
+    });
+
+    marker.addListener("click", () => {
+      infoWindow.open(map, marker);
+    });
+
+    bounds.extend(position);
+    markerCount += 1;
+  });
+
+  if (markerCount > 0) {
+    map.fitBounds(bounds);
+
+    google.maps.event.addListenerOnce(map, "bounds_changed", function () {
+      if (this.getZoom() > 14) {
+        this.setZoom(14);
+      }
+    });
+  }
+}
+</script>
+
+<script
+  async
+  src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initSavedListMap">
+</script>
