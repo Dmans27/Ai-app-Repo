@@ -40,6 +40,7 @@ body::before {
     transparent 60%
   );
   pointer-events: none;
+}
 
 *,
 *::before,
@@ -6817,4 +6818,4 @@ body:not(.page-discover):not(.page-account) .app-main {
   visibility: hidden !important;
   pointer-events: none !important;
     transition: transform 0.32s cubic-bezier(0.22,1,0.36,1), visibility 0.32s !important;
-}
+  }
