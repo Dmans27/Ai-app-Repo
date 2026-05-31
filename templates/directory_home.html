@@ -258,6 +258,13 @@
         .app-composer-wrap.is-hidden {
           display: none;
         }
+
+        /* ── On desktop, hide the in-hero composer; use bottom bar instead ── */
+        @media (min-width: 1025px) {
+          .hero-composer {
+            display: none !important;
+          }
+        }
       </style>
 
       <div class="app-main__inner">
@@ -639,26 +646,24 @@ function wireFilterBar() {
   function isDesktop() { return window.innerWidth >= 1024; }
 
   function initComposer() {
-    if (isDesktop()) {
-      if (bottomComposer) bottomComposer.style.display = 'none';
-    } else {
-      if (bottomComposer) bottomComposer.style.display = '';
-      const mobileInput  = document.getElementById('ai-chat-input-mobile');
-      const mobileSubmit = document.getElementById('ai-chat-submit-mobile');
-      if (mobileSubmit && mobileInput) {
-        mobileSubmit.onclick = () => {
-          const val = mobileInput.value.trim();
-          if (!val) return;
-          const desktopInput = document.getElementById('ai-chat-input');
-          if (desktopInput) desktopInput.value = val;
-          const desktopSubmit = document.getElementById('ai-chat-submit');
-          if (desktopSubmit) desktopSubmit.click();
-          mobileInput.value = '';
-        };
-        mobileInput.onkeydown = e => {
-          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mobileSubmit.click(); }
-        };
-      }
+    // Always show the bottom composer on both desktop and mobile
+    if (bottomComposer) bottomComposer.style.display = '';
+
+    const mobileInput  = document.getElementById('ai-chat-input-mobile');
+    const mobileSubmit = document.getElementById('ai-chat-submit-mobile');
+    if (mobileSubmit && mobileInput) {
+      mobileSubmit.onclick = () => {
+        const val = mobileInput.value.trim();
+        if (!val) return;
+        const desktopInput = document.getElementById('ai-chat-input');
+        if (desktopInput) desktopInput.value = val;
+        const desktopSubmit = document.getElementById('ai-chat-submit');
+        if (desktopSubmit) desktopSubmit.click();
+        mobileInput.value = '';
+      };
+      mobileInput.onkeydown = e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mobileSubmit.click(); }
+      };
     }
   }
 
@@ -718,7 +723,7 @@ function wireFilterBar() {
         </section>
       </div>
 
-      <section class="app-composer-wrap" id="bottom-composer" style="display:none;">
+      <section class="app-composer-wrap" id="bottom-composer">
         <div class="chat-composer is-collapsed">
           <div class="chat-composer__inner">
             <div class="ai-input-bar">
