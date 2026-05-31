@@ -257,10 +257,16 @@
         /* ── Bottom composer: hidden on desktop until chat starts ── */
         @media (min-width: 1025px) {
           #bottom-composer {
-            display: none;
+            display: block;
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease;
           }
           #bottom-composer.is-visible {
-            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
           }
         }
       </style>
@@ -680,9 +686,12 @@ function wireFilterBar() {
     // Shrink the hero to compact topbar
     if (hero) hero.classList.add('is-chatting');
     // Slide up the fixed bottom input bar
+    // Must set display:block BEFORE adding is-visible so CSS transition fires
     if (bottomComposer) {
-      bottomComposer.style.display = '';
-      requestAnimationFrame(() => bottomComposer.classList.add('is-visible'));
+      bottomComposer.style.display = 'block';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => bottomComposer.classList.add('is-visible'));
+      });
     }
   }
 
