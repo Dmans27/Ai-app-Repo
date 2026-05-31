@@ -164,15 +164,101 @@
       </header>
 
       <!-- Desktop page header -->
-      <header class="desktop-page-header desktop-only">
-        <div>
+      <header class="desktop-page-header desktop-only" id="desktop-hero">
+        <div class="hero-center">
           <p class="desktop-page-header__eyebrow" id="time-greeting">Good afternoon 👋</p>
           <h1 class="desktop-page-header__title">Where should we go today?</h1>
           <p class="desktop-page-header__subtitle">
             Find coffee, bars, dinner, shopping, and more.
           </p>
+
+          <!-- AI input bar lives HERE on desktop before first message -->
+          <div class="hero-composer" id="hero-composer">
+            <div class="ai-input-bar">
+              <textarea
+                id="ai-chat-input"
+                class="ai-input-bar__input"
+                placeholder="Where should I go?"
+                rows="1"
+              ></textarea>
+              <button
+                id="ai-chat-submit"
+                class="ai-input-bar__send"
+                type="button"
+                aria-label="Send"
+              >➤</button>
+            </div>
+            <div id="ai-chat-status" class="ai-chat-status"></div>
+          </div>
         </div>
       </header>
+
+      <style>
+        /* ── Centered hero layout ── */
+        .desktop-page-header.desktop-only {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
+          padding: 0 24px;
+          transition: flex 0.5s cubic-bezier(0.22,1,0.36,1),
+                      padding 0.5s cubic-bezier(0.22,1,0.36,1);
+        }
+
+        .hero-center {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 20px;
+          width: 100%;
+          max-width: 680px;
+          transition: transform 0.5s cubic-bezier(0.22,1,0.36,1),
+                      opacity 0.4s ease;
+        }
+
+        .hero-composer {
+          width: 100%;
+          transition: transform 0.5s cubic-bezier(0.22,1,0.36,1),
+                      opacity 0.4s ease;
+        }
+
+        /* ── When conversation starts — hero slides up and shrinks ── */
+        .desktop-page-header.desktop-only.is-chatting {
+          flex: 0 0 auto;
+          padding: 16px 24px 0;
+          align-items: flex-start;
+        }
+
+        .desktop-page-header.desktop-only.is-chatting .hero-center {
+          flex-direction: row;
+          align-items: center;
+          text-align: left;
+          max-width: 100%;
+          gap: 12px;
+        }
+
+        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__eyebrow,
+        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__subtitle {
+          display: none;
+        }
+
+        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__title {
+          font-size: 18px;
+          font-weight: 800;
+          margin: 0;
+          flex-shrink: 0;
+        }
+
+        .desktop-page-header.desktop-only.is-chatting .hero-composer {
+          flex: 1;
+        }
+
+        /* ── Hide the bottom composer once chatting (we use hero one) ── */
+        .app-composer-wrap.is-hidden {
+          display: none;
+        }
+      </style>
 
       <div class="app-main__inner">
         <section class="chat-page is-empty" id="chat-page">
@@ -544,6 +630,59 @@ function wireFilterBar() {
 }
 
 
+/* ── Hero composer animation ── */
+(function() {
+  const hero = document.getElementById('desktop-hero');
+  const bottomComposer = document.getElementById('bottom-composer');
+  let hasChatted = false;
+
+  function isDesktop() { return window.innerWidth >= 1024; }
+
+  function initComposer() {
+    if (isDesktop()) {
+      if (bottomComposer) bottomComposer.style.display = 'none';
+    } else {
+      if (bottomComposer) bottomComposer.style.display = '';
+      const mobileInput  = document.getElementById('ai-chat-input-mobile');
+      const mobileSubmit = document.getElementById('ai-chat-submit-mobile');
+      if (mobileSubmit && mobileInput) {
+        mobileSubmit.onclick = () => {
+          const val = mobileInput.value.trim();
+          if (!val) return;
+          const desktopInput = document.getElementById('ai-chat-input');
+          if (desktopInput) desktopInput.value = val;
+          const desktopSubmit = document.getElementById('ai-chat-submit');
+          if (desktopSubmit) desktopSubmit.click();
+          mobileInput.value = '';
+        };
+        mobileInput.onkeydown = e => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mobileSubmit.click(); }
+        };
+      }
+    }
+  }
+
+  function triggerChatAnimation() {
+    if (hasChatted || !isDesktop()) return;
+    hasChatted = true;
+    if (hero) hero.classList.add('is-chatting');
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('ai-chat-submit');
+    if (submitBtn) submitBtn.addEventListener('click', triggerChatAnimation, { once: true });
+    const inputEl = document.getElementById('ai-chat-input');
+    if (inputEl) inputEl.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) triggerChatAnimation();
+    }, { once: true });
+    document.querySelectorAll('.quick-chip').forEach(btn => {
+      btn.addEventListener('click', triggerChatAnimation, { once: true });
+    });
+    initComposer();
+  });
+  window.addEventListener('resize', initComposer);
+})();
+
 /* ── Page transition: fade out before navigation ── */
 (function initPageTransitions() {
   document.body.classList.add("page-transition");
@@ -579,26 +718,26 @@ function wireFilterBar() {
         </section>
       </div>
 
-      <section class="app-composer-wrap">
+      <section class="app-composer-wrap" id="bottom-composer">
         <div class="chat-composer is-collapsed">
           <div class="chat-composer__inner">
             <div class="ai-input-bar">
               <textarea
-                id="ai-chat-input"
+                id="ai-chat-input-mobile"
                 class="ai-input-bar__input"
                 placeholder="Where should I go?"
                 rows="1"
               ></textarea>
 
               <button
-                id="ai-chat-submit"
+                id="ai-chat-submit-mobile"
                 class="ai-input-bar__send"
                 type="button"
                 aria-label="Send"
               >➤</button>
             </div>
 
-            <div id="ai-chat-status" class="ai-chat-status"></div>
+            <div id="ai-chat-status-mobile" class="ai-chat-status"></div>
           </div>
         </div>
       </section>
