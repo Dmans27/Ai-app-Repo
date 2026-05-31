@@ -219,11 +219,10 @@
 
         .hero-composer {
           width: 100%;
-          transition: transform 0.5s cubic-bezier(0.22,1,0.36,1),
-                      opacity 0.4s ease;
+          transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        /* ── When conversation starts — hero slides up and shrinks ── */
+        /* ── When conversation starts — hero shrinks to compact topbar ── */
         .desktop-page-header.desktop-only.is-chatting {
           flex: 0 0 auto;
           padding: 16px 24px 0;
@@ -250,19 +249,18 @@
           flex-shrink: 0;
         }
 
+        /* ── Hide hero-composer once chatting — bottom bar takes over ── */
         .desktop-page-header.desktop-only.is-chatting .hero-composer {
-          flex: 1;
-        }
-
-        /* ── Hide the bottom composer once chatting (we use hero one) ── */
-        .app-composer-wrap.is-hidden {
           display: none;
         }
 
-        /* ── On desktop, hide the in-hero composer; use bottom bar instead ── */
+        /* ── Bottom composer: hidden on desktop until chat starts ── */
         @media (min-width: 1025px) {
-          .hero-composer {
-            display: none !important;
+          #bottom-composer {
+            display: none;
+          }
+          #bottom-composer.is-visible {
+            display: block;
           }
         }
       </style>
@@ -643,12 +641,21 @@ function wireFilterBar() {
   const bottomComposer = document.getElementById('bottom-composer');
   let hasChatted = false;
 
-  function isDesktop() { return window.innerWidth >= 1024; }
+  function isDesktop() { return window.innerWidth >= 1025; }
 
   function initComposer() {
-    // Always show the bottom composer on both desktop and mobile
-    if (bottomComposer) bottomComposer.style.display = '';
+    if (isDesktop()) {
+      // Desktop: hide bottom bar until first message
+      if (bottomComposer) bottomComposer.classList.remove('is-visible');
+    } else {
+      // Mobile: always show bottom bar
+      if (bottomComposer) {
+        bottomComposer.style.display = '';
+        bottomComposer.classList.add('is-visible');
+      }
+    }
 
+    // Wire up the bottom bar's input to proxy through the hero input's submit logic
     const mobileInput  = document.getElementById('ai-chat-input-mobile');
     const mobileSubmit = document.getElementById('ai-chat-submit-mobile');
     if (mobileSubmit && mobileInput) {
@@ -670,7 +677,13 @@ function wireFilterBar() {
   function triggerChatAnimation() {
     if (hasChatted || !isDesktop()) return;
     hasChatted = true;
+    // Shrink the hero to compact topbar
     if (hero) hero.classList.add('is-chatting');
+    // Slide up the fixed bottom input bar
+    if (bottomComposer) {
+      bottomComposer.style.display = '';
+      requestAnimationFrame(() => bottomComposer.classList.add('is-visible'));
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
