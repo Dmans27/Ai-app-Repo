@@ -201,8 +201,6 @@
           justify-content: center;
           flex: 1;
           padding: 0 24px;
-          transition: flex 0.4s cubic-bezier(0.22,1,0.36,1),
-                      padding 0.4s cubic-bezier(0.22,1,0.36,1);
         }
 
         .hero-center {
@@ -219,30 +217,9 @@
           width: 100%;
         }
 
-        /* ── When conversation starts — collapse hero text, keep composer visible ── */
-        .desktop-page-header.desktop-only.is-chatting {
-          flex: 0 0 auto;
-          padding: 0;
-          min-height: 0;
-        }
-
-        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__eyebrow,
-        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__title,
-        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__subtitle,
-        .desktop-page-header.desktop-only.is-chatting .hero-composer {
-          display: none;
-        }
-
-        /* ── Hero composer placeholder keeps layout stable after hero hides ── */
-        .hero-spacer { display: none; }
-        .is-chatting .hero-spacer { display: block; }
-
-        /* ── Fixed bottom bar — hidden until chat starts ── */
-        #bottom-composer {
-          display: none;
-        }
-        #bottom-composer.is-anchored {
-          display: block !important;
+        /* ── On desktop, hide the in-hero duplicate input — bottom bar handles everything ── */
+        @media (min-width: 1025px) {
+          .hero-composer { display: none !important; }
         }
       </style>
 
@@ -616,19 +593,9 @@ function wireFilterBar() {
 }
 
 
-/* ── Hero composer animation ── */
+/* ── Composer setup ── */
 (function() {
-  const hero = document.getElementById('desktop-hero');
-  const bottomComposer = document.getElementById('bottom-composer');
-  let hasChatted = false;
-
-  function isDesktop() { return window.innerWidth >= 1025; }
-
   function initComposer() {
-    if (!isDesktop() && bottomComposer) {
-      bottomComposer.classList.add('is-anchored');
-    }
-
     const mobileInput  = document.getElementById('ai-chat-input-mobile');
     const mobileSubmit = document.getElementById('ai-chat-submit-mobile');
     if (mobileSubmit && mobileInput) {
@@ -647,28 +614,7 @@ function wireFilterBar() {
     }
   }
 
-  function triggerChatAnimation() {
-    if (hasChatted || !isDesktop()) return;
-    hasChatted = true;
-    // Collapse the hero text
-    if (hero) hero.classList.add('is-chatting');
-    // Show the fixed bottom input bar
-    if (bottomComposer) bottomComposer.classList.add('is-anchored');
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    const submitBtn = document.getElementById('ai-chat-submit');
-    if (submitBtn) submitBtn.addEventListener('click', triggerChatAnimation, { once: true });
-    const inputEl = document.getElementById('ai-chat-input');
-    if (inputEl) inputEl.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) triggerChatAnimation();
-    }, { once: true });
-    document.querySelectorAll('.quick-chip').forEach(btn => {
-      btn.addEventListener('click', triggerChatAnimation, { once: true });
-    });
-    initComposer();
-  });
-  window.addEventListener('resize', initComposer);
+  document.addEventListener('DOMContentLoaded', initComposer);
 })();
 
 /* ── Page transition: fade out before navigation ── */
