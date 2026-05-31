@@ -201,8 +201,8 @@
           justify-content: center;
           flex: 1;
           padding: 0 24px;
-          transition: flex 0.5s cubic-bezier(0.22,1,0.36,1),
-                      padding 0.5s cubic-bezier(0.22,1,0.36,1);
+          transition: flex 0.4s cubic-bezier(0.22,1,0.36,1),
+                      padding 0.4s cubic-bezier(0.22,1,0.36,1);
         }
 
         .hero-center {
@@ -213,61 +213,36 @@
           gap: 20px;
           width: 100%;
           max-width: 680px;
-          transition: transform 0.5s cubic-bezier(0.22,1,0.36,1),
-                      opacity 0.4s ease;
         }
 
         .hero-composer {
           width: 100%;
-          transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        /* ── When conversation starts — hero shrinks to compact topbar ── */
+        /* ── When conversation starts — collapse hero text, keep composer visible ── */
         .desktop-page-header.desktop-only.is-chatting {
           flex: 0 0 auto;
-          padding: 16px 24px 0;
-          align-items: flex-start;
-        }
-
-        .desktop-page-header.desktop-only.is-chatting .hero-center {
-          flex-direction: row;
-          align-items: center;
-          text-align: left;
-          max-width: 100%;
-          gap: 12px;
+          padding: 0;
+          min-height: 0;
         }
 
         .desktop-page-header.desktop-only.is-chatting .desktop-page-header__eyebrow,
-        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__subtitle {
-          display: none;
-        }
-
-        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__title {
-          font-size: 18px;
-          font-weight: 800;
-          margin: 0;
-          flex-shrink: 0;
-        }
-
-        /* ── Hide hero-composer once chatting — bottom bar takes over ── */
+        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__title,
+        .desktop-page-header.desktop-only.is-chatting .desktop-page-header__subtitle,
         .desktop-page-header.desktop-only.is-chatting .hero-composer {
           display: none;
         }
 
-        /* ── Bottom composer: hidden on desktop until chat starts ── */
-        @media (min-width: 1025px) {
-          #bottom-composer {
-            display: block;
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-            transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease;
-          }
-          #bottom-composer.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-          }
+        /* ── Hero composer placeholder keeps layout stable after hero hides ── */
+        .hero-spacer { display: none; }
+        .is-chatting .hero-spacer { display: block; }
+
+        /* ── Fixed bottom bar — hidden until chat starts ── */
+        #bottom-composer {
+          display: none;
+        }
+        #bottom-composer.is-anchored {
+          display: block !important;
         }
       </style>
 
@@ -650,18 +625,10 @@ function wireFilterBar() {
   function isDesktop() { return window.innerWidth >= 1025; }
 
   function initComposer() {
-    if (isDesktop()) {
-      // Desktop: hide bottom bar until first message
-      if (bottomComposer) bottomComposer.classList.remove('is-visible');
-    } else {
-      // Mobile: always show bottom bar
-      if (bottomComposer) {
-        bottomComposer.style.display = '';
-        bottomComposer.classList.add('is-visible');
-      }
+    if (!isDesktop() && bottomComposer) {
+      bottomComposer.classList.add('is-anchored');
     }
 
-    // Wire up the bottom bar's input to proxy through the hero input's submit logic
     const mobileInput  = document.getElementById('ai-chat-input-mobile');
     const mobileSubmit = document.getElementById('ai-chat-submit-mobile');
     if (mobileSubmit && mobileInput) {
@@ -683,16 +650,10 @@ function wireFilterBar() {
   function triggerChatAnimation() {
     if (hasChatted || !isDesktop()) return;
     hasChatted = true;
-    // Shrink the hero to compact topbar
+    // Collapse the hero text
     if (hero) hero.classList.add('is-chatting');
-    // Slide up the fixed bottom input bar
-    // Must set display:block BEFORE adding is-visible so CSS transition fires
-    if (bottomComposer) {
-      bottomComposer.style.display = 'block';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => bottomComposer.classList.add('is-visible'));
-      });
-    }
+    // Show the fixed bottom input bar
+    if (bottomComposer) bottomComposer.classList.add('is-anchored');
   }
 
   document.addEventListener('DOMContentLoaded', function() {
