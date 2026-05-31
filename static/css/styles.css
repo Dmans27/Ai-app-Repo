@@ -6,20 +6,19 @@
    ========================================================= */
 
 :root {
-  --bg-main: #050505;
-  --bg-surface: #111214;
-  --bg-elevated: #181a1f;
-  --bg-soft: #22252b;
+  --bg-main: #f5f5f7;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f0f0f2;
+  --bg-soft: #e8e8ea;
 
+  --sidebar-w: 260px;
 
-  --sidebar-w: 260px; /* match your actual sidebar width */
+  --text-primary: #1d1d1f;
+  --text-secondary: rgba(0, 0, 0, 0.72);
+  --text-muted: rgba(0, 0, 0, 0.45);
 
-  --text-primary: #f5f5f7;
-  --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-muted: rgba(255, 255, 255, 0.55);
-
-  --line-subtle: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.14);
+  --line-subtle: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.14);
 
   --brand: #10a37f;
   --brand-strong: #0d8a6c;
