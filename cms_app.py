@@ -67,7 +67,7 @@ AI_JOBS = {}  # job_id -> dict(status, result, error, created_at)
 
 from sqlalchemy import create_engine, text as sql_text
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../static', static_url_path='/static')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SQLITE_PATH = os.path.join(BASE_DIR, "cms.db")
