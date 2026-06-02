@@ -3297,15 +3297,14 @@ select {
 @media (min-width: 1025px) {
   .app-composer-wrap {
     position: fixed !important;
-    left: 450px !important;
+    left: var(--sidebar-w, 280px) !important;
     right: 0 !important;
-    bottom: 32px !important;
+    bottom: 24px !important;
     top: auto !important;
     width: auto !important;
     max-width: none !important;
     padding: 0 40px !important;
     box-sizing: border-box !important;
-    transform: none !important;
     margin: 0 !important;
     z-index: 950 !important;
     background: none !important;
@@ -3748,10 +3747,10 @@ margin: 10px 10px -86px 10px;
   border-radius: 28px;
   overflow: hidden;
   box-shadow:
-  0 0 0 1px rgba(255,255,255,0.05),
-  0 10px 40px rgba(16,185,129,0.08);
-    background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+    0 2px 16px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(0,0,0,0.07);
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.1);
   backdrop-filter: blur(14px);
 }
 
@@ -3795,8 +3794,8 @@ margin: 10px 10px -86px 10px;
 
 .ai-input-bar:focus-within {
   box-shadow:
-    0 0 0 1px rgba(157,232,200,0.35),
-    0 0 50px rgba(16,185,129,0.25);
+    0 0 0 2px rgba(16,185,129,0.4),
+    0 4px 20px rgba(0,0,0,0.1);
 }
 
 /* animated border glow */
@@ -3828,7 +3827,7 @@ margin: 10px 10px -86px 10px;
   position: absolute;
   inset: 2px;
   border-radius: inherit;
-  background: #111; /* match your dark theme */
+  background: #ffffff; /* light theme inner mask */
   z-index: 1;
 }
 
@@ -3859,8 +3858,8 @@ margin: 10px 10px -86px 10px;
   padding: 6px 8px 6px 14px;
   border: 1px solid var(--line-subtle);
   border-radius: 999px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.1);
   backdrop-filter: blur(14px);
 }
 
@@ -3872,7 +3871,7 @@ margin: 10px 10px -86px 10px;
   outline: none;
   resize: none;
   background: transparent;
-  color: #fff;
+  color: #111;
   font-size: 1rem;
   line-height: 1.45;
   padding: 10px 0;
@@ -4804,14 +4803,21 @@ body:not(.page-discover):not(.page-account) .app-main {
 /* Desktop home composer: center before search, bottom after search */
 @media (min-width: 1025px) {
 
+  /* Always show the bottom composer on desktop */
+  #bottom-composer {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
 
   body.ai-chat-active .app-composer-wrap {
-    position: fixed;
-    left: var(--sidebar-w);
-    right: 0;
-    bottom: 28px;
-    top: auto;
-    transform: none;
+    position: fixed !important;
+    left: var(--sidebar-w) !important;
+    right: 0 !important;
+    bottom: 28px !important;
+    top: auto !important;
+    transform: none !important;
+    z-index: 950 !important;
   }
 
 
