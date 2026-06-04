@@ -2287,7 +2287,7 @@ select {
 
 /* give the page breathing room */
 .chat-page.is-empty {
-  min-height: calc(100vh - 220px);
+  min-height: 0;
 }
 
 /* mobile only */
@@ -3573,7 +3573,7 @@ select {
 }
 
 .chat-welcome {
-  min-height: calc(100vh - 280px);
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3630,8 +3630,8 @@ select {
 }
 
 .chat-page.is-active .chat-welcome {
-  min-height: 0;
-  height: 0;
+  min-height: 0 !important;
+  height: 0 !important;
   padding: 0;
   opacity: 0;
   transform: translateY(-10px);
@@ -6908,4 +6908,14 @@ body:not(.page-discover):not(.page-account) .app-main {
   body.ai-chat-active .ai-results-thread {
     padding-top: 8px !important;
   }
+}
+
+/* ── Hide mobile hero and chips when chat is active ── */
+body.ai-chat-active .mobile-home-hero,
+body.ai-chat-active .quick-scroll-wrap {
+  display: none !important;
+}
+
+body.ai-chat-active .chat-page {
+  min-height: 0 !important;
 }
