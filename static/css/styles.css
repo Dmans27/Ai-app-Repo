@@ -4785,7 +4785,7 @@ body:not(.page-discover):not(.page-account) .app-main {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 115px;
+    bottom: 76px;
     z-index: 940;
     padding: 0 14px;
   }
