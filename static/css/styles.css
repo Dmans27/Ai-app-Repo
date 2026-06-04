@@ -4063,25 +4063,37 @@ margin: 10px 10px -86px 10px;
   }
 
   .app-main {
-    min-height: 100dvh;
+    height: calc(100dvh - var(--header-h, 60px));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .app-main__inner {
     max-width: 100%;
-    padding: 18px 16px 124px;
+    padding: 12px 16px 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .chat-welcome {
-    min-height: calc(100dvh - 270px);
-    padding: 12px 4px 8px;
+    flex: 1;
+    min-height: 0;
+    padding: 8px 4px 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .chat-welcome__title {
-    font-size: clamp(2.2rem, 10vw, 3.5rem);
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
   }
 
   .chat-welcome__subtitle {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    margin-top: 4px;
   }
 
   .chat-thread {
@@ -4099,8 +4111,7 @@ margin: 10px 10px -86px 10px;
   }
 
   .app-composer-wrap {
-
-    background: linear-gradient(to top, rgba(18,18,18,0.98) 68%, rgba(18,18,18,0));
+    background: none;
   }
 
   .search-view-toggle {
@@ -6829,4 +6840,42 @@ body:not(.page-discover):not(.page-account) .app-main {
   transform: translateY(100%) !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+/* ── Mobile hero: fit everything on one screen ── */
+@media (max-width: 1024px) {
+  .desktop-page-header__eyebrow {
+    font-size: 0.8rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .desktop-page-header__title {
+    font-size: clamp(1.6rem, 7vw, 2.2rem) !important;
+    margin-bottom: 4px !important;
+    line-height: 1.1 !important;
+  }
+
+  .desktop-page-header__subtitle {
+    font-size: 0.85rem !important;
+    margin-bottom: 8px !important;
+  }
+
+  .desktop-page-header {
+    padding: 12px 20px 8px !important;
+  }
+
+  .quick-chips-row {
+    gap: 6px !important;
+    padding: 6px 0 !important;
+  }
+
+  .quick-chip {
+    font-size: 0.78rem !important;
+    padding: 6px 12px !important;
+    height: auto !important;
+  }
+
+  #bottom-composer {
+    padding-bottom: env(safe-area-inset-bottom, 8px) !important;
+  }
 }
