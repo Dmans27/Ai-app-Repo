@@ -6879,3 +6879,33 @@ body:not(.page-discover):not(.page-account) .app-main {
     padding-bottom: env(safe-area-inset-bottom, 8px) !important;
   }
 }
+
+
+/* ── Mobile: collapse hero when chat starts ── */
+@media (max-width: 1024px) {
+  body.ai-chat-active .desktop-page-header,
+  body.ai-chat-active .mobile-hero-header {
+    min-height: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    transition: all 0.24s ease !important;
+  }
+
+  body.ai-chat-active .quick-chips-row,
+  body.ai-chat-active .chat-suggestion-chips {
+    display: none !important;
+  }
+
+  body.ai-chat-active .app-main__inner {
+    padding-top: 0 !important;
+  }
+
+  body.ai-chat-active .chat-thread,
+  body.ai-chat-active .ai-results-thread {
+    padding-top: 8px !important;
+  }
+}
