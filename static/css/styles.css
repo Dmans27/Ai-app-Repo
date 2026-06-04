@@ -3690,7 +3690,7 @@ padding-bottom: 0;
 
 .ai-chat-message--assistant .ai-chat-bubble {
   background: var(--bg-surface);
-  color: #fff;
+  color: #000f00;
   border: 1px solid var(--line-subtle);
 }
 
@@ -4827,7 +4827,7 @@ body:not(.page-discover):not(.page-account) .app-main {
   }
 
   .chat-composer {
-    margin: 0 !important;
+    margin: -1px 0px -25px 175px !important;
   }
 
   .chat-page {
