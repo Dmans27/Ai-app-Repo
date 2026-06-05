@@ -4834,16 +4834,25 @@ body:not(.page-discover):not(.page-account) .app-main {
     top: auto !important;
     transform: none !important;
     z-index: 950 !important;
+    display: flex;
+    justify-content: center;
+    padding: 0 40px !important;
+  }
+
+  body.ai-chat-active .chat-composer {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 !important;
   }
 
 
   .chat-composer__inner {
-    max-width: 960px;
-    margin: 0;
+    max-width: 860px;
+    margin: 0 auto;
   }
 
   .chat-composer {
-    margin: -1px 0px -25px 175px !important;
+    margin: 0 40px !important;
   }
 
   .chat-page {
