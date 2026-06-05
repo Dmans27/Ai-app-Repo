@@ -4846,21 +4846,23 @@ body:not(.page-discover):not(.page-account) .app-main {
     margin: 0 !important;
   }
 
-  /* Also center the hero input bar before chat starts */
+  /* Center the input bar in the content area (right of sidebar) */
   #bottom-composer {
     display: block !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-  }
-
-  .app-composer-wrap {
+    position: fixed !important;
+    left: var(--sidebar-w, 280px) !important;
+    right: 0 !important;
+    bottom: 28px !important;
     display: flex !important;
     justify-content: center !important;
     padding: 0 40px !important;
     box-sizing: border-box !important;
+    z-index: 950 !important;
   }
 
-  .app-composer-wrap .chat-composer {
+  #bottom-composer .chat-composer {
     width: 100% !important;
     max-width: 860px !important;
     margin: 0 !important;
