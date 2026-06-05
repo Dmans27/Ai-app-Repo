@@ -2908,7 +2908,7 @@ select {
   height: 104px;
   border-radius: 18px;
   overflow: hidden;
-  background: #1c1f24;
+  background: #e8e8ea;
   flex-shrink: 0;
 }
 
@@ -2948,7 +2948,7 @@ select {
 .place-card__category {
   margin: 4px 0 0;
   font-size: 0.92rem;
-  color: rgba(255,255,255,0.68);
+  color: rgba(0,0,0,0.55);
   line-height: 1.35;
 }
 
@@ -2973,7 +2973,7 @@ select {
   padding: 0 10px;
   border-radius: 999px;
   background: rgba(16,163,127,0.12);
-  color: #7ee2bf;
+  color: var(--brand);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -6923,4 +6923,66 @@ body.ai-chat-active .quick-scroll-wrap {
 
 body.ai-chat-active .chat-page {
   min-height: 0 !important;
+}
+
+/* ── Large desktop: tighter results layout ── */
+@media (min-width: 1025px) {
+  .ai-results-thread {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .search-results-stack {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Smaller image on desktop cards */
+  .place-card {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border-radius: 16px;
+  }
+
+  .place-card__image-wrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+  }
+
+  .place-card__title {
+    font-size: 0.95rem;
+  }
+
+  .place-card__category {
+    font-size: 0.82rem;
+  }
+
+  .place-card__meta {
+    margin-top: 6px;
+  }
+
+  /* Full-width featured card (first result) stays single column */
+  .search-results-stack > .place-card:first-child {
+    grid-column: 1 / -1;
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+
+  .search-results-stack > .place-card:first-child .place-card__image-wrap {
+    width: 120px;
+    height: 120px;
+  }
+
+  /* Cap the results inner width */
+  .ai-results-inner {
+    gap: 14px;
+  }
+
+  /* Tighter chat bubbles */
+  .ai-chat-bubble {
+    max-width: min(72%, 600px);
+  }
 }
