@@ -221,6 +221,21 @@
         @media (min-width: 1025px) {
           .hero-composer { display: none !important; }
         }
+      /* ── Hide mobile hero + chips when chat is active ── */
+      body.ai-chat-active .mobile-home-hero,
+      body.ai-chat-active .quick-scroll-wrap {
+        display: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      body.ai-chat-active #chat-page,
+      body.ai-chat-active .chat-page {
+        min-height: 0 !important;
+        height: auto !important;
+      }
       </style>
 
       <div class="app-main__inner">
