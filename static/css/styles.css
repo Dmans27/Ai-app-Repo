@@ -3122,7 +3122,7 @@ select {
 .app-sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
-  background: #0f1013;
+  background: #ffffff;
   border-right: 1px solid rgba(0,0,0,0.08);
   padding: 18px 14px 20px;
   display: flex;
@@ -4834,14 +4834,35 @@ body:not(.page-discover):not(.page-account) .app-main {
     top: auto !important;
     transform: none !important;
     z-index: 950 !important;
-    display: flex;
-    justify-content: center;
+    display: flex !important;
+    justify-content: center !important;
     padding: 0 40px !important;
+    box-sizing: border-box !important;
   }
 
   body.ai-chat-active .chat-composer {
-    width: 100%;
-    max-width: 860px;
+    width: 100% !important;
+    max-width: 860px !important;
+    margin: 0 !important;
+  }
+
+  /* Also center the hero input bar before chat starts */
+  #bottom-composer {
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .app-composer-wrap {
+    display: flex !important;
+    justify-content: center !important;
+    padding: 0 40px !important;
+    box-sizing: border-box !important;
+  }
+
+  .app-composer-wrap .chat-composer {
+    width: 100% !important;
+    max-width: 860px !important;
     margin: 0 !important;
   }
 
