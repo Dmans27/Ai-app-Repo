@@ -9,9 +9,10 @@
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
   <style>
     /* Allow scroll on account page even if sticky-nav CSS locks body */
-    body.page-account{overflow-y:auto !important;height:auto !important}
+    body.page-account{overflow-y:auto !important;height:auto !important;background:#f5f5f7 !important}
     body.page-account .mobile-app-shell,
-    body.page-account .mobile-screen{height:auto !important;overflow:visible !important}
+    body.page-account .mobile-screen{height:auto !important;overflow:visible !important;background:#f5f5f7 !important}
+    body.page-account .app-main,body.page-account .mobile-screen__body,body.page-account .acct-wrap{background:#f5f5f7 !important}
 
     .acct-hero{display:flex;align-items:center;gap:16px;padding:20px 16px 16px}
     .acct-avatar-form{flex-shrink:0;margin:0;padding:0}
@@ -244,7 +245,7 @@
     </aside>
     <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
 
-    <main class="mobile-screen">
+    <main class="mobile-screen" style="background:#f5f5f7 !important">
       <header class="mobile-app-header">
         <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
         <div class="mobile-app-header__center">
