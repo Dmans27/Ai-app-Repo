@@ -18,24 +18,24 @@
     .acct-avatar-label{position:relative;display:block;width:72px;height:72px;border-radius:50%;overflow:hidden;cursor:pointer;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);transition:border-color 0.18s}
     .acct-avatar-label:hover{border-color:rgba(157,232,200,0.6)}
     .acct-avatar-label img,.acct-avatar-fallback{width:100%;height:100%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#7ee2bf}
-    .acct-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#10a37f;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #050505;pointer-events:none}
+    .acct-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#10a37f;color:#1a1a1a;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #050505;pointer-events:none}
     .acct-profile-info{flex:1;min-width:0}
-    .acct-profile-name{font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.03em;line-height:1.1;margin:0 0 2px}
+    .acct-profile-name{font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:-0.03em;line-height:1.1;margin:0 0 2px}
     .acct-profile-username{font-size:13px;color:#7ee2bf;font-weight:600;margin:0 0 4px}
-    .acct-profile-city{font-size:13px;color:rgba(255,255,255,0.45);margin:0 0 10px}
+    .acct-profile-city{font-size:13px;color:rgba(0,0,0,0.45);margin:0 0 10px}
     .acct-profile-btns{display:flex;gap:8px}
     .acct-btn{height:34px;padding:0 14px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s}
     .acct-btn:active{transform:scale(0.95)}
-    .acct-btn--primary{background:#10a37f;color:#fff}
+    .acct-btn--primary{background:#10a37f;color:#1a1a1a}
     .acct-btn--primary:hover{background:#0d8a6c}
-    .acct-btn--ghost{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.72);border:0.5px solid rgba(255,255,255,0.12)}
-    .acct-btn--ghost:hover{background:rgba(255,255,255,0.12);color:#fff}
+    .acct-btn--ghost{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.65);border:0.5px solid rgba(0,0,0,0.1)}
+    .acct-btn--ghost:hover{background:rgba(0,0,0,0.08);color:#1a1a1a}
     .acct-stats{display:flex;gap:8px;padding:0 16px 16px}
-    .acct-stat{flex:1;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:11px 8px;display:flex;flex-direction:column;align-items:center;text-decoration:none;transition:background 0.15s}
+    .acct-stat{flex:1;background:rgba(0,0,0,0.04);border:0.5px solid rgba(0,0,0,0.08);border-radius:14px;padding:11px 8px;display:flex;flex-direction:column;align-items:center;text-decoration:none;transition:background 0.15s}
     .acct-stat--cta{background:rgba(16,163,127,0.1);border-color:rgba(16,163,127,0.28);cursor:pointer;justify-content:center}
     .acct-stat--cta:hover{background:rgba(16,163,127,0.18)}
-    .acct-stat__num{font-size:22px;font-weight:900;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
-    .acct-stat__lbl{font-size:10px;color:rgba(255,255,255,0.38);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+    .acct-stat__num{font-size:22px;font-weight:900;color:#1a1a1a;line-height:1;font-variant-numeric:tabular-nums}
+    .acct-stat__lbl{font-size:10px;color:rgba(0,0,0,0.4);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
     .acct-stat--cta .acct-stat__lbl{font-size:13px;font-weight:800;color:#7ee2bf;margin:0;text-transform:none;letter-spacing:0}
     .acct-notif-banner{margin:0 16px 14px;padding:11px 14px;background:rgba(16,163,127,0.08);border:0.5px solid rgba(16,163,127,0.28);border-radius:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.15s}
     .acct-notif-banner:hover{background:rgba(16,163,127,0.14)}
@@ -43,51 +43,51 @@
     .acct-notif-live-dot{width:8px;height:8px;border-radius:50%;background:#10a37f;flex-shrink:0;animation:liveDocPulse 2.2s ease-in-out infinite}
     @keyframes liveDocPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
     .acct-notif-banner__text{font-size:13px;font-weight:700;color:#7ee2bf}
-    .acct-notif-banner__badge{width:22px;height:22px;border-radius:50%;background:#10a37f;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
-    .notifications-panel{display:none;margin:-6px 16px 14px;padding:14px;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.07);border-top:none;border-radius:0 0 14px 14px}
+    .acct-notif-banner__badge{width:22px;height:22px;border-radius:50%;background:#10a37f;color:#1a1a1a;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+    .notifications-panel{display:none;margin:-6px 16px 14px;padding:14px;background:rgba(0,0,0,0.03);border:0.5px solid rgba(0,0,0,0.07);border-top:none;border-radius:0 0 14px 14px}
     .notifications-panel.is-open{display:block}
     .acct-header-icon-wrap{position:relative;display:inline-flex}
-    .acct-bell-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#10a37f;border:1.5px solid #050505;pointer-events:none}
-    .acct-map-card{margin:0 16px 16px;border-radius:20px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.08);background:#111214}
+    .acct-bell-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#10a37f;border:1.5px solid #ffffff;pointer-events:none}
+    .acct-map-card{margin:0 16px 16px;border-radius:20px;overflow:hidden;border:0.5px solid rgba(0,0,0,0.08);background:#111214}
     .acct-map-card .account-map{width:100%;height:210px;min-height:0;border-radius:0}
     .acct-map-chips{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:10px 12px;border-top:0.5px solid rgba(255,255,255,0.07)}
     .acct-map-chips::-webkit-scrollbar{display:none}
-    .acct-map-chip{flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;font-size:11.5px;font-weight:600;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.55);cursor:pointer;white-space:nowrap;transition:all 0.15s}
+    .acct-map-chip{flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;font-size:11.5px;font-weight:600;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);cursor:pointer;white-space:nowrap;transition:all 0.15s}
     .acct-map-chip:hover{background:rgba(255,255,255,0.09);color:rgba(255,255,255,0.85)}
     .acct-map-chip.is-active{background:rgba(16,163,127,0.18);border-color:rgba(16,163,127,0.42);color:#7ee2bf}
-    .acct-map-chip-divider{color:rgba(255,255,255,0.15);font-size:13px;flex-shrink:0;padding:0 2px;pointer-events:none}
+    .acct-map-chip-divider{color:rgba(0,0,0,0.2);font-size:13px;flex-shrink:0;padding:0 2px;pointer-events:none}
     .acct-section-header{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 10px}
-    .acct-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.3)}
+    .acct-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(0,0,0,0.35)}
     .acct-section-action{font-size:13px;font-weight:700;color:#7ee2bf;text-decoration:none}
     .acct-section-action:hover{opacity:0.75}
     .acct-lists-stack{display:flex;flex-direction:column;gap:12px}
-    .acct-list-card{margin:0 16px;background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;transition:border-color 0.18s}
+    .acct-list-card{margin:0 16px;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:20px;overflow:hidden;transition:border-color 0.18s}
     .acct-list-card:hover{border-color:rgba(157,232,200,0.2)}
     .acct-list-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 14px 10px}
-    .acct-list-card__name{font-size:17px;font-weight:900;color:#fff;letter-spacing:-0.025em;line-height:1.15;margin:0 0 3px}
-    .acct-list-card__meta{font-size:12px;color:rgba(255,255,255,0.38);margin:0}
+    .acct-list-card__name{font-size:17px;font-weight:900;color:#1a1a1a;letter-spacing:-0.025em;line-height:1.15;margin:0 0 3px}
+    .acct-list-card__meta{font-size:12px;color:rgba(0,0,0,0.4);margin:0}
     .acct-list-badge{flex-shrink:0;height:24px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;margin-top:2px;background:rgba(16,163,127,0.14);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.3)}
-    .acct-list-badge--private{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);border-color:rgba(255,255,255,0.1)}
+    .acct-list-badge--private{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.45);border-color:rgba(255,255,255,0.1)}
     .acct-thumb-strip{display:flex;gap:8px;padding:0 14px 14px;overflow-x:auto;scrollbar-width:none}
     .acct-thumb-strip::-webkit-scrollbar{display:none}
-    .acct-place-thumb{flex-shrink:0;width:92px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;transition:border-color 0.15s,transform 0.15s}
-    .acct-place-thumb:hover{border-color:rgba(255,255,255,0.18);transform:translateY(-2px)}
+    .acct-place-thumb{flex-shrink:0;width:92px;background:rgba(0,0,0,0.04);border:0.5px solid rgba(0,0,0,0.08);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;transition:border-color 0.15s,transform 0.15s}
+    .acct-place-thumb:hover{border-color:rgba(0,0,0,0.15);transform:translateY(-2px)}
     .acct-place-thumb:active{transform:scale(0.95)}
-    .acct-place-thumb__img{width:100%;height:62px;overflow:hidden;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
+    .acct-place-thumb__img{width:100%;height:62px;overflow:hidden;background:rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:center}
     .acct-place-thumb__img img{width:100%;height:100%;object-fit:cover;display:block}
     .acct-place-thumb__emoji{font-size:22px}
     .acct-place-thumb__body{padding:7px 8px 8px}
-    .acct-place-thumb__name{font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
-    .acct-place-thumb__cat{font-size:10px;color:rgba(255,255,255,0.38);margin-top:1px;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-place-thumb__name{font-size:11px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+    .acct-place-thumb__cat{font-size:10px;color:rgba(0,0,0,0.4);margin-top:1px;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .acct-place-thumb--add{border-style:dashed;border-color:rgba(255,255,255,0.12);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px;gap:4px}
     .acct-place-thumb--add:hover{border-color:rgba(157,232,200,0.3);background:rgba(16,163,127,0.06)}
-    .acct-place-thumb--add span:first-child{font-size:18px;color:rgba(255,255,255,0.28);line-height:1}
-    .acct-place-thumb--add span:last-child{font-size:10px;font-weight:700;color:rgba(255,255,255,0.3)}
-    .acct-list-empty{padding:0 14px 14px;font-size:13px;color:rgba(255,255,255,0.38)}
+    .acct-place-thumb--add span:first-child{font-size:18px;color:rgba(0,0,0,0.3);line-height:1}
+    .acct-place-thumb--add span:last-child{font-size:10px;font-weight:700;color:rgba(0,0,0,0.35)}
+    .acct-list-empty{padding:0 14px 14px;font-size:13px;color:rgba(0,0,0,0.4)}
     .acct-list-empty a{color:#7ee2bf;font-weight:700;text-decoration:none}
     .acct-list-card__foot{border-top:0.5px solid rgba(255,255,255,0.07);padding:10px 14px;display:flex;gap:8px}
-    .acct-foot-btn{height:30px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.65);font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;transition:all 0.15s}
-    .acct-foot-btn:hover{background:rgba(255,255,255,0.11);color:#fff}
+    .acct-foot-btn{height:30px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(255,255,255,0.65);font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;transition:all 0.15s}
+    .acct-foot-btn:hover{background:rgba(255,255,255,0.11);color:#1a1a1a}
     .acct-foot-btn:active{transform:scale(0.95)}
     .acct-foot-btn--share{background:rgba(16,163,127,0.1);border-color:rgba(16,163,127,0.3);color:#7ee2bf}
     .acct-foot-btn--share:hover{background:rgba(16,163,127,0.18)}
@@ -95,91 +95,91 @@
 
     /* FRIENDS */
     .acct-friends-section{margin:0 16px 24px}
-    .friends-add-bar{display:flex;gap:8px;margin-bottom:14px;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.09);border-radius:16px;padding:8px 8px 8px 14px;transition:border-color 0.18s}
+    .friends-add-bar{display:flex;gap:8px;margin-bottom:14px;background:rgba(0,0,0,0.04);border:0.5px solid rgba(255,255,255,0.09);border-radius:16px;padding:8px 8px 8px 14px;transition:border-color 0.18s}
     .friends-add-bar:focus-within{border-color:rgba(16,163,127,0.45);box-shadow:0 0 0 3px rgba(16,163,127,0.07)}
-    .friends-add-input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px;padding:4px 0}
-    .friends-add-input::placeholder{color:rgba(255,255,255,0.28)}
-    .friends-add-btn{height:34px;padding:0 14px;border:none;border-radius:10px;background:#10a37f;color:#fff;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background 0.15s;white-space:nowrap}
+    .friends-add-input{flex:1;background:none;border:none;outline:none;color:#1a1a1a;font-size:14px;padding:4px 0}
+    .friends-add-input::placeholder{color:rgba(0,0,0,0.3)}
+    .friends-add-btn{height:34px;padding:0 14px;border:none;border-radius:10px;background:#10a37f;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background 0.15s;white-space:nowrap}
     .friends-add-btn:hover{background:#0d8a6c}
     .friends-add-btn:active{transform:scale(0.95)}
-    .friends-search-results{background:#13151a;border:0.5px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;margin-bottom:14px;display:none}
+    .friends-search-results{background:#ffffff;border:0.5px solid rgba(0,0,0,0.1);border-radius:16px;overflow:hidden;margin-bottom:14px;display:none}
     .friends-search-results.is-open{display:block}
-    .friends-search-result{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:0.5px solid rgba(255,255,255,0.05);transition:background 0.15s}
+    .friends-search-result{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:0.5px solid rgba(0,0,0,0.06);transition:background 0.15s}
     .friends-search-result:last-child{border-bottom:none}
-    .friends-search-result:hover{background:rgba(255,255,255,0.03)}
+    .friends-search-result:hover{background:rgba(0,0,0,0.03)}
     .friends-result-avatar{width:36px;height:36px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
     .friends-result-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
     .friends-result-info{flex:1;min-width:0}
-    .friends-result-name{font-size:14px;font-weight:700;color:#fff}
-    .friends-result-email{font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px}
+    .friends-result-name{font-size:14px;font-weight:700;color:#1a1a1a}
+    .friends-result-email{font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px}
     .friends-result-action{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
     .friends-result-action--add{background:rgba(16,163,127,0.15);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.35)}
     .friends-result-action--add:hover{background:rgba(16,163,127,0.25)}
-    .friends-result-action--pending,.friends-result-action--friends{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.42);border:0.5px solid rgba(255,255,255,0.1);cursor:default}
+    .friends-result-action--pending,.friends-result-action--friends{background:rgba(0,0,0,0.05);color:rgba(255,255,255,0.42);border:0.5px solid rgba(0,0,0,0.1);cursor:default}
     .friends-pending-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(245,179,1,0.08);border:0.5px solid rgba(245,179,1,0.28);border-radius:14px;margin-bottom:12px;cursor:pointer;transition:background 0.15s}
     .friends-pending-banner:hover{background:rgba(245,179,1,0.14)}
     .friends-pending-dot{width:8px;height:8px;border-radius:50%;background:#f5b301;flex-shrink:0}
     .friends-pending-text{flex:1;font-size:13px;font-weight:700;color:#f5d87a}
     .friends-pending-count{width:22px;height:22px;border-radius:50%;background:#f5b301;color:#07110d;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
-    .friends-pending-panel{display:none;background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;margin-bottom:12px}
+    .friends-pending-panel{display:none;background:rgba(0,0,0,0.03);border:0.5px solid rgba(0,0,0,0.07);border-radius:14px;overflow:hidden;margin-bottom:12px}
     .friends-pending-panel.is-open{display:block}
     .friends-list{display:block;flex-direction:column;gap:8px}
-    .friend-row{display:flex;align-items:center;gap:12px;background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px 14px;transition:border-color 0.15s}
-    .friend-row:hover{border-color:rgba(255,255,255,0.13)}
+    .friend-row{display:flex;align-items:center;gap:12px;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:12px 14px;transition:border-color 0.15s}
+    .friend-row:hover{border-color:rgba(0,0,0,0.13)}
     .friend-avatar{width:40px;height:40px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
     .friend-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
     .friend-info{flex:1;min-width:0}
-    .friend-name{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .friend-meta{font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px}
+    .friend-name{font-size:14px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .friend-meta{font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px}
     .friend-actions{display:flex;gap:6px;flex-shrink:0}
-    .friend-action-btn{height:28px;padding:0 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.58);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s}
-    .friend-action-btn:hover{background:rgba(255,255,255,0.11);color:#fff}
+    .friend-action-btn{height:28px;padding:0 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.55);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .friend-action-btn:hover{background:rgba(255,255,255,0.11);color:#1a1a1a}
     .friend-action-btn--accept{background:rgba(16,163,127,0.15);border-color:rgba(16,163,127,0.35);color:#7ee2bf}
     .friend-action-btn--accept:hover{background:rgba(16,163,127,0.25)}
     .friend-action-btn--decline{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);color:#f87171}
     .friend-action-btn--decline:hover{background:rgba(239,68,68,0.18)}
-    .friends-empty{text-align:center;padding:24px 16px;color:rgba(255,255,255,0.35);font-size:13px}
+    .friends-empty{text-align:center;padding:24px 16px;color:rgba(0,0,0,0.35);font-size:13px}
     .friends-empty-icon{font-size:32px;margin-bottom:10px;opacity:0.45}
-    .friends-loading{text-align:center;padding:20px;color:rgba(255,255,255,0.32);font-size:13px}
+    .friends-loading{text-align:center;padding:20px;color:rgba(0,0,0,0.32);font-size:13px}
 
     /* SHARE MODAL V2 */
     .share-modal-v2[hidden]{display:none !important}
     .share-modal-v2{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center}
     .share-modal-v2__backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.58);backdrop-filter:blur(5px)}
-    .share-modal-v2__panel{position:relative;z-index:1;width:min(560px,calc(100vw - 16px));background:#13151a;border:0.5px solid rgba(255,255,255,0.1);border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:85dvh;overflow-y:auto;animation:shareSlideUp 0.28s cubic-bezier(0.22,1,0.36,1) both}
+    .share-modal-v2__panel{position:relative;z-index:1;width:min(560px,calc(100vw - 16px));background:#ffffff;border:0.5px solid rgba(0,0,0,0.1);border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:85dvh;overflow-y:auto;animation:shareSlideUp 0.28s cubic-bezier(0.22,1,0.36,1) both}
     @keyframes shareSlideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
     .share-modal-v2__handle-wrap{display:flex;justify-content:center;margin-bottom:16px}
-    .share-modal-v2__handle{width:36px;height:4px;background:rgba(255,255,255,0.14);border-radius:2px}
+    .share-modal-v2__handle{width:36px;height:4px;background:rgba(0,0,0,0.12);border-radius:2px}
     .share-modal-v2__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-    .share-modal-v2__title{font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.02em}
-    .share-modal-v2__close{width:34px;height:34px;border:none;border-radius:10px;background:rgba(255,255,255,0.08);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .share-modal-v2__title{font-size:17px;font-weight:800;color:#1a1a1a;letter-spacing:-0.02em}
+    .share-modal-v2__close{width:34px;height:34px;border:none;border-radius:10px;background:rgba(0,0,0,0.06);color:#1a1a1a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
     .share-modal-v2__close:hover{background:rgba(255,255,255,0.13)}
-    .share-modal-v2__list-name{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:18px}
-    .share-tabs{display:flex;gap:4px;padding:2px;background:rgba(255,255,255,0.05);border-radius:12px;margin-bottom:16px}
-    .share-tab{flex:1;height:34px;border:none;border-radius:10px;background:transparent;color:rgba(255,255,255,0.45);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s}
-    .share-tab.is-active{background:#fff;color:#111}
+    .share-modal-v2__list-name{font-size:13px;color:rgba(0,0,0,0.45);margin-bottom:18px}
+    .share-tabs{display:flex;gap:4px;padding:2px;background:rgba(0,0,0,0.04);border-radius:12px;margin-bottom:16px}
+    .share-tab{flex:1;height:34px;border:none;border-radius:10px;background:transparent;color:rgba(0,0,0,0.45);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .share-tab.is-active{background:#1a1a1a;color:#ffffff}
     .share-tab-panel{display:none}
     .share-tab-panel.is-active{display:block}
-    .share-friend-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(255,255,255,0.05)}
+    .share-friend-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)}
     .share-friend-row:last-child{border-bottom:none}
     .share-friend-avatar{width:36px;height:36px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.22);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
     .share-friend-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .share-friend-name{flex:1;font-size:14px;font-weight:700;color:#fff;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .share-friend-name{flex:1;font-size:14px;font-weight:700;color:#1a1a1a;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .share-friend-btn{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(16,163,127,0.35);background:rgba(16,163,127,0.12);color:#7ee2bf;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
     .share-friend-btn:hover{background:rgba(16,163,127,0.22)}
     .share-friend-btn:active{transform:scale(0.95)}
-    .share-friend-btn--sent{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);cursor:default}
-    .share-no-friends{text-align:center;padding:20px;color:rgba(255,255,255,0.35);font-size:13px}
-    .share-search-input{width:100%;height:42px;padding:0 14px;border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.05);color:#fff;font-size:14px;outline:none;transition:border-color 0.18s;margin-bottom:12px;box-sizing:border-box}
+    .share-friend-btn--sent{background:rgba(0,0,0,0.05);border-color:rgba(255,255,255,0.1);color:rgba(0,0,0,0.45);cursor:default}
+    .share-no-friends{text-align:center;padding:20px;color:rgba(0,0,0,0.35);font-size:13px}
+    .share-search-input{width:100%;height:42px;padding:0 14px;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;background:rgba(0,0,0,0.04);color:#1a1a1a;font-size:14px;outline:none;transition:border-color 0.18s;margin-bottom:12px;box-sizing:border-box}
     .share-search-input:focus{border-color:rgba(16,163,127,0.45)}
-    .share-search-input::placeholder{color:rgba(255,255,255,0.28)}
+    .share-search-input::placeholder{color:rgba(0,0,0,0.3)}
     .share-user-results-v2{display:flex;flex-direction:column;max-height:260px;overflow-y:auto}
-    .share-user-row-v2{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.15s;border-radius:10px}
+    .share-user-row-v2{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);cursor:pointer;transition:background 0.15s;border-radius:10px}
     .share-user-row-v2:last-child{border-bottom:none}
     .share-user-row-v2 input[type="radio"]{display:none}
-    .share-user-check-v2{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;color:transparent;font-size:13px;flex-shrink:0;transition:all 0.15s}
-    .share-user-name-v2{flex:1;font-size:14px;font-weight:600;color:#fff}
-    .share-submit-btn{width:100%;height:46px;border-radius:14px;border:none;background:#10a37f;color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:14px;transition:background 0.15s,transform 0.1s}
+    .share-user-check-v2{width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;color:transparent;font-size:13px;flex-shrink:0;transition:all 0.15s}
+    .share-user-name-v2{flex:1;font-size:14px;font-weight:600;color:#1a1a1a}
+    .share-submit-btn{width:100%;height:46px;border-radius:14px;border:none;background:#10a37f;color:#1a1a1a;font-size:15px;font-weight:800;cursor:pointer;margin-top:14px;transition:background 0.15s,transform 0.1s}
     .share-submit-btn:hover{background:#0d8a6c}
     .share-submit-btn:active{transform:scale(0.97)}
     @media(min-width:1025px){.mobile-tabbar{display:none !important}}
@@ -515,7 +515,7 @@
             <label class="share-user-row-v2" data-user-search="{{ (user_option.name or user_option.email or '')|lower }} {{ (user_option.username or '')|lower }}">
               <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
               <span class="share-user-check-v2">✓</span>
-              <span class="share-user-name-v2">{{ user_option.name or user_option.email }}{% if user_option.username %} <span style="color:rgba(255,255,255,0.38);font-weight:400;">@{{ user_option.username }}</span>{% endif %}</span>
+              <span class="share-user-name-v2">{{ user_option.name or user_option.email }}{% if user_option.username %} <span style="color:rgba(0,0,0,0.4);font-weight:400;">@{{ user_option.username }}</span>{% endif %}</span>
             </label>
             {% endif %}
           {% endfor %}
@@ -704,13 +704,13 @@ function renderFriends() {
       ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">`
       : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};">${escapeHtml(initials)}</div>`;
     return `
-      <a href="/profile/${f.user_id}" style="background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(157,232,200,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+      <a href="/profile/${f.user_id}" style="background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(157,232,200,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
         ${avatar}
         <div style="width:100%;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || uname)}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px;">@${escapeHtml(uname)}</div>
+          <div style="font-size:13px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || uname)}</div>
+          <div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(uname)}</div>
         </div>
-        <button onclick="event.preventDefault();event.stopPropagation();removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);cursor:pointer;width:100%;">Remove</button>
+        <button onclick="event.preventDefault();event.stopPropagation();removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.5);cursor:pointer;width:100%;">Remove</button>
       </a>`;
   }
 
@@ -718,7 +718,7 @@ function renderFriends() {
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;" id="friends-grid">
     ${visible.map((f,i) => cardHTML(f,i)).join('')}
   </div>
-  ${extra > 0 ? `<button id="show-more-friends-btn" onclick="showMoreFriends()" style="width:100%;padding:10px;border-radius:14px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.55);font-size:13px;font-weight:600;cursor:pointer;">Show all ${friends.length} friends</button>` : ''}`;
+  ${extra > 0 ? `<button id="show-more-friends-btn" onclick="showMoreFriends()" style="width:100%;padding:10px;border-radius:14px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);font-size:13px;font-weight:600;cursor:pointer;">Show all ${friends.length} friends</button>` : ''}`;
 }
 
 function showMoreFriends() {
@@ -742,8 +742,8 @@ function showMoreFriends() {
       ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">`
       : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};">${escapeHtml(initials)}</div>`;
     const card = document.createElement('div');
-    card.style.cssText = "background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;";
-    card.innerHTML = `${avatar}<div style="width:100%;min-width:0;"><div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name||uname)}</div><div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px;">@${escapeHtml(uname)}</div></div><button onclick="removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);cursor:pointer;width:100%;">Remove</button>`;
+    card.style.cssText = "background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;";
+    card.innerHTML = `${avatar}<div style="width:100%;min-width:0;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name||uname)}</div><div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(uname)}</div></div><button onclick="removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.5);cursor:pointer;width:100%;">Remove</button>`;
     grid.appendChild(card);
   });
   btn.remove();
@@ -782,11 +782,11 @@ document.addEventListener("DOMContentLoaded", function() {
   async function run() {
     const q = inp.value.trim();
     if(q.length < 2) { res.classList.remove("is-open"); return; }
-    res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Searching…</div>`;
+    res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">Searching…</div>`;
     res.classList.add("is-open");
     try {
       const r = await fetch(`/friends/search?q=${encodeURIComponent(q)}`), data = await r.json();
-      if(!data.length) { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">No users found</div>`; return; }
+      if(!data.length) { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">No users found</div>`; return; }
       res.innerHTML = data.map(u => {
         let a;
         if(u.status === "friends")       a = `<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
@@ -802,7 +802,7 @@ document.addEventListener("DOMContentLoaded", function() {
           ${a}
         </div>`;
       }).join('');
-    } catch { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(255,255,255,0.38);font-size:13px;">Search failed</div>`; }
+    } catch { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">Search failed</div>`; }
   }
 
   inp.addEventListener("input", function() { clearTimeout(srch); srch = setTimeout(run, 350); });
@@ -891,7 +891,7 @@ function renderShareFriendsList(){
       <div class="share-friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div>
       <div style="flex:1;min-width:0;">
         <div class="share-friend-name">${escapeHtml(f.name)}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.38);margin-top:1px;">@${escapeHtml(f.username||f.email.split("@")[0])}</div>
+        <div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(f.username||f.email.split("@")[0])}</div>
       </div>
       <button class="share-friend-btn" onclick="shareListToFriend(${f.user_id},this)">Send</button>
     </div>`).join("");
