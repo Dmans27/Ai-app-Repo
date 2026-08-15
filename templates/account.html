@@ -184,6 +184,22 @@
     .share-submit-btn:hover{background:#0d8a6c}
     .share-submit-btn:active{transform:scale(0.97)}
     @media(min-width:1025px){.mobile-tabbar{display:none !important}}
+
+    /* MAPBOX CUSTOMIZATIONS */
+    .acct-map-pin{cursor:pointer;transform-origin:bottom center;transition:transform 0.15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45))}
+    .acct-map-pin:hover{transform:scale(1.15)}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-content{background:#16181b;color:#f2f2f2;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-tip{border-top-color:#16181b;border-bottom-color:#16181b}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.5);font-size:16px;padding:2px 6px}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button:hover{color:#fff;background:none}
+    .acct-map-popup__head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+    .acct-map-popup__dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .acct-map-popup__name{font-size:14px;font-weight:800;color:#ffffff;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-map-popup__cat{font-size:11px;color:#7ee2bf;text-transform:capitalize;margin:0 0 4px}
+    .acct-map-popup__addr{font-size:12px;color:rgba(255,255,255,0.55);margin:0 0 10px;max-width:210px}
+    .acct-map-popup__actions{display:flex;gap:6px}
+    .acct-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.18);border:0.5px solid rgba(16,163,127,0.4);color:#7ee2bf;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
+    .acct-map-popup__btn:hover{background:rgba(16,163,127,0.3)}
   </style>
 </head>
 <body class="app-body page-account">
@@ -578,6 +594,29 @@ document.addEventListener("DOMContentLoaded",function(){
   const token="{{ mapbox_token }}",styleUrl="{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}",places=JSON.parse(document.getElementById("map-data").textContent||"[]");
   if(!token)return;
   let aC="all",aL="all",mk=[];
+
+  function categoryColor(p){
+    const c=[p.category,p.cuisine].join(" ").toLowerCase();
+    if(c.includes("coffee"))return"#C6935A";
+    if(c.includes("bar")||c.includes("cocktail"))return"#B368F7";
+    if(c.includes("wine"))return"#B4436C";
+    if(c.includes("rooftop"))return"#5AC8E8";
+    if(c.includes("shop"))return"#F5B301";
+    if(c.includes("restaurant")||c.includes("food"))return"#E2574C";
+    return"#7ee2bf";
+  }
+  function buildMarkerEl(color){
+    const el=document.createElement("div");
+    el.className="acct-map-pin";
+    el.innerHTML=`<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 1C6.8 1 1 6.7 1 13.7c0 9.6 13 21.3 13 21.3s13-11.7 13-21.3C27 6.7 21.2 1 14 1z" fill="${color}" stroke="#0b0c0d" stroke-width="1.5"/><circle cx="14" cy="13.5" r="5" fill="#0b0c0d" fill-opacity="0.85"/></svg>`;
+    return el;
+  }
+  function popupHtml(p){
+    const dot=categoryColor(p);
+    const dirUrl=p.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`:"";
+    return`<div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category?`<p class="acct-map-popup__cat">${escapeHtml(p.category)}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div>`;
+  }
+
   function nm(v){return String(v||"").trim().toLowerCase();}
   function ll(p){if(p.city&&p.city.trim())return p.city.trim();const pts=(p.address||"").split(",").map(s=>s.trim());return pts.length>=2?pts[1]:"";}
   function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p));return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL));}
@@ -585,7 +624,10 @@ document.addEventListener("DOMContentLoaded",function(){
   function rn(){
     cm();const fl=places.filter(mt),bd=new mapboxgl.LngLatBounds();let n=0;
     fl.forEach(p=>{if(p.lng==null||p.lat==null)return;
-      const m=new mapboxgl.Marker().setLngLat([p.lng,p.lat]).setPopup(new mapboxgl.Popup({offset:18}).setHTML(`<div style="max-width:200px;"><strong style="font-size:14px;">${p.name||""}</strong>${p.category?`<div style="font-size:12px;color:#888;margin-top:2px;">${p.category}</div>`:""}${p.address?`<div style="font-size:12px;color:#aaa;margin-top:4px;">${p.address}</div>`:""}</div>`)).addTo(map);
+      const m=new mapboxgl.Marker({element:buildMarkerEl(categoryColor(p))})
+        .setLngLat([p.lng,p.lat])
+        .setPopup(new mapboxgl.Popup({offset:24,closeButton:true,className:"acct-map-popup"}).setHTML(popupHtml(p)))
+        .addTo(map);
       mk.push(m);bd.extend([p.lng,p.lat]);n++;
     });
     if(n>1)map.fitBounds(bd,{padding:50,maxZoom:13});else if(n===1)map.flyTo({center:[fl[0].lng,fl[0].lat],zoom:13});
@@ -605,9 +647,30 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   mapboxgl.accessToken=token;
   const dc=places.length?[places[0].lng,places[0].lat]:[-87.6298,41.8781];
-  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:places.length?11:9,projection:"mercator",pitch:0,bearing:0,antialias:true});
+  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:places.length?11:9,projection:"mercator",pitch:40,bearing:-8,antialias:true});
   map.addControl(new mapboxgl.NavigationControl(),"top-right");
-  blc();wc();map.on("load",rn);
+  map.on("load",function(){
+    rn();
+    if(!map.getLayer("acct-3d-buildings")){
+      try{
+        map.addLayer({
+          id:"acct-3d-buildings",
+          source:"composite",
+          "source-layer":"building",
+          filter:["==","extrude","true"],
+          type:"fill-extrusion",
+          minzoom:14,
+          paint:{
+            "fill-extrusion-color":"#2a2d31",
+            "fill-extrusion-height":["get","height"],
+            "fill-extrusion-base":["get","min_height"],
+            "fill-extrusion-opacity":0.75
+          }
+        });
+      }catch(e){/* style has no composite building layer — skip */}
+    }
+  });
+  blc();wc();
 });
 
 /* Place popup */

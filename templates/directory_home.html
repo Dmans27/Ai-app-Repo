@@ -7,6 +7,29 @@
 
   <link rel="stylesheet" href="/static/css/styles.css">
   <link rel="manifest" href="/static/manifest.json">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
+  <style>
+    .map-category-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 4px;
+    }
+    .map-category-filter__chip {
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .map-category-filter__chip.is-active {
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+    }
+  </style>
 
   <meta name="theme-color" content="#111111">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -747,6 +770,7 @@ function wireFilterBar() {
       >✕</button>
     </div>
 
+    <div id="fullscreen-map-filter" class="map-category-filter"></div>
     <div id="fullscreen-map-canvas" class="fullscreen-map-modal__canvas"></div>
   </div>
 
@@ -1195,8 +1219,8 @@ function buildResultRow(item, isInternal, index = 0) {
             listView?.classList.remove("is-active");
             mapView?.classList.add("is-active");
 
-            if (window.searchResultsMap && typeof google !== "undefined" && google.maps) {
-              google.maps.event.trigger(window.searchResultsMap, "resize");
+            if (window._searchResultsMapInstance) {
+              window._searchResultsMapInstance.map.resize();
             }
           }
         });
@@ -1204,100 +1228,236 @@ function buildResultRow(item, isInternal, index = 0) {
     }
 
     /* ======================================================
-       GOOGLE MAPS RESULTS VIEW
+       MAPBOX RESULTS VIEW
     ====================================================== */
 
-    function getMarkerIcon(place) {
-      const isInternal = place.source === "internal";
-      const fillColor = isInternal ? "#111111" : "#E2574C";
+    function categoryColor(category) {
+      const c = (category || "").toLowerCase();
+      if (c.includes("coffee") || c.includes("cafe")) return "#8B5E3C";
+      if (c.includes("bar") || c.includes("cocktail")) return "#7B2CBF";
+      if (c.includes("restaurant") || c.includes("food")) return "#E2574C";
+      if (c.includes("pizza")) return "#F4A300";
+      if (c.includes("sushi") || c.includes("japanese")) return "#2A9D8F";
+      if (c.includes("burger")) return "#D62828";
+      if (c.includes("brunch") || c.includes("breakfast")) return "#F77F00";
+      return "#111111";
+    }
+
+    function placesToGeoJson(places) {
+      return {
+        type: "FeatureCollection",
+        features: places
+          .filter((place) => place.lat != null && place.lng != null)
+          .map((place, i) => ({
+            type: "Feature",
+            id: i,
+            geometry: {
+              type: "Point",
+              coordinates: [Number(place.lng), Number(place.lat)]
+            },
+            properties: {
+              name: place.name || "",
+              category: place.category || "",
+              address: place.address || "",
+              website: place.website || "",
+              color: categoryColor(place.category)
+            }
+          }))
+      };
+    }
+
+    // Creates a clustered, category-colored Mapbox map inside `container`
+    // for the given places. Returns { map, setCategoryFilter } or null.
+    function createPlacesMap(container, places) {
+      if (typeof mapboxgl === "undefined" || !container || !places.length) return null;
+
+      const sourceId = "places";
+      const defaultCenter = [Number(places[0].lng), Number(places[0].lat)];
+
+      const map = new mapboxgl.Map({
+        container,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: defaultCenter,
+        zoom: 12
+      });
+
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+
+      const state = { activeCategories: null }; // null = show all categories
+
+      function filteredPlaces() {
+        if (!state.activeCategories) return places;
+        return places.filter((p) => state.activeCategories.has(p.category || ""));
+      }
+
+      function refresh() {
+        const src = map.getSource(sourceId);
+        if (src) src.setData(placesToGeoJson(filteredPlaces()));
+      }
+
+      map.on("load", () => {
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: placesToGeoJson(places),
+          cluster: true,
+          clusterMaxZoom: 14,
+          clusterRadius: 50
+        });
+
+        map.addLayer({
+          id: "clusters",
+          type: "circle",
+          source: sourceId,
+          filter: ["has", "point_count"],
+          paint: {
+            "circle-color": "#111111",
+            "circle-radius": ["step", ["get", "point_count"], 16, 10, 20, 25, 26],
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#ffffff"
+          }
+        });
+
+        map.addLayer({
+          id: "cluster-count",
+          type: "symbol",
+          source: sourceId,
+          filter: ["has", "point_count"],
+          layout: {
+            "text-field": ["get", "point_count_abbreviated"],
+            "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+            "text-size": 13
+          },
+          paint: { "text-color": "#ffffff" }
+        });
+
+        map.addLayer({
+          id: "unclustered-point",
+          type: "circle",
+          source: sourceId,
+          filter: ["!", ["has", "point_count"]],
+          paint: {
+            "circle-color": ["get", "color"],
+            "circle-radius": 9,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#ffffff"
+          }
+        });
+
+        map.on("click", "clusters", (e) => {
+          const features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
+          const clusterId = features[0].properties.cluster_id;
+          map.getSource(sourceId).getClusterExpansionZoom(clusterId, (err, zoom) => {
+            if (err) return;
+            map.easeTo({ center: features[0].geometry.coordinates, zoom });
+          });
+        });
+
+        map.on("click", "unclustered-point", (e) => {
+          const feature = e.features[0];
+          const coords = feature.geometry.coordinates.slice();
+          const { name, category, address, website } = feature.properties;
+
+          new mapboxgl.Popup({ offset: 12 })
+            .setLngLat(coords)
+            .setHTML(`
+              <div style="max-width:220px;">
+                <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
+                  ${name}
+                </div>
+                <div style="font-size:13px;color:#666;margin-bottom:8px;">
+                  ${category}
+                </div>
+                <div style="font-size:13px;color:#444;margin-bottom:8px;">
+                  ${address}
+                </div>
+                ${website ? `<a href="${website}" target="_blank" rel="noopener">Visit website</a>` : ""}
+              </div>
+            `)
+            .addTo(map);
+        });
+
+        ["clusters", "unclustered-point"].forEach((layer) => {
+          map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
+          map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
+        });
+
+        const bounds = new mapboxgl.LngLatBounds();
+        places.forEach((p) => bounds.extend([Number(p.lng), Number(p.lat)]));
+        map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 0 });
+      });
 
       return {
-        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">
-            <path d="M20 2C10 2 2 10 2 20c0 14 18 30 18 30s18-16 18-30C38 10 30 2 20 2z" fill="${fillColor}"/>
-            <circle cx="20" cy="20" r="8" fill="#ffffff"/>
-          </svg>
-        `),
-        scaledSize: new google.maps.Size(40, 52),
-        anchor: new google.maps.Point(20, 52)
+        map,
+        setCategoryFilter(categories) {
+          state.activeCategories = categories && categories.size ? categories : null;
+          if (map.isStyleLoaded() && map.getSource(sourceId)) {
+            refresh();
+          } else {
+            map.once("load", refresh);
+          }
+        }
       };
+    }
+
+    function buildCategoryChips(places) {
+      const categories = Array.from(
+        new Set(places.map((p) => p.category).filter(Boolean))
+      ).sort();
+
+      if (!categories.length) return "";
+
+      const chips = [{ label: "All", value: "" }].concat(
+        categories.map((cat) => ({ label: cat.replaceAll("_", " "), value: cat }))
+      );
+
+      return chips.map((chip, i) => `
+        <button
+          type="button"
+          class="map-category-filter__chip${i === 0 ? " is-active" : ""}"
+          data-map-category="${chip.value}"
+        >${chip.label}</button>
+      `).join("");
+    }
+
+    function wireCategoryChips(filterEl, onChange) {
+      if (!filterEl) return;
+      const chips = filterEl.querySelectorAll("[data-map-category]");
+      chips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          chips.forEach((c) => c.classList.remove("is-active"));
+          chip.classList.add("is-active");
+          const value = chip.getAttribute("data-map-category");
+          onChange(value ? new Set([value]) : null);
+        });
+      });
     }
 
     function initSearchResultsMap() {
       const mapEl = document.getElementById("search-results-map");
-      if (!mapEl || typeof google === "undefined" || !google.maps) return;
+      const filterEl = document.getElementById("search-map-filter");
+      if (!mapEl) return;
 
       const places = window._searchResultsMapData || [];
+      if (!places.length) return;
 
-      const defaultCenter = places.length
-        ? { lat: places[0].lat, lng: places[0].lng }
-        : { lat: 37.7749, lng: -122.4194 };
+      const instance = createPlacesMap(mapEl, places);
+      if (!instance) return;
 
-      const map = new google.maps.Map(mapEl, {
-        zoom: 12,
-        center: defaultCenter,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false
-      });
+      window.searchResultsMap = instance.map;
+      window._searchResultsMapInstance = instance;
 
-      window.searchResultsMap = map;
-
-      const bounds = new google.maps.LatLngBounds();
-      let markerCount = 0;
-
-      places.forEach((place) => {
-        if (place.lat == null || place.lng == null) return;
-
-        const marker = new google.maps.Marker({
-          position: { lat: Number(place.lat), lng: Number(place.lng) },
-          map,
-          title: place.name || "",
-          icon: getMarkerIcon(place)
-        });
-
-        const infoWindow = new google.maps.InfoWindow({
-          content: `
-            <div style="max-width:220px;">
-              <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
-                ${place.name || ""}
-              </div>
-              <div style="font-size:13px;color:#666;margin-bottom:8px;">
-                ${place.category || ""}
-              </div>
-              <div style="font-size:13px;color:#444;margin-bottom:8px;">
-                ${place.address || ""}
-              </div>
-              ${place.website ? `<a href="${place.website}" target="_blank" rel="noopener">Visit website</a>` : ""}
-            </div>
-          `
-        });
-
-        marker.addListener("click", () => {
-          infoWindow.open(map, marker);
-        });
-
-        bounds.extend(marker.getPosition());
-        markerCount += 1;
-      });
-
-      if (markerCount > 0) {
-        map.fitBounds(bounds);
-
-        google.maps.event.addListenerOnce(map, "bounds_changed", function () {
-          if (this.getZoom() > 14) {
-            this.setZoom(14);
-          }
-        });
+      if (filterEl) {
+        filterEl.innerHTML = buildCategoryChips(places);
+        wireCategoryChips(filterEl, (categories) => instance.setCategoryFilter(categories));
       }
     }
 
     function openFullscreenMap() {
       const modal = document.getElementById("fullscreen-map-modal");
       const canvas = document.getElementById("fullscreen-map-canvas");
+      const filterEl = document.getElementById("fullscreen-map-filter");
 
       if (!modal || !canvas) return;
-      if (typeof google === "undefined" || !google.maps) return;
 
       const places = window._searchResultsMapData || [];
       if (!places.length) return;
@@ -1305,83 +1465,35 @@ function buildResultRow(item, isInternal, index = 0) {
       modal.hidden = false;
       document.body.classList.add("map-modal-open");
 
-      const defaultCenter = {
-        lat: Number(places[0].lat),
-        lng: Number(places[0].lng)
-      };
-
-      const map = new google.maps.Map(canvas, {
-        zoom: 12,
-        center: defaultCenter,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false
-      });
-
-      window.fullscreenResultsMap = map;
-
-      const bounds = new google.maps.LatLngBounds();
-      let markerCount = 0;
-
-      places.forEach((place) => {
-        if (place.lat == null || place.lng == null) return;
-
-        const marker = new google.maps.Marker({
-          position: {
-            lat: Number(place.lat),
-            lng: Number(place.lng)
-          },
-          map,
-          title: place.name || "",
-          icon: getMarkerIcon(place)
-        });
-
-        const infoWindow = new google.maps.InfoWindow({
-          content: `
-            <div style="max-width:220px;">
-              <div style="font-size:16px;font-weight:700;margin-bottom:4px;">
-                ${place.name || ""}
-              </div>
-              <div style="font-size:13px;color:#666;margin-bottom:8px;">
-                ${place.category || ""}
-              </div>
-              <div style="font-size:13px;color:#444;margin-bottom:8px;">
-                ${place.address || ""}
-              </div>
-              ${place.website ? `<a href="${place.website}" target="_blank" rel="noopener">Visit website</a>` : ""}
-            </div>
-          `
-        });
-
-        marker.addListener("click", () => {
-          infoWindow.open(map, marker);
-        });
-
-        bounds.extend(marker.getPosition());
-        markerCount += 1;
-      });
-
       setTimeout(() => {
-        google.maps.event.trigger(map, "resize");
+        const instance = createPlacesMap(canvas, places);
+        if (!instance) return;
 
-        if (markerCount > 0) {
-          map.fitBounds(bounds);
+        window.fullscreenResultsMap = instance.map;
+        window._fullscreenMapInstance = instance;
 
-          google.maps.event.addListenerOnce(map, "bounds_changed", function () {
-            if (this.getZoom() > 14) {
-              this.setZoom(14);
-            }
-          });
+        if (filterEl) {
+          filterEl.innerHTML = buildCategoryChips(places);
+          wireCategoryChips(filterEl, (categories) => instance.setCategoryFilter(categories));
         }
+
+        instance.map.once("load", () => instance.map.resize());
       }, 100);
     }
 
     function closeFullscreenMap() {
       const modal = document.getElementById("fullscreen-map-modal");
       const canvas = document.getElementById("fullscreen-map-canvas");
+      const filterEl = document.getElementById("fullscreen-map-filter");
+
+      if (window._fullscreenMapInstance) {
+        window._fullscreenMapInstance.map.remove();
+        window._fullscreenMapInstance = null;
+      }
 
       if (modal) modal.hidden = true;
       if (canvas) canvas.innerHTML = "";
+      if (filterEl) filterEl.innerHTML = "";
 
       document.body.classList.remove("map-modal-open");
       window.fullscreenResultsMap = null;
@@ -1467,6 +1579,7 @@ function buildResultRow(item, isInternal, index = 0) {
           </div>
 
           <div id="search-map-view" class="search-view-section">
+            <div id="search-map-filter" class="map-category-filter"></div>
             <div class="search-map-panel">
               <div id="search-results-map" class="search-map-frame"></div>
             </div>
@@ -1490,7 +1603,7 @@ function buildResultRow(item, isInternal, index = 0) {
         );
       }
 
-      if (typeof google !== "undefined" && google.maps) {
+      if (typeof mapboxgl !== "undefined") {
         initSearchResultsMap();
       }
 
@@ -1774,9 +1887,11 @@ function setChatUiState(isActive) {
 
 
 
-  <script
-    async
-    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+  <script>
+    if (typeof mapboxgl !== "undefined") {
+      mapboxgl.accessToken = "{{ mapbox_access_token }}";
+    }
   </script>
 
 
