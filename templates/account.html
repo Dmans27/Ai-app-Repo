@@ -660,7 +660,7 @@ document.addEventListener("DOMContentLoaded",function(){
   // Bias the camera's notion of "center" upward so the globe (and later
   // the local city view) sits higher in the card instead of dead-center,
   // which was reading as too low / clipped at the bottom.
-  map.setPadding({top:0,bottom:Math.round(boxHeight*0.22),left:0,right:0});
+  map.setPadding({top:1,bottom:Math.round(boxHeight*0.92),left:0,right:0});
   map.addControl(new mapboxgl.NavigationControl(),"top-right");
   map.on("style.load",function(){
     map.setFog({
