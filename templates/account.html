@@ -651,7 +651,12 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   mapboxgl.accessToken=token;
   const dc=places.length?[places[0].lng,places[0].lat]:[-87.6298,41.8781];
-  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:1.4,projection:"globe",pitch:0,bearing:-8,antialias:true});
+  // Pick a globe zoom that keeps the whole sphere inside the container's
+  // height (globe diameter in px ≈ 512*2^zoom / π) instead of a fixed
+  // value that can crop the top/bottom on short, wide cards.
+  const boxHeight=mel.clientHeight||340;
+  const globeZoom=Math.max(0,Math.log2((boxHeight*0.8*Math.PI)/512));
+  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:globeZoom,projection:"globe",pitch:0,bearing:-8,antialias:true});
   map.addControl(new mapboxgl.NavigationControl(),"top-right");
   map.on("style.load",function(){
     map.setFog({
