@@ -657,6 +657,10 @@ document.addEventListener("DOMContentLoaded",function(){
   const boxHeight=mel.clientHeight||340;
   const globeZoom=Math.max(0,Math.log2((boxHeight*0.8*Math.PI)/512));
   const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:globeZoom,projection:"globe",pitch:0,bearing:-8,antialias:true});
+  // Bias the camera's notion of "center" upward so the globe (and later
+  // the local city view) sits higher in the card instead of dead-center,
+  // which was reading as too low / clipped at the bottom.
+  map.setPadding({top:0,bottom:Math.round(boxHeight*0.22),left:0,right:0});
   map.addControl(new mapboxgl.NavigationControl(),"top-right");
   map.on("style.load",function(){
     map.setFog({
