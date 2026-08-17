@@ -621,6 +621,7 @@ document.addEventListener("DOMContentLoaded",function(){
   function ll(p){if(p.city&&p.city.trim())return p.city.trim();const pts=(p.address||"").split(",").map(s=>s.trim());return pts.length>=2?pts[1]:"";}
   function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p));return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL));}
   function cm(){mk.forEach(m=>m.remove());mk=[];}
+  let firstRender=true;
   function rn(){
     cm();const fl=places.filter(mt),bd=new mapboxgl.LngLatBounds();let n=0;
     fl.forEach(p=>{if(p.lng==null||p.lat==null)return;
@@ -630,7 +631,10 @@ document.addEventListener("DOMContentLoaded",function(){
         .addTo(map);
       mk.push(m);bd.extend([p.lng,p.lat]);n++;
     });
-    if(n>1)map.fitBounds(bd,{padding:50,maxZoom:13});else if(n===1)map.flyTo({center:[fl[0].lng,fl[0].lat],zoom:13});
+    const flyDuration=firstRender?3200:800;
+    if(n>1)map.fitBounds(bd,{padding:60,maxZoom:13,duration:flyDuration,pitch:40,essential:true});
+    else if(n===1)map.flyTo({center:[fl[0].lng,fl[0].lat],zoom:13,duration:flyDuration,pitch:40,essential:true});
+    firstRender=false;
     document.querySelectorAll(".acct-place-thumb.js-place-popup").forEach(card=>{
       const ct=[card.dataset.categoryFilter,card.dataset.nameFilter,card.dataset.addressFilter].join(" ").toLowerCase(),lt=nm(card.dataset.cityFilter||card.dataset.addressFilter||"");
       card.style.display=(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))?"":"none";
@@ -647,8 +651,17 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   mapboxgl.accessToken=token;
   const dc=places.length?[places[0].lng,places[0].lat]:[-87.6298,41.8781];
-  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:places.length?11:9,projection:"mercator",pitch:40,bearing:-8,antialias:true});
+  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:1.4,projection:"globe",pitch:0,bearing:-8,antialias:true});
   map.addControl(new mapboxgl.NavigationControl(),"top-right");
+  map.on("style.load",function(){
+    map.setFog({
+      color:"rgb(20,22,26)",
+      "high-color":"rgb(36,60,120)",
+      "horizon-blend":0.03,
+      "space-color":"rgb(5,6,8)",
+      "star-intensity":0.3
+    });
+  });
   map.on("load",function(){
     rn();
     if(!map.getLayer("acct-3d-buildings")){
