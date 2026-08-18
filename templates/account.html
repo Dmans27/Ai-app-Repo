@@ -51,8 +51,9 @@
     .acct-bell-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#10a37f;border:1.5px solid #ffffff;pointer-events:none}
     .acct-map-card{margin:10px 16px 24px;overflow:hidden;border:none;background:#f5f5f7;}
     .acct-map-card .account-map{width:100%;height:480px;min-height:0;border-radius:0;border:none}
-    .acct-map-chips{display:none;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:10px 12px;background:#f5f5f7;border-top:0.5px solid rgba(0,0,0,0.08)}
-    .acct-map-chips::-webkit-scrollbar{display:none}
+    .acct-map-chips{display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:#f5f5f7;border-top:0.5px solid rgba(0,0,0,0.08)}
+    .acct-map-chip-row{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none}
+    .acct-map-chip-row::-webkit-scrollbar{display:none}
     .acct-map-chip{flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;font-size:11.5px;font-weight:600;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);cursor:pointer;white-space:nowrap;transition:all 0.15s}
     .acct-map-chip:hover{background:rgba(255,255,255,0.09);color:rgba(255,255,255,0.85)}
     .acct-map-chip.is-active{background:rgba(16,163,127,0.18);border-color:rgba(16,163,127,0.42);color:#7ee2bf}
@@ -336,16 +337,26 @@
             <section class="acct-map-card">
               <div id="account-map" class="account-map"></div>
               <div class="acct-map-chips" id="acct-map-chips">
-                <button class="acct-map-chip is-active" data-cat="all" type="button">All</button>
-                <button class="acct-map-chip" data-cat="coffee" type="button">☕ Coffee</button>
-                <button class="acct-map-chip" data-cat="restaurant" type="button">🍽 Restaurants</button>
-                <button class="acct-map-chip" data-cat="bar" type="button">🍸 Bars</button>
-                <button class="acct-map-chip" data-cat="wine" type="button">🍷 Wine</button>
-                <button class="acct-map-chip" data-cat="rooftop" type="button">🌃 Rooftops</button>
-                <button class="acct-map-chip" data-cat="shopping" type="button">🛍 Shopping</button>
-                <span class="acct-map-chip-divider">|</span>
-                <button class="acct-map-chip is-active" data-loc="all" type="button">All cities</button>
-                <span id="acct-loc-chips" style="display:contents;"></span>
+                <div class="acct-map-chip-row" data-filter-row="category">
+                  <button class="acct-map-chip is-active" data-cat="all" type="button">All</button>
+                  <button class="acct-map-chip" data-cat="coffee" type="button">☕ Coffee</button>
+                  <button class="acct-map-chip" data-cat="restaurant" type="button">🍽 Restaurants</button>
+                  <button class="acct-map-chip" data-cat="bar" type="button">🍸 Bars</button>
+                  <button class="acct-map-chip" data-cat="wine" type="button">🍷 Wine</button>
+                  <button class="acct-map-chip" data-cat="rooftop" type="button">🌃 Rooftops</button>
+                  <button class="acct-map-chip" data-cat="shopping" type="button">🛍 Shopping</button>
+                </div>
+                <div class="acct-map-chip-row" data-filter-row="location">
+                  <button class="acct-map-chip is-active" data-loc="all" type="button">All cities</button>
+                  <span id="acct-loc-chips" style="display:contents;"></span>
+                </div>
+                <div class="acct-map-chip-row" data-filter-row="rating">
+                  <button class="acct-map-chip is-active" data-rating="0" type="button">All ratings</button>
+                  <button class="acct-map-chip" data-rating="3" type="button">3.0+ ★</button>
+                  <button class="acct-map-chip" data-rating="3.5" type="button">3.5+ ★</button>
+                  <button class="acct-map-chip" data-rating="4" type="button">4.0+ ★</button>
+                  <button class="acct-map-chip" data-rating="4.5" type="button">4.5+ ★</button>
+                </div>
               </div>
             </section>
 
@@ -379,6 +390,7 @@
                     data-name-filter="{{ (place.name or '')|lower }}"
                     data-address-filter="{{ (place.address or '')|lower }}"
                     data-city-filter="{{ (place.city or '')|lower }}"
+                    data-rating-filter="{{ place.rating or 0 }}"
                   >
                     <div class="acct-place-thumb__img">
                       {% if place.photo_url %}<img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">{% else %}<span class="acct-place-thumb__emoji">📍</span>{% endif %}
@@ -593,7 +605,7 @@ document.addEventListener("DOMContentLoaded",function(){
   if(!mel||typeof mapboxgl==="undefined")return;
   const token="{{ mapbox_token }}",styleUrl="{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}",places=JSON.parse(document.getElementById("map-data").textContent||"[]");
   if(!token)return;
-  let aC="all",aL="all",mk=[];
+  let aC="all",aL="all",aR=0,mk=[];
 
   function categoryColor(p){
     const c=[p.category,p.cuisine].join(" ").toLowerCase();
@@ -613,13 +625,15 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   function popupHtml(p){
     const dot=categoryColor(p);
+    const rt=pr(p);
     const dirUrl=p.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`:"";
-    return`<div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category?`<p class="acct-map-popup__cat">${escapeHtml(p.category)}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div>`;
+    return`<div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div>`;
   }
 
   function nm(v){return String(v||"").trim().toLowerCase();}
   function ll(p){if(p.city&&p.city.trim())return p.city.trim();const pts=(p.address||"").split(",").map(s=>s.trim());return pts.length>=2?pts[1]:"";}
-  function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p));return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL));}
+  function pr(p){return p.rating!=null&&p.rating!==""?Number(p.rating):null;}
+  function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p)),rt=pr(p);return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))&&(aR===0||(rt!=null&&rt>=aR));}
   function cm(){mk.forEach(m=>m.remove());mk=[];}
   function rn(){
     cm();const fl=places.filter(mt);
@@ -634,7 +648,8 @@ document.addEventListener("DOMContentLoaded",function(){
     // filtering places no longer flies the map into a close-up city view.
     document.querySelectorAll(".acct-place-thumb.js-place-popup").forEach(card=>{
       const ct=[card.dataset.categoryFilter,card.dataset.nameFilter,card.dataset.addressFilter].join(" ").toLowerCase(),lt=nm(card.dataset.cityFilter||card.dataset.addressFilter||"");
-      card.style.display=(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))?"":"none";
+      const rawRating=card.dataset.ratingFilter,rt=rawRating&&rawRating!=="0"?Number(rawRating):null;
+      card.style.display=(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))&&(aR===0||(rt!=null&&rt>=aR))?"":"none";
     });
   }
   function blc(){
@@ -645,6 +660,7 @@ document.addEventListener("DOMContentLoaded",function(){
   function wc(){
     document.querySelectorAll("#acct-map-chips [data-cat]").forEach(chip=>{chip.addEventListener("click",function(){document.querySelectorAll("#acct-map-chips [data-cat]").forEach(c=>c.classList.remove("is-active"));chip.classList.add("is-active");aC=chip.dataset.cat;rn();});});
     document.querySelectorAll("#acct-map-chips [data-loc]").forEach(chip=>{chip.addEventListener("click",function(){document.querySelectorAll("#acct-map-chips [data-loc]").forEach(c=>c.classList.remove("is-active"));chip.classList.add("is-active");aL=chip.dataset.loc;rn();});});
+    document.querySelectorAll("#acct-map-chips [data-rating]").forEach(chip=>{chip.addEventListener("click",function(){document.querySelectorAll("#acct-map-chips [data-rating]").forEach(c=>c.classList.remove("is-active"));chip.classList.add("is-active");aR=parseFloat(chip.dataset.rating)||0;rn();});});
   }
   mapboxgl.accessToken=token;
   const dc=places.length?[places[0].lng,places[0].lat]:[-87.6298,41.8781];
