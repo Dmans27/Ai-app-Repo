@@ -14,17 +14,17 @@
     body.page-account .mobile-screen{height:auto !important;overflow:visible !important;background:#f5f5f7 !important}
     body.page-account .app-main,body.page-account .mobile-screen__body,body.page-account .acct-wrap{background:#f5f5f7 !important}
 
-    .acct-hero{display:flex;align-items:center;gap:16px;padding:20px 16px 16px}
+    .acct-hero{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px 24px;padding:24px 16px 20px;text-align:left}
     .acct-avatar-form{flex-shrink:0;margin:0;padding:0}
+    .acct-hero__identity{display:flex;flex-direction:column;gap:1px}
     .acct-avatar-label{position:relative;display:block;width:72px;height:72px;border-radius:50%;overflow:hidden;cursor:pointer;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);transition:border-color 0.18s}
     .acct-avatar-label:hover{border-color:rgba(157,232,200,0.6)}
     .acct-avatar-label img,.acct-avatar-fallback{width:100%;height:100%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#7ee2bf}
     .acct-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#10a37f;color:#1a1a1a;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #050505;pointer-events:none}
-    .acct-profile-info{flex:1;min-width:0}
-    .acct-profile-name{font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:-0.03em;line-height:1.1;margin:0 0 2px}
-    .acct-profile-username{font-size:13px;color:#7ee2bf;font-weight:600;margin:0 0 4px}
-    .acct-profile-city{font-size:13px;color:rgba(0,0,0,0.45);margin:0 0 10px}
-    .acct-profile-btns{display:flex;gap:8px}
+    .acct-profile-name{font-size:20px;font-weight:900;color:#1a1a1a;letter-spacing:-0.03em;line-height:1.2;margin:0}
+    .acct-profile-username{font-size:13px;color:#7ee2bf;font-weight:600;margin:0}
+    .acct-profile-city{font-size:13px;color:rgba(0,0,0,0.45);margin:0;white-space:nowrap}
+    .acct-profile-btns{display:flex;gap:8px;flex-shrink:0}
     .acct-btn{height:34px;padding:0 14px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s}
     .acct-btn:active{transform:scale(0.95)}
     .acct-btn--primary{background:#10a37f;color:#1a1a1a}
@@ -321,14 +321,14 @@
                 </label>
                 <input id="account-profile-photo" type="file" name="profile_photo" accept="image/*" hidden onchange="this.form.submit()">
               </form>
-              <div class="acct-profile-info">
+              <div class="acct-hero__identity">
                 <h1 class="acct-profile-name">{{ user.name or "Your Profile" }}</h1>
                 {% if user.username %}<p class="acct-profile-username">@{{ user.username }}</p>{% endif %}
-                <p class="acct-profile-city">{% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}</p>
-                <div class="acct-profile-btns">
-                  <a href="{{ url_for('settings') }}" class="acct-btn acct-btn--primary">Edit profile</a>
-                  <a href="{{ url_for('messages_with_user', user_id=user.id) }}" class="acct-btn acct-btn--ghost">💬</a>
-                </div>
+              </div>
+              <p class="acct-profile-city">{% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}</p>
+              <div class="acct-profile-btns">
+                <a href="{{ url_for('settings') }}" class="acct-btn acct-btn--primary">Edit profile</a>
+                <a href="{{ url_for('messages_with_user', user_id=user.id) }}" class="acct-btn acct-btn--ghost">💬</a>
               </div>
             </section>
 
