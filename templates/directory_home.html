@@ -195,6 +195,10 @@
             Find coffee, bars, dinner, shopping, and more.
           </p>
 
+          <section class="home-globe-card">
+            <div id="home-globe-desktop" class="home-globe-canvas"></div>
+          </section>
+
           <!-- AI input bar lives HERE on desktop before first message -->
           <div class="hero-composer" id="hero-composer">
             <div class="ai-input-bar">
@@ -259,6 +263,31 @@
         min-height: 0 !important;
         height: auto !important;
       }
+
+      /* ── Homepage globe card ── */
+      .home-globe-card {
+        width: 100%;
+        max-width: 720px;
+        margin: 4px auto 0;
+        border-radius: 26px;
+        overflow: hidden;
+        background: #f5f5f7;
+        box-shadow: 0 30px 70px -26px rgba(0,0,0,0.35), 0 14px 34px -12px rgba(0,0,0,0.15);
+      }
+      .home-globe-canvas {
+        width: 100%;
+        height: 300px;
+      }
+      /* Only one globe instance should ever be visible at a time — the
+         mobile card lives outside .mobile-home-hero (so it survives the
+         ai-chat-active hide rule), so it needs its own explicit guard
+         against showing up alongside the desktop hero's globe. */
+      @media (min-width: 1025px) {
+        .home-globe-card--mobile { display: none !important; }
+      }
+      @media (max-width: 1024px) {
+        .desktop-page-header .home-globe-card { display: none !important; }
+      }
       </style>
 
       <div class="app-main__inner">
@@ -277,6 +306,13 @@
       Find coffee, bars, dinner, shopping, and more.
     </p>
   </div>
+</section>
+
+<!-- Sibling of .mobile-home-hero (not nested inside it) so it stays visible
+     after a search runs, since .mobile-home-hero gets display:none when
+     body.ai-chat-active is set. -->
+<section class="home-globe-card home-globe-card--mobile">
+  <div id="home-globe-mobile" class="home-globe-canvas"></div>
 </section>
 
 <div class="quick-scroll-wrap">
@@ -1243,6 +1279,110 @@ function buildResultRow(item, isInternal, index = 0) {
       return "#111111";
     }
 
+    /* ======================================================
+       HOMEPAGE GLOBE — decorative on load, populates with pins
+       once an AI search returns results (see renderAiResults).
+    ====================================================== */
+    let _homeGlobeMap = null;
+    let _homeGlobeMarkers = [];
+    let _homeGlobeSpin = null;
+
+    function buildHomeGlobeMarkerEl(color) {
+      const el = document.createElement("div");
+      el.style.width = "16px";
+      el.style.height = "16px";
+      el.style.borderRadius = "50%";
+      el.style.background = color;
+      el.style.border = "2px solid #ffffff";
+      el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.35)";
+      el.style.cursor = "pointer";
+      return el;
+    }
+
+    function spinHomeGlobe() {
+      if (!_homeGlobeMap || _homeGlobeMarkers.length) return;
+      const center = _homeGlobeMap.getCenter();
+      center.lng -= 0.12;
+      _homeGlobeMap.easeTo({ center, duration: 80, easing: (n) => n });
+      _homeGlobeSpin = requestAnimationFrame(spinHomeGlobe);
+    }
+
+    function initHomeGlobe() {
+      if (typeof mapboxgl === "undefined" || _homeGlobeMap) return;
+
+      const isDesktop = window.matchMedia("(min-width: 1025px)").matches;
+      const containerId = isDesktop ? "home-globe-desktop" : "home-globe-mobile";
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      const map = new mapboxgl.Map({
+        container: containerId,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: [-87.6298, 41.8781],
+        zoom: 1.2,
+        projection: "globe",
+        pitch: 0,
+        bearing: 0,
+        antialias: true
+      });
+
+      _homeGlobeMap = map;
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+
+      map.on("style.load", function () {
+        map.setFog({
+          color: "rgb(245,245,247)",
+          "high-color": "#f5f5f7",
+          "horizon-blend": 0.02,
+          "space-color": "rgb(245,245,247)",
+          "star-intensity": 0
+        });
+      });
+
+      map.on("load", function () {
+        spinHomeGlobe();
+      });
+    }
+
+    function updateHomeGlobeMarkers(mapData) {
+      if (!_homeGlobeMap) return;
+
+      if (_homeGlobeSpin) {
+        cancelAnimationFrame(_homeGlobeSpin);
+        _homeGlobeSpin = null;
+      }
+
+      _homeGlobeMarkers.forEach((m) => m.remove());
+      _homeGlobeMarkers = [];
+
+      const bounds = new mapboxgl.LngLatBounds();
+      let count = 0;
+
+      mapData.forEach((p) => {
+        if (p.lat == null || p.lng == null) return;
+
+        const marker = new mapboxgl.Marker({ element: buildHomeGlobeMarkerEl(categoryColor(p.category)) })
+          .setLngLat([p.lng, p.lat])
+          .setPopup(new mapboxgl.Popup({ offset: 14 }).setHTML(`
+            <div style="max-width:200px;">
+              <strong style="font-size:13px;">${p.name || ""}</strong>
+              ${p.category ? `<div style="font-size:11px;color:#666;margin-top:2px;">${p.category}</div>` : ""}
+            </div>
+          `))
+          .addTo(_homeGlobeMap);
+
+        _homeGlobeMarkers.push(marker);
+        bounds.extend([p.lng, p.lat]);
+        count += 1;
+      });
+
+      if (count > 1) {
+        _homeGlobeMap.fitBounds(bounds, { padding: 40, maxZoom: 13, duration: 1800 });
+      } else if (count === 1) {
+        _homeGlobeMap.flyTo({ center: [mapData[0].lng, mapData[0].lat], zoom: 13, duration: 1800 });
+      }
+    }
+
     function placesToGeoJson(places) {
       return {
         type: "FeatureCollection",
@@ -1522,6 +1662,7 @@ function buildResultRow(item, isInternal, index = 0) {
       }
 
       const mapData = buildSearchMapData(allResults);
+      updateHomeGlobeMarkers(mapData);
 
       const listRowsHtml = `
         ${featured.length ? `
@@ -1799,6 +1940,7 @@ function setChatUiState(isActive) {
 
 
       setChatUiState(false);
+      initHomeGlobe();
 
       if (desktopGreeting) desktopGreeting.textContent = greeting;
       if (mobileGreeting) mobileGreeting.textContent = greeting;
