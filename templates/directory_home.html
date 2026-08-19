@@ -56,6 +56,13 @@
           <div class="app-brand__subtitle">Recommendations near you</div>
         </div>
 
+        <button
+          id="desktop-sidebar-collapse-btn"
+          class="desktop-sidebar-collapse-btn"
+          type="button"
+          aria-label="Hide sidebar"
+        >‹</button>
+
         {% if current_user.is_authenticated %}
           <a
             href="{{ url_for('account') }}"
@@ -105,6 +112,97 @@
         {% endif %}
       </div>
     </aside>
+
+    <button
+      id="desktop-sidebar-expand-btn"
+      class="desktop-sidebar-expand-btn desktop-only"
+      type="button"
+      aria-label="Show sidebar"
+    >☰</button>
+
+    <style>
+      .app-sidebar.desktop-sidebar {
+        transition: max-width 0.22s ease, opacity 0.18s ease, padding 0.22s ease;
+        max-width: 320px;
+        overflow: hidden;
+      }
+      .app-shell.sidebar-collapsed .app-sidebar.desktop-sidebar {
+        max-width: 0;
+        min-width: 0;
+        padding: 0;
+        opacity: 0;
+        pointer-events: none;
+        border-width: 0;
+      }
+      .desktop-sidebar-collapse-btn {
+        margin-left: auto;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        border: 0.5px solid rgba(0,0,0,0.1);
+        background: rgba(0,0,0,0.04);
+        color: rgba(0,0,0,0.55);
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s;
+      }
+      .desktop-sidebar-collapse-btn:hover {
+        background: rgba(0,0,0,0.08);
+      }
+      .desktop-sidebar-expand-btn {
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 60;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 0.5px solid rgba(0,0,0,0.1);
+        background: #ffffff;
+        color: rgba(0,0,0,0.65);
+        font-size: 15px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 24px -8px rgba(0,0,0,0.25);
+      }
+      .desktop-sidebar-expand-btn:hover {
+        background: rgba(0,0,0,0.04);
+      }
+      .app-shell.sidebar-collapsed .desktop-sidebar-expand-btn {
+        display: flex;
+      }
+    </style>
+
+    <script>
+      (function () {
+        var KEY = "localAiSidebarCollapsed";
+        var shell = document.querySelector(".app-shell");
+        if (!shell) return;
+
+        function setCollapsed(collapsed) {
+          shell.classList.toggle("sidebar-collapsed", collapsed);
+          try { localStorage.setItem(KEY, collapsed ? "1" : "0"); } catch (e) {}
+        }
+
+        try {
+          if (localStorage.getItem(KEY) === "1") setCollapsed(true);
+        } catch (e) {}
+
+        document.addEventListener("DOMContentLoaded", function () {
+          var collapseBtn = document.getElementById("desktop-sidebar-collapse-btn");
+          var expandBtn = document.getElementById("desktop-sidebar-expand-btn");
+          collapseBtn && collapseBtn.addEventListener("click", function () { setCollapsed(true); });
+          expandBtn && expandBtn.addEventListener("click", function () { setCollapsed(false); });
+        });
+      })();
+    </script>
 
     <!-- Mobile drawer -->
     <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
