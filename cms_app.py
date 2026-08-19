@@ -3622,7 +3622,7 @@ def home():
     homepage_inline_ads=homepage_inline_ads,
     default_saved_list_id=default_saved_list_id,
     user_lists=user_lists,
-    google_maps_api_key=GOOGLE_MAPS_API_KEY,   # <-- add this line
+    mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
 )
 
 
