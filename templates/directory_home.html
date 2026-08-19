@@ -191,6 +191,23 @@
         max-width: 100% !important;
         transition: margin-left 0.22s ease, padding-left 0.22s ease, width 0.22s ease;
       }
+      /* The persistent bottom search bar lives inside .app-main too, but it
+         very likely has its own fixed positioning (common for bars that
+         must stay pinned while content scrolls), so it needs the same
+         reset independently of the .app-main fix above. Only the OUTER
+         wrapper gets width/left forced full-bleed — the inner
+         .chat-composer pill keeps its own max-width + margin:auto so it
+         re-centers naturally instead of stretching edge to edge. */
+      .app-shell.sidebar-collapsed .app-composer-wrap,
+      .app-shell.sidebar-collapsed #bottom-composer {
+        left: 0 !important;
+        right: 0 !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transition: left 0.22s ease, margin-left 0.22s ease, width 0.22s ease;
+      }
     </style>
 
     <script>
