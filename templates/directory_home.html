@@ -178,6 +178,19 @@
       .app-shell.sidebar-collapsed .desktop-sidebar-expand-btn {
         display: flex;
       }
+      /* The sidebar likely sits outside normal flex flow (fixed/sticky),
+         so .app-main carries its own offset for it. Collapsing the
+         sidebar's own width doesn't reclaim that space automatically —
+         force it back to full width so the hero content re-centers. */
+      .app-shell.sidebar-collapsed .app-main,
+      .app-shell.sidebar-collapsed .app-main__inner {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transition: margin-left 0.22s ease, padding-left 0.22s ease, width 0.22s ease;
+      }
     </style>
 
     <script>
