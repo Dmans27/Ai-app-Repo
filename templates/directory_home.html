@@ -396,7 +396,7 @@
       /* ── Homepage globe card ── */
       .home-globe-card {
         width: 100%;
-        max-width: 720px;
+        max-width: 760px;
         margin: 4px auto 0;
         border-radius: 26px;
         overflow: hidden;
@@ -404,7 +404,12 @@
       }
       .home-globe-canvas {
         width: 100%;
-        height: 300px;
+        height: 460px;
+      }
+      @media (max-width: 1024px) {
+        .home-globe-canvas {
+          height: 320px;
+        }
       }
       /* Only one globe instance should ever be visible at a time — the
          mobile card lives outside .mobile-home-hero (so it survives the
@@ -1447,7 +1452,7 @@ function buildResultRow(item, isInternal, index = 0) {
         container: containerId,
         style: "mapbox://styles/mapbox/light-v11",
         center: [-87.6298, 41.8781],
-        zoom: 1.2,
+        zoom: isDesktop ? 1.05 : 1.2,
         projection: "globe",
         pitch: 0,
         bearing: 0,
