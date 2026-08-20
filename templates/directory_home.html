@@ -414,8 +414,11 @@
         pointer-events: none;
       }
       @media (max-width: 1024px) {
+        .home-globe-card {
+          max-width: calc(100% - 40px);
+        }
         .home-globe-canvas {
-          height: 320px;
+          height: 380px;
         }
       }
       /* Only one globe instance should ever be visible at a time — the
