@@ -406,6 +406,13 @@
         width: 100%;
         height: 460px;
       }
+      .home-globe-canvas .mapboxgl-ctrl-logo,
+      .home-globe-canvas .mapboxgl-ctrl-attrib,
+      .home-globe-canvas .mapboxgl-ctrl-bottom-left,
+      .home-globe-canvas .mapboxgl-ctrl-top-right {
+        opacity: 0;
+        pointer-events: none;
+      }
       @media (max-width: 1024px) {
         .home-globe-canvas {
           height: 320px;
@@ -1460,7 +1467,6 @@ function buildResultRow(item, isInternal, index = 0) {
       });
 
       _homeGlobeMap = map;
-      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
       map.on("style.load", function () {
         map.setFog({
