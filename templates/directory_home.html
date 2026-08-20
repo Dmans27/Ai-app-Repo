@@ -418,7 +418,7 @@
           max-width: calc(100% - 40px);
         }
         .home-globe-canvas {
-          height: 380px;
+          height: 340px;
         }
       }
       /* Only one globe instance should ever be visible at a time — the
@@ -1462,7 +1462,7 @@ function buildResultRow(item, isInternal, index = 0) {
         container: containerId,
         style: "mapbox://styles/mapbox/light-v11",
         center: [-87.6298, 41.8781],
-        zoom: isDesktop ? 1.05 : 1.2,
+        zoom: isDesktop ? 1.05 : 0.9,
         projection: "globe",
         pitch: 0,
         bearing: 0,
