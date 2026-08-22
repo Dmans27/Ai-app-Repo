@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Account · Local AI</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
   <style>
     /* Allow scroll on account page even if sticky-nav CSS locks body */
     body.page-account{overflow-y:auto !important;height:auto !important;background:#f5f5f7 !important}
@@ -686,7 +686,17 @@ document.addEventListener("DOMContentLoaded",function(){
     if(!fl.length)return;
     const avgLng=fl.reduce((s,p)=>s+p.lng,0)/fl.length;
     const avgLat=fl.reduce((s,p)=>s+p.lat,0)/fl.length;
-    map.flyTo({center:[avgLng,avgLat],zoom:13.5,pitch:0,bearing:0,duration:1400,essential:true});
+    const targetZoom=13.5;
+    map.flyTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:0,bearing:0,duration:1400,essential:true});
+    // Safety net: some globe-projection builds can silently drop the zoom
+    // portion of an animated camera move (center pans but zoom never
+    // changes). If we're still nowhere near the target zoom once the
+    // animation should be done, snap straight there.
+    setTimeout(function(){
+      if(Math.abs(map.getZoom()-targetZoom)>1){
+        map.jumpTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:0,bearing:0});
+      }
+    },1600);
   }
   function updateCarousel(fl){
     if(!carouselEl)return;
