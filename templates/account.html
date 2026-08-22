@@ -51,7 +51,7 @@
     .acct-bell-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#10a37f;border:1.5px solid #ffffff;pointer-events:none}
     .acct-map-card{margin:10px 16px 24px;overflow:hidden;border:none;background:#f5f5f7;}
     .acct-map-card .account-map{width:100%;height:480px;min-height:0;border-radius:0;border:none}
-    .acct-map-chips{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;background:#f5f5f7;border-top:0.5px solid rgba(0,0,0,0.08);position:relative;overflow:visible}
+    .acct-map-chips{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:0 16px 16px;background:#f5f5f7;position:relative;overflow:visible}
     .acct-filter-dropdown{position:relative;flex-shrink:0}
     .acct-filter-pill{height:32px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.12);background:#ffffff;color:rgba(0,0,0,0.65);font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.15s;max-width:160px}
     .acct-filter-pill__label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -76,6 +76,7 @@
     .acct-list-badge{flex-shrink:0;height:24px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;margin-top:2px;background:rgba(16,163,127,0.14);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.3)}
     .acct-list-badge--private{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.45);border-color:rgba(255,255,255,0.1)}
     .acct-thumb-strip{display:flex;gap:8px;padding:0 14px 14px;overflow-x:auto;scrollbar-width:none}
+    .acct-thumb-strip--standalone{padding:0 16px 20px}
     .acct-thumb-strip::-webkit-scrollbar{display:none}
     .acct-place-thumb{flex-shrink:0;width:92px;background:rgba(0,0,0,0.04);border:0.5px solid rgba(0,0,0,0.08);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;transition:border-color 0.15s,transform 0.15s}
     .acct-place-thumb:hover{border-color:rgba(0,0,0,0.15);transform:translateY(-2px)}
@@ -332,116 +333,98 @@
               </div>
             </section>
 
-            <div class="acct-stats">
-              <div class="acct-stat"><span class="acct-stat__num">{{ lists|length }}</span><span class="acct-stat__lbl">Lists</span></div>
-              <div class="acct-stat"><span class="acct-stat__num">{{ lists | map(attribute='places') | map('length') | sum }}</span><span class="acct-stat__lbl">Places</span></div>
-              <div class="acct-stat"><span class="acct-stat__num" id="friends-count">–</span><span class="acct-stat__lbl">Friends</span></div>
-              <a href="{{ url_for('create_list') }}" class="acct-stat acct-stat--cta"><span class="acct-stat__lbl">+ New</span></a>
+            <div class="acct-map-chips" id="acct-map-chips">
+              <div class="acct-filter-dropdown" data-filter-row="category">
+                <button type="button" class="acct-filter-pill" data-pill="category">
+                  <span class="acct-filter-pill__label" data-pill-label="category">All categories</span>
+                  <span class="acct-filter-pill__caret">▾</span>
+                </button>
+                <div class="acct-filter-menu" data-menu="category">
+                  <button class="acct-filter-option is-active" data-cat="all" type="button">All</button>
+                  <button class="acct-filter-option" data-cat="coffee" type="button">☕ Coffee</button>
+                  <button class="acct-filter-option" data-cat="restaurant" type="button">🍽 Restaurants</button>
+                  <button class="acct-filter-option" data-cat="bar" type="button">🍸 Bars</button>
+                  <button class="acct-filter-option" data-cat="wine" type="button">🍷 Wine</button>
+                  <button class="acct-filter-option" data-cat="rooftop" type="button">🌃 Rooftops</button>
+                  <button class="acct-filter-option" data-cat="shopping" type="button">🛍 Shopping</button>
+                </div>
+              </div>
+              <div class="acct-filter-dropdown" data-filter-row="location">
+                <button type="button" class="acct-filter-pill" data-pill="location">
+                  <span class="acct-filter-pill__label" data-pill-label="location">All cities</span>
+                  <span class="acct-filter-pill__caret">▾</span>
+                </button>
+                <div class="acct-filter-menu" data-menu="location">
+                  <button class="acct-filter-option is-active" data-loc="all" type="button">All cities</button>
+                  <span id="acct-loc-chips" style="display:contents;"></span>
+                </div>
+              </div>
+              <div class="acct-filter-dropdown" data-filter-row="rating">
+                <button type="button" class="acct-filter-pill" data-pill="rating">
+                  <span class="acct-filter-pill__label" data-pill-label="rating">All ratings</span>
+                  <span class="acct-filter-pill__caret">▾</span>
+                </button>
+                <div class="acct-filter-menu" data-menu="rating">
+                  <button class="acct-filter-option is-active" data-rating="0" type="button">All ratings</button>
+                  <button class="acct-filter-option" data-rating="3" type="button">3.0+ ★</button>
+                  <button class="acct-filter-option" data-rating="3.5" type="button">3.5+ ★</button>
+                  <button class="acct-filter-option" data-rating="4" type="button">4.0+ ★</button>
+                  <button class="acct-filter-option" data-rating="4.5" type="button">4.5+ ★</button>
+                </div>
+              </div>
             </div>
 
             <section class="acct-map-card">
               <div id="account-map" class="account-map"></div>
-              <div class="acct-map-chips" id="acct-map-chips">
-                <div class="acct-filter-dropdown" data-filter-row="category">
-                  <button type="button" class="acct-filter-pill" data-pill="category">
-                    <span class="acct-filter-pill__label" data-pill-label="category">All categories</span>
-                    <span class="acct-filter-pill__caret">▾</span>
-                  </button>
-                  <div class="acct-filter-menu" data-menu="category">
-                    <button class="acct-filter-option is-active" data-cat="all" type="button">All</button>
-                    <button class="acct-filter-option" data-cat="coffee" type="button">☕ Coffee</button>
-                    <button class="acct-filter-option" data-cat="restaurant" type="button">🍽 Restaurants</button>
-                    <button class="acct-filter-option" data-cat="bar" type="button">🍸 Bars</button>
-                    <button class="acct-filter-option" data-cat="wine" type="button">🍷 Wine</button>
-                    <button class="acct-filter-option" data-cat="rooftop" type="button">🌃 Rooftops</button>
-                    <button class="acct-filter-option" data-cat="shopping" type="button">🛍 Shopping</button>
-                  </div>
-                </div>
-                <div class="acct-filter-dropdown" data-filter-row="location">
-                  <button type="button" class="acct-filter-pill" data-pill="location">
-                    <span class="acct-filter-pill__label" data-pill-label="location">All cities</span>
-                    <span class="acct-filter-pill__caret">▾</span>
-                  </button>
-                  <div class="acct-filter-menu" data-menu="location">
-                    <button class="acct-filter-option is-active" data-loc="all" type="button">All cities</button>
-                    <span id="acct-loc-chips" style="display:contents;"></span>
-                  </div>
-                </div>
-                <div class="acct-filter-dropdown" data-filter-row="rating">
-                  <button type="button" class="acct-filter-pill" data-pill="rating">
-                    <span class="acct-filter-pill__label" data-pill-label="rating">All ratings</span>
-                    <span class="acct-filter-pill__caret">▾</span>
-                  </button>
-                  <div class="acct-filter-menu" data-menu="rating">
-                    <button class="acct-filter-option is-active" data-rating="0" type="button">All ratings</button>
-                    <button class="acct-filter-option" data-rating="3" type="button">3.0+ ★</button>
-                    <button class="acct-filter-option" data-rating="3.5" type="button">3.5+ ★</button>
-                    <button class="acct-filter-option" data-rating="4" type="button">4.0+ ★</button>
-                    <button class="acct-filter-option" data-rating="4.5" type="button">4.5+ ★</button>
-                  </div>
-                </div>
-              </div>
             </section>
 
-            {% if lists %}
-            <div class="acct-section-header">
-              <span class="acct-section-lbl">Your lists</span>
-              <a href="{{ url_for('create_list') }}" class="acct-section-action">+ New list</a>
-            </div>
-            <div class="acct-lists-stack">
-              {% for saved_list in lists %}
-              <div class="acct-list-card">
-                <div class="acct-list-card__head">
-                  <div>
-                    <h2 class="acct-list-card__name">{{ saved_list.title }}</h2>
-                    <p class="acct-list-card__meta">{{ saved_list.places|length }} place{{ 's' if saved_list.places|length != 1 else '' }}</p>
-                  </div>
-                  <span class="acct-list-badge {% if not saved_list.is_public %}acct-list-badge--private{% endif %}">{{ "Public" if saved_list.is_public else "Private" }}</span>
-                </div>
-                {% if saved_list.places %}
-                <div class="acct-thumb-strip">
-                  {% for place in saved_list.places %}
-                  <article class="acct-place-thumb js-place-popup"
-                    data-slug="{{ place.slug }}"
-                    data-name="{{ place.name }}"
-                    data-category="{{ place.category or 'Local business' }}"
-                    data-address="{{ place.address or '' }}"
-                    data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-                    data-website="{{ place.website or '' }}"
-                    data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% endif %}"
-                    data-category-filter="{{ (place.category or '')|lower }}"
-                    data-name-filter="{{ (place.name or '')|lower }}"
-                    data-address-filter="{{ (place.address or '')|lower }}"
-                    data-city-filter="{{ (place.city or '')|lower }}"
-                    data-rating-filter="{{ place.rating or 0 }}"
-                  >
-                    <div class="acct-place-thumb__img">
-                      {% if place.photo_url %}<img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">{% else %}<span class="acct-place-thumb__emoji">📍</span>{% endif %}
-                    </div>
-                    <div class="acct-place-thumb__body">
-                      <div class="acct-place-thumb__name">{{ place.name }}</div>
-                      <div class="acct-place-thumb__cat">{{ place.category or '' }}</div>
-                    </div>
-                  </article>
-                  {% endfor %}
-                  <a href="{{ url_for('discover_page') }}" class="acct-place-thumb acct-place-thumb--add"><span>+</span><span>Add place</span></a>
-                </div>
-                {% else %}
-                <div class="acct-list-empty">No saved places yet. <a href="{{ url_for('discover_page') }}">Browse places →</a></div>
+            {% set ns = namespace(seen=[], places=[]) %}
+            {% for saved_list in lists %}
+              {% for place in saved_list.places %}
+                {% if place.slug not in ns.seen %}
+                  {% set ns.seen = ns.seen + [place.slug] %}
+                  {% set ns.places = ns.places + [place] %}
                 {% endif %}
-                <div class="acct-list-card__foot">
-                  <button type="button" class="acct-foot-btn acct-foot-btn--share js-open-share-v2" data-list-id="{{ saved_list.id }}" data-list-title="{{ saved_list.title }}">⇧ Share</button>
-                  {% if saved_list.is_public %}<button type="button" class="acct-foot-btn" onclick="openQrModal('{{ saved_list.slug }}','{{ saved_list.title }}')">QR Code</button>{% endif %}
-                  <a href="{{ url_for('settings') }}" class="acct-foot-btn">Edit</a>
-                </div>
-              </div>
               {% endfor %}
+            {% endfor %}
+
+            <div class="acct-section-header">
+              <span class="acct-section-lbl">Pinned locations</span>
+              <a href="{{ url_for('discover_page') }}" class="acct-section-action">+ Add place</a>
+            </div>
+            {% if ns.places %}
+            <div class="acct-thumb-strip acct-thumb-strip--standalone">
+              {% for place in ns.places %}
+              <article class="acct-place-thumb js-place-popup"
+                data-slug="{{ place.slug }}"
+                data-name="{{ place.name }}"
+                data-category="{{ place.category or 'Local business' }}"
+                data-address="{{ place.address or '' }}"
+                data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                data-website="{{ place.website or '' }}"
+                data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% endif %}"
+                data-category-filter="{{ (place.category or '')|lower }}"
+                data-name-filter="{{ (place.name or '')|lower }}"
+                data-address-filter="{{ (place.address or '')|lower }}"
+                data-city-filter="{{ (place.city or '')|lower }}"
+                data-rating-filter="{{ place.rating or 0 }}"
+              >
+                <div class="acct-place-thumb__img">
+                  {% if place.photo_url %}<img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">{% else %}<span class="acct-place-thumb__emoji">📍</span>{% endif %}
+                </div>
+                <div class="acct-place-thumb__body">
+                  <div class="acct-place-thumb__name">{{ place.name }}</div>
+                  <div class="acct-place-thumb__cat">{{ place.category or '' }}</div>
+                </div>
+              </article>
+              {% endfor %}
+              <a href="{{ url_for('discover_page') }}" class="acct-place-thumb acct-place-thumb--add"><span>+</span><span>Add place</span></a>
             </div>
             {% else %}
             <section class="account-ios-empty">
-              <h2>No lists yet</h2>
-              <p>Create your first list to start saving favorite places.</p>
-              <a href="{{ url_for('create_list') }}" class="acct-btn acct-btn--primary" style="display:inline-flex;margin-top:14px;">+ Create a list</a>
+              <h2>No pinned places yet</h2>
+              <p>Save places you love to see them pinned on your globe.</p>
+              <a href="{{ url_for('discover_page') }}" class="acct-btn acct-btn--primary" style="display:inline-flex;margin-top:14px;">+ Browse places</a>
             </section>
             {% endif %}
 
@@ -659,7 +642,9 @@ document.addEventListener("DOMContentLoaded",function(){
   function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p)),rt=pr(p);return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))&&(aR===0||(rt!=null&&rt>=aR));}
   function cm(){mk.forEach(m=>m.remove());mk=[];}
   function rn(){
-    cm();const fl=places.filter(mt);
+    cm();
+    const filtersActive=!(aC==="all"&&aL==="all"&&aR===0);
+    const fl=filtersActive?places.filter(mt):[];
     fl.forEach(p=>{if(p.lng==null||p.lat==null)return;
       const m=new mapboxgl.Marker({element:buildMarkerEl(categoryColor(p))})
         .setLngLat([p.lng,p.lat])
