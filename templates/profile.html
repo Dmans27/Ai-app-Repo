@@ -3,148 +3,627 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{{ profile_user.name or profile_user.username }} · Local AI</title>
+  <title>Account · Local AI</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
-    body.page-profile{overflow-y:auto !important;height:auto !important}
-    body.page-profile .mobile-app-shell,
-    body.page-profile .mobile-screen{height:auto !important;overflow:visible !important}
-    .profile-hero{display:flex;align-items:center;gap:16px;padding:24px 16px 16px}
-    .profile-avatar{width:80px;height:80px;border-radius:50%;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:#7ee2bf;flex-shrink:0;overflow:hidden}
-    .profile-avatar img{width:100%;height:100%;object-fit:cover}
-    .profile-info{flex:1;min-width:0}
-    .profile-name{font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.03em;margin:0 0 2px}
-    .profile-username{font-size:14px;color:#7ee2bf;font-weight:600;margin:0 0 4px}
-    .profile-city{font-size:13px;color:rgba(255,255,255,0.45);margin:0 0 12px}
-    .profile-actions{display:flex;gap:8px}
-    .profile-btn{height:36px;padding:0 16px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all 0.15s}
-    .profile-btn--primary{background:#10a37f;color:#fff}
-    .profile-btn--primary:hover{background:#0d8a6c}
-    .profile-btn--ghost{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.72);border:0.5px solid rgba(255,255,255,0.12)}
-    .profile-btn--ghost:hover{background:rgba(255,255,255,0.12);color:#fff}
-    .profile-btn--pending{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.38);border:0.5px solid rgba(255,255,255,0.1);cursor:default}
-    .profile-stats{display:flex;gap:8px;padding:0 16px 20px}
-    .profile-stat{flex:1;background:rgba(255,255,255,0.04);border:0.5px solid rgba(255,255,255,0.08);border-radius:14px;padding:11px 8px;display:flex;flex-direction:column;align-items:center}
-    .profile-stat__num{font-size:22px;font-weight:900;color:#fff;line-height:1}
-    .profile-stat__lbl{font-size:10px;color:rgba(255,255,255,0.38);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
-    .profile-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.3);padding:0 16px 10px}
-    .profile-lists{display:flex;flex-direction:column;gap:12px;padding:0 0 40px}
-    .profile-list-card{margin:0 16px;background:#13151a;border:0.5px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden}
-    .profile-list-card__head{padding:14px 14px 10px}
-    .profile-list-card__name{font-size:17px;font-weight:900;color:#fff;letter-spacing:-0.025em;margin:0 0 3px}
-    .profile-list-card__meta{font-size:12px;color:rgba(255,255,255,0.38);margin:0}
-    .profile-empty{text-align:center;padding:48px 24px;color:rgba(255,255,255,0.35);font-size:14px}
-    .profile-empty-icon{font-size:36px;margin-bottom:12px;opacity:0.4}
+    /* Allow scroll on account page even if sticky-nav CSS locks body */
+    body.page-account{overflow-y:auto !important;height:auto !important;background:#f5f5f7 !important}
+    body.page-account .mobile-app-shell,
+    body.page-account .mobile-screen{height:auto !important;overflow:visible !important;background:#f5f5f7 !important}
+    body.page-account .app-main,body.page-account .mobile-screen__body,body.page-account .acct-wrap{background:#f5f5f7 !important}
+
+    .acct-hero{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px 24px;padding:24px 16px 20px;text-align:left}
+    .acct-avatar-form{flex-shrink:0;margin:0;padding:0}
+    .acct-hero__identity{display:flex;flex-direction:column;gap:1px}
+    .acct-avatar-label{position:relative;display:block;width:72px;height:72px;border-radius:50%;overflow:hidden;cursor:pointer;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);transition:border-color 0.18s}
+    .acct-avatar-label:hover{border-color:rgba(157,232,200,0.6)}
+    .acct-avatar-label img,.acct-avatar-fallback{width:100%;height:100%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#7ee2bf}
+    .acct-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#10a37f;color:#1a1a1a;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #050505;pointer-events:none}
+    .acct-profile-name{font-size:20px;font-weight:900;color:#1a1a1a;letter-spacing:-0.03em;line-height:1.2;margin:0}
+    .acct-profile-username{font-size:13px;color:#7ee2bf;font-weight:600;margin:0}
+    .acct-profile-city{font-size:13px;color:rgba(0,0,0,0.45);margin:0;white-space:nowrap}
+    .acct-profile-btns{display:flex;gap:8px;flex-shrink:0}
+    .acct-btn{height:34px;padding:0 14px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s}
+    .acct-btn:active{transform:scale(0.95)}
+    .acct-btn--primary{background:#10a37f;color:#1a1a1a}
+    .acct-btn--primary:hover{background:#0d8a6c}
+    .acct-btn--ghost{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.65);border:0.5px solid rgba(0,0,0,0.1)}
+    .acct-btn--ghost:hover{background:rgba(0,0,0,0.08);color:#1a1a1a}
+    .acct-notif-banner{margin:0 16px 14px;padding:11px 14px;background:rgba(16,163,127,0.08);border:0.5px solid rgba(16,163,127,0.28);border-radius:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.15s}
+    .acct-notif-banner:hover{background:rgba(16,163,127,0.14)}
+    .acct-notif-banner__left{display:flex;align-items:center;gap:9px}
+    .acct-notif-live-dot{width:8px;height:8px;border-radius:50%;background:#10a37f;flex-shrink:0;animation:liveDocPulse 2.2s ease-in-out infinite}
+    @keyframes liveDocPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+    .acct-notif-banner__text{font-size:13px;font-weight:700;color:#7ee2bf}
+    .acct-notif-banner__badge{width:22px;height:22px;border-radius:50%;background:#10a37f;color:#1a1a1a;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+    .notifications-panel{display:none;margin:-6px 16px 14px;padding:14px;background:rgba(0,0,0,0.03);border:0.5px solid rgba(0,0,0,0.07);border-top:none;border-radius:0 0 14px 14px}
+    .notifications-panel.is-open{display:block}
+    .acct-header-icon-wrap{position:relative;display:inline-flex}
+    .acct-bell-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#10a37f;border:1.5px solid #ffffff;pointer-events:none}
+    .acct-section-header{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 10px}
+    .acct-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(0,0,0,0.35)}
+    .acct-section-action{font-size:13px;font-weight:700;color:#7ee2bf;text-decoration:none}
+    .acct-section-action:hover{opacity:0.75}
+    .acct-thumb-strip{display:flex;gap:8px;padding:0 14px 14px;overflow-x:auto;scrollbar-width:none}
+    .acct-thumb-strip::-webkit-scrollbar{display:none}
+    .acct-thumb-strip--standalone{padding:0 16px 20px}
+    .acct-place-thumb{flex-shrink:0;width:92px;background:rgba(0,0,0,0.04);border:0.5px solid rgba(0,0,0,0.08);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;transition:border-color 0.15s,transform 0.15s}
+    .acct-place-thumb:hover{border-color:rgba(0,0,0,0.15);transform:translateY(-2px)}
+    .acct-place-thumb:active{transform:scale(0.95)}
+    .acct-place-thumb__img{width:100%;height:62px;overflow:hidden;background:rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:center}
+    .acct-place-thumb__img img{width:100%;height:100%;object-fit:cover;display:block}
+    .acct-place-thumb__emoji{font-size:22px}
+    .acct-place-thumb__body{padding:7px 8px 8px}
+    .acct-place-thumb__name{font-size:11px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+    .acct-place-thumb__cat{font-size:10px;color:rgba(0,0,0,0.4);margin-top:1px;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-place-thumb--add{border-style:dashed;border-color:rgba(255,255,255,0.12);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px;gap:4px}
+    .acct-place-thumb--add:hover{border-color:rgba(157,232,200,0.3);background:rgba(16,163,127,0.06)}
+    .acct-place-thumb--add span:first-child{font-size:18px;color:rgba(0,0,0,0.3);line-height:1}
+    .acct-place-thumb--add span:last-child{font-size:10px;font-weight:700;color:rgba(0,0,0,0.35)}
+
+    /* FRIENDS */
+    .acct-friends-section{margin:0 16px 24px}
+    .friends-add-bar{display:flex;gap:8px;margin-bottom:14px;background:rgba(0,0,0,0.04);border:0.5px solid rgba(255,255,255,0.09);border-radius:16px;padding:8px 8px 8px 14px;transition:border-color 0.18s}
+    .friends-add-bar:focus-within{border-color:rgba(16,163,127,0.45);box-shadow:0 0 0 3px rgba(16,163,127,0.07)}
+    .friends-add-input{flex:1;background:none;border:none;outline:none;color:#1a1a1a;font-size:14px;padding:4px 0}
+    .friends-add-input::placeholder{color:rgba(0,0,0,0.3)}
+    .friends-add-btn{height:34px;padding:0 14px;border:none;border-radius:10px;background:#10a37f;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background 0.15s;white-space:nowrap}
+    .friends-add-btn:hover{background:#0d8a6c}
+    .friends-add-btn:active{transform:scale(0.95)}
+    .friends-search-results{background:#ffffff;border:0.5px solid rgba(0,0,0,0.1);border-radius:16px;overflow:hidden;margin-bottom:14px;display:none}
+    .friends-search-results.is-open{display:block}
+    .friends-search-result{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:0.5px solid rgba(0,0,0,0.06);transition:background 0.15s}
+    .friends-search-result:last-child{border-bottom:none}
+    .friends-search-result:hover{background:rgba(0,0,0,0.03)}
+    .friends-result-avatar{width:36px;height:36px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
+    .friends-result-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .friends-result-info{flex:1;min-width:0}
+    .friends-result-name{font-size:14px;font-weight:700;color:#1a1a1a}
+    .friends-result-email{font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px}
+    .friends-result-action{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .friends-result-action--add{background:rgba(16,163,127,0.15);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.35)}
+    .friends-result-action--add:hover{background:rgba(16,163,127,0.25)}
+    .friends-result-action--pending,.friends-result-action--friends{background:rgba(0,0,0,0.05);color:rgba(255,255,255,0.42);border:0.5px solid rgba(0,0,0,0.1);cursor:default}
+    .friends-pending-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(245,179,1,0.08);border:0.5px solid rgba(245,179,1,0.28);border-radius:14px;margin-bottom:12px;cursor:pointer;transition:background 0.15s}
+    .friends-pending-banner:hover{background:rgba(245,179,1,0.14)}
+    .friends-pending-dot{width:8px;height:8px;border-radius:50%;background:#f5b301;flex-shrink:0}
+    .friends-pending-text{flex:1;font-size:13px;font-weight:700;color:#f5d87a}
+    .friends-pending-count{width:22px;height:22px;border-radius:50%;background:#f5b301;color:#07110d;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+    .friends-pending-panel{display:none;background:rgba(0,0,0,0.03);border:0.5px solid rgba(0,0,0,0.07);border-radius:14px;overflow:hidden;margin-bottom:12px}
+    .friends-pending-panel.is-open{display:block}
+    .friends-list{display:block;flex-direction:column;gap:8px}
+    .friend-row{display:flex;align-items:center;gap:12px;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:12px 14px;transition:border-color 0.15s}
+    .friend-row:hover{border-color:rgba(0,0,0,0.13)}
+    .friend-avatar{width:40px;height:40px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
+    .friend-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .friend-info{flex:1;min-width:0}
+    .friend-name{font-size:14px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .friend-meta{font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px}
+    .friend-actions{display:flex;gap:6px;flex-shrink:0}
+    .friend-action-btn{height:28px;padding:0 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.55);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s}
+    .friend-action-btn:hover{background:rgba(255,255,255,0.11);color:#1a1a1a}
+    .friend-action-btn--accept{background:rgba(16,163,127,0.15);border-color:rgba(16,163,127,0.35);color:#7ee2bf}
+    .friend-action-btn--accept:hover{background:rgba(16,163,127,0.25)}
+    .friend-action-btn--decline{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);color:#f87171}
+    .friend-action-btn--decline:hover{background:rgba(239,68,68,0.18)}
+    .friends-empty{text-align:center;padding:24px 16px;color:rgba(0,0,0,0.35);font-size:13px}
+    .friends-empty-icon{font-size:32px;margin-bottom:10px;opacity:0.45}
+    .friends-loading{text-align:center;padding:20px;color:rgba(0,0,0,0.32);font-size:13px}
+
+    @media(min-width:1025px){.mobile-tabbar{display:none !important}}
   </style>
 </head>
-<body class="app-body page-profile">
+<body class="app-body page-account">
 <div class="app-shell">
 
+  <aside class="app-sidebar desktop-sidebar">
+    <div class="app-sidebar__top">
+      <div class="app-brand">
+        <div class="app-brand__title">Local AI</div>
+        <div class="app-brand__subtitle">Recommendations near you</div>
+      </div>
+      <a href="{{ url_for('account_profile') }}" class="app-sidebar__account" aria-label="Account">
+        {% if user.profile_image_url %}<img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}{{ (user.name or user.email or "U")[0]|upper }}{% endif %}
+      </a>
+    </div>
+    <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">+ New search</button>
+    <nav class="app-sidebar__nav">
+      <a href="/" class="app-sidebar__link">AI Search</a>
+      <a href="/discover" class="app-sidebar__link">Discover</a>
+      <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
+      <a href="{{ url_for('account') }}" class="app-sidebar__link">Saved</a>
+      <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
+    </nav>
+    <div class="app-sidebar__section-label">Account</div>
+    <div class="app-sidebar__footer">
+      <a href="/" class="app-sidebar__footer-link">Home</a>
+      <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
+      <a href="{{ url_for('account_profile') }}" class="app-sidebar__footer-link is-active">Account</a>
+      <form method="post" action="{{ url_for('logout') }}"><button type="submit" class="app-sidebar__footer-button">Log out</button></form>
+    </div>
+  </aside>
+
   <div class="mobile-app-shell">
-    <main class="mobile-screen">
+    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+      <div class="mobile-drawer__header">
+        <div class="mobile-drawer__title">Local AI</div>
+        <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
+      </div>
+      <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">+ New search</button>
+      <nav class="mobile-drawer__nav">
+        <a href="/" class="mobile-drawer__link">AI Search</a>
+        <a href="/discover" class="mobile-drawer__link">Discover</a>
+        <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
+        <a href="{{ url_for('account') }}" class="mobile-drawer__link">Saved</a>
+      </nav>
+      <div class="mobile-drawer__section-label">Account</div>
+      <div class="mobile-drawer__footer">
+        <a href="/" class="mobile-drawer__footer-link">Home</a>
+        <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account_profile') }}" class="mobile-drawer__footer-link is-active">Account</a>
+          <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
+          <form method="post" action="{{ url_for('logout') }}"><button type="submit" class="mobile-drawer__footer-button">Log out</button></form>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
+          <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
+        {% endif %}
+      </div>
+    </aside>
+    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+
+    <main class="mobile-screen" style="background:#f5f5f7 !important">
       <header class="mobile-app-header">
-        <button class="mobile-app-header__icon" onclick="history.back()" type="button" aria-label="Back">←</button>
+        <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
         <div class="mobile-app-header__center">
-          <div class="mobile-app-header__title">{{ profile_user.name or profile_user.username or 'Profile' }}</div>
+          <div class="mobile-app-header__title">My Account</div>
           <div class="mobile-app-header__subtitle">Local AI</div>
         </div>
-        <a href="{{ url_for('account') }}" class="mobile-app-header__icon mobile-app-header__icon--link">👤</a>
+        <div style="display:flex;align-items:center;gap:6px;">
+          {% if current_user.is_authenticated %}
+            <div class="acct-header-icon-wrap">
+              <button type="button" class="mobile-app-header__icon" id="notifications-toggle" aria-label="Notifications">🔔</button>
+              {% if shared_with_me %}<span class="acct-bell-dot" id="notification-badge"></span>{% endif %}
+            </div>
+            <a href="{{ url_for('settings') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Settings"></a>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Log in">👤</a>
+          {% endif %}
+        </div>
       </header>
 
-      <section class="mobile-content">
+      <section class="mobile-content account-page-content">
+        <div class="account-desktop-wrap">
+          <div class="account-ios-shell">
 
-        <!-- Hero -->
-        <div class="profile-hero">
-          <div class="profile-avatar">
-            {% if profile_user.profile_image_url %}
-              <img src="{{ profile_user.profile_image_url }}" alt="{{ profile_user.name }}">
+            {% if shared_with_me %}
+            <div class="acct-notif-banner" id="notifications-panel-trigger">
+              <div class="acct-notif-banner__left">
+                <span class="acct-notif-live-dot"></span>
+                <span class="acct-notif-banner__text">{{ shared_with_me|length }} new shared list{{ 's' if shared_with_me|length != 1 else '' }}</span>
+              </div>
+              <span class="acct-notif-banner__badge">{{ shared_with_me|length }}</span>
+            </div>
+            <section class="notifications-panel" id="notifications-panel">
+              {% for shared in shared_with_me %}
+              <article class="notification-card">
+                <p><strong>{{ shared.sender_name or shared.sender_email or "Someone" }}</strong> shared a list with you</p>
+                <h3>{{ shared.title }}</h3>
+                <div class="notification-actions">
+                  <a href="{{ url_for('view_public_list', slug=shared.slug) }}">View list</a>
+                  <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}"><button type="submit">Save</button></form>
+                </div>
+              </article>
+              {% endfor %}
+            </section>
+            {% endif %}
+
+            <section class="acct-hero">
+              <form method="post" action="{{ url_for('update_profile_photo') }}" enctype="multipart/form-data" class="acct-avatar-form">
+                <label class="acct-avatar-label" for="account-profile-photo" aria-label="Change profile photo">
+                  {% if user.profile_image_url %}<img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}">{% else %}<span class="acct-avatar-fallback">{{ (user.name or user.email or "U")[0]|upper }}</span>{% endif %}
+                  <span class="acct-avatar-edit" aria-hidden="true">✎</span>
+                </label>
+                <input id="account-profile-photo" type="file" name="profile_photo" accept="image/*" hidden onchange="this.form.submit()">
+              </form>
+              <div class="acct-hero__identity">
+                <h1 class="acct-profile-name">{{ user.name or "Your Profile" }}</h1>
+                {% if user.username %}<p class="acct-profile-username">@{{ user.username }}</p>{% endif %}
+              </div>
+              <p class="acct-profile-city">{% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}</p>
+              <div class="acct-profile-btns">
+                <a href="{{ url_for('settings') }}" class="acct-btn acct-btn--primary">Edit profile</a>
+                <a href="{{ url_for('messages_with_user', user_id=user.id) }}" class="acct-btn acct-btn--ghost">💬</a>
+              </div>
+            </section>
+
+            {% set ns = namespace(seen=[], places=[]) %}
+            {% for saved_list in lists %}
+              {% for place in saved_list.places %}
+                {% if place.slug not in ns.seen %}
+                  {% set ns.seen = ns.seen + [place.slug] %}
+                  {% set ns.places = ns.places + [place] %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+
+            <div class="acct-section-header">
+              <span class="acct-section-lbl">Pinned locations</span>
+              <a href="{{ url_for('discover_page') }}" class="acct-section-action">+ Add place</a>
+            </div>
+            {% if ns.places %}
+            <div class="acct-thumb-strip acct-thumb-strip--standalone">
+              {% for place in ns.places %}
+              <article class="acct-place-thumb js-place-popup"
+                data-slug="{{ place.slug }}"
+                data-name="{{ place.name }}"
+                data-category="{{ place.category or 'Local business' }}"
+                data-address="{{ place.address or '' }}"
+                data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
+                data-website="{{ place.website or '' }}"
+                data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% endif %}"
+              >
+                <div class="acct-place-thumb__img">
+                  {% if place.photo_url %}<img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">{% else %}<span class="acct-place-thumb__emoji">📍</span>{% endif %}
+                </div>
+                <div class="acct-place-thumb__body">
+                  <div class="acct-place-thumb__name">{{ place.name }}</div>
+                  <div class="acct-place-thumb__cat">{{ place.category or '' }}</div>
+                </div>
+              </article>
+              {% endfor %}
+              <a href="{{ url_for('discover_page') }}" class="acct-place-thumb acct-place-thumb--add"><span>+</span><span>Add place</span></a>
+            </div>
             {% else %}
-              {{ (profile_user.name or profile_user.username or 'U')[0]|upper }}
+            <section class="account-ios-empty">
+              <h2>No pinned places yet</h2>
+              <p>Save places you love to see them pinned on your globe.</p>
+              <a href="{{ url_for('discover_page') }}" class="acct-btn acct-btn--primary" style="display:inline-flex;margin-top:14px;">+ Browse places</a>
+            </section>
             {% endif %}
-          </div>
-          <div class="profile-info">
-            <h1 class="profile-name">{{ profile_user.name or profile_user.username or 'Local AI User' }}</h1>
-            {% if profile_user.username %}
-            <p class="profile-username">@{{ profile_user.username }}</p>
-            {% endif %}
-            <p class="profile-city">{% if profile_user.home_city %}📍 {{ profile_user.home_city }}{% endif %}</p>
-            <div class="profile-actions">
-              {% if is_friend %}
-                <a href="{{ url_for('messages_with_user', user_id=profile_user.id) }}" class="profile-btn profile-btn--primary">💬 Message</a>
-                <button class="profile-btn profile-btn--ghost" onclick="removeFriendProfile({{ profile_user.id }}, {{ friendship_id }}, this)">Remove friend</button>
-              {% elif pending_out %}
-                <button class="profile-btn profile-btn--pending" disabled>Request sent</button>
-              {% else %}
-                <button class="profile-btn profile-btn--primary" onclick="addFriendProfile({{ profile_user.id }}, this)">+ Add friend</button>
-              {% endif %}
+
+            <!-- FRIENDS SECTION -->
+            <div class="acct-section-header" style="margin-top:24px;">
+              <span class="acct-section-lbl">Friends</span>
             </div>
-          </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <span class="profile-stat__num">{{ lists|length }}</span>
-            <span class="profile-stat__lbl">Lists</span>
-          </div>
-          <div class="profile-stat">
-            <span class="profile-stat__num">{{ lists | map(attribute='places') | map('length') | sum }}</span>
-            <span class="profile-stat__lbl">Places</span>
-          </div>
-        </div>
-
-        <!-- Public lists -->
-        {% if lists %}
-        <div class="profile-section-lbl">Public lists</div>
-        <div class="profile-lists">
-          {% for lst in lists %}
-          <a href="{{ url_for('view_public_list', slug=lst.slug) }}" class="profile-list-card" style="text-decoration:none;">
-            <div class="profile-list-card__head">
-              <h2 class="profile-list-card__name">{{ lst.title }}</h2>
-              <p class="profile-list-card__meta">{{ lst.places|length }} place{{ 's' if lst.places|length != 1 else '' }}</p>
+            <div class="acct-friends-section">
+              <div class="friends-add-bar">
+                <input id="friends-search-input" class="friends-add-input" type="search" placeholder="Search by @username or name…" autocomplete="off">
+                <button class="friends-add-btn" type="button" id="friends-search-btn">Search</button>
+              </div>
+              <div class="friends-search-results" id="friends-search-results"></div>
+              <div class="friends-pending-banner" id="friends-pending-banner" style="display:none;" onclick="togglePendingPanel()">
+                <span class="friends-pending-dot"></span>
+                <span class="friends-pending-text" id="friends-pending-text">Friend requests</span>
+                <span class="friends-pending-count" id="friends-pending-count">0</span>
+              </div>
+              <div class="friends-pending-panel" id="friends-pending-panel"></div>
+              <div class="friends-list" id="friends-list"><div class="friends-loading">Loading friends…</div></div>
             </div>
-          </a>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="profile-empty">
-          <div class="profile-empty-icon">📋</div>
-          No public lists yet.
-        </div>
-        {% endif %}
 
+          </div>
+        </div>
       </section>
+
+      <!-- Place popup -->
+      <div class="place-popup" id="place-popup" hidden>
+        <div class="place-popup__backdrop" data-close-place-popup></div>
+        <div class="place-popup__card place-popup__card--large">
+          <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
+          <section class="place-popup__hero">
+            <img id="place-popup-photo" class="place-popup__image" src="" alt="">
+            <div class="place-popup__body">
+              <p id="place-popup-category" class="place-popup__category"></p>
+              <h2 id="place-popup-name"></h2>
+              <p id="place-popup-address" class="place-popup__address"></p>
+              <p id="place-popup-description" class="place-popup__description"></p>
+              <div class="place-popup__actions">
+                <a id="place-popup-website" class="place-popup__btn" target="_blank" rel="noopener">Website</a>
+                <a id="place-popup-directions" class="place-popup__btn" target="_blank" rel="noopener">Directions</a>
+                <a id="place-popup-listing" class="place-popup__btn place-popup__btn--primary">View listing</a>
+              </div>
+            </div>
+          </section>
+          <div class="photo-slider" id="popup-slider">
+            <div class="photo-slider__viewport">
+              <button type="button" class="slider-btn slider-btn--left" data-slider-prev>‹</button>
+              <div class="slider-track" id="popup-slider-track"></div>
+              <button type="button" class="slider-btn slider-btn--right" data-slider-next>›</button>
+            </div>
+          </div>
+          <div class="slider-thumbs" id="popup-slider-thumbs"></div>
+          <section class="place-popup__section place-popup__comments">
+            <h3>Comments</h3>
+            <div id="popup-comments-list" class="place-popup__comments-list"><p class="place-popup__muted">No comments yet. Be the first to leave one.</p></div>
+            <form id="popup-comment-form" class="place-popup__comment-form">
+              <input type="text" name="author_name" placeholder="Your name">
+              <textarea name="body" placeholder="Share your experience or thoughts about this business"></textarea>
+              <button type="submit">Post comment</button>
+            </form>
+          </section>
+        </div>
+      </div>
+
+      <nav class="mobile-tabbar">
+        <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🏠</span><span class="mobile-tabbar__label">Home</span></a>
+        <a href="/discover" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🗺️</span><span class="mobile-tabbar__label">Discover</span></a>
+        <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🔎</span><span class="mobile-tabbar__label">Search</span></a>
+        <a href="{{ url_for('account') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">📌</span><span class="mobile-tabbar__label">Saved</span></a>
+        <a href="{{ url_for('account_profile') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item is-active"><span class="mobile-tabbar__icon">👤</span><span class="mobile-tabbar__label">Account</span></a>
+      </nav>
     </main>
   </div>
 </div>
 
 <script>
-async function addFriendProfile(uid, btn) {
-  btn.disabled = true; btn.textContent = 'Sending…';
-  try {
-    const r = await fetch('/friends/request', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({user_id: uid})
+function escapeHtml(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
+
+/* Drawer */
+document.addEventListener("DOMContentLoaded",function(){
+  const s=document.getElementById("app-sidebar"),t=document.getElementById("app-sidebar-toggle"),c=document.getElementById("app-sidebar-close"),b=document.getElementById("app-sidebar-backdrop");
+  function o(){s?.classList.add("is-open");b?.classList.add("is-open");}
+  function cl(){s?.classList.remove("is-open");b?.classList.remove("is-open");}
+  t?.addEventListener("click",o);c?.addEventListener("click",cl);b?.addEventListener("click",cl);
+});
+
+/* Notifications */
+document.addEventListener("DOMContentLoaded",function(){
+  const bn=document.getElementById("notifications-panel-trigger"),pn=document.getElementById("notifications-panel"),bd=document.getElementById("notification-badge"),bl=document.getElementById("notifications-toggle");
+  function ms(){if(bd)bd.style.display="none";fetch("/notifications/mark-seen",{method:"POST",headers:{"Content-Type":"application/json"}}).catch(()=>{});}
+  function tp(){if(!pn)return;const op=!pn.classList.contains("is-open");pn.classList.toggle("is-open");if(op)ms();}
+  bn?.addEventListener("click",tp);bl?.addEventListener("click",tp);
+});
+
+/* Place popup */
+document.addEventListener("DOMContentLoaded",function(){
+  const popup=document.getElementById("place-popup"),photo=document.getElementById("place-popup-photo"),name=document.getElementById("place-popup-name"),category=document.getElementById("place-popup-category"),address=document.getElementById("place-popup-address"),website=document.getElementById("place-popup-website"),directions=document.getElementById("place-popup-directions"),listing=document.getElementById("place-popup-listing"),slider=document.getElementById("popup-slider"),track=document.getElementById("popup-slider-track"),thumbs=document.getElementById("popup-slider-thumbs"),prevBtn=slider?.querySelector("[data-slider-prev]"),nextBtn=slider?.querySelector("[data-slider-next]");
+  let pp=[],ci=0;
+  function rs(i=0){if(!track||!thumbs)return;if(!pp.length){track.innerHTML=`<p class="place-popup__muted">No gallery photos yet.</p>`;thumbs.innerHTML="";if(prevBtn)prevBtn.style.display="none";if(nextBtn)nextBtn.style.display="none";return;}ci=(i+pp.length)%pp.length;if(prevBtn)prevBtn.style.display=pp.length>1?"flex":"none";if(nextBtn)nextBtn.style.display=pp.length>1?"flex":"none";track.innerHTML=`<img src="${pp[ci]}" class="popup-slider__image" alt="">`;thumbs.innerHTML=pp.map((u,j)=>`<button type="button" class="popup-slider__thumb ${j===ci?"is-active":""}" data-thumb="${j}"><img src="${u}" alt=""></button>`).join("");thumbs.querySelectorAll("[data-thumb]").forEach(btn=>{btn.addEventListener("click",()=>rs(Number(btn.dataset.thumb)));});}
+  prevBtn?.addEventListener("click",e=>{e.stopPropagation();rs(ci-1);});
+  nextBtn?.addEventListener("click",e=>{e.stopPropagation();rs(ci+1);});
+  document.querySelectorAll(".js-place-popup").forEach(card=>{
+    card.addEventListener("click",async function(e){
+      if(e.target.closest("a, button, form"))return;
+      const slug=card.dataset.slug;
+      photo.src=card.dataset.photo||"/static/img/default-business.jpg";name.textContent=card.dataset.name||"Local business";category.textContent=card.dataset.category||"Local business";address.textContent=card.dataset.address||"";
+      website.style.display=card.dataset.website?"flex":"none";website.href=card.dataset.website||"#";listing.style.display=card.dataset.listingUrl?"flex":"none";listing.href=card.dataset.listingUrl||"#";directions.href=card.dataset.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`:"#";
+      popup.hidden=false;pp=[];ci=0;track.innerHTML=`<p class="place-popup__muted">Loading photos...</p>`;thumbs.innerHTML="";if(prevBtn)prevBtn.style.display="none";if(nextBtn)nextBtn.style.display="none";
+      if(!slug){track.innerHTML=`<p class="place-popup__muted">No directory listing connected yet.</p>`;return;}
+      try{const res=await fetch(`/listing-data/${slug}`),data=await res.json();if(data.photo_url)photo.src=data.photo_url;pp=Array.isArray(data.photos)?data.photos.filter(Boolean):[];rs(0);}catch{track.innerHTML=`<p class="place-popup__muted">Could not load photos.</p>`;}
     });
-    const d = await r.json();
-    if(d.ok) { btn.textContent = 'Request sent'; btn.className = 'profile-btn profile-btn--pending'; btn.disabled = true; }
-    else { btn.textContent = d.error || 'Error'; btn.disabled = false; }
-  } catch { btn.textContent = 'Failed'; btn.disabled = false; }
+  });
+  document.querySelectorAll("[data-close-place-popup]").forEach(el=>{el.addEventListener("click",function(){popup.hidden=true;pp=[];ci=0;if(track)track.innerHTML="";if(thumbs)thumbs.innerHTML="";});});
+});
+</script>
+
+<script>
+/* ═══════════════════════════════════════════
+   FRIENDS — single clean block, no duplicates
+═══════════════════════════════════════════ */
+let friendsData = {friends:[], pending_in:[], pending_out:[]};
+
+async function loadFriends() {
+  const list = document.getElementById("friends-list");
+  try {
+    const res  = await fetch('/friends');
+    const text = await res.text();
+    try {
+      friendsData = JSON.parse(text);
+    } catch(e) {
+      if(list) list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>Server error — please refresh.</div>`;
+      console.error('Friends parse error:', text.substring(0,500));
+      return;
+    }
+    renderFriends();
+  } catch(e) {
+    if(list) list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>Could not load friends.</div>`;
+    console.error('Friends fetch error:', e);
+  }
 }
 
-async function removeFriendProfile(uid, fid, btn) {
+function renderFriends() {
+  const {friends, pending_in} = friendsData;
+
+  const bn = document.getElementById("friends-pending-banner"),
+        pt = document.getElementById("friends-pending-text"),
+        pc = document.getElementById("friends-pending-count");
+  if(pending_in && pending_in.length > 0) {
+    if(bn) bn.style.display = "flex";
+    if(pt) pt.textContent = `${pending_in.length} friend request${pending_in.length !== 1 ? 's' : ''}`;
+    if(pc) pc.textContent = pending_in.length;
+    renderPendingPanel();
+  } else {
+    if(bn) bn.style.display = "none";
+  }
+
+  const list = document.getElementById("friends-list");
+  if(!list) return;
+
+  if(!friends || !friends.length) {
+    list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>No friends yet. Search above to add someone.</div>`;
+    return;
+  }
+
+  const avatarColors = [
+    {bg:'rgba(16,163,127,0.15)', color:'#0f6e56'},
+    {bg:'rgba(50,130,246,0.15)', color:'#185fa5'},
+    {bg:'rgba(245,179,1,0.15)',  color:'#854f0b'},
+    {bg:'rgba(239,68,68,0.12)',  color:'#a32d2d'},
+    {bg:'rgba(168,85,247,0.14)',color:'#534ab7'},
+    {bg:'rgba(52,211,153,0.15)', color:'#065f46'},
+  ];
+
+  const LIMIT   = 6;
+  const visible = friends.slice(0, LIMIT);
+  const extra   = friends.length - LIMIT;
+
+  function cardHTML(f, i) {
+    const col      = avatarColors[i % avatarColors.length];
+    const initials = (f.name || f.username || '?').substring(0,2).toUpperCase();
+    const uname    = f.username || (f.email ? f.email.split('@')[0] : '?');
+    const avatar   = f.photo_url
+      ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">`
+      : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};">${escapeHtml(initials)}</div>`;
+    return `
+      <a href="/profile/${f.user_id}" style="background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(157,232,200,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
+        ${avatar}
+        <div style="width:100%;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || uname)}</div>
+          <div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(uname)}</div>
+        </div>
+        <button onclick="event.preventDefault();event.stopPropagation();removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.5);cursor:pointer;width:100%;">Remove</button>
+      </a>`;
+  }
+
+  list.innerHTML = `
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;" id="friends-grid">
+    ${visible.map((f,i) => cardHTML(f,i)).join('')}
+  </div>
+  ${extra > 0 ? `<button id="show-more-friends-btn" onclick="showMoreFriends()" style="width:100%;padding:10px;border-radius:14px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);font-size:13px;font-weight:600;cursor:pointer;">Show all ${friends.length} friends</button>` : ''}`;
+}
+
+function showMoreFriends() {
+  const {friends} = friendsData;
+  const grid = document.getElementById("friends-grid");
+  const btn  = document.getElementById("show-more-friends-btn");
+  if(!grid || !btn) return;
+  const avatarColors = [
+    {bg:'rgba(16,163,127,0.15)',color:'#0f6e56'},
+    {bg:'rgba(50,130,246,0.15)',color:'#185fa5'},
+    {bg:'rgba(245,179,1,0.15)', color:'#854f0b'},
+    {bg:'rgba(239,68,68,0.12)', color:'#a32d2d'},
+    {bg:'rgba(168,85,247,0.14)',color:'#534ab7'},
+    {bg:'rgba(52,211,153,0.15)',color:'#065f46'},
+  ];
+  friends.slice(6).forEach((f,i) => {
+    const col      = avatarColors[(i+6) % avatarColors.length];
+    const initials = (f.name || f.username || '?').substring(0,2).toUpperCase();
+    const uname    = f.username || (f.email ? f.email.split('@')[0] : '?');
+    const avatar   = f.photo_url
+      ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">`
+      : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};">${escapeHtml(initials)}</div>`;
+    const card = document.createElement('div');
+    card.style.cssText = "background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;";
+    card.innerHTML = `${avatar}<div style="width:100%;min-width:0;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name||uname)}</div><div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(uname)}</div></div><button onclick="removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.5);cursor:pointer;width:100%;">Remove</button>`;
+    grid.appendChild(card);
+  });
+  btn.remove();
+}
+
+function renderPendingPanel() {
+  const panel = document.getElementById("friends-pending-panel");
+  if(!panel) return;
+  panel.innerHTML = (friendsData.pending_in || []).map(f => {
+    const uname = f.username || (f.email ? f.email.split('@')[0] : '?');
+    return `
+      <div class="friend-row" style="border-radius:0;border-left:none;border-right:none;margin:0;">
+        <div class="friend-avatar">${f.photo_url ? `<img src="${escapeHtml(f.photo_url)}" alt="">` : escapeHtml((f.name||'?')[0].toUpperCase())}</div>
+        <div class="friend-info">
+          <div class="friend-name">${escapeHtml(f.name || uname)}</div>
+          <div class="friend-meta">@${escapeHtml(uname)} · wants to be friends</div>
+        </div>
+        <div class="friend-actions">
+          <button class="friend-action-btn friend-action-btn--accept" onclick="respondFriend(${f.friendship_id},'accept',this)">Accept</button>
+          <button class="friend-action-btn friend-action-btn--decline" onclick="respondFriend(${f.friendship_id},'decline',this)">Decline</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function togglePendingPanel() {
+  document.getElementById("friends-pending-panel").classList.toggle("is-open");
+}
+
+let srch = null;
+document.addEventListener("DOMContentLoaded", function() {
+  const inp = document.getElementById("friends-search-input"),
+        res = document.getElementById("friends-search-results"),
+        btn = document.getElementById("friends-search-btn");
+
+  async function run() {
+    const q = inp.value.trim();
+    if(q.length < 2) { res.classList.remove("is-open"); return; }
+    res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">Searching…</div>`;
+    res.classList.add("is-open");
+    try {
+      const r = await fetch(`/friends/search?q=${encodeURIComponent(q)}`), data = await r.json();
+      if(!data.length) { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">No users found</div>`; return; }
+      res.innerHTML = data.map(u => {
+        let a;
+        if(u.status === "friends")       a = `<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
+        else if(u.status === "pending_out") a = `<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
+        else if(u.status === "pending_in")  a = `<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}" data-friendship-id="${u.friendship_id||''}">Accept</button>`;
+        else a = `<button class="friends-result-action friends-result-action--add" onclick="addFriendFromSearch(event,this)" data-user-id="${u.id}">+ Add</button>`;
+        return `<div class="friends-search-result">
+          <div class="friends-result-avatar">${u.photo ? `<img src="${escapeHtml(u.photo)}" alt="">` : escapeHtml((u.name||'?')[0].toUpperCase())}</div>
+          <div class="friends-result-info">
+            <div class="friends-result-name">${escapeHtml(u.name)}</div>
+            <div class="friends-result-email">@${escapeHtml(u.username||u.email.split('@')[0])}</div>
+          </div>
+          ${a}
+        </div>`;
+      }).join('');
+    } catch { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">Search failed</div>`; }
+  }
+
+  inp.addEventListener("input", function() { clearTimeout(srch); srch = setTimeout(run, 350); });
+  btn.addEventListener("click", run);
+  inp.addEventListener("keydown", function(e) {
+    if(e.key === "Enter") { e.preventDefault(); run(); }
+    if(e.key === "Escape") { res.classList.remove("is-open"); inp.blur(); }
+  });
+  document.addEventListener("click", function(e) {
+    if(!e.target.closest("#friends-search-input,#friends-search-btn,#friends-search-results"))
+      res.classList.remove("is-open");
+  });
+});
+
+async function addFriendFromSearch(e, btn) {
+  e.stopPropagation();
+  const uid = Number(btn.dataset.userId);
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const r = await fetch('/friends/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})}), data = await r.json();
+    if(data.ok) { btn.textContent = "Sent ✓"; btn.className = "friends-result-action friends-result-action--pending"; }
+    else { btn.textContent = data.error||"Error"; btn.disabled = false; }
+  } catch { btn.textContent = "Failed"; btn.disabled = false; }
+}
+
+async function acceptFromSearch(e, btn) {
+  e.stopPropagation();
+  const fid = Number(btn.dataset.friendshipId);
+  if(!fid) {
+    const uid = Number(btn.dataset.userId);
+    const f = friendsData.pending_in.find(x => x.user_id === uid);
+    if(!f) { btn.textContent = 'Error'; return; }
+    await respondFriend(f.friendship_id, 'accept', btn);
+  } else {
+    await respondFriend(fid, 'accept', btn);
+  }
+  await loadFriends();
+}
+
+async function respondFriend(fid, action, btn) {
+  btn.disabled = true;
+  btn.textContent = action === 'accept' ? 'Accepting…' : 'Declining…';
+  try {
+    const r = await fetch('/friends/respond', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friendship_id:fid,action})});
+    const d = await r.json();
+    if(d.ok) await loadFriends();
+  } catch { btn.disabled = false; btn.textContent = 'Error'; }
+}
+
+async function removeFriend(uid, btn) {
   if(!confirm('Remove this friend?')) return;
   btn.disabled = true;
   try {
-    await fetch('/friends/remove', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({user_id: uid})
-    });
-    window.location.href = '/account';
+    await fetch('/friends/remove', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});
+    await loadFriends();
   } catch { btn.disabled = false; }
 }
+
+document.addEventListener("DOMContentLoaded", loadFriends);
 </script>
+
 </body>
 </html>

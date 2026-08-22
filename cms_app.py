@@ -2874,7 +2874,7 @@ def update_profile_photo():
 
     if not profile_photo or not profile_photo.filename:
         flash("Please choose a photo.")
-        return redirect(url_for("account"))
+        return redirect(url_for("account_profile"))
 
     profile_photo.stream.seek(0)
 
@@ -2889,7 +2889,7 @@ def update_profile_photo():
     db.session.commit()
 
     flash("Profile photo updated.")
-    return redirect(url_for("account"))
+    return redirect(url_for("account_profile"))
     
     
     
@@ -5904,9 +5904,7 @@ def admin_edit_ad(ad_id):
 
 
 
-@app.route("/account")
-@login_required
-def account():
+def _account_context():
     shared_with_me = []
     users = []
     lists = SavedList.query.filter_by(user_id=current_user.id) \
@@ -6029,18 +6027,28 @@ def account():
     
     
 
-    return render_template(
-        "account.html",
-        user=current_user,
-        lists=account_lists,
-        unread_shared_count=unread_shared_count,
-        map_places=map_places,
-        shared_with_me=shared_with_me,
-        users=users,
-        mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
-        mapbox_style_url=os.getenv("MAPBOX_STYLE_URL", "")
-    )
+    return {
+        "user": current_user,
+        "lists": account_lists,
+        "unread_shared_count": unread_shared_count,
+        "map_places": map_places,
+        "shared_with_me": shared_with_me,
+        "users": users,
+        "mapbox_token": os.getenv("MAPBOX_TOKEN", ""),
+        "mapbox_style_url": os.getenv("MAPBOX_STYLE_URL", ""),
+    }
 
+
+@app.route("/account")
+@login_required
+def account():
+    return render_template("account.html", **_account_context())
+
+
+@app.route("/account/profile")
+@login_required
+def account_profile():
+    return render_template("profile.html", **_account_context())
 
 
 @app.route("/claim-business", methods=["POST"])
