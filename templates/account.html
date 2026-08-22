@@ -696,7 +696,7 @@ document.addEventListener("DOMContentLoaded",function(){
       if(Math.abs(map.getZoom()-targetZoom)>1){
         map.jumpTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:0,bearing:0});
       }
-    },1600);
+    },1000);
   }
   function updateCarousel(fl){
     if(!carouselEl)return;
