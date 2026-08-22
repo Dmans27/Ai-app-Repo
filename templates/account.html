@@ -675,19 +675,18 @@ document.addEventListener("DOMContentLoaded",function(){
   }
   function updateCamera(fl){
     // "All cities" — pull back out to the overview globe. A specific city
-    // pick zooms/fits the map in on just the matching places.
+    // pick flies the map in to a close, street-level view centered on the
+    // matching places. (fitBounds was unreliable here on the globe
+    // projection with small/degenerate boxes, so we just fly to the
+    // average point at a fixed close zoom instead.)
     if(aL==="all"){
-      map.easeTo({center:dc,zoom:globeZoom,pitch:0,bearing:-8,duration:1100});
+      map.easeTo({center:dc,zoom:globeZoom,pitch:0,bearing:-8,duration:1100,essential:true});
       return;
     }
     if(!fl.length)return;
-    if(fl.length===1){
-      map.flyTo({center:[fl[0].lng,fl[0].lat],zoom:13,pitch:0,duration:1300});
-      return;
-    }
-    const bounds=new mapboxgl.LngLatBounds();
-    fl.forEach(p=>bounds.extend([p.lng,p.lat]));
-    map.fitBounds(bounds,{padding:{top:60,bottom:200,left:60,right:60},maxZoom:14,duration:1300});
+    const avgLng=fl.reduce((s,p)=>s+p.lng,0)/fl.length;
+    const avgLat=fl.reduce((s,p)=>s+p.lat,0)/fl.length;
+    map.flyTo({center:[avgLng,avgLat],zoom:13.5,pitch:0,bearing:0,duration:1400,essential:true});
   }
   function updateCarousel(fl){
     if(!carouselEl)return;
