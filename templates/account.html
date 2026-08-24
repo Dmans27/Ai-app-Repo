@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Account · Local AI</title>
+  <title>Saved · Local AI</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
   <style>
     /* Allow scroll on account page even if sticky-nav CSS locks body */
     body.page-account{overflow-y:auto !important;height:auto !important;background:#f5f5f7 !important}
@@ -14,176 +14,47 @@
     body.page-account .mobile-screen{height:auto !important;overflow:visible !important;background:#f5f5f7 !important}
     body.page-account .app-main,body.page-account .mobile-screen__body,body.page-account .acct-wrap{background:#f5f5f7 !important}
 
-    .acct-hero{display:flex;align-items:center;gap:16px;padding:20px 16px 16px}
-    .acct-avatar-form{flex-shrink:0;margin:0;padding:0}
-    .acct-avatar-label{position:relative;display:block;width:72px;height:72px;border-radius:50%;overflow:hidden;cursor:pointer;background:rgba(16,163,127,0.18);border:2px solid rgba(157,232,200,0.28);transition:border-color 0.18s}
-    .acct-avatar-label:hover{border-color:rgba(157,232,200,0.6)}
-    .acct-avatar-label img,.acct-avatar-fallback{width:100%;height:100%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#7ee2bf}
-    .acct-avatar-edit{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#10a37f;color:#1a1a1a;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #050505;pointer-events:none}
-    .acct-profile-info{flex:1;min-width:0}
-    .acct-profile-name{font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:-0.03em;line-height:1.1;margin:0 0 2px}
-    .acct-profile-username{font-size:13px;color:#7ee2bf;font-weight:600;margin:0 0 4px}
-    .acct-profile-city{font-size:13px;color:rgba(0,0,0,0.45);margin:0 0 10px}
-    .acct-profile-btns{display:flex;gap:8px}
-    .acct-btn{height:34px;padding:0 14px;border-radius:999px;border:none;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:all 0.15s}
-    .acct-btn:active{transform:scale(0.95)}
-    .acct-btn--primary{background:#10a37f;color:#1a1a1a}
-    .acct-btn--primary:hover{background:#0d8a6c}
-    .acct-btn--ghost{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.65);border:0.5px solid rgba(0,0,0,0.1)}
-    .acct-btn--ghost:hover{background:rgba(0,0,0,0.08);color:#1a1a1a}
-    .acct-stats{display:flex;gap:8px;padding:0 16px 16px}
-    .acct-stat{flex:1;background:rgba(0,0,0,0.04);border:0.5px solid rgba(0,0,0,0.08);border-radius:14px;padding:11px 8px;display:flex;flex-direction:column;align-items:center;text-decoration:none;transition:background 0.15s}
-    .acct-stat--cta{background:rgba(16,163,127,0.1);border-color:rgba(16,163,127,0.28);cursor:pointer;justify-content:center}
-    .acct-stat--cta:hover{background:rgba(16,163,127,0.18)}
-    .acct-stat__num{font-size:22px;font-weight:900;color:#1a1a1a;line-height:1;font-variant-numeric:tabular-nums}
-    .acct-stat__lbl{font-size:10px;color:rgba(0,0,0,0.4);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
-    .acct-stat--cta .acct-stat__lbl{font-size:13px;font-weight:800;color:#7ee2bf;margin:0;text-transform:none;letter-spacing:0}
-    .acct-notif-banner{margin:0 16px 14px;padding:11px 14px;background:rgba(16,163,127,0.08);border:0.5px solid rgba(16,163,127,0.28);border-radius:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.15s}
-    .acct-notif-banner:hover{background:rgba(16,163,127,0.14)}
-    .acct-notif-banner__left{display:flex;align-items:center;gap:9px}
-    .acct-notif-live-dot{width:8px;height:8px;border-radius:50%;background:#10a37f;flex-shrink:0;animation:liveDocPulse 2.2s ease-in-out infinite}
-    @keyframes liveDocPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
-    .acct-notif-banner__text{font-size:13px;font-weight:700;color:#7ee2bf}
-    .acct-notif-banner__badge{width:22px;height:22px;border-radius:50%;background:#10a37f;color:#1a1a1a;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
-    .notifications-panel{display:none;margin:-6px 16px 14px;padding:14px;background:rgba(0,0,0,0.03);border:0.5px solid rgba(0,0,0,0.07);border-top:none;border-radius:0 0 14px 14px}
-    .notifications-panel.is-open{display:block}
-    .acct-header-icon-wrap{position:relative;display:inline-flex}
-    .acct-bell-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#10a37f;border:1.5px solid #ffffff;pointer-events:none}
-    .acct-map-card{margin:0 16px 16px;border-radius:20px;overflow:hidden;border:0.5px solid rgba(0,0,0,0.08);background:#111214}
-    .acct-map-card .account-map{width:100%;height:210px;min-height:0;border-radius:0}
-    .acct-map-chips{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:10px 12px;border-top:0.5px solid rgba(255,255,255,0.07)}
-    .acct-map-chips::-webkit-scrollbar{display:none}
-    .acct-map-chip{flex-shrink:0;height:28px;padding:0 11px;border-radius:999px;font-size:11.5px;font-weight:600;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);cursor:pointer;white-space:nowrap;transition:all 0.15s}
-    .acct-map-chip:hover{background:rgba(255,255,255,0.09);color:rgba(255,255,255,0.85)}
-    .acct-map-chip.is-active{background:rgba(16,163,127,0.18);border-color:rgba(16,163,127,0.42);color:#7ee2bf}
-    .acct-map-chip-divider{color:rgba(0,0,0,0.2);font-size:13px;flex-shrink:0;padding:0 2px;pointer-events:none}
-    .acct-section-header{display:flex;align-items:center;justify-content:space-between;padding:4px 16px 10px}
-    .acct-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(0,0,0,0.35)}
-    .acct-section-action{font-size:13px;font-weight:700;color:#7ee2bf;text-decoration:none}
-    .acct-section-action:hover{opacity:0.75}
-    .acct-lists-stack{display:flex;flex-direction:column;gap:12px}
-    .acct-list-card{margin:0 16px;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:20px;overflow:hidden;transition:border-color 0.18s}
-    .acct-list-card:hover{border-color:rgba(157,232,200,0.2)}
-    .acct-list-card__head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 14px 10px}
-    .acct-list-card__name{font-size:17px;font-weight:900;color:#1a1a1a;letter-spacing:-0.025em;line-height:1.15;margin:0 0 3px}
-    .acct-list-card__meta{font-size:12px;color:rgba(0,0,0,0.4);margin:0}
-    .acct-list-badge{flex-shrink:0;height:24px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;margin-top:2px;background:rgba(16,163,127,0.14);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.3)}
-    .acct-list-badge--private{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.45);border-color:rgba(255,255,255,0.1)}
-    .acct-thumb-strip{display:flex;gap:8px;padding:0 14px 14px;overflow-x:auto;scrollbar-width:none}
-    .acct-thumb-strip::-webkit-scrollbar{display:none}
-    .acct-place-thumb{flex-shrink:0;width:92px;background:rgba(0,0,0,0.04);border:0.5px solid rgba(0,0,0,0.08);border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;transition:border-color 0.15s,transform 0.15s}
-    .acct-place-thumb:hover{border-color:rgba(0,0,0,0.15);transform:translateY(-2px)}
-    .acct-place-thumb:active{transform:scale(0.95)}
-    .acct-place-thumb__img{width:100%;height:62px;overflow:hidden;background:rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:center}
-    .acct-place-thumb__img img{width:100%;height:100%;object-fit:cover;display:block}
-    .acct-place-thumb__emoji{font-size:22px}
-    .acct-place-thumb__body{padding:7px 8px 8px}
-    .acct-place-thumb__name{font-size:11px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
-    .acct-place-thumb__cat{font-size:10px;color:rgba(0,0,0,0.4);margin-top:1px;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .acct-place-thumb--add{border-style:dashed;border-color:rgba(255,255,255,0.12);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px;gap:4px}
-    .acct-place-thumb--add:hover{border-color:rgba(157,232,200,0.3);background:rgba(16,163,127,0.06)}
-    .acct-place-thumb--add span:first-child{font-size:18px;color:rgba(0,0,0,0.3);line-height:1}
-    .acct-place-thumb--add span:last-child{font-size:10px;font-weight:700;color:rgba(0,0,0,0.35)}
-    .acct-list-empty{padding:0 14px 14px;font-size:13px;color:rgba(0,0,0,0.4)}
-    .acct-list-empty a{color:#7ee2bf;font-weight:700;text-decoration:none}
-    .acct-list-card__foot{border-top:0.5px solid rgba(255,255,255,0.07);padding:10px 14px;display:flex;gap:8px}
-    .acct-foot-btn{height:30px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(255,255,255,0.65);font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;transition:all 0.15s}
-    .acct-foot-btn:hover{background:rgba(255,255,255,0.11);color:#1a1a1a}
-    .acct-foot-btn:active{transform:scale(0.95)}
-    .acct-foot-btn--share{background:rgba(16,163,127,0.1);border-color:rgba(16,163,127,0.3);color:#7ee2bf}
-    .acct-foot-btn--share:hover{background:rgba(16,163,127,0.18)}
-    .acct-info-panel{margin:20px 16px 40px}
-
-    /* FRIENDS */
-    .acct-friends-section{margin:0 16px 24px}
-    .friends-add-bar{display:flex;gap:8px;margin-bottom:14px;background:rgba(0,0,0,0.04);border:0.5px solid rgba(255,255,255,0.09);border-radius:16px;padding:8px 8px 8px 14px;transition:border-color 0.18s}
-    .friends-add-bar:focus-within{border-color:rgba(16,163,127,0.45);box-shadow:0 0 0 3px rgba(16,163,127,0.07)}
-    .friends-add-input{flex:1;background:none;border:none;outline:none;color:#1a1a1a;font-size:14px;padding:4px 0}
-    .friends-add-input::placeholder{color:rgba(0,0,0,0.3)}
-    .friends-add-btn{height:34px;padding:0 14px;border:none;border-radius:10px;background:#10a37f;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;transition:background 0.15s;white-space:nowrap}
-    .friends-add-btn:hover{background:#0d8a6c}
-    .friends-add-btn:active{transform:scale(0.95)}
-    .friends-search-results{background:#ffffff;border:0.5px solid rgba(0,0,0,0.1);border-radius:16px;overflow:hidden;margin-bottom:14px;display:none}
-    .friends-search-results.is-open{display:block}
-    .friends-search-result{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:0.5px solid rgba(0,0,0,0.06);transition:background 0.15s}
-    .friends-search-result:last-child{border-bottom:none}
-    .friends-search-result:hover{background:rgba(0,0,0,0.03)}
-    .friends-result-avatar{width:36px;height:36px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
-    .friends-result-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .friends-result-info{flex:1;min-width:0}
-    .friends-result-name{font-size:14px;font-weight:700;color:#1a1a1a}
-    .friends-result-email{font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px}
-    .friends-result-action{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
-    .friends-result-action--add{background:rgba(16,163,127,0.15);color:#7ee2bf;border:0.5px solid rgba(16,163,127,0.35)}
-    .friends-result-action--add:hover{background:rgba(16,163,127,0.25)}
-    .friends-result-action--pending,.friends-result-action--friends{background:rgba(0,0,0,0.05);color:rgba(255,255,255,0.42);border:0.5px solid rgba(0,0,0,0.1);cursor:default}
-    .friends-pending-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(245,179,1,0.08);border:0.5px solid rgba(245,179,1,0.28);border-radius:14px;margin-bottom:12px;cursor:pointer;transition:background 0.15s}
-    .friends-pending-banner:hover{background:rgba(245,179,1,0.14)}
-    .friends-pending-dot{width:8px;height:8px;border-radius:50%;background:#f5b301;flex-shrink:0}
-    .friends-pending-text{flex:1;font-size:13px;font-weight:700;color:#f5d87a}
-    .friends-pending-count{width:22px;height:22px;border-radius:50%;background:#f5b301;color:#07110d;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
-    .friends-pending-panel{display:none;background:rgba(0,0,0,0.03);border:0.5px solid rgba(0,0,0,0.07);border-radius:14px;overflow:hidden;margin-bottom:12px}
-    .friends-pending-panel.is-open{display:block}
-    .friends-list{display:block;flex-direction:column;gap:8px}
-    .friend-row{display:flex;align-items:center;gap:12px;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:12px 14px;transition:border-color 0.15s}
-    .friend-row:hover{border-color:rgba(0,0,0,0.13)}
-    .friend-avatar{width:40px;height:40px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.25);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
-    .friend-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .friend-info{flex:1;min-width:0}
-    .friend-name{font-size:14px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .friend-meta{font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px}
-    .friend-actions{display:flex;gap:6px;flex-shrink:0}
-    .friend-action-btn{height:28px;padding:0 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.55);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s}
-    .friend-action-btn:hover{background:rgba(255,255,255,0.11);color:#1a1a1a}
-    .friend-action-btn--accept{background:rgba(16,163,127,0.15);border-color:rgba(16,163,127,0.35);color:#7ee2bf}
-    .friend-action-btn--accept:hover{background:rgba(16,163,127,0.25)}
-    .friend-action-btn--decline{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);color:#f87171}
-    .friend-action-btn--decline:hover{background:rgba(239,68,68,0.18)}
-    .friends-empty{text-align:center;padding:24px 16px;color:rgba(0,0,0,0.35);font-size:13px}
-    .friends-empty-icon{font-size:32px;margin-bottom:10px;opacity:0.45}
-    .friends-loading{text-align:center;padding:20px;color:rgba(0,0,0,0.32);font-size:13px}
-
-    /* SHARE MODAL V2 */
-    .share-modal-v2[hidden]{display:none !important}
-    .share-modal-v2{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center}
-    .share-modal-v2__backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.58);backdrop-filter:blur(5px)}
-    .share-modal-v2__panel{position:relative;z-index:1;width:min(560px,calc(100vw - 16px));background:#ffffff;border:0.5px solid rgba(0,0,0,0.1);border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:85dvh;overflow-y:auto;animation:shareSlideUp 0.28s cubic-bezier(0.22,1,0.36,1) both}
-    @keyframes shareSlideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
-    .share-modal-v2__handle-wrap{display:flex;justify-content:center;margin-bottom:16px}
-    .share-modal-v2__handle{width:36px;height:4px;background:rgba(0,0,0,0.12);border-radius:2px}
-    .share-modal-v2__header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-    .share-modal-v2__title{font-size:17px;font-weight:800;color:#1a1a1a;letter-spacing:-0.02em}
-    .share-modal-v2__close{width:34px;height:34px;border:none;border-radius:10px;background:rgba(0,0,0,0.06);color:#1a1a1a;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-    .share-modal-v2__close:hover{background:rgba(255,255,255,0.13)}
-    .share-modal-v2__list-name{font-size:13px;color:rgba(0,0,0,0.45);margin-bottom:18px}
-    .share-tabs{display:flex;gap:4px;padding:2px;background:rgba(0,0,0,0.04);border-radius:12px;margin-bottom:16px}
-    .share-tab{flex:1;height:34px;border:none;border-radius:10px;background:transparent;color:rgba(0,0,0,0.45);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s}
-    .share-tab.is-active{background:#1a1a1a;color:#ffffff}
-    .share-tab-panel{display:none}
-    .share-tab-panel.is-active{display:block}
-    .share-friend-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)}
-    .share-friend-row:last-child{border-bottom:none}
-    .share-friend-avatar{width:36px;height:36px;border-radius:50%;background:rgba(16,163,127,0.15);border:1px solid rgba(16,163,127,0.22);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#7ee2bf;flex-shrink:0;overflow:hidden}
-    .share-friend-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .share-friend-name{flex:1;font-size:14px;font-weight:700;color:#1a1a1a;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .share-friend-btn{flex-shrink:0;height:28px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(16,163,127,0.35);background:rgba(16,163,127,0.12);color:#7ee2bf;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
-    .share-friend-btn:hover{background:rgba(16,163,127,0.22)}
-    .share-friend-btn:active{transform:scale(0.95)}
-    .share-friend-btn--sent{background:rgba(0,0,0,0.05);border-color:rgba(255,255,255,0.1);color:rgba(0,0,0,0.45);cursor:default}
-    .share-no-friends{text-align:center;padding:20px;color:rgba(0,0,0,0.35);font-size:13px}
-    .share-search-input{width:100%;height:42px;padding:0 14px;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;background:rgba(0,0,0,0.04);color:#1a1a1a;font-size:14px;outline:none;transition:border-color 0.18s;margin-bottom:12px;box-sizing:border-box}
-    .share-search-input:focus{border-color:rgba(16,163,127,0.45)}
-    .share-search-input::placeholder{color:rgba(0,0,0,0.3)}
-    .share-user-results-v2{display:flex;flex-direction:column;max-height:260px;overflow-y:auto}
-    .share-user-row-v2{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);cursor:pointer;transition:background 0.15s;border-radius:10px}
-    .share-user-row-v2:last-child{border-bottom:none}
-    .share-user-row-v2 input[type="radio"]{display:none}
-    .share-user-check-v2{width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;color:transparent;font-size:13px;flex-shrink:0;transition:all 0.15s}
-    .share-user-name-v2{flex:1;font-size:14px;font-weight:600;color:#1a1a1a}
-    .share-submit-btn{width:100%;height:46px;border-radius:14px;border:none;background:#10a37f;color:#1a1a1a;font-size:15px;font-weight:800;cursor:pointer;margin-top:14px;transition:background 0.15s,transform 0.1s}
-    .share-submit-btn:hover{background:#0d8a6c}
-    .share-submit-btn:active{transform:scale(0.97)}
+    .acct-map-card{position:relative;margin:10px -40px 24px;overflow:hidden;border:none;background:#f5f5f7;}
+    .acct-map-card .account-map{width:100%;height:480px;min-height:0;border-radius:0;border:none}
+    .acct-map-carousel{display:none;position:absolute;left:0;right:0;bottom:16px;gap:10px;padding:0 16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;z-index:5}
+    .acct-map-carousel::-webkit-scrollbar{display:none}
+    .acct-map-card-item{scroll-snap-align:center;flex-shrink:0;width:220px;display:flex;gap:10px;padding:10px;background:rgba(20,20,22,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;cursor:pointer;transition:border-color 0.15s,transform 0.15s;color:#fff}
+    .acct-map-card-item:hover{border-color:rgba(255,255,255,0.22)}
+    .acct-map-card-item.is-active{border-color:rgba(126,226,191,0.55);transform:translateY(-3px)}
+    .acct-map-card-item__img{width:48px;height:48px;flex-shrink:0;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:18px}
+    .acct-map-card-item__img img{width:100%;height:100%;object-fit:cover;display:block}
+    .acct-map-card-item__body{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px}
+    .acct-map-card-item__name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-map-card-item__meta{font-size:11.5px;color:rgba(255,255,255,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-map-chips{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:0 16px 16px;background:#f5f5f7;position:relative;overflow:visible}
+    .acct-filter-dropdown{position:relative;flex-shrink:0}
+    .acct-filter-pill{height:32px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.12);background:#ffffff;color:rgba(0,0,0,0.65);font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.15s;max-width:160px}
+    .acct-filter-pill__label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .acct-filter-pill__caret{font-size:9px;opacity:0.5;flex-shrink:0}
+    .acct-filter-pill:hover{border-color:rgba(16,163,127,0.4)}
+    .acct-filter-pill.has-value{background:rgba(16,163,127,0.12);border-color:rgba(16,163,127,0.42);color:#0f6e56}
+    .acct-filter-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:170px;max-height:220px;overflow-y:auto;background:#ffffff;border:0.5px solid rgba(0,0,0,0.1);border-radius:14px;box-shadow:0 16px 32px -10px rgba(0,0,0,0.28);padding:6px;display:none;flex-direction:column;gap:2px;z-index:20}
+    .acct-filter-menu.is-open{display:flex}
+    .acct-filter-option{text-align:left;height:32px;padding:0 10px;border-radius:8px;border:none;background:transparent;color:rgba(0,0,0,0.65);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+    .acct-filter-option:hover{background:rgba(0,0,0,0.05)}
+    .acct-filter-option.is-active{background:rgba(16,163,127,0.14);color:#0f6e56}
     @media(min-width:1025px){.mobile-tabbar{display:none !important}}
+
+    /* MAPBOX CUSTOMIZATIONS */
+    .acct-map-pin{cursor:pointer;transform-origin:bottom center;transition:transform 0.15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45))}
+    .acct-map-pin:hover{transform:scale(1.15)}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-content{background:#16181b;color:#f2f2f2;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-tip{border-top-color:#16181b;border-bottom-color:#16181b}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.5);font-size:16px;padding:2px 6px}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button:hover{color:#fff;background:none}
+    .acct-map-popup__head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+    .acct-map-popup__dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .acct-map-popup__name{font-size:14px;font-weight:800;color:#ffffff;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-map-popup__cat{font-size:11px;color:#7ee2bf;text-transform:capitalize;margin:0 0 4px}
+    .acct-map-popup__addr{font-size:12px;color:rgba(255,255,255,0.55);margin:0 0 10px;max-width:210px}
+    .acct-map-popup__actions{display:flex;gap:6px}
+    .acct-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.18);border:0.5px solid rgba(16,163,127,0.4);color:#7ee2bf;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
+    .acct-map-popup__btn:hover{background:rgba(16,163,127,0.3)}
   </style>
 </head>
 <body class="app-body page-account">
@@ -195,7 +66,7 @@
         <div class="app-brand__title">Local AI</div>
         <div class="app-brand__subtitle">Recommendations near you</div>
       </div>
-      <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">
+      <a href="{{ url_for('account_profile') }}" class="app-sidebar__account" aria-label="Account">
         {% if user.profile_image_url %}<img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}{{ (user.name or user.email or "U")[0]|upper }}{% endif %}
       </a>
     </div>
@@ -204,14 +75,14 @@
       <a href="/" class="app-sidebar__link">AI Search</a>
       <a href="/discover" class="app-sidebar__link">Discover</a>
       <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
-      <a href="{{ url_for('account') }}" class="app-sidebar__link is-active">Account</a>
+      <a href="{{ url_for('account') }}" class="app-sidebar__link is-active">Saved</a>
       <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
     </nav>
     <div class="app-sidebar__section-label">Account</div>
     <div class="app-sidebar__footer">
       <a href="/" class="app-sidebar__footer-link">Home</a>
       <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
-      <a href="{{ url_for('account') }}" class="app-sidebar__footer-link is-active">Account</a>
+      <a href="{{ url_for('account_profile') }}" class="app-sidebar__footer-link">Account</a>
       <form method="post" action="{{ url_for('logout') }}"><button type="submit" class="app-sidebar__footer-button">Log out</button></form>
     </div>
   </aside>
@@ -227,14 +98,14 @@
         <a href="/" class="mobile-drawer__link">AI Search</a>
         <a href="/discover" class="mobile-drawer__link">Discover</a>
         <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
-        <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active">Account</a>
+        <a href="{{ url_for('account') }}" class="mobile-drawer__link is-active">Saved</a>
       </nav>
       <div class="mobile-drawer__section-label">Account</div>
       <div class="mobile-drawer__footer">
         <a href="/" class="mobile-drawer__footer-link">Home</a>
         <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link is-active">Account</a>
+          <a href="{{ url_for('account_profile') }}" class="mobile-drawer__footer-link">Account</a>
           <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
           <form method="post" action="{{ url_for('logout') }}"><button type="submit" class="mobile-drawer__footer-button">Log out</button></form>
         {% else %}
@@ -249,16 +120,12 @@
       <header class="mobile-app-header">
         <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
         <div class="mobile-app-header__center">
-          <div class="mobile-app-header__title">My Account</div>
-          <div class="mobile-app-header__subtitle">Local AI</div>
+          <div class="mobile-app-header__title">Local AI</div>
+          <div class="mobile-app-header__subtitle">Saved</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           {% if current_user.is_authenticated %}
-            <div class="acct-header-icon-wrap">
-              <button type="button" class="mobile-app-header__icon" id="notifications-toggle" aria-label="Notifications">🔔</button>
-              {% if shared_with_me %}<span class="acct-bell-dot" id="notification-badge"></span>{% endif %}
-            </div>
-            <a href="{{ url_for('settings') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Settings"></a>
+            <a href="{{ url_for('account_profile') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Account">👤</a>
           {% else %}
             <a href="{{ url_for('login') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Log in">👤</a>
           {% endif %}
@@ -269,284 +136,64 @@
         <div class="account-desktop-wrap">
           <div class="account-ios-shell">
 
-            {% if shared_with_me %}
-            <div class="acct-notif-banner" id="notifications-panel-trigger">
-              <div class="acct-notif-banner__left">
-                <span class="acct-notif-live-dot"></span>
-                <span class="acct-notif-banner__text">{{ shared_with_me|length }} new shared list{{ 's' if shared_with_me|length != 1 else '' }}</span>
-              </div>
-              <span class="acct-notif-banner__badge">{{ shared_with_me|length }}</span>
-            </div>
-            <section class="notifications-panel" id="notifications-panel">
-              {% for shared in shared_with_me %}
-              <article class="notification-card">
-                <p><strong>{{ shared.sender_name or shared.sender_email or "Someone" }}</strong> shared a list with you</p>
-                <h3>{{ shared.title }}</h3>
-                <div class="notification-actions">
-                  <a href="{{ url_for('view_public_list', slug=shared.slug) }}">View list</a>
-                  <form method="post" action="{{ url_for('accept_shared_list', shared_id=shared.id) }}"><button type="submit">Save</button></form>
-                </div>
-              </article>
-              {% endfor %}
-            </section>
-            {% endif %}
-
-            <section class="acct-hero">
-              <form method="post" action="{{ url_for('update_profile_photo') }}" enctype="multipart/form-data" class="acct-avatar-form">
-                <label class="acct-avatar-label" for="account-profile-photo" aria-label="Change profile photo">
-                  {% if user.profile_image_url %}<img src="{{ user.profile_image_url }}" alt="{{ user.name or user.email }}">{% else %}<span class="acct-avatar-fallback">{{ (user.name or user.email or "U")[0]|upper }}</span>{% endif %}
-                  <span class="acct-avatar-edit" aria-hidden="true">✎</span>
-                </label>
-                <input id="account-profile-photo" type="file" name="profile_photo" accept="image/*" hidden onchange="this.form.submit()">
-              </form>
-              <div class="acct-profile-info">
-                <h1 class="acct-profile-name">{{ user.name or "Your Profile" }}</h1>
-                {% if user.username %}<p class="acct-profile-username">@{{ user.username }}</p>{% endif %}
-                <p class="acct-profile-city">{% if user.home_city %}📍 {{ user.home_city }}{% else %}<span style="opacity:.45;">Add your city</span>{% endif %}</p>
-                <div class="acct-profile-btns">
-                  <a href="{{ url_for('settings') }}" class="acct-btn acct-btn--primary">Edit profile</a>
-                  <a href="{{ url_for('messages_with_user', user_id=user.id) }}" class="acct-btn acct-btn--ghost">💬</a>
+            <div class="acct-map-chips" id="acct-map-chips">
+              <div class="acct-filter-dropdown" data-filter-row="category">
+                <button type="button" class="acct-filter-pill" data-pill="category">
+                  <span class="acct-filter-pill__label" data-pill-label="category">All categories</span>
+                  <span class="acct-filter-pill__caret">▾</span>
+                </button>
+                <div class="acct-filter-menu" data-menu="category">
+                  <button class="acct-filter-option is-active" data-cat="all" type="button">All</button>
+                  <button class="acct-filter-option" data-cat="coffee" type="button">☕ Coffee</button>
+                  <button class="acct-filter-option" data-cat="restaurant" type="button">🍽 Restaurants</button>
+                  <button class="acct-filter-option" data-cat="bar" type="button">🍸 Bars</button>
+                  <button class="acct-filter-option" data-cat="wine" type="button">🍷 Wine</button>
+                  <button class="acct-filter-option" data-cat="rooftop" type="button">🌃 Rooftops</button>
+                  <button class="acct-filter-option" data-cat="shopping" type="button">🛍 Shopping</button>
                 </div>
               </div>
-            </section>
-
-            <div class="acct-stats">
-              <div class="acct-stat"><span class="acct-stat__num">{{ lists|length }}</span><span class="acct-stat__lbl">Lists</span></div>
-              <div class="acct-stat"><span class="acct-stat__num">{{ lists | map(attribute='places') | map('length') | sum }}</span><span class="acct-stat__lbl">Places</span></div>
-              <div class="acct-stat"><span class="acct-stat__num" id="friends-count">–</span><span class="acct-stat__lbl">Friends</span></div>
-              <a href="{{ url_for('create_list') }}" class="acct-stat acct-stat--cta"><span class="acct-stat__lbl">+ New</span></a>
+              <div class="acct-filter-dropdown" data-filter-row="location">
+                <button type="button" class="acct-filter-pill" data-pill="location">
+                  <span class="acct-filter-pill__label" data-pill-label="location">All cities</span>
+                  <span class="acct-filter-pill__caret">▾</span>
+                </button>
+                <div class="acct-filter-menu" data-menu="location">
+                  <button class="acct-filter-option is-active" data-loc="all" type="button">All cities</button>
+                  <span id="acct-loc-chips" style="display:contents;"></span>
+                </div>
+              </div>
+              <div class="acct-filter-dropdown" data-filter-row="rating">
+                <button type="button" class="acct-filter-pill" data-pill="rating">
+                  <span class="acct-filter-pill__label" data-pill-label="rating">All ratings</span>
+                  <span class="acct-filter-pill__caret">▾</span>
+                </button>
+                <div class="acct-filter-menu" data-menu="rating">
+                  <button class="acct-filter-option is-active" data-rating="0" type="button">All ratings</button>
+                  <button class="acct-filter-option" data-rating="3" type="button">3.0+ ★</button>
+                  <button class="acct-filter-option" data-rating="3.5" type="button">3.5+ ★</button>
+                  <button class="acct-filter-option" data-rating="4" type="button">4.0+ ★</button>
+                  <button class="acct-filter-option" data-rating="4.5" type="button">4.5+ ★</button>
+                </div>
+              </div>
             </div>
 
             <section class="acct-map-card">
               <div id="account-map" class="account-map"></div>
-              <div class="acct-map-chips" id="acct-map-chips">
-                <button class="acct-map-chip is-active" data-cat="all" type="button">All</button>
-                <button class="acct-map-chip" data-cat="coffee" type="button">☕ Coffee</button>
-                <button class="acct-map-chip" data-cat="restaurant" type="button">🍽 Restaurants</button>
-                <button class="acct-map-chip" data-cat="bar" type="button">🍸 Bars</button>
-                <button class="acct-map-chip" data-cat="wine" type="button">🍷 Wine</button>
-                <button class="acct-map-chip" data-cat="rooftop" type="button">🌃 Rooftops</button>
-                <button class="acct-map-chip" data-cat="shopping" type="button">🛍 Shopping</button>
-                <span class="acct-map-chip-divider">|</span>
-                <button class="acct-map-chip is-active" data-loc="all" type="button">All cities</button>
-                <span id="acct-loc-chips" style="display:contents;"></span>
-              </div>
-            </section>
-
-            {% if lists %}
-            <div class="acct-section-header">
-              <span class="acct-section-lbl">Your lists</span>
-              <a href="{{ url_for('create_list') }}" class="acct-section-action">+ New list</a>
-            </div>
-            <div class="acct-lists-stack">
-              {% for saved_list in lists %}
-              <div class="acct-list-card">
-                <div class="acct-list-card__head">
-                  <div>
-                    <h2 class="acct-list-card__name">{{ saved_list.title }}</h2>
-                    <p class="acct-list-card__meta">{{ saved_list.places|length }} place{{ 's' if saved_list.places|length != 1 else '' }}</p>
-                  </div>
-                  <span class="acct-list-badge {% if not saved_list.is_public %}acct-list-badge--private{% endif %}">{{ "Public" if saved_list.is_public else "Private" }}</span>
-                </div>
-                {% if saved_list.places %}
-                <div class="acct-thumb-strip">
-                  {% for place in saved_list.places %}
-                  <article class="acct-place-thumb js-place-popup"
-                    data-slug="{{ place.slug }}"
-                    data-name="{{ place.name }}"
-                    data-category="{{ place.category or 'Local business' }}"
-                    data-address="{{ place.address or '' }}"
-                    data-photo="{{ place.photo_url or '/static/img/default-business.jpg' }}"
-                    data-website="{{ place.website or '' }}"
-                    data-listing-url="{% if place.slug %}{{ url_for('listing_page', slug=place.slug) }}{% endif %}"
-                    data-category-filter="{{ (place.category or '')|lower }}"
-                    data-name-filter="{{ (place.name or '')|lower }}"
-                    data-address-filter="{{ (place.address or '')|lower }}"
-                    data-city-filter="{{ (place.city or '')|lower }}"
-                  >
-                    <div class="acct-place-thumb__img">
-                      {% if place.photo_url %}<img src="{{ place.photo_url }}" alt="{{ place.name }}" loading="lazy">{% else %}<span class="acct-place-thumb__emoji">📍</span>{% endif %}
-                    </div>
-                    <div class="acct-place-thumb__body">
-                      <div class="acct-place-thumb__name">{{ place.name }}</div>
-                      <div class="acct-place-thumb__cat">{{ place.category or '' }}</div>
-                    </div>
-                  </article>
-                  {% endfor %}
-                  <a href="{{ url_for('discover_page') }}" class="acct-place-thumb acct-place-thumb--add"><span>+</span><span>Add place</span></a>
-                </div>
-                {% else %}
-                <div class="acct-list-empty">No saved places yet. <a href="{{ url_for('discover_page') }}">Browse places →</a></div>
-                {% endif %}
-                <div class="acct-list-card__foot">
-                  <button type="button" class="acct-foot-btn acct-foot-btn--share js-open-share-v2" data-list-id="{{ saved_list.id }}" data-list-title="{{ saved_list.title }}">⇧ Share</button>
-                  {% if saved_list.is_public %}<button type="button" class="acct-foot-btn" onclick="openQrModal('{{ saved_list.slug }}','{{ saved_list.title }}')">QR Code</button>{% endif %}
-                  <a href="{{ url_for('settings') }}" class="acct-foot-btn">Edit</a>
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-            {% else %}
-            <section class="account-ios-empty">
-              <h2>No lists yet</h2>
-              <p>Create your first list to start saving favorite places.</p>
-              <a href="{{ url_for('create_list') }}" class="acct-btn acct-btn--primary" style="display:inline-flex;margin-top:14px;">+ Create a list</a>
-            </section>
-            {% endif %}
-
-            <!-- FRIENDS SECTION -->
-            <div class="acct-section-header" style="margin-top:24px;">
-              <span class="acct-section-lbl">Friends</span>
-            </div>
-            <div class="acct-friends-section">
-              <div class="friends-add-bar">
-                <input id="friends-search-input" class="friends-add-input" type="search" placeholder="Search by @username or name…" autocomplete="off">
-                <button class="friends-add-btn" type="button" id="friends-search-btn">Search</button>
-              </div>
-              <div class="friends-search-results" id="friends-search-results"></div>
-              <div class="friends-pending-banner" id="friends-pending-banner" style="display:none;" onclick="togglePendingPanel()">
-                <span class="friends-pending-dot"></span>
-                <span class="friends-pending-text" id="friends-pending-text">Friend requests</span>
-                <span class="friends-pending-count" id="friends-pending-count">0</span>
-              </div>
-              <div class="friends-pending-panel" id="friends-pending-panel"></div>
-              <div class="friends-list" id="friends-list"><div class="friends-loading">Loading friends…</div></div>
-            </div>
-
-            <!-- Account info panel — FIXED: shows username not email -->
-            <section class="account-ios-account-panel acct-info-panel" style="display: none;">
-              <h2>Your account</h2>
-              <p><strong>Name:</strong> {{ user.name or "Not added yet" }}</p>
-              {% if user.username %}
-              <p><strong>Username:</strong> @{{ user.username }}</p>
-              {% endif %}
-              <p><strong>Email:</strong> {{ user.email }}</p>
-              <form method="post" action="{{ url_for('logout') }}" style="margin-top:14px;"><button type="submit" class="acct-foot-btn">Log out</button></form>
+              <div class="acct-map-carousel" id="acct-map-carousel"></div>
             </section>
 
           </div>
         </div>
       </section>
 
-      <!-- Place popup -->
-      <div class="place-popup" id="place-popup" hidden>
-        <div class="place-popup__backdrop" data-close-place-popup></div>
-        <div class="place-popup__card place-popup__card--large">
-          <button class="place-popup__close" type="button" data-close-place-popup>✕</button>
-          <section class="place-popup__hero">
-            <img id="place-popup-photo" class="place-popup__image" src="" alt="">
-            <div class="place-popup__body">
-              <p id="place-popup-category" class="place-popup__category"></p>
-              <h2 id="place-popup-name"></h2>
-              <p id="place-popup-address" class="place-popup__address"></p>
-              <p id="place-popup-description" class="place-popup__description"></p>
-              <div class="place-popup__actions">
-                <a id="place-popup-website" class="place-popup__btn" target="_blank" rel="noopener">Website</a>
-                <a id="place-popup-directions" class="place-popup__btn" target="_blank" rel="noopener">Directions</a>
-                <a id="place-popup-listing" class="place-popup__btn place-popup__btn--primary">View listing</a>
-              </div>
-            </div>
-          </section>
-          <div class="photo-slider" id="popup-slider">
-            <div class="photo-slider__viewport">
-              <button type="button" class="slider-btn slider-btn--left" data-slider-prev>‹</button>
-              <div class="slider-track" id="popup-slider-track"></div>
-              <button type="button" class="slider-btn slider-btn--right" data-slider-next>›</button>
-            </div>
-          </div>
-          <div class="slider-thumbs" id="popup-slider-thumbs"></div>
-          <section class="place-popup__section place-popup__comments">
-            <h3>Comments</h3>
-            <div id="popup-comments-list" class="place-popup__comments-list"><p class="place-popup__muted">No comments yet. Be the first to leave one.</p></div>
-            <form id="popup-comment-form" class="place-popup__comment-form">
-              <input type="text" name="author_name" placeholder="Your name">
-              <textarea name="body" placeholder="Share your experience or thoughts about this business"></textarea>
-              <button type="submit">Post comment</button>
-            </form>
-          </section>
-        </div>
-      </div>
-
       <nav class="mobile-tabbar">
         <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🏠</span><span class="mobile-tabbar__label">Home</span></a>
         <a href="/discover" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🗺️</span><span class="mobile-tabbar__label">Discover</span></a>
         <a href="/" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">🔎</span><span class="mobile-tabbar__label">Search</span></a>
         <a href="{{ url_for('account') }}" class="mobile-tabbar__item is-active"><span class="mobile-tabbar__icon">📌</span><span class="mobile-tabbar__label">Saved</span></a>
-        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">👤</span><span class="mobile-tabbar__label">Account</span></a>
+        <a href="{{ url_for('account_profile') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item"><span class="mobile-tabbar__icon">👤</span><span class="mobile-tabbar__label">Account</span></a>
       </nav>
     </main>
-  </div>
-</div>
-
-<!-- QR Modal -->
-<div class="qr-modal" id="qrModal">
-  <div class="qr-modal__backdrop" onclick="closeQrModal()"></div>
-  <div class="qr-modal__card">
-    <button class="qr-close" onclick="closeQrModal()">✕</button>
-    <h3 id="qrTitle">Share List</h3>
-    <p>Scan to open this list</p>
-    <img id="qrImage" src="" alt="QR Code">
-    <div class="qr-actions"><button onclick="copyQrLink()">Copy Link</button><button onclick="nativeShareQr()">Share</button></div>
-  </div>
-</div>
-
-<!-- Share Modal V2 -->
-<div class="share-modal-v2" id="share-modal-v2" hidden>
-  <div class="share-modal-v2__backdrop" id="share-modal-v2-backdrop"></div>
-  <div class="share-modal-v2__panel">
-    <div class="share-modal-v2__handle-wrap"><div class="share-modal-v2__handle"></div></div>
-    <div class="share-modal-v2__header">
-      <span class="share-modal-v2__title">Share list</span>
-      <button type="button" class="share-modal-v2__close" id="share-modal-v2-close-btn">✕</button>
-    </div>
-    <p class="share-modal-v2__list-name" id="share-modal-v2-list-name"></p>
-    <div class="share-tabs">
-      <button class="share-tab is-active" data-tab="friends" type="button">👥 Friends</button>
-      <button class="share-tab" data-tab="everyone" type="button">🔍 Search everyone</button>
-    </div>
-    <div class="share-tab-panel is-active" id="share-tab-friends">
-      <div id="share-friends-list"><div class="share-no-friends">Loading friends…</div></div>
-    </div>
-    <div class="share-tab-panel" id="share-tab-everyone">
-      <input type="search" class="share-search-input" id="share-everyone-search" placeholder="Search by name or @username…">
-      <form method="post" id="share-everyone-form">
-        <div class="share-user-results-v2" id="share-everyone-results">
-          {% for user_option in users %}
-            {% if user_option.id != current_user.id %}
-            <label class="share-user-row-v2" data-user-search="{{ (user_option.name or user_option.email or '')|lower }} {{ (user_option.username or '')|lower }}">
-              <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
-              <span class="share-user-check-v2">✓</span>
-              <span class="share-user-name-v2">{{ user_option.name or user_option.email }}{% if user_option.username %} <span style="color:rgba(0,0,0,0.4);font-weight:400;">@{{ user_option.username }}</span>{% endif %}</span>
-            </label>
-            {% endif %}
-          {% endfor %}
-        </div>
-        <button type="submit" class="share-submit-btn">Send list</button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Legacy share modal -->
-<div class="share-user-modal" id="share-user-modal" hidden>
-  <div class="share-user-modal__backdrop" data-close-share-modal></div>
-  <div class="share-user-modal__card">
-    <button type="button" class="share-user-modal__close" data-close-share-modal>✕</button>
-    <h3>Share list</h3>
-    <p id="share-list-title"></p>
-    <input id="share-user-search" class="share-user-search" type="search" placeholder="Search users">
-    <form method="post" id="share-user-form">
-      <div class="share-user-results">
-        {% for user_option in users %}{% if user_option.id != current_user.id %}
-        <label class="share-user-row" data-user-search="{{ (user_option.name or user_option.email or '')|lower }}">
-          <input type="radio" name="recipient_id" value="{{ user_option.id }}" required>
-          <span class="share-user-check">✓</span>
-          <span class="share-user-name">{{ user_option.name or user_option.email }}</span>
-        </label>
-        {% endif %}{% endfor %}
-      </div>
-      <button type="submit" class="share-user-submit">Send list</button>
-    </form>
   </div>
 </div>
 
@@ -563,390 +210,226 @@ document.addEventListener("DOMContentLoaded",function(){
   t?.addEventListener("click",o);c?.addEventListener("click",cl);b?.addEventListener("click",cl);
 });
 
-/* Notifications */
-document.addEventListener("DOMContentLoaded",function(){
-  const bn=document.getElementById("notifications-panel-trigger"),pn=document.getElementById("notifications-panel"),bd=document.getElementById("notification-badge"),bl=document.getElementById("notifications-toggle");
-  function ms(){if(bd)bd.style.display="none";fetch("/notifications/mark-seen",{method:"POST",headers:{"Content-Type":"application/json"}}).catch(()=>{});}
-  function tp(){if(!pn)return;const op=!pn.classList.contains("is-open");pn.classList.toggle("is-open");if(op)ms();}
-  bn?.addEventListener("click",tp);bl?.addEventListener("click",tp);
-});
-
 /* Mapbox */
 document.addEventListener("DOMContentLoaded",function(){
   const mel=document.getElementById("account-map");
   if(!mel||typeof mapboxgl==="undefined")return;
   const token="{{ mapbox_token }}",styleUrl="{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}",places=JSON.parse(document.getElementById("map-data").textContent||"[]");
   if(!token)return;
-  let aC="all",aL="all",mk=[];
+  let aC="all",aL="all",aR=0,mk=[];
+  const carouselEl=document.getElementById("acct-map-carousel");
+  let activeCardIdx=-1,carouselScrollTimer=null;
+
+  function categoryColor(p){
+    const c=[p.category,p.cuisine].join(" ").toLowerCase();
+    if(c.includes("coffee"))return"#C6935A";
+    if(c.includes("bar")||c.includes("cocktail"))return"#B368F7";
+    if(c.includes("wine"))return"#B4436C";
+    if(c.includes("rooftop"))return"#5AC8E8";
+    if(c.includes("shop"))return"#F5B301";
+    if(c.includes("restaurant")||c.includes("food"))return"#E2574C";
+    return"#7ee2bf";
+  }
+  function buildMarkerEl(color){
+    const el=document.createElement("div");
+    el.className="acct-map-pin";
+    el.innerHTML=`<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 1C6.8 1 1 6.7 1 13.7c0 9.6 13 21.3 13 21.3s13-11.7 13-21.3C27 6.7 21.2 1 14 1z" fill="${color}" stroke="#0b0c0d" stroke-width="1.5"/><circle cx="14" cy="13.5" r="5" fill="#0b0c0d" fill-opacity="0.85"/></svg>`;
+    return el;
+  }
+  function popupHtml(p){
+    const dot=categoryColor(p);
+    const rt=pr(p);
+    const dirUrl=p.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`:"";
+    return`<div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div>`;
+  }
+
   function nm(v){return String(v||"").trim().toLowerCase();}
   function ll(p){if(p.city&&p.city.trim())return p.city.trim();const pts=(p.address||"").split(",").map(s=>s.trim());return pts.length>=2?pts[1]:"";}
-  function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p));return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL));}
+  function pr(p){return p.rating!=null&&p.rating!==""?Number(p.rating):null;}
+  function mt(p){const ct=[p.name,p.category,p.cuisine,p.address].join(" ").toLowerCase(),lt=nm(ll(p)),rt=pr(p);return(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))&&(aR===0||(rt!=null&&rt>=aR));}
   function cm(){mk.forEach(m=>m.remove());mk=[];}
   function rn(){
-    cm();const fl=places.filter(mt),bd=new mapboxgl.LngLatBounds();let n=0;
-    fl.forEach(p=>{if(p.lng==null||p.lat==null)return;
-      const m=new mapboxgl.Marker().setLngLat([p.lng,p.lat]).setPopup(new mapboxgl.Popup({offset:18}).setHTML(`<div style="max-width:200px;"><strong style="font-size:14px;">${p.name||""}</strong>${p.category?`<div style="font-size:12px;color:#888;margin-top:2px;">${p.category}</div>`:""}${p.address?`<div style="font-size:12px;color:#aaa;margin-top:4px;">${p.address}</div>`:""}</div>`)).addTo(map);
-      mk.push(m);bd.extend([p.lng,p.lat]);n++;
+    cm();
+    const fl=places.filter(mt).filter(p=>p.lng!=null&&p.lat!=null);
+    fl.forEach(p=>{
+      const m=new mapboxgl.Marker({element:buildMarkerEl(categoryColor(p))})
+        .setLngLat([p.lng,p.lat])
+        .setPopup(new mapboxgl.Popup({offset:24,closeButton:true,className:"acct-map-popup"}).setHTML(popupHtml(p)))
+        .addTo(map);
+      m._place=p;
+      mk.push(m);
     });
-    if(n>1)map.fitBounds(bd,{padding:50,maxZoom:13});else if(n===1)map.flyTo({center:[fl[0].lng,fl[0].lat],zoom:13});
-    document.querySelectorAll(".acct-place-thumb.js-place-popup").forEach(card=>{
-      const ct=[card.dataset.categoryFilter,card.dataset.nameFilter,card.dataset.addressFilter].join(" ").toLowerCase(),lt=nm(card.dataset.cityFilter||card.dataset.addressFilter||"");
-      card.style.display=(aC==="all"||ct.includes(aC))&&(aL==="all"||lt.includes(aL))?"":"none";
+    updateCamera(fl);
+    updateCarousel(fl);
+  }
+  function updateCamera(fl){
+    // "All cities" — pull back out to the overview globe. A specific city
+    // pick flies the map in to a close, street-level view centered on the
+    // matching places. (fitBounds was unreliable here on the globe
+    // projection with small/degenerate boxes, so we just fly to the
+    // average point at a fixed close zoom instead.)
+    if(aL==="all"){
+      map.easeTo({center:dc,zoom:globeZoom,pitch:0,bearing:-8,duration:1100,essential:true});
+      return;
+    }
+    if(!fl.length)return;
+    const avgLng=fl.reduce((s,p)=>s+p.lng,0)/fl.length;
+    const avgLat=fl.reduce((s,p)=>s+p.lat,0)/fl.length;
+    const targetZoom=13.5;
+    map.flyTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:0,bearing:0,duration:1400,essential:true});
+    // Safety net: some globe-projection builds can silently drop the zoom
+    // portion of an animated camera move (center pans but zoom never
+    // changes). If we're still nowhere near the target zoom once the
+    // animation should be done, snap straight there.
+    setTimeout(function(){
+      if(Math.abs(map.getZoom()-targetZoom)>1){
+        map.jumpTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:0,bearing:0});
+      }
+    },1000);
+  }
+  function updateCarousel(fl){
+    if(!carouselEl)return;
+    activeCardIdx=-1;
+    if(aL==="all"||!fl.length){
+      carouselEl.style.display="none";
+      carouselEl.innerHTML="";
+      carouselEl._places=[];
+      return;
+    }
+    carouselEl._places=fl;
+    carouselEl.innerHTML=fl.map((p,i)=>{
+      const rt=pr(p);
+      return`<article class="acct-map-card-item" data-idx="${i}">
+        <div class="acct-map-card-item__img">${p.photo_url?`<img src="${escapeHtml(p.photo_url)}" alt="" loading="lazy">`:`<span>📍</span>`}</div>
+        <div class="acct-map-card-item__body">
+          <div class="acct-map-card-item__name">${escapeHtml(p.name||"")}</div>
+          <div class="acct-map-card-item__meta">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</div>
+        </div>
+      </article>`;
+    }).join("");
+    carouselEl.style.display="flex";
+    carouselEl.scrollLeft=0;
+    // Sync the highlighted card + map center once the cards have laid out.
+    requestAnimationFrame(handleCarouselScroll);
+  }
+  function handleCarouselScroll(){
+    if(!carouselEl)return;
+    const list=carouselEl._places||[];
+    const cards=[...carouselEl.querySelectorAll(".acct-map-card-item")];
+    if(!list.length||!cards.length)return;
+    const center=carouselEl.scrollLeft+carouselEl.clientWidth/2;
+    let closest=0,closestDist=Infinity;
+    cards.forEach((card,i)=>{
+      const cardCenter=card.offsetLeft+card.offsetWidth/2;
+      const dist=Math.abs(cardCenter-center);
+      if(dist<closestDist){closestDist=dist;closest=i;}
+    });
+    if(closest===activeCardIdx)return;
+    activeCardIdx=closest;
+    cards.forEach((c,i)=>c.classList.toggle("is-active",i===closest));
+    const p=list[closest];
+    if(p&&p.lng!=null&&p.lat!=null){
+      map.easeTo({center:[p.lng,p.lat],duration:550});
+    }
+  }
+  function initCarousel(){
+    if(!carouselEl)return;
+    carouselEl.addEventListener("scroll",function(){
+      clearTimeout(carouselScrollTimer);
+      carouselScrollTimer=setTimeout(handleCarouselScroll,110);
+    },{passive:true});
+    carouselEl.addEventListener("click",function(e){
+      const card=e.target.closest(".acct-map-card-item");
+      if(!card)return;
+      card.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
     });
   }
   function blc(){
     const c=document.getElementById("acct-loc-chips");if(!c)return;
     const locs=[...new Set(places.map(ll).filter(Boolean))].sort();
-    c.innerHTML=locs.map(city=>`<button class="acct-map-chip" data-loc="${city.toLowerCase()}" type="button">${city}</button>`).join("");
+    c.innerHTML=locs.map(city=>`<button class="acct-filter-option" data-loc="${city.toLowerCase()}" type="button">${city}</button>`).join("");
+  }
+  function closeAllMenus(except){
+    document.querySelectorAll("#acct-map-chips .acct-filter-menu").forEach(menu=>{if(menu!==except)menu.classList.remove("is-open");});
+  }
+  function wirePill(key,attr,onSelect){
+    const dropdown=document.querySelector(`#acct-map-chips [data-filter-row="${key}"]`);
+    if(!dropdown)return;
+    const pillBtn=dropdown.querySelector("[data-pill]");
+    const pillLabel=dropdown.querySelector("[data-pill-label]");
+    const menu=dropdown.querySelector("[data-menu]");
+    pillBtn.addEventListener("click",function(e){
+      e.stopPropagation();
+      const willOpen=!menu.classList.contains("is-open");
+      closeAllMenus();
+      menu.classList.toggle("is-open",willOpen);
+    });
+    menu.addEventListener("click",function(e){
+      const opt=e.target.closest(`[${attr}]`);
+      if(!opt)return;
+      menu.querySelectorAll(`[${attr}]`).forEach(o=>o.classList.remove("is-active"));
+      opt.classList.add("is-active");
+      pillLabel.textContent=opt.textContent.trim();
+      const val=opt.getAttribute(attr);
+      pillBtn.classList.toggle("has-value",val!=="all"&&val!=="0");
+      menu.classList.remove("is-open");
+      onSelect(opt);
+    });
   }
   function wc(){
-    document.querySelectorAll("#acct-map-chips [data-cat]").forEach(chip=>{chip.addEventListener("click",function(){document.querySelectorAll("#acct-map-chips [data-cat]").forEach(c=>c.classList.remove("is-active"));chip.classList.add("is-active");aC=chip.dataset.cat;rn();});});
-    document.querySelectorAll("#acct-map-chips [data-loc]").forEach(chip=>{chip.addEventListener("click",function(){document.querySelectorAll("#acct-map-chips [data-loc]").forEach(c=>c.classList.remove("is-active"));chip.classList.add("is-active");aL=chip.dataset.loc;rn();});});
+    // Location options are rebuilt each time (blc), so wire them fresh too.
+    wirePill("category","data-cat",opt=>{aC=opt.dataset.cat;rn();});
+    wirePill("location","data-loc",opt=>{aL=opt.dataset.loc;rn();});
+    wirePill("rating","data-rating",opt=>{aR=parseFloat(opt.dataset.rating)||0;rn();});
+    document.addEventListener("click",function(e){
+      if(!e.target.closest("#acct-map-chips"))closeAllMenus();
+    });
   }
   mapboxgl.accessToken=token;
   const dc=places.length?[places[0].lng,places[0].lat]:[-87.6298,41.8781];
-  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:places.length?11:9,projection:"mercator",pitch:0,bearing:0,antialias:true});
+  // Pick a globe zoom that keeps the whole sphere inside the container's
+  // height (globe diameter in px ≈ 512*2^zoom / π) instead of a fixed
+  // value that can crop the top/bottom on short, wide cards.
+  const boxHeight=mel.clientHeight||340;
+  const globeZoom=Math.max(0,Math.log2((boxHeight*0.8*Math.PI)/512));
+  const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:globeZoom,projection:"globe",pitch:0,bearing:-8,antialias:true});
+  // Bias the camera's notion of "center" upward so the globe (and later
+  // the local city view) sits higher in the card instead of dead-center,
+  // which was reading as too low / clipped at the bottom.
+  map.setPadding({top:0,bottom:Math.round(boxHeight*0.05),left:0,right:0});
   map.addControl(new mapboxgl.NavigationControl(),"top-right");
-  blc();wc();map.on("load",rn);
-});
-
-/* Place popup */
-document.addEventListener("DOMContentLoaded",function(){
-  const popup=document.getElementById("place-popup"),photo=document.getElementById("place-popup-photo"),name=document.getElementById("place-popup-name"),category=document.getElementById("place-popup-category"),address=document.getElementById("place-popup-address"),website=document.getElementById("place-popup-website"),directions=document.getElementById("place-popup-directions"),listing=document.getElementById("place-popup-listing"),slider=document.getElementById("popup-slider"),track=document.getElementById("popup-slider-track"),thumbs=document.getElementById("popup-slider-thumbs"),prevBtn=slider?.querySelector("[data-slider-prev]"),nextBtn=slider?.querySelector("[data-slider-next]");
-  let pp=[],ci=0;
-  function rs(i=0){if(!track||!thumbs)return;if(!pp.length){track.innerHTML=`<p class="place-popup__muted">No gallery photos yet.</p>`;thumbs.innerHTML="";if(prevBtn)prevBtn.style.display="none";if(nextBtn)nextBtn.style.display="none";return;}ci=(i+pp.length)%pp.length;if(prevBtn)prevBtn.style.display=pp.length>1?"flex":"none";if(nextBtn)nextBtn.style.display=pp.length>1?"flex":"none";track.innerHTML=`<img src="${pp[ci]}" class="popup-slider__image" alt="">`;thumbs.innerHTML=pp.map((u,j)=>`<button type="button" class="popup-slider__thumb ${j===ci?"is-active":""}" data-thumb="${j}"><img src="${u}" alt=""></button>`).join("");thumbs.querySelectorAll("[data-thumb]").forEach(btn=>{btn.addEventListener("click",()=>rs(Number(btn.dataset.thumb)));});}
-  prevBtn?.addEventListener("click",e=>{e.stopPropagation();rs(ci-1);});
-  nextBtn?.addEventListener("click",e=>{e.stopPropagation();rs(ci+1);});
-  document.querySelectorAll(".js-place-popup").forEach(card=>{
-    card.addEventListener("click",async function(e){
-      if(e.target.closest("a, button, form"))return;
-      const slug=card.dataset.slug;
-      photo.src=card.dataset.photo||"/static/img/default-business.jpg";name.textContent=card.dataset.name||"Local business";category.textContent=card.dataset.category||"Local business";address.textContent=card.dataset.address||"";
-      website.style.display=card.dataset.website?"flex":"none";website.href=card.dataset.website||"#";listing.style.display=card.dataset.listingUrl?"flex":"none";listing.href=card.dataset.listingUrl||"#";directions.href=card.dataset.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.dataset.address)}`:"#";
-      popup.hidden=false;pp=[];ci=0;track.innerHTML=`<p class="place-popup__muted">Loading photos...</p>`;thumbs.innerHTML="";if(prevBtn)prevBtn.style.display="none";if(nextBtn)nextBtn.style.display="none";
-      if(!slug){track.innerHTML=`<p class="place-popup__muted">No directory listing connected yet.</p>`;return;}
-      try{const res=await fetch(`/listing-data/${slug}`),data=await res.json();if(data.photo_url)photo.src=data.photo_url;pp=Array.isArray(data.photos)?data.photos.filter(Boolean):[];rs(0);}catch{track.innerHTML=`<p class="place-popup__muted">Could not load photos.</p>`;}
+  map.on("style.load",function(){
+    map.setFog({
+      color:"rgb(245,245,247)",
+      "high-color":"#f5f5f7",
+      "horizon-blend":0.02,
+      "space-color":"rgb(245,245,247)",
+      "star-intensity":0
     });
   });
-  document.querySelectorAll("[data-close-place-popup]").forEach(el=>{el.addEventListener("click",function(){popup.hidden=true;pp=[];ci=0;if(track)track.innerHTML="";if(thumbs)thumbs.innerHTML="";});});
-});
-</script>
-
-
-<script>
-/* ═══════════════════════════════════════════
-   FRIENDS — single clean block, no duplicates
-═══════════════════════════════════════════ */
-let friendsData = {friends:[], pending_in:[], pending_out:[]};
-
-async function loadFriends() {
-  const list = document.getElementById("friends-list");
-  try {
-    const res  = await fetch('/friends');
-    const text = await res.text();
-    try {
-      friendsData = JSON.parse(text);
-    } catch(e) {
-      if(list) list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>Server error — please refresh.</div>`;
-      console.error('Friends parse error:', text.substring(0,500));
-      return;
+  map.on("load",function(){
+    rn();
+    if(!map.getLayer("acct-3d-buildings")){
+      try{
+        map.addLayer({
+          id:"acct-3d-buildings",
+          source:"composite",
+          "source-layer":"building",
+          filter:["==","extrude","true"],
+          type:"fill-extrusion",
+          minzoom:14,
+          paint:{
+            "fill-extrusion-color":"#2a2d31",
+            "fill-extrusion-height":["get","height"],
+            "fill-extrusion-base":["get","min_height"],
+            "fill-extrusion-opacity":0.75
+          }
+        });
+      }catch(e){/* style has no composite building layer — skip */}
     }
-    renderFriends();
-  } catch(e) {
-    if(list) list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>Could not load friends.</div>`;
-    console.error('Friends fetch error:', e);
-  }
-}
-
-function renderFriends() {
-  const {friends, pending_in} = friendsData;
-
-  const ce = document.getElementById("friends-count");
-  if(ce) ce.textContent = friends.length;
-
-  const bn = document.getElementById("friends-pending-banner"),
-        pt = document.getElementById("friends-pending-text"),
-        pc = document.getElementById("friends-pending-count");
-  if(pending_in && pending_in.length > 0) {
-    if(bn) bn.style.display = "flex";
-    if(pt) pt.textContent = `${pending_in.length} friend request${pending_in.length !== 1 ? 's' : ''}`;
-    if(pc) pc.textContent = pending_in.length;
-    renderPendingPanel();
-  } else {
-    if(bn) bn.style.display = "none";
-  }
-
-  const list = document.getElementById("friends-list");
-  if(!list) return;
-
-  if(!friends || !friends.length) {
-    list.innerHTML = `<div class="friends-empty"><div class="friends-empty-icon">👥</div>No friends yet. Search above to add someone.</div>`;
-    return;
-  }
-
-  const avatarColors = [
-    {bg:'rgba(16,163,127,0.15)', color:'#0f6e56'},
-    {bg:'rgba(50,130,246,0.15)', color:'#185fa5'},
-    {bg:'rgba(245,179,1,0.15)',  color:'#854f0b'},
-    {bg:'rgba(239,68,68,0.12)',  color:'#a32d2d'},
-    {bg:'rgba(168,85,247,0.14)',color:'#534ab7'},
-    {bg:'rgba(52,211,153,0.15)', color:'#065f46'},
-  ];
-
-  const LIMIT   = 6;
-  const visible = friends.slice(0, LIMIT);
-  const extra   = friends.length - LIMIT;
-
-  function cardHTML(f, i) {
-    const col      = avatarColors[i % avatarColors.length];
-    const initials = (f.name || f.username || '?').substring(0,2).toUpperCase();
-    const uname    = f.username || (f.email ? f.email.split('@')[0] : '?');
-    const avatar   = f.photo_url
-      ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">`
-      : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};">${escapeHtml(initials)}</div>`;
-    return `
-      <a href="/profile/${f.user_id}" style="background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='rgba(157,232,200,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
-        ${avatar}
-        <div style="width:100%;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name || uname)}</div>
-          <div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(uname)}</div>
-        </div>
-        <button onclick="event.preventDefault();event.stopPropagation();removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.5);cursor:pointer;width:100%;">Remove</button>
-      </a>`;
-  }
-
-  list.innerHTML = `
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;" id="friends-grid">
-    ${visible.map((f,i) => cardHTML(f,i)).join('')}
-  </div>
-  ${extra > 0 ? `<button id="show-more-friends-btn" onclick="showMoreFriends()" style="width:100%;padding:10px;border-radius:14px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.5);font-size:13px;font-weight:600;cursor:pointer;">Show all ${friends.length} friends</button>` : ''}`;
-}
-
-function showMoreFriends() {
-  const {friends} = friendsData;
-  const grid = document.getElementById("friends-grid");
-  const btn  = document.getElementById("show-more-friends-btn");
-  if(!grid || !btn) return;
-  const avatarColors = [
-    {bg:'rgba(16,163,127,0.15)',color:'#0f6e56'},
-    {bg:'rgba(50,130,246,0.15)',color:'#185fa5'},
-    {bg:'rgba(245,179,1,0.15)', color:'#854f0b'},
-    {bg:'rgba(239,68,68,0.12)', color:'#a32d2d'},
-    {bg:'rgba(168,85,247,0.14)',color:'#534ab7'},
-    {bg:'rgba(52,211,153,0.15)',color:'#065f46'},
-  ];
-  friends.slice(6).forEach((f,i) => {
-    const col      = avatarColors[(i+6) % avatarColors.length];
-    const initials = (f.name || f.username || '?').substring(0,2).toUpperCase();
-    const uname    = f.username || (f.email ? f.email.split('@')[0] : '?');
-    const avatar   = f.photo_url
-      ? `<img src="${escapeHtml(f.photo_url)}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" alt="">`
-      : `<div style="width:44px;height:44px;border-radius:50%;background:${col.bg};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:${col.color};">${escapeHtml(initials)}</div>`;
-    const card = document.createElement('div');
-    card.style.cssText = "background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;";
-    card.innerHTML = `${avatar}<div style="width:100%;min-width:0;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(f.name||uname)}</div><div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(uname)}</div></div><button onclick="removeFriend(${f.user_id},this)" style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.1);background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.5);cursor:pointer;width:100%;">Remove</button>`;
-    grid.appendChild(card);
   });
-  btn.remove();
-}
-
-function renderPendingPanel() {
-  const panel = document.getElementById("friends-pending-panel");
-  if(!panel) return;
-  panel.innerHTML = (friendsData.pending_in || []).map(f => {
-    const uname = f.username || (f.email ? f.email.split('@')[0] : '?');
-    return `
-      <div class="friend-row" style="border-radius:0;border-left:none;border-right:none;margin:0;">
-        <div class="friend-avatar">${f.photo_url ? `<img src="${escapeHtml(f.photo_url)}" alt="">` : escapeHtml((f.name||'?')[0].toUpperCase())}</div>
-        <div class="friend-info">
-          <div class="friend-name">${escapeHtml(f.name || uname)}</div>
-          <div class="friend-meta">@${escapeHtml(uname)} · wants to be friends</div>
-        </div>
-        <div class="friend-actions">
-          <button class="friend-action-btn friend-action-btn--accept" onclick="respondFriend(${f.friendship_id},'accept',this)">Accept</button>
-          <button class="friend-action-btn friend-action-btn--decline" onclick="respondFriend(${f.friendship_id},'decline',this)">Decline</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function togglePendingPanel() {
-  document.getElementById("friends-pending-panel").classList.toggle("is-open");
-}
-
-let srch = null;
-document.addEventListener("DOMContentLoaded", function() {
-  const inp = document.getElementById("friends-search-input"),
-        res = document.getElementById("friends-search-results"),
-        btn = document.getElementById("friends-search-btn");
-
-  async function run() {
-    const q = inp.value.trim();
-    if(q.length < 2) { res.classList.remove("is-open"); return; }
-    res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">Searching…</div>`;
-    res.classList.add("is-open");
-    try {
-      const r = await fetch(`/friends/search?q=${encodeURIComponent(q)}`), data = await r.json();
-      if(!data.length) { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">No users found</div>`; return; }
-      res.innerHTML = data.map(u => {
-        let a;
-        if(u.status === "friends")       a = `<button class="friends-result-action friends-result-action--friends" disabled>Friends ✓</button>`;
-        else if(u.status === "pending_out") a = `<button class="friends-result-action friends-result-action--pending" disabled>Sent</button>`;
-        else if(u.status === "pending_in")  a = `<button class="friends-result-action friends-result-action--add" onclick="acceptFromSearch(event,this)" data-user-id="${u.id}" data-friendship-id="${u.friendship_id||''}">Accept</button>`;
-        else a = `<button class="friends-result-action friends-result-action--add" onclick="addFriendFromSearch(event,this)" data-user-id="${u.id}">+ Add</button>`;
-        return `<div class="friends-search-result">
-          <div class="friends-result-avatar">${u.photo ? `<img src="${escapeHtml(u.photo)}" alt="">` : escapeHtml((u.name||'?')[0].toUpperCase())}</div>
-          <div class="friends-result-info">
-            <div class="friends-result-name">${escapeHtml(u.name)}</div>
-            <div class="friends-result-email">@${escapeHtml(u.username||u.email.split('@')[0])}</div>
-          </div>
-          ${a}
-        </div>`;
-      }).join('');
-    } catch { res.innerHTML = `<div style="padding:14px;text-align:center;color:rgba(0,0,0,0.4);font-size:13px;">Search failed</div>`; }
-  }
-
-  inp.addEventListener("input", function() { clearTimeout(srch); srch = setTimeout(run, 350); });
-  btn.addEventListener("click", run);
-  inp.addEventListener("keydown", function(e) {
-    if(e.key === "Enter") { e.preventDefault(); run(); }
-    if(e.key === "Escape") { res.classList.remove("is-open"); inp.blur(); }
-  });
-  document.addEventListener("click", function(e) {
-    if(!e.target.closest("#friends-search-input,#friends-search-btn,#friends-search-results"))
-      res.classList.remove("is-open");
-  });
+  blc();wc();initCarousel();
 });
-
-async function addFriendFromSearch(e, btn) {
-  e.stopPropagation();
-  const uid = Number(btn.dataset.userId);
-  btn.disabled = true; btn.textContent = "Sending…";
-  try {
-    const r = await fetch('/friends/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})}), data = await r.json();
-    if(data.ok) { btn.textContent = "Sent ✓"; btn.className = "friends-result-action friends-result-action--pending"; }
-    else { btn.textContent = data.error||"Error"; btn.disabled = false; }
-  } catch { btn.textContent = "Failed"; btn.disabled = false; }
-}
-
-async function acceptFromSearch(e, btn) {
-  e.stopPropagation();
-  const fid = Number(btn.dataset.friendshipId);
-  if(!fid) {
-    const uid = Number(btn.dataset.userId);
-    const f = friendsData.pending_in.find(x => x.user_id === uid);
-    if(!f) { btn.textContent = 'Error'; return; }
-    await respondFriend(f.friendship_id, 'accept', btn);
-  } else {
-    await respondFriend(fid, 'accept', btn);
-  }
-  await loadFriends();
-}
-
-async function respondFriend(fid, action, btn) {
-  btn.disabled = true;
-  btn.textContent = action === 'accept' ? 'Accepting…' : 'Declining…';
-  try {
-    const r = await fetch('/friends/respond', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friendship_id:fid,action})});
-    const d = await r.json();
-    if(d.ok) await loadFriends();
-  } catch { btn.disabled = false; btn.textContent = 'Error'; }
-}
-
-async function removeFriend(uid, btn) {
-  if(!confirm('Remove this friend?')) return;
-  btn.disabled = true;
-  try {
-    await fetch('/friends/remove', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid})});
-    await loadFriends();
-  } catch { btn.disabled = false; }
-}
-
-document.addEventListener("DOMContentLoaded", loadFriends);
-</script>
-
-
-<script>
-/* Share Modal V2 */
-let shareModalListId=null;
-
-function openShareModal(lid,ltitle){
-  shareModalListId=lid;
-  document.getElementById("share-modal-v2-list-name").textContent=ltitle||"";
-  document.getElementById("share-modal-v2").hidden=false;
-  document.querySelectorAll(".share-tab").forEach(t=>t.classList.remove("is-active"));
-  document.querySelectorAll(".share-tab-panel").forEach(p=>p.classList.remove("is-active"));
-  document.querySelector('[data-tab="friends"]').classList.add("is-active");
-  document.getElementById("share-tab-friends").classList.add("is-active");
-  renderShareFriendsList();
-}
-
-function renderShareFriendsList(){
-  const c=document.getElementById("share-friends-list"),{friends}=friendsData;
-  if(!friends.length){
-    c.innerHTML=`<div class="share-no-friends">No friends yet. Add friends using the section below.</div>`;
-    return;
-  }
-  c.innerHTML=friends.map(f=>`
-    <div class="share-friend-row">
-      <div class="share-friend-avatar">${f.photo_url?`<img src="${escapeHtml(f.photo_url)}" alt="${escapeHtml(f.name)}">`:escapeHtml((f.name||"?")[0].toUpperCase())}</div>
-      <div style="flex:1;min-width:0;">
-        <div class="share-friend-name">${escapeHtml(f.name)}</div>
-        <div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:1px;">@${escapeHtml(f.username||f.email.split("@")[0])}</div>
-      </div>
-      <button class="share-friend-btn" onclick="shareListToFriend(${f.user_id},this)">Send</button>
-    </div>`).join("");
-}
-
-async function shareListToFriend(fid,btn){
-  if(!shareModalListId)return;
-  btn.disabled=true;btn.textContent="Sending…";
-  try{
-    const r=await fetch('/lists/share/friend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({list_id:shareModalListId,friend_id:fid})}),d=await r.json();
-    if(d.ok){btn.textContent="Sent ✓";btn.className="share-friend-btn share-friend-btn--sent";}
-    else{btn.textContent=d.error||"Error";btn.disabled=false;}
-  }catch{btn.textContent="Failed";btn.disabled=false;}
-}
-
-document.addEventListener("DOMContentLoaded",function(){
-  document.querySelectorAll(".js-open-share-v2").forEach(btn=>{
-    btn.addEventListener("click",function(){openShareModal(btn.dataset.listId,btn.dataset.listTitle);});
-  });
-  document.querySelectorAll(".share-tab").forEach(tab=>{
-    tab.addEventListener("click",function(){
-      document.querySelectorAll(".share-tab").forEach(t=>t.classList.remove("is-active"));
-      document.querySelectorAll(".share-tab-panel").forEach(p=>p.classList.remove("is-active"));
-      tab.classList.add("is-active");
-      document.getElementById(`share-tab-${tab.dataset.tab}`).classList.add("is-active");
-    });
-  });
-  function closeShare(){document.getElementById("share-modal-v2").hidden=true;}
-  document.getElementById("share-modal-v2-backdrop")?.addEventListener("click",closeShare);
-  document.getElementById("share-modal-v2-close-btn")?.addEventListener("click",closeShare);
-  const es=document.getElementById("share-everyone-search");
-  es?.addEventListener("input",function(){
-    const q=es.value.trim().toLowerCase();
-    document.querySelectorAll(".share-user-row-v2").forEach(row=>{
-      row.style.display=q&&!row.dataset.userSearch.includes(q)?"none":"";
-    });
-  });
-  const ef=document.getElementById("share-everyone-form");
-  ef?.addEventListener("submit",function(e){
-    e.preventDefault();
-    if(!shareModalListId)return;
-    ef.action=`/lists/${shareModalListId}/share`;
-    const b=ef.querySelector(".share-submit-btn");
-    if(b){b.disabled=true;b.textContent="Sending…";}
-    ef.submit();
-  });
-});
-
-/* QR Modal */
-let currentQrUrl="";
-function openQrModal(slug,title){currentQrUrl=`/lists/${slug}`;document.getElementById("qrTitle").innerText=title;document.getElementById("qrImage").src=`/lists/${slug}/qr.png`;document.getElementById("qrModal").classList.add("is-open");}
-function closeQrModal(){document.getElementById("qrModal").classList.remove("is-open");}
-function copyQrLink(){navigator.clipboard.writeText(window.location.origin+currentQrUrl).then(()=>alert("Link copied!")).catch(()=>alert("Could not copy link."));}
-function nativeShareQr(){if(navigator.share)navigator.share({title:"Shared List",url:window.location.origin+currentQrUrl});}
 </script>
 
 </body>
