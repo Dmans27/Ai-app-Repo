@@ -355,7 +355,7 @@ document.addEventListener("DOMContentLoaded",function(){
       const list=listStrip._places||[];
       const p=list[Number(card.dataset.idx)];
       if(!p||p.lng==null||p.lat==null)return;
-      map.flyTo({center:[p.lng,p.lat],zoom:15,pitch:0,bearing:0,duration:1200,essential:true});
+      map.flyTo({center:[p.lng,p.lat],zoom:15,pitch:55,bearing:-17,duration:1200,essential:true});
       const m=mk.find(mm=>mm._place===p);
       if(m)setTimeout(()=>m.togglePopup(),650);
     });
@@ -373,15 +373,15 @@ document.addEventListener("DOMContentLoaded",function(){
     if(!fl.length)return;
     const avgLng=fl.reduce((s,p)=>s+p.lng,0)/fl.length;
     const avgLat=fl.reduce((s,p)=>s+p.lat,0)/fl.length;
-    const targetZoom=13.5;
-    map.flyTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:0,bearing:0,duration:1400,essential:true});
+    const targetZoom=13.5,targetPitch=55;
+    map.flyTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:targetPitch,bearing:-17,duration:1400,essential:true});
     // Safety net: some globe-projection builds can silently drop the zoom
     // portion of an animated camera move (center pans but zoom never
     // changes). If we're still nowhere near the target zoom once the
     // animation should be done, snap straight there.
     setTimeout(function(){
       if(Math.abs(map.getZoom()-targetZoom)>1){
-        map.jumpTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:0,bearing:0});
+        map.jumpTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:targetPitch,bearing:-17});
       }
     },1000);
   }
