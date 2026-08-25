@@ -338,6 +338,7 @@ document.addEventListener("DOMContentLoaded",function(){
     listWrap.classList.toggle("is-hidden",zoomedIn);
     if(zoomedIn===mapZoomedIn)return;
     mapZoomedIn=zoomedIn;
+    map.setProjection(zoomedIn?"mercator":"globe");
     if(window.innerWidth<=640){
       if(zoomedIn)applyExpandedMapHeight();
       else resetMapHeight();
