@@ -312,10 +312,32 @@ document.addEventListener("DOMContentLoaded",function(){
       </article>`;
     }).join("");
   }
+  let mapZoomedIn=false;
+  function applyExpandedMapHeight(){
+    if(window.innerWidth>640)return;
+    const top=mel.getBoundingClientRect().top;
+    const target=Math.max(320,window.innerHeight-top-100);
+    mel.style.height=target+"px";
+    requestAnimationFrame(function(){map.resize();});
+  }
+  function resetMapHeight(){
+    mel.style.height="";
+    requestAnimationFrame(function(){map.resize();});
+  }
   function updateListingVisibility(){
     if(!listWrap)return;
-    listWrap.classList.toggle("is-hidden",map.getZoom()>LIST_HIDE_ZOOM);
+    const zoomedIn=map.getZoom()>LIST_HIDE_ZOOM;
+    listWrap.classList.toggle("is-hidden",zoomedIn);
+    if(zoomedIn===mapZoomedIn)return;
+    mapZoomedIn=zoomedIn;
+    if(window.innerWidth<=640){
+      if(zoomedIn)applyExpandedMapHeight();
+      else resetMapHeight();
+    }
   }
+  window.addEventListener("resize",function(){
+    if(mapZoomedIn&&window.innerWidth<=640)applyExpandedMapHeight();
+  });
   function initListingStrip(){
     if(!listStrip)return;
     listStrip.addEventListener("click",function(e){
