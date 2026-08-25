@@ -17,7 +17,11 @@
 
     .acct-map-card{position:relative;margin:10px -40px 24px;overflow:hidden;border:none;background:#f5f5f7;}
     .acct-map-card .account-map{width:100%;height:480px;min-height:0;border-radius:0;border:none}
-    @media(max-width:640px){.acct-map-card .account-map{height:380px}}
+    @media(max-width:640px){
+      .acct-map-card .account-map{height:380px}
+      body.page-account.acct-map-expanded .mobile-content.account-page-content{padding-bottom:0 !important}
+      body.page-account.acct-map-expanded .acct-map-card{margin-bottom:0 !important}
+    }
     .acct-map-carousel{display:none;position:absolute;left:0;right:0;bottom:16px;gap:10px;padding:0 16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;z-index:5}
     .acct-map-carousel::-webkit-scrollbar{display:none}
     .acct-map-card-item{scroll-snap-align:center;flex-shrink:0;width:220px;display:flex;gap:10px;padding:10px;background:rgba(20,20,22,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;cursor:pointer;transition:border-color 0.15s,transform 0.15s;color:#fff}
@@ -315,12 +319,16 @@ document.addEventListener("DOMContentLoaded",function(){
   let mapZoomedIn=false;
   function applyExpandedMapHeight(){
     if(window.innerWidth>640)return;
+    document.body.classList.add("acct-map-expanded");
+    const tabbar=document.querySelector(".mobile-tabbar");
+    const tabbarH=tabbar?tabbar.getBoundingClientRect().height:80;
     const top=mel.getBoundingClientRect().top;
-    const target=Math.max(320,window.innerHeight-top-100);
+    const target=Math.max(320,window.innerHeight-top-tabbarH);
     mel.style.height=target+"px";
     requestAnimationFrame(function(){map.resize();});
   }
   function resetMapHeight(){
+    document.body.classList.remove("acct-map-expanded");
     mel.style.height="";
     requestAnimationFrame(function(){map.resize();});
   }
