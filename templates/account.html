@@ -57,19 +57,22 @@
     .acct-map-popup__btn:hover{background:rgba(16,163,127,0.3)}
 
     /* Below-map listing strip — visible at globe/overview zoom, hides once you zoom into a city */
-    .acct-listing-wrap{overflow:hidden;transition:max-height 0.35s ease,opacity 0.25s ease,margin 0.35s ease;max-height:220px;opacity:1;margin:0 0 24px;}
+    .acct-listing-wrap{overflow:hidden;transition:max-height 0.35s ease,opacity 0.25s ease,margin 0.35s ease;max-height:340px;opacity:1;margin:0 0 24px;}
     .acct-listing-wrap.is-hidden{max-height:0;opacity:0;margin-bottom:0;pointer-events:none}
-    .acct-listing-strip{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 10px;justify-content:center}
+    .acct-listing-strip{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 12px}
     .acct-listing-strip::-webkit-scrollbar{display:none}
-    .acct-listing-card{scroll-snap-align:center;flex:0 0 calc((100% - 28px)/3);max-width:240px;min-width:170px;display:flex;gap:10px;align-items:center;padding:12px;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:16px;cursor:pointer;transition:border-color 0.15s,transform 0.15s,box-shadow 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
-    .acct-listing-card:hover{border-color:rgba(16,163,127,0.35);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.08)}
-    .acct-listing-card__img{width:44px;height:44px;flex-shrink:0;border-radius:10px;overflow:hidden;background:#f0f0f2;display:flex;align-items:center;justify-content:center;font-size:17px}
+    .acct-listing-card{scroll-snap-align:start;flex:0 0 calc((100% - 32px)/3);display:flex;flex-direction:column;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:18px;overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.15s,box-shadow 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+    .acct-listing-card:hover{border-color:rgba(16,163,127,0.35);transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,0.09)}
+    .acct-listing-card__img{width:100%;height:150px;flex-shrink:0;background:#eef0f1;display:flex;align-items:center;justify-content:center;font-size:34px}
     .acct-listing-card__img img{width:100%;height:100%;object-fit:cover;display:block}
-    .acct-listing-card__body{min-width:0;display:flex;flex-direction:column;gap:2px}
-    .acct-listing-card__name{font-size:13px;font-weight:700;color:rgba(0,0,0,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .acct-listing-card__meta{font-size:11.5px;color:rgba(0,0,0,0.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-listing-card__body{min-width:0;display:flex;flex-direction:column;gap:5px;padding:14px 16px 16px}
+    .acct-listing-card__name{font-size:16px;font-weight:800;color:rgba(0,0,0,0.87);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-listing-card__loc{font-size:12.5px;font-weight:600;color:rgba(0,0,0,0.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-listing-card__cat{font-size:12.5px;color:rgba(0,0,0,0.42);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-listing-card__rating{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;color:#c8860a;margin-top:2px}
     .acct-listing-empty{width:100%;text-align:center;font-size:12.5px;color:rgba(0,0,0,0.4);padding:12px 0}
-    @media(max-width:640px){.acct-listing-card{flex:0 0 78%;max-width:280px}}
+    @media(max-width:900px){.acct-listing-card{flex:0 0 calc((100% - 16px)/2)}}
+    @media(max-width:640px){.acct-listing-card{flex:0 0 100%}.acct-listing-card__img{height:170px}}
   </style>
 </head>
 <body class="app-body page-account">
@@ -295,11 +298,14 @@ document.addEventListener("DOMContentLoaded",function(){
     listStrip._places=fl;
     listStrip.innerHTML=fl.map((p,i)=>{
       const rt=pr(p);
+      const city=ll(p);
       return`<article class="acct-listing-card" data-idx="${i}">
         <div class="acct-listing-card__img">${p.photo_url?`<img src="${escapeHtml(p.photo_url)}" alt="" loading="lazy">`:`<span>📍</span>`}</div>
         <div class="acct-listing-card__body">
           <div class="acct-listing-card__name">${escapeHtml(p.name||"")}</div>
-          <div class="acct-listing-card__meta">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</div>
+          ${city?`<div class="acct-listing-card__loc">${escapeHtml(city)}</div>`:""}
+          ${p.category?`<div class="acct-listing-card__cat">${escapeHtml(p.category)}</div>`:""}
+          ${rt!=null?`<div class="acct-listing-card__rating">★ ${rt.toFixed(1)}</div>`:""}
         </div>
       </article>`;
     }).join("");
