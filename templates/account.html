@@ -13,6 +13,7 @@
     body.page-account .mobile-app-shell,
     body.page-account .mobile-screen{height:auto !important;overflow:visible !important;background:#f5f5f7 !important}
     body.page-account .app-main,body.page-account .mobile-screen__body,body.page-account .acct-wrap{background:#f5f5f7 !important}
+    @media(min-width:1025px){body.page-account .mobile-content.account-page-content{padding:24px 32px 40px !important}}
 
     .acct-map-card{position:relative;margin:10px -40px 24px;overflow:hidden;border:none;background:#f5f5f7;}
     .acct-map-card .account-map{width:100%;height:480px;min-height:0;border-radius:0;border:none}
@@ -57,22 +58,22 @@
     .acct-map-popup__btn:hover{background:rgba(16,163,127,0.3)}
 
     /* Below-map listing strip — visible at globe/overview zoom, hides once you zoom into a city */
-    .acct-listing-wrap{overflow:hidden;transition:max-height 0.35s ease,opacity 0.25s ease,margin 0.35s ease;max-height:340px;opacity:1;margin:0 0 24px;}
+    .acct-listing-wrap{overflow:hidden;transition:max-height 0.35s ease,opacity 0.25s ease,margin 0.35s ease;max-height:340px;opacity:1;margin:0 0 12px;}
     .acct-listing-wrap.is-hidden{max-height:0;opacity:0;margin-bottom:0;pointer-events:none}
     .acct-listing-strip{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 12px}
     .acct-listing-strip::-webkit-scrollbar{display:none}
     .acct-listing-card{scroll-snap-align:start;flex:0 0 calc((100% - 32px)/3);display:flex;flex-direction:column;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);border-radius:18px;overflow:hidden;cursor:pointer;transition:border-color 0.15s,transform 0.15s,box-shadow 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
     .acct-listing-card:hover{border-color:rgba(16,163,127,0.35);transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,0.09)}
-    .acct-listing-card__img{width:100%;height:150px;flex-shrink:0;background:#eef0f1;display:flex;align-items:center;justify-content:center;font-size:34px}
+    .acct-listing-card__img{width:100%;height:128px;flex-shrink:0;background:#eef0f1;display:flex;align-items:center;justify-content:center;font-size:32px}
     .acct-listing-card__img img{width:100%;height:100%;object-fit:cover;display:block}
-    .acct-listing-card__body{min-width:0;display:flex;flex-direction:column;gap:5px;padding:14px 16px 16px}
+    .acct-listing-card__body{min-width:0;display:flex;flex-direction:column;gap:4px;padding:12px 14px 14px}
     .acct-listing-card__name{font-size:16px;font-weight:800;color:rgba(0,0,0,0.87);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .acct-listing-card__loc{font-size:12.5px;font-weight:600;color:rgba(0,0,0,0.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .acct-listing-card__cat{font-size:12.5px;color:rgba(0,0,0,0.42);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .acct-listing-card__rating{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800;color:#c8860a;margin-top:2px}
     .acct-listing-empty{width:100%;text-align:center;font-size:12.5px;color:rgba(0,0,0,0.4);padding:12px 0}
     @media(max-width:900px){.acct-listing-card{flex:0 0 calc((100% - 16px)/2)}}
-    @media(max-width:640px){.acct-listing-card{flex:0 0 100%}.acct-listing-card__img{height:170px}}
+    @media(max-width:640px){.acct-listing-card{flex:0 0 100%}.acct-listing-card__img{height:150px}}
   </style>
 </head>
 <body class="app-body page-account">
