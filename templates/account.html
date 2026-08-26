@@ -15,6 +15,13 @@
     body.page-account .app-main,body.page-account .mobile-screen__body,body.page-account .acct-wrap{background:#f5f5f7 !important}
     @media(min-width:1025px){body.page-account .mobile-content.account-page-content{padding:24px 32px 40px !important}}
 
+    /* Native-feeling header: blend into the page instead of reading as a separate web toolbar */
+    body.page-account .mobile-app-header{background:#f5f5f7 !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;border-bottom:none !important;box-shadow:none !important}
+    body.page-account .mobile-app-header__icon,body.page-account .mobile-app-header__icon--link{width:38px;height:38px;border-radius:12px;background:#ffffff;border:0.5px solid rgba(0,0,0,0.08);box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;align-items:center;justify-content:center;font-size:17px;transition:background 0.15s}
+    body.page-account .mobile-app-header__icon:active,body.page-account .mobile-app-header__icon--link:active{background:rgba(0,0,0,0.04)}
+    body.page-account .acct-hamburger{flex-direction:column;gap:4px}
+    body.page-account .acct-hamburger span{display:block;width:16px;height:2px;border-radius:2px;background:rgba(0,0,0,0.78)}
+
     .acct-map-card{position:relative;margin:10px -40px 24px;overflow:hidden;border:none;background:#f5f5f7;}
     .acct-map-card .account-map{width:100%;height:480px;min-height:0;border-radius:0;border:none}
     @media(max-width:640px){
@@ -142,7 +149,7 @@
 
     <main class="mobile-screen" style="background:#f5f5f7 !important">
       <header class="mobile-app-header">
-        <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
+        <button class="mobile-app-header__icon acct-hamburger" id="app-sidebar-toggle" type="button" aria-label="Open menu"><span></span><span></span><span></span></button>
         <div class="mobile-app-header__center">
           <div class="mobile-app-header__title">Local AI</div>
           <div class="mobile-app-header__subtitle">Saved</div>
