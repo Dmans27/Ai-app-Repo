@@ -313,7 +313,7 @@ document.addEventListener("DOMContentLoaded",function(){
       const rt=pr(p);
       const city=ll(p);
       return`<article class="acct-listing-card" data-idx="${i}">
-        <div class="acct-listing-card__img">${p.photo_url?`<img src="${escapeHtml(p.photo_url)}" alt="" loading="lazy">`:`<span>📍</span>`}</div>
+        <div class="acct-listing-card__img">${p.photo_url?`<img src="${escapeHtml(p.photo_url)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='&lt;span&gt;📍&lt;/span&gt;'">`:`<span>📍</span>`}</div>
         <div class="acct-listing-card__body">
           <div class="acct-listing-card__name">${escapeHtml(p.name||"")}</div>
           ${city?`<div class="acct-listing-card__loc">${escapeHtml(city)}</div>`:""}
