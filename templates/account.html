@@ -366,6 +366,19 @@ document.addEventListener("DOMContentLoaded",function(){
     if(zoomedIn===mapZoomedIn)return;
     mapZoomedIn=zoomedIn;
     map.setProjection(zoomedIn?"mercator":"globe");
+    map.setFog(zoomedIn?{
+      color:"rgb(15,16,19)",
+      "high-color":"rgb(15,16,19)",
+      "horizon-blend":0.02,
+      "space-color":"rgb(15,16,19)",
+      "star-intensity":0
+    }:{
+      color:"rgb(245,245,247)",
+      "high-color":"#f5f5f7",
+      "horizon-blend":0.02,
+      "space-color":"rgb(245,245,247)",
+      "star-intensity":0
+    });
     if(window.innerWidth<=640){
       if(zoomedIn)applyExpandedMapHeight();
       else resetMapHeight();
