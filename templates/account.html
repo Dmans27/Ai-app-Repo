@@ -56,10 +56,11 @@
     /* MAPBOX CUSTOMIZATIONS */
     .acct-map-pin{cursor:pointer;transform-origin:bottom center;transition:transform 0.15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45))}
     .acct-map-pin:hover{transform:scale(1.15)}
-    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-content{background:#16181b;color:#f2f2f2;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-content{background:transparent;box-shadow:none;padding:0;color:#f2f2f2;border-radius:0;}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-tip{border-top-color:#16181b;border-bottom-color:#16181b}
-    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.5);font-size:16px;padding:2px 6px}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.6);font-size:16px;padding:2px 6px;z-index:2}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button:hover{color:#fff;background:none}
+    .acct-map-popup__card{background:#16181b;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
     .acct-map-popup__head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
     .acct-map-popup__dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
     .acct-map-popup__name{font-size:14px;font-weight:800;color:#ffffff;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -68,9 +69,9 @@
     .acct-map-popup__actions{display:flex;gap:6px}
     .acct-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.18);border:0.5px solid rgba(16,163,127,0.4);color:#7ee2bf;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
     .acct-map-popup__btn:hover{background:rgba(16,163,127,0.3)}
-    .acct-map-popup__gallery{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-top:10px;padding-bottom:2px;max-width:230px}
+    .acct-map-popup__gallery{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:10px 0 0;padding:2px;max-width:260px}
     .acct-map-popup__gallery::-webkit-scrollbar{display:none}
-    .acct-map-popup__gallery img{scroll-snap-align:start;flex-shrink:0;width:64px;height:64px;object-fit:cover;border-radius:10px;background:rgba(255,255,255,0.06)}
+    .acct-map-popup__gallery img{scroll-snap-align:start;flex-shrink:0;width:64px;height:64px;object-fit:cover;border-radius:12px;background:rgba(255,255,255,0.06);box-shadow:0 4px 12px rgba(0,0,0,0.45);}
 
     /* Below-map listing strip — visible at globe/overview zoom, hides once you zoom into a city */
     .acct-listing-wrap{overflow:hidden;transition:max-height 0.35s ease,opacity 0.25s ease,margin 0.35s ease;max-height:340px;opacity:1;margin:0 0 12px;}
@@ -283,7 +284,7 @@ document.addEventListener("DOMContentLoaded",function(){
     const dirUrl=p.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`:"";
     const photos=(Array.isArray(p.photo_urls)&&p.photo_urls.length?p.photo_urls:(p.photo_url?[p.photo_url]:[])).slice(0,10);
     const gallery=photos.length?`<div class="acct-map-popup__gallery">${photos.map(u=>`<img src="${escapeHtml(u)}" alt="" loading="lazy" onerror="this.remove()">`).join("")}</div>`:"";
-    return`<div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div>${gallery}`;
+    return`<div class="acct-map-popup__card"><div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div></div>${gallery}`;
   }
 
   function nm(v){return String(v||"").trim().toLowerCase();}
