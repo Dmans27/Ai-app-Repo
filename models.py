@@ -62,7 +62,7 @@ class SavedPlace(db.Model):
     address       = db.Column(db.String(255))
     website       = db.Column(db.String(255))
     category      = db.Column(db.String(100))
-    photo_url     = db.Column(db.String(500))
+    photo_url     = db.Column(db.Text)
     city          = db.Column(db.String(120), nullable=True)
     state         = db.Column(db.String(120), nullable=True)
     cuisine       = db.Column(db.String(120), nullable=True)

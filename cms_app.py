@@ -371,6 +371,14 @@ def create_core_tables():
             ADD COLUMN IF NOT EXISTS place_id TEXT;
         """))
 
+        # photo_url was originally VARCHAR(500); newer Google Places API photo
+        # URLs are often longer than that and were failing to save with a
+        # silent 500 error. Widen it to unbounded text.
+        conn.execute(sql_text("""
+            ALTER TABLE saved_place
+            ALTER COLUMN photo_url TYPE TEXT;
+        """))
+
         conn.execute(sql_text("""
             CREATE UNIQUE INDEX IF NOT EXISTS idx_listings_place_id
             ON listings(place_id)
@@ -6424,8 +6432,13 @@ def save_place_to_list(list_id):
         longitude=float(longitude) if longitude else None,
     )
 
-    db.session.add(saved_place)
-    db.session.commit()
+    try:
+        db.session.add(saved_place)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("[SAVE_PLACE_ERROR]", name, str(e), flush=True)
+        return "Could not save this place.", 500
 
     print("[SAVED_PLACE_ROW]", {
         "id": saved_place.id,

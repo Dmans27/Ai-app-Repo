@@ -1112,8 +1112,8 @@ function wireFilterBar() {
     payload.append("longitude", pendingPlaceToSave.longitude || "");
     payload.append("notes", "");
     payload.append("photo_url", pendingPlaceToSave.photo_url || "");
-    payload.append("place_id", "");
-    payload.append("listing_id", "");
+    payload.append("place_id", pendingPlaceToSave.place_id || "");
+    payload.append("listing_id", pendingPlaceToSave.listing_id || "");
 
     if (triggerButton) {
       triggerButton.disabled = true;
