@@ -3474,7 +3474,7 @@ def import_google_place():
 
         print("[IMPORT_GOOGLE_PLACE_PHOTO_COUNT]", len(photos), flush=True)
 
-        for photo in photos[:8]:
+        for photo in photos[:10]:
             photo_name = photo.get("name")
 
             if not photo_name:
@@ -3649,7 +3649,7 @@ def refresh_listing_photos():
             photos = data.get("photos") or []
             photo_urls = []
 
-            for photo in photos[:8]:
+            for photo in photos[:10]:
                 photo_name = photo.get("name")
 
                 if not photo_name:
@@ -6068,6 +6068,16 @@ def _account_context():
 
             resolved_photo_url = place.photo_url or (listing["photo_url"] if listing else "") or ""
 
+            resolved_photo_urls = []
+            if listing and listing.get("photo_urls_json"):
+                try:
+                    resolved_photo_urls = json.loads(listing["photo_urls_json"]) or []
+                except (TypeError, ValueError):
+                    resolved_photo_urls = []
+            if not resolved_photo_urls and resolved_photo_url:
+                resolved_photo_urls = [resolved_photo_url]
+            resolved_photo_urls = resolved_photo_urls[:10]
+
             place_dict = {
                 "id": place.id,
                 "name": place.name or "",
@@ -6105,6 +6115,7 @@ def _account_context():
                         "website": place.website or "",
                         "category": place.category or "",
                         "photo_url": resolved_photo_url,
+                        "photo_urls": resolved_photo_urls,
                         "city": place_dict["city"],
                         "cuisine": place_dict["cuisine"],
                         "slug": place_dict["slug"],

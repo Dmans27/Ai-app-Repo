@@ -68,6 +68,9 @@
     .acct-map-popup__actions{display:flex;gap:6px}
     .acct-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.18);border:0.5px solid rgba(16,163,127,0.4);color:#7ee2bf;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
     .acct-map-popup__btn:hover{background:rgba(16,163,127,0.3)}
+    .acct-map-popup__gallery{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-top:10px;padding-bottom:2px;max-width:230px}
+    .acct-map-popup__gallery::-webkit-scrollbar{display:none}
+    .acct-map-popup__gallery img{scroll-snap-align:start;flex-shrink:0;width:64px;height:64px;object-fit:cover;border-radius:10px;background:rgba(255,255,255,0.06)}
 
     /* Below-map listing strip — visible at globe/overview zoom, hides once you zoom into a city */
     .acct-listing-wrap{overflow:hidden;transition:max-height 0.35s ease,opacity 0.25s ease,margin 0.35s ease;max-height:340px;opacity:1;margin:0 0 12px;}
@@ -278,7 +281,9 @@ document.addEventListener("DOMContentLoaded",function(){
     const dot=categoryColor(p);
     const rt=pr(p);
     const dirUrl=p.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`:"";
-    return`<div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div>`;
+    const photos=(Array.isArray(p.photo_urls)&&p.photo_urls.length?p.photo_urls:(p.photo_url?[p.photo_url]:[])).slice(0,10);
+    const gallery=photos.length?`<div class="acct-map-popup__gallery">${photos.map(u=>`<img src="${escapeHtml(u)}" alt="" loading="lazy" onerror="this.remove()">`).join("")}</div>`:"";
+    return`<div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div>${gallery}`;
   }
 
   function nm(v){return String(v||"").trim().toLowerCase();}
@@ -292,7 +297,7 @@ document.addEventListener("DOMContentLoaded",function(){
     fl.forEach(p=>{
       const m=new mapboxgl.Marker({element:buildMarkerEl(categoryColor(p))})
         .setLngLat([p.lng,p.lat])
-        .setPopup(new mapboxgl.Popup({offset:24,closeButton:true,className:"acct-map-popup"}).setHTML(popupHtml(p)))
+        .setPopup(new mapboxgl.Popup({offset:24,closeButton:true,className:"acct-map-popup",maxWidth:"260px"}).setHTML(popupHtml(p)))
         .addTo(map);
       m._place=p;
       mk.push(m);
