@@ -3567,6 +3567,119 @@ def import_google_place():
         return "Import failed", 500
 
 
+@app.get("/admin/refresh-listing-photos")
+@login_required
+def refresh_listing_photos():
+    """
+    Re-fetches fresh photos from Google Places for listings whose photo is
+    missing or points at the old legacy Places Photo API
+    (maps.googleapis.com/maps/api/place/photo) — those photo_reference
+    tokens go stale over time and start failing to load.
+
+    Query params:
+      place_id  - refresh just one listing by its Google place_id
+      limit     - max number of stale listings to process in one call (default 25, max 100)
+    """
+    if not GOOGLE_MAPS_API_KEY:
+        return jsonify({"error": "Missing GOOGLE_MAPS_API_KEY"}), 500
+
+    single_place_id = (request.args.get("place_id") or "").strip()
+
+    try:
+        limit = min(max(int(request.args.get("limit", 25) or 25), 1), 100)
+    except ValueError:
+        limit = 25
+
+    if single_place_id:
+        rows = query_all(
+            """
+            SELECT id, place_id, name, photo_url
+            FROM listings
+            WHERE place_id = :place_id
+            LIMIT 1
+            """,
+            {"place_id": single_place_id}
+        )
+    else:
+        rows = query_all(
+            """
+            SELECT id, place_id, name, photo_url
+            FROM listings
+            WHERE place_id IS NOT NULL
+              AND place_id <> ''
+              AND (
+                    photo_url IS NULL
+                 OR photo_url = ''
+                 OR photo_url LIKE '%maps.googleapis.com/maps/api/place/photo%'
+              )
+            ORDER BY id
+            LIMIT :limit
+            """,
+            {"limit": limit}
+        )
+
+    results = []
+
+    for row in rows:
+        place_id = row["place_id"]
+        name = row["name"]
+
+        try:
+            url = f"https://places.googleapis.com/v1/places/{place_id}"
+            headers = {
+                "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+                "X-Goog-FieldMask": "photos"
+            }
+            r = requests.get(url, headers=headers, timeout=20)
+
+            if not r.ok:
+                print("[REFRESH_PHOTO_STATUS]", name, r.status_code, r.text, flush=True)
+                results.append({"id": row["id"], "name": name, "status": "google_error", "code": r.status_code})
+                continue
+
+            data = r.json()
+            photos = data.get("photos") or []
+            photo_urls = []
+
+            for photo in photos[:8]:
+                photo_name = photo.get("name")
+
+                if not photo_name:
+                    continue
+
+                resolved_url = google_place_photo_uri(photo_name, max_width=1200)
+
+                if resolved_url:
+                    photo_urls.append(resolved_url)
+
+            if not photo_urls:
+                results.append({"id": row["id"], "name": name, "status": "no_photos_found"})
+                continue
+
+            execute(
+                """
+                UPDATE listings
+                SET photo_url = :photo_url,
+                    photo_urls_json = :photo_urls_json,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id
+                """,
+                {
+                    "photo_url": photo_urls[0],
+                    "photo_urls_json": json.dumps(photo_urls),
+                    "id": row["id"]
+                }
+            )
+
+            results.append({"id": row["id"], "name": name, "status": "updated", "photo_count": len(photo_urls)})
+
+        except Exception as e:
+            print("[REFRESH_PHOTO_ERROR]", name, str(e), flush=True)
+            results.append({"id": row["id"], "name": name, "status": "error", "error": str(e)})
+
+        time.sleep(0.15)
+
+    return jsonify({"processed": len(results), "results": results})
 
 
 
