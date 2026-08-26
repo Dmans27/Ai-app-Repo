@@ -5945,13 +5945,15 @@ def _account_context():
                 )
                 
 
+            resolved_photo_url = place.photo_url or (listing["photo_url"] if listing else "") or ""
+
             place_dict = {
                 "id": place.id,
                 "name": place.name or "",
                 "address": place.address or "",
                 "website": place.website or "",
                 "category": place.category or "",
-                "photo_url": place.photo_url or "",
+                "photo_url": resolved_photo_url,
                 "notes": place.notes or "",
                 "latitude": place.latitude,
                 "longitude": place.longitude,
@@ -5981,7 +5983,7 @@ def _account_context():
                         "address": place.address or "",
                         "website": place.website or "",
                         "category": place.category or "",
-                        "photo_url": place.photo_url or "",
+                        "photo_url": resolved_photo_url,
                         "city": place_dict["city"],
                         "cuisine": place_dict["cuisine"],
                         "slug": place_dict["slug"],
