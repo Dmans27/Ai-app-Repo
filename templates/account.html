@@ -23,10 +23,11 @@
     body.page-account .acct-hamburger span{display:block;width:16px;height:2px;border-radius:2px;background:rgba(0,0,0,0.78)}
 
     /* When the map expands to fill the screen (zoomed into a city on mobile),
-       match the top bar + filter pills to the map's dark background instead
-       of leaving a light strip above it. */
+       match the top bar to the map's dark background instead of leaving a
+       light strip above it. The filter pills now float directly on top of
+       the map itself (see .acct-map-chips below), so they no longer need
+       their own backing panel or a light/dark swap. */
     body.page-account.acct-map-expanded .mobile-app-header,
-    body.page-account.acct-map-expanded .acct-map-chips,
     body.page-account.acct-map-expanded .account-desktop-wrap,
     body.page-account.acct-map-expanded .account-ios-shell,
     body.page-account.acct-map-expanded .mobile-content.account-page-content{background:rgb(15,16,19) !important;transition:background 0.25s ease}
@@ -35,10 +36,8 @@
     body.page-account.acct-map-expanded .mobile-app-header__icon--link{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.14)}
     body.page-account.acct-map-expanded .mobile-app-header__icon:active,
     body.page-account.acct-map-expanded .mobile-app-header__icon--link:active{background:rgba(255,255,255,0.18)}
-    body.page-account.acct-map-expanded .acct-filter-pill{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.16);color:rgba(255,255,255,0.78)}
-    body.page-account.acct-map-expanded .acct-filter-pill.has-value{background:rgba(16,163,127,0.24);border-color:rgba(16,163,127,0.5);color:#7ee2bf}
 
-    .acct-map-card{position:relative;margin:10px -40px 24px;overflow:hidden;border:none;background:#f5f5f7;}
+    .acct-map-card{position:relative;margin:10px -40px 24px;overflow:visible;border:none;background:#f5f5f7;}
     .acct-map-card .account-map{width:100%;height:480px;min-height:0;border-radius:0;border:none}
     @media(max-width:640px){
       .acct-map-card .account-map{height:380px}
@@ -55,13 +54,17 @@
     .acct-map-card-item__body{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px}
     .acct-map-card-item__name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .acct-map-card-item__meta{font-size:11.5px;color:rgba(255,255,255,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .acct-map-chips{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:0 16px 16px;background:#f5f5f7;position:relative;overflow:visible}
-    .acct-filter-dropdown{position:relative;flex-shrink:0}
-    .acct-filter-pill{height:32px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.12);background:#ffffff;color:rgba(0,0,0,0.65);font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.15s;max-width:160px}
+    /* Floats directly on top of the map (like a native maps app) instead of
+       sitting in its own bar above it — no backing panel means no seam or
+       color mismatch against the map underneath, in either light or dark
+       zoom state. */
+    .acct-map-chips{position:absolute;top:14px;left:16px;right:56px;z-index:6;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;pointer-events:none}
+    .acct-filter-dropdown{position:relative;flex-shrink:0;pointer-events:auto}
+    .acct-filter-pill{height:32px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(0,0,0,0.08);background:#ffffff;color:rgba(0,0,0,0.7);font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.15s;max-width:160px;box-shadow:0 2px 10px rgba(0,0,0,0.22)}
     .acct-filter-pill__label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .acct-filter-pill__caret{font-size:9px;opacity:0.5;flex-shrink:0}
     .acct-filter-pill:hover{border-color:rgba(16,163,127,0.4)}
-    .acct-filter-pill.has-value{background:rgba(16,163,127,0.12);border-color:rgba(16,163,127,0.42);color:#0f6e56}
+    .acct-filter-pill.has-value{background:#10a37f;border-color:transparent;color:#fff}
     .acct-filter-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:170px;max-height:220px;overflow-y:auto;background:#ffffff;border:0.5px solid rgba(0,0,0,0.1);border-radius:14px;box-shadow:0 16px 32px -10px rgba(0,0,0,0.28);padding:6px;display:none;flex-direction:column;gap:2px;z-index:20}
     .acct-filter-menu.is-open{display:flex}
     .acct-filter-option{text-align:left;height:32px;padding:0 10px;border-radius:8px;border:none;background:transparent;color:rgba(0,0,0,0.65);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
@@ -187,48 +190,48 @@
         <div class="account-desktop-wrap">
           <div class="account-ios-shell">
 
-            <div class="acct-map-chips" id="acct-map-chips">
-              <div class="acct-filter-dropdown" data-filter-row="category">
-                <button type="button" class="acct-filter-pill" data-pill="category">
-                  <span class="acct-filter-pill__label" data-pill-label="category">All categories</span>
-                  <span class="acct-filter-pill__caret">▾</span>
-                </button>
-                <div class="acct-filter-menu" data-menu="category">
-                  <button class="acct-filter-option is-active" data-cat="all" type="button">All</button>
-                  <button class="acct-filter-option" data-cat="coffee" type="button">☕ Coffee</button>
-                  <button class="acct-filter-option" data-cat="restaurant" type="button">🍽 Restaurants</button>
-                  <button class="acct-filter-option" data-cat="bar" type="button">🍸 Bars</button>
-                  <button class="acct-filter-option" data-cat="wine" type="button">🍷 Wine</button>
-                  <button class="acct-filter-option" data-cat="rooftop" type="button">🌃 Rooftops</button>
-                  <button class="acct-filter-option" data-cat="shopping" type="button">🛍 Shopping</button>
-                </div>
-              </div>
-              <div class="acct-filter-dropdown" data-filter-row="location">
-                <button type="button" class="acct-filter-pill" data-pill="location">
-                  <span class="acct-filter-pill__label" data-pill-label="location">All cities</span>
-                  <span class="acct-filter-pill__caret">▾</span>
-                </button>
-                <div class="acct-filter-menu" data-menu="location">
-                  <button class="acct-filter-option is-active" data-loc="all" type="button">All cities</button>
-                  <span id="acct-loc-chips" style="display:contents;"></span>
-                </div>
-              </div>
-              <div class="acct-filter-dropdown" data-filter-row="rating">
-                <button type="button" class="acct-filter-pill" data-pill="rating">
-                  <span class="acct-filter-pill__label" data-pill-label="rating">All ratings</span>
-                  <span class="acct-filter-pill__caret">▾</span>
-                </button>
-                <div class="acct-filter-menu" data-menu="rating">
-                  <button class="acct-filter-option is-active" data-rating="0" type="button">All ratings</button>
-                  <button class="acct-filter-option" data-rating="3" type="button">3.0+ ★</button>
-                  <button class="acct-filter-option" data-rating="3.5" type="button">3.5+ ★</button>
-                  <button class="acct-filter-option" data-rating="4" type="button">4.0+ ★</button>
-                  <button class="acct-filter-option" data-rating="4.5" type="button">4.5+ ★</button>
-                </div>
-              </div>
-            </div>
-
             <section class="acct-map-card">
+              <div class="acct-map-chips" id="acct-map-chips">
+                <div class="acct-filter-dropdown" data-filter-row="category">
+                  <button type="button" class="acct-filter-pill" data-pill="category">
+                    <span class="acct-filter-pill__label" data-pill-label="category">All categories</span>
+                    <span class="acct-filter-pill__caret">▾</span>
+                  </button>
+                  <div class="acct-filter-menu" data-menu="category">
+                    <button class="acct-filter-option is-active" data-cat="all" type="button">All</button>
+                    <button class="acct-filter-option" data-cat="coffee" type="button">☕ Coffee</button>
+                    <button class="acct-filter-option" data-cat="restaurant" type="button">🍽 Restaurants</button>
+                    <button class="acct-filter-option" data-cat="bar" type="button">🍸 Bars</button>
+                    <button class="acct-filter-option" data-cat="wine" type="button">🍷 Wine</button>
+                    <button class="acct-filter-option" data-cat="rooftop" type="button">🌃 Rooftops</button>
+                    <button class="acct-filter-option" data-cat="shopping" type="button">🛍 Shopping</button>
+                  </div>
+                </div>
+                <div class="acct-filter-dropdown" data-filter-row="location">
+                  <button type="button" class="acct-filter-pill" data-pill="location">
+                    <span class="acct-filter-pill__label" data-pill-label="location">All cities</span>
+                    <span class="acct-filter-pill__caret">▾</span>
+                  </button>
+                  <div class="acct-filter-menu" data-menu="location">
+                    <button class="acct-filter-option is-active" data-loc="all" type="button">All cities</button>
+                    <span id="acct-loc-chips" style="display:contents;"></span>
+                  </div>
+                </div>
+                <div class="acct-filter-dropdown" data-filter-row="rating">
+                  <button type="button" class="acct-filter-pill" data-pill="rating">
+                    <span class="acct-filter-pill__label" data-pill-label="rating">All ratings</span>
+                    <span class="acct-filter-pill__caret">▾</span>
+                  </button>
+                  <div class="acct-filter-menu" data-menu="rating">
+                    <button class="acct-filter-option is-active" data-rating="0" type="button">All ratings</button>
+                    <button class="acct-filter-option" data-rating="3" type="button">3.0+ ★</button>
+                    <button class="acct-filter-option" data-rating="3.5" type="button">3.5+ ★</button>
+                    <button class="acct-filter-option" data-rating="4" type="button">4.0+ ★</button>
+                    <button class="acct-filter-option" data-rating="4.5" type="button">4.5+ ★</button>
+                  </div>
+                </div>
+              </div>
+
               <div id="account-map" class="account-map"></div>
               <div class="acct-map-carousel" id="acct-map-carousel"></div>
             </section>
