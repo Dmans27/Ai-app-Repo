@@ -135,6 +135,7 @@
       display: flex; align-items: center; justify-content: center;
       text-decoration: none;
       transition: background 0.15s;
+      overflow: hidden;
     }
     .feed-hdr-btn:hover { background: rgba(255,255,255,0.1); }
     .feed-hdr-btn:active { transform: scale(0.94); }
@@ -747,7 +748,7 @@
     <div class="feed-header__actions">
       {% if current_user.is_authenticated %}
         <button class="feed-hdr-btn feed-hdr-btn--green" id="feed-compose-toggle" type="button" aria-label="Create post">+</button>
-        <a href="{{ url_for('account') }}" class="feed-hdr-btn" aria-label="Account">👤</a>
+        <a href="{{ url_for('account') }}" class="feed-hdr-btn" aria-label="Account">{% if current_user.profile_image_url %}<img src="{{ current_user.profile_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}👤{% endif %}</a>
       {% else %}
         <a href="{{ url_for('login') }}" class="feed-hdr-btn" aria-label="Log in">👤</a>
       {% endif %}

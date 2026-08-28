@@ -3199,6 +3199,7 @@ select {
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  overflow: hidden;
 }
 
 .app-sidebar__new-search {
@@ -3562,6 +3563,7 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 /* =========================
@@ -4180,6 +4182,7 @@ margin: 10px 10px -86px 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .mobile-tabbar {

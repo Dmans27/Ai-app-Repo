@@ -499,7 +499,7 @@
         <div class="app-brand__subtitle">Recommendations near you</div>
       </div>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">👤</a>
+        <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">{% if current_user.profile_image_url %}<img src="{{ current_user.profile_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}👤{% endif %}</a>
       {% else %}
         <a href="{{ url_for('login') }}" class="app-sidebar__account" aria-label="Log in">👤</a>
       {% endif %}
@@ -588,7 +588,7 @@
         </div>
 
         {% if current_user.is_authenticated %}
-          <a href="{{ url_for('account') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Account">👤</a>
+          <a href="{{ url_for('account') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Account">{% if current_user.profile_image_url %}<img src="{{ current_user.profile_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}👤{% endif %}</a>
         {% else %}
           <a href="{{ url_for('login') }}" class="mobile-app-header__icon mobile-app-header__icon--link" aria-label="Log in">👤</a>
         {% endif %}

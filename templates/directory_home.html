@@ -68,7 +68,7 @@
             href="{{ url_for('account') }}"
             class="app-sidebar__account"
             aria-label="Account"
-          >👤</a>
+          >{% if current_user.profile_image_url %}<img src="{{ current_user.profile_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}👤{% endif %}</a>
         {% else %}
           <a
             href="{{ url_for('login') }}"
@@ -304,7 +304,7 @@
             href="{{ url_for('account') }}"
             class="mobile-app-header__icon mobile-app-header__icon--link"
             aria-label="Account"
-          >👤</a>
+          >{% if current_user.profile_image_url %}<img src="{{ current_user.profile_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}👤{% endif %}</a>
         {% else %}
           <a
             href="{{ url_for('login') }}"
