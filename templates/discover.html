@@ -754,6 +754,8 @@
                               <input type="hidden" name="longitude" value="{{ place.longitude or '' }}">
                               <input type="hidden" name="listing_id" value="{{ place.id }}">
                               <input type="hidden" name="place_id"  value="{{ place.place_id or '' }}">
+                              <input type="hidden" name="photo_url" value="{{ place.photo_url or '' }}">
+                              <input type="hidden" name="city"      value="{{ place.city or '' }}">
                               <button type="submit" class="disc-card__btn" aria-label="Save {{ place.name }}">
                                 + Save
                               </button>

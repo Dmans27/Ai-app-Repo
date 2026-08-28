@@ -6116,7 +6116,18 @@ def _account_context():
         for place in saved_list.places:
             listing = None
 
-            if getattr(place, "place_id", None):
+            if getattr(place, "listing_id", None):
+                listing = query_one(
+                    """
+                    SELECT id, slug, photo_url, photo_urls_json
+                    FROM listings
+                    WHERE id = :listing_id
+                    LIMIT 1
+                    """,
+                    {"listing_id": place.listing_id}
+                )
+
+            if not listing and getattr(place, "place_id", None):
                 listing = query_one(
                     """
                     SELECT id, slug, photo_url, photo_urls_json
