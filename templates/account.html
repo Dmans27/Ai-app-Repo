@@ -532,14 +532,19 @@ document.addEventListener("DOMContentLoaded",function(){
   const dc=places.length?[places[0].lng,places[0].lat]:[-87.6298,41.8781];
   // Pick a globe zoom that keeps the whole sphere inside the container's
   // height (globe diameter in px ≈ 512*2^zoom / π) instead of a fixed
-  // value that can crop the top/bottom on short, wide cards.
+  // value that can crop the top/bottom on short, wide cards. The top strip
+  // is reserved for the floating filter pills, so size the globe to the
+  // remaining space, not the full container height.
   const boxHeight=mel.clientHeight||340;
-  const globeZoom=Math.max(0,Math.log2((boxHeight*0.8*Math.PI)/512));
+  const topReserve=64;
+  const globeAvailHeight=Math.max(200,boxHeight-topReserve);
+  const globeZoom=Math.max(0,Math.log2((globeAvailHeight*0.8*Math.PI)/512));
   const map=new mapboxgl.Map({container:"account-map",style:styleUrl,center:dc,zoom:globeZoom,projection:"globe",pitch:0,bearing:-8,antialias:true});
-  // Bias the camera's notion of "center" upward so the globe (and later
-  // the local city view) sits higher in the card instead of dead-center,
-  // which was reading as too low / clipped at the bottom.
-  map.setPadding({top:0,bottom:Math.round(boxHeight*0.05),left:0,right:0});
+  // Reserve space at the top for the floating filter pills so the globe
+  // doesn't render right up underneath them, and keep a small bottom bias
+  // so the globe (and later the local city view) doesn't sit too low /
+  // clipped at the bottom.
+  map.setPadding({top:topReserve,bottom:Math.round(boxHeight*0.04),left:0,right:0});
   map.addControl(new mapboxgl.NavigationControl(),"top-right");
   map.on("zoom",updateListingVisibility);
   updateListingVisibility();
