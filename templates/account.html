@@ -545,7 +545,6 @@ document.addEventListener("DOMContentLoaded",function(){
   // so the globe (and later the local city view) doesn't sit too low /
   // clipped at the bottom.
   map.setPadding({top:topReserve,bottom:Math.round(boxHeight*0.04),left:0,right:0});
-  map.addControl(new mapboxgl.NavigationControl(),"top-right");
   map.on("zoom",updateListingVisibility);
   updateListingVisibility();
   map.on("style.load",function(){
