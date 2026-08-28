@@ -3690,6 +3690,79 @@ def refresh_listing_photos():
     return jsonify({"processed": len(results), "results": results})
 
 
+@app.get("/admin/dedupe-listings")
+@login_required
+def dedupe_listings():
+    """
+    Finds published listings that are the same real-world place entered
+    more than once (same name + same city, e.g. from re-importing the
+    same business under a slightly different place_id). For each group of
+    duplicates it keeps one "best" row (prefers one with a photo, then the
+    most recently updated) and marks the rest status='duplicate' so they
+    drop out of Discover/search but nothing is actually deleted.
+
+    Query params:
+      apply  - set to 1 to actually apply the changes. Without it, this is
+               a dry run that just reports what it would do.
+    """
+    apply_changes = (request.args.get("apply") or "") == "1"
+
+    rows = query_all(
+        """
+        SELECT id, name, city, address, photo_url, updated_at
+        FROM listings
+        WHERE status = 'published'
+        """
+    )
+
+    def norm(s):
+        return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+    groups = {}
+    for r in rows:
+        key = (norm(r["name"]), norm(r["city"]) or norm(r["address"])[:24])
+        groups.setdefault(key, []).append(r)
+
+    def keeper_score(r):
+        has_photo = 1 if (r.get("photo_url") or "").strip() else 0
+        updated = r.get("updated_at")
+        return (has_photo, updated or "")
+
+    dupe_groups = []
+    archived_ids = []
+
+    for key, group in groups.items():
+        if len(group) < 2:
+            continue
+
+        group_sorted = sorted(group, key=keeper_score, reverse=True)
+        keeper = group_sorted[0]
+        losers = group_sorted[1:]
+
+        dupe_groups.append({
+            "name": keeper["name"],
+            "kept_id": keeper["id"],
+            "archived_ids": [l["id"] for l in losers],
+        })
+        archived_ids.extend(l["id"] for l in losers)
+
+    if apply_changes and archived_ids:
+        for lid in archived_ids:
+            execute(
+                """
+                UPDATE listings
+                SET status = 'duplicate', updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id
+                """,
+                {"id": lid}
+            )
+
+    return jsonify({
+        "applied": apply_changes,
+        "duplicate_groups_found": len(dupe_groups),
+        "listings_archived": len(archived_ids) if apply_changes else 0,
+        "details": dupe_groups,
+    })
 
 
 

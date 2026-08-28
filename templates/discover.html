@@ -712,7 +712,9 @@
                           src="{{ place.photo_url }}"
                           alt="{{ place.name }}"
                           loading="lazy"
+                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                         >
+                        <div class="disc-card__img-placeholder" style="display:none;">{{ cat_emoji }}</div>
                       {% else %}
                         <div class="disc-card__img-placeholder">{{ cat_emoji }}</div>
                       {% endif %}
