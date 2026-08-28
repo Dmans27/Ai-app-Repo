@@ -11,6 +11,13 @@
        DISCOVER PAGE — SCOPED STYLES
     ═══════════════════════════════════════ */
 
+    /* Native-feeling header: blend into the white page instead of reading as a web toolbar */
+    .disc-header{background:#ffffff !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;border-bottom:none !important;box-shadow:none !important}
+    .disc-header .mobile-app-header__icon,.disc-header .mobile-app-header__icon--link{width:38px;height:38px;border-radius:12px;background:#f5f5f7;border:0.5px solid rgba(0,0,0,0.08);box-shadow:none;display:flex;align-items:center;justify-content:center;font-size:17px;transition:background 0.15s}
+    .disc-header .mobile-app-header__icon:active,.disc-header .mobile-app-header__icon--link:active{background:rgba(0,0,0,0.06)}
+    .disc-hamburger{flex-direction:column;gap:4px}
+    .disc-hamburger span{display:block;width:16px;height:2px;border-radius:2px;background:rgba(0,0,0,0.78)}
+
     /* ── Hero ── */
     .disc-hero {
       padding: 24px 20px 18px;
@@ -139,28 +146,26 @@
       letter-spacing: 0.2px;
     }
 
-    /* ── Card grid ── */
+    /* ── Card list (one horizontal row per place) ── */
     .disc-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      display: flex;
+      flex-direction: column;
       gap: 10px;
       padding: 0 16px 120px;
     }
 
-    @media (min-width: 600px) and (max-width: 1024px) {
-      .disc-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-
-    /* On desktop the grid lives inside the list panel */
+    /* On desktop the list lives inside the list panel */
     @media (min-width: 1025px) {
       .disc-grid {
-        grid-template-columns: repeat(2, 1fr);
         padding: 0 0 40px;
       }
     }
 
-    /* ── Place card ── */
+    /* ── Place card: info on the left, photo on the right ── */
     .disc-card {
+      display: flex;
+      align-items: stretch;
+      min-height: 104px;
       background: #13151a;
       border: 0.5px solid rgba(255,255,255,0.08);
       border-radius: 18px;
@@ -171,26 +176,27 @@
     }
     .disc-card:hover {
       border-color: rgba(157,232,200,0.28);
-      transform: translateY(-2px);
     }
-    .disc-card:active { transform: scale(0.97); }
+    .disc-card:active { transform: scale(0.98); }
     .disc-card.is-selected {
       border-color: rgba(16,163,127,0.55);
       box-shadow: 0 0 0 1px rgba(16,163,127,0.25);
     }
 
-    /* Card photo */
+    /* Card photo — right side */
     .disc-card__img {
-      width: 100%;
-      height: 80px;
+      order: 2;
+      width: 104px;
+      flex-shrink: 0;
       object-fit: cover;
       display: block;
       background: rgba(255,255,255,0.05);
     }
 
     .disc-card__img-placeholder {
-      width: 100%;
-      height: 80px;
+      order: 2;
+      width: 104px;
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -198,44 +204,56 @@
       background: linear-gradient(135deg, #131a16 0%, #0d1510 100%);
     }
 
-    /* Card body */
-    .disc-card__body { padding: 10px 10px 11px; }
+    /* Card body — left side */
+    .disc-card__body {
+      order: 1;
+      flex: 1;
+      min-width: 0;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
 
     .disc-card__name {
-      font-size: 13px;
+      font-size: 14.5px;
       font-weight: 800;
       color: #fff;
       line-height: 1.2;
-      margin: 0 0 3px;
+      margin: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .disc-card__meta {
-      font-size: 11px;
+      font-size: 11.5px;
       color: rgba(255,255,255,0.38);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin: 0 0 9px;
+      margin: 0;
       text-transform: capitalize;
     }
 
-    /* Card action row */
+    /* Card action row — always a horizontal row */
     .disc-card__actions {
       display: flex;
-      gap: 5px;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
     }
 
     .disc-card__btn {
-      flex: 1;
-      height: 24px;
+      flex: 0 0 auto;
+      height: 26px;
+      padding: 0 12px;
       border-radius: 999px;
       border: 0.5px solid rgba(255,255,255,0.1);
       background: rgba(255,255,255,0.05);
       color: rgba(255,255,255,0.55);
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 700;
       cursor: pointer;
       text-decoration: none;
@@ -254,8 +272,7 @@
     .disc-card__btn--primary:hover { background: rgba(16,163,127,0.25); }
 
     /* Save button as a form inside the card */
-    .disc-card__save-form { flex: 1; display: contents; }
-    .disc-card__save-form .disc-card__btn { width: 100%; }
+    .disc-card__save-form { flex: 0 0 auto; display: contents; }
 
     /* ── Desktop two-column layout ── */
     @media (min-width: 1025px) {
@@ -562,8 +579,8 @@
     <main class="mobile-screen">
 
       <!-- Mobile header -->
-      <header class="mobile-app-header mobile-only">
-        <button class="mobile-app-header__icon" id="app-sidebar-toggle" type="button" aria-label="Open menu">☰</button>
+      <header class="mobile-app-header mobile-only disc-header">
+        <button class="mobile-app-header__icon disc-hamburger" id="app-sidebar-toggle" type="button" aria-label="Open menu"><span></span><span></span><span></span></button>
 
         <div class="mobile-app-header__center">
           <div class="mobile-app-header__title">Discover</div>
@@ -734,6 +751,18 @@
                               onclick="event.stopPropagation();"
                               aria-label="Log in to save {{ place.name }}"
                             >+ Save</a>
+                          {% endif %}
+
+                          <!-- Directions -->
+                          {% if place.address %}
+                            <a
+                              href="https://www.google.com/maps/search/?api=1&query={{ place.address | urlencode }}"
+                              class="disc-card__btn"
+                              target="_blank"
+                              rel="noopener"
+                              onclick="event.stopPropagation();"
+                              aria-label="Directions to {{ place.name }}"
+                            >Directions</a>
                           {% endif %}
                         </div>
                       </div>
