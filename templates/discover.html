@@ -173,21 +173,23 @@
       display: flex;
       align-items: stretch;
       min-height: 104px;
-      background: #13151a;
-      border: 0.5px solid rgba(255,255,255,0.08);
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.08);
       border-radius: 18px;
       overflow: hidden;
       cursor: pointer;
-      transition: border-color 0.18s, transform 0.18s;
+      transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
       position: relative;
+      box-shadow: 0 1px 3px rgba(20,20,25,0.06);
     }
     .disc-card:hover {
-      border-color: rgba(157,232,200,0.28);
+      border-color: rgba(16,163,127,0.4);
+      box-shadow: 0 6px 16px rgba(20,20,25,0.1);
     }
     .disc-card:active { transform: scale(0.98); }
     .disc-card.is-selected {
-      border-color: rgba(16,163,127,0.55);
-      box-shadow: 0 0 0 1px rgba(16,163,127,0.25);
+      border-color: #10a37f;
+      box-shadow: 0 0 0 2px rgba(16,163,127,0.18);
     }
 
     /* Card photo — right side */
@@ -197,7 +199,7 @@
       flex-shrink: 0;
       object-fit: cover;
       display: block;
-      background: rgba(255,255,255,0.05);
+      background: rgba(0,0,0,0.04);
     }
 
     .disc-card__img-placeholder {
@@ -208,7 +210,7 @@
       align-items: center;
       justify-content: center;
       font-size: 30px;
-      background: linear-gradient(135deg, #131a16 0%, #0d1510 100%);
+      background: linear-gradient(135deg, #eafaf3 0%, #dcf3e8 100%);
     }
 
     /* Card body — left side */
@@ -224,9 +226,10 @@
     }
 
     .disc-card__name {
-      font-size: 14.5px;
+      font-size: 16px;
       font-weight: 800;
-      color: #fff;
+      color: #14151a;
+      letter-spacing: -0.01em;
       line-height: 1.2;
       margin: 0;
       white-space: nowrap;
@@ -236,12 +239,14 @@
 
     .disc-card__meta {
       font-size: 11.5px;
-      color: rgba(255,255,255,0.38);
+      font-weight: 700;
+      color: #10a37f;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       margin: 0;
-      text-transform: capitalize;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
     }
 
     /* Card action row — always a horizontal row */
@@ -249,17 +254,17 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-top: 4px;
+      margin-top: 5px;
     }
 
     .disc-card__btn {
       flex: 0 0 auto;
-      height: 26px;
+      height: 27px;
       padding: 0 12px;
       border-radius: 999px;
-      border: 0.5px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #f5f5f7;
+      color: #3c3c43;
       font-size: 10.5px;
       font-weight: 700;
       cursor: pointer;
@@ -270,13 +275,13 @@
       transition: all 0.15s;
       white-space: nowrap;
     }
-    .disc-card__btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .disc-card__btn:hover { background: #ebebee; color: #14151a; }
     .disc-card__btn--primary {
-      background: rgba(16,163,127,0.15);
-      border-color: rgba(16,163,127,0.35);
-      color: #7ee2bf;
+      background: #10a37f;
+      border-color: transparent;
+      color: #fff;
     }
-    .disc-card__btn--primary:hover { background: rgba(16,163,127,0.25); }
+    .disc-card__btn--primary:hover { background: #0d8a6c; }
 
     /* Save button as a form inside the card */
     .disc-card__save-form { flex: 0 0 auto; display: contents; }
