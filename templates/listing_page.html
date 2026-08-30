@@ -197,7 +197,7 @@
 }
 
 .listing-thumb.is-active {
-  border-color: #111827;
+  border-color: #10a37f;
 }
 
 .listing-thumb img {
@@ -437,8 +437,8 @@
     }
 
     .listing-badge--category {
-      background: #eff6ff;
-      color: #1d4ed8;
+      background: rgba(16,163,127,0.1);
+      color: #0f6e56;
     }
 
     .listing-title {
@@ -489,9 +489,12 @@
     }
 
     .listing-btn--primary {
-      background: #111827;
+      background: #10a37f;
       color: #fff;
-      box-shadow: 0 10px 20px rgba(17, 24, 39, 0.12);
+      box-shadow: 0 10px 20px rgba(16, 163, 127, 0.22);
+    }
+    .listing-btn--primary:hover {
+      background: #0d8a6c;
     }
 
     .listing-btn--secondary {
@@ -668,7 +671,7 @@
     }
 
     .related-card__cta {
-      color: #111827;
+      color: #10a37f;
       font-weight: 700;
       font-size: 14px;
     }
@@ -715,82 +718,146 @@
       .listing-sidebar-card {
         position: static;
       }
+
+      /* Leave room for the fixed bottom tab bar and drop the desktop-sized
+         top padding now that the mobile header sits directly above. */
+      .listing-page {
+        padding: 18px 16px 120px;
+      }
     }
   </style>
 </head>
-<body>
+<body class="app-body page-listing">
 
 <div class="app-shell">
 
-  <aside class="app-sidebar" id="app-sidebar">
+  <aside class="app-sidebar desktop-sidebar">
     <div class="app-sidebar__top">
-      <button class="app-sidebar__new-chat">+ New search</button>
+      <div class="app-brand">
+        <div class="app-brand__title">Local AI</div>
+        <div class="app-brand__subtitle">Recommendations near you</div>
+      </div>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}" class="app-sidebar__account" aria-label="Account">{% if current_user.profile_image_url %}<img src="{{ current_user.profile_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">{% else %}👤{% endif %}</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="app-sidebar__account" aria-label="Log in">👤</a>
+      {% endif %}
     </div>
+
+    <button class="app-sidebar__new-search" type="button" onclick="window.location.href='/'">+ New search</button>
 
     <nav class="app-sidebar__nav">
-      <a href="/" class="app-sidebar__link app-sidebar__link--active">AI Search</a>
-      <a href="/search?q=coffee near me" class="app-sidebar__link">Coffee</a>
-      <a href="/search?q=restaurant coffee near me" class="app-sidebar__link">Restaurants</a>
-      <a href="/search?q=bars" class="app-sidebar__link">Bars</a>
-      <a href="/search?q=plumbers" class="app-sidebar__link">Plumbers</a>
-      <a href="/admin" class="app-sidebar__link">Admin</a>
-      <a href="https://buy.stripe.com/test_5kQ3cxfEe6Bg2qifsn0VO00" class="app-sidebar__link">Promote Your Business</a>
+      <a href="/" class="app-sidebar__link">AI Search</a>
+      <a href="/discover" class="app-sidebar__link is-active">Discover</a>
+      <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}" class="app-sidebar__link">Saved</a>
+        <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
+      {% endif %}
+      {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <a href="/admin" class="app-sidebar__link">Admin</a>
+      {% endif %}
     </nav>
 
-    <div class="app-sidebar__section-title">Recent searches</div>
+    <div class="app-sidebar__section-label">Account</div>
 
-    <div class="app-sidebar__history">
-      <button class="app-sidebar__history-item">Best coffee in Nashville</button>
-      <button class="app-sidebar__history-item">Bars near me</button>
-      <button class="app-sidebar__history-item">Best burgers in Miami</button>
-    </div>
-
-    <div class="app-sidebar__bottom">
+    <div class="app-sidebar__footer">
       <a href="/" class="app-sidebar__footer-link">Home</a>
       <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}" class="app-sidebar__footer-link">Account</a>
+        <form method="post" action="{{ url_for('logout') }}">
+          <button type="submit" class="app-sidebar__footer-button">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="app-sidebar__footer-link">Log in</a>
+        <a href="{{ url_for('signup') }}" class="app-sidebar__footer-link">Sign up</a>
+      {% endif %}
     </div>
   </aside>
 
-<div class="app-main listing-app-main">
+  <div class="mobile-app-shell">
 
-  <header class="mobile-app-header">
-    <button
-      class="mobile-app-header__icon"
-      id="app-sidebar-toggle"
-      type="button"
-      aria-label="Open menu"
-    >
-      ☰
-    </button>
-
-    <div class="mobile-app-header__center">
-      <div class="mobile-app-header__title">
-        {{ listing.name }}
+    <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
+      <div class="mobile-drawer__header">
+        <div class="mobile-drawer__title">Local AI</div>
+        <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
       </div>
 
-      <div class="mobile-app-header__subtitle">
-        {{ (listing.category or "Local business")|replace('_', ' ')|title }}
-      </div>
-    </div>
+      <button class="mobile-drawer__new-search" type="button" onclick="window.location.href='/'">+ New search</button>
 
-    <a
-      href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
-      class="mobile-app-header__icon mobile-app-header__icon--link"
-      aria-label="Account"
-    >
-      {% if current_user.is_authenticated and current_user.profile_image_url %}
-        <img
-          src="{{ current_user.profile_image_url }}"
-          alt="{{ current_user.name or current_user.email }}"
-          class="mobile-app-header__avatar-img"
+      <nav class="mobile-drawer__nav">
+        <a href="/" class="mobile-drawer__link">AI Search</a>
+        <a href="/discover" class="mobile-drawer__link is-active">Discover</a>
+        <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="mobile-drawer__link">Saved</a>
+        {% endif %}
+      </nav>
+
+      <div class="mobile-drawer__section-label">Account</div>
+
+      <div class="mobile-drawer__footer">
+        <a href="/" class="mobile-drawer__footer-link">Home</a>
+        <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="mobile-drawer__footer-link">Account</a>
+          <a href="{{ url_for('settings') }}" class="account-settings-link">⚙️ Settings</a>
+          {% if current_user.role == 'admin' %}
+            <a href="/admin" class="mobile-drawer__footer-link">Admin</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('logout') }}">
+            <button type="submit" class="mobile-drawer__footer-button">Log out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="mobile-drawer__footer-link">Log in</a>
+          <a href="{{ url_for('signup') }}" class="mobile-drawer__footer-link">Sign up</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <div class="mobile-drawer-backdrop" id="app-sidebar-backdrop"></div>
+
+    <main class="mobile-screen listing-app-main">
+
+      <header class="mobile-app-header mobile-only">
+        <button
+          class="mobile-app-header__icon"
+          id="app-sidebar-toggle"
+          type="button"
+          aria-label="Open menu"
         >
-      {% else %}
-        👤
-      {% endif %}
-    </a>
-  </header>
+          ☰
+        </button>
 
-   <main class="listing-page">
+        <div class="mobile-app-header__center">
+          <div class="mobile-app-header__title">
+            {{ listing.name }}
+          </div>
+
+          <div class="mobile-app-header__subtitle">
+            {{ (listing.category or "Local business")|replace('_', ' ')|title }}
+          </div>
+        </div>
+
+        <a
+          href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
+          class="mobile-app-header__icon mobile-app-header__icon--link"
+          aria-label="Account"
+        >
+          {% if current_user.is_authenticated and current_user.profile_image_url %}
+            <img
+              src="{{ current_user.profile_image_url }}"
+              alt="{{ current_user.name or current_user.email }}"
+              class="mobile-app-header__avatar-img"
+            >
+          {% else %}
+            👤
+          {% endif %}
+        </a>
+      </header>
+
+   <section class="mobile-content listing-page">
   <a
     href="/search?q={{ ((listing.category or 'business') ~ ' in ' ~ (listing.city or ''))|urlencode }}"
     class="listing-back-link"
@@ -816,11 +883,12 @@
 
   <div class="listing-grid">
     <div class="listing-left-column">
+      {% set hero_photo = listing.photo_url or (listing_photos[0] if listing_photos else None) %}
       <section class="listing-card listing-hero">
-        {% if listing.photo_url %}
+        {% if hero_photo %}
           <div class="listing-hero__media">
             <img
-              src="{{ listing.photo_url }}"
+              src="{{ hero_photo }}"
               alt="{{ listing.name }}"
               class="listing-hero__image"
               loading="lazy"
@@ -957,11 +1025,11 @@
     <div class="listing-stars-input" id="listing-stars-input">
       <input type="hidden" name="rating" id="rating-value" value="0">
 
-      <button type="button" class="star-btn is-active" data-value="1" aria-label="1 star">★</button>
-      <button type="button" class="star-btn is-active" data-value="2" aria-label="2 stars">★</button>
-      <button type="button" class="star-btn is-active" data-value="3" aria-label="3 stars">★</button>
-      <button type="button" class="star-btn is-active" data-value="4" aria-label="4 stars">★</button>
-      <button type="button" class="star-btn is-active" data-value="5" aria-label="5 stars">★</button>
+      <button type="button" class="star-btn" data-value="1" aria-label="1 star">★</button>
+      <button type="button" class="star-btn" data-value="2" aria-label="2 stars">★</button>
+      <button type="button" class="star-btn" data-value="3" aria-label="3 stars">★</button>
+      <button type="button" class="star-btn" data-value="4" aria-label="4 stars">★</button>
+      <button type="button" class="star-btn" data-value="5" aria-label="5 stars">★</button>
     </div>
   </div>
 
@@ -1123,7 +1191,31 @@
       {% endif %}
     </aside>
   </div>
-</main>
+</section>
+
+      <nav class="mobile-tabbar mobile-only">
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🏠</span>
+          <span class="mobile-tabbar__label">Home</span>
+        </a>
+        <a href="/discover" class="mobile-tabbar__item is-active">
+          <span class="mobile-tabbar__icon">🗺️</span>
+          <span class="mobile-tabbar__label">Discover</span>
+        </a>
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">🔎</span>
+          <span class="mobile-tabbar__label">Search</span>
+        </a>
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">📌</span>
+          <span class="mobile-tabbar__label">Saved</span>
+        </a>
+        <a href="{{ url_for('account_profile') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon">👤</span>
+          <span class="mobile-tabbar__label">Account</span>
+        </a>
+      </nav>
+    </main>
   </div>
 </div>
 
@@ -1133,12 +1225,21 @@
 document.addEventListener("DOMContentLoaded", function () {
   const sidebar = document.getElementById("app-sidebar");
   const toggle = document.getElementById("app-sidebar-toggle");
+  const closeBtn = document.getElementById("app-sidebar-close");
+  const backdrop = document.getElementById("app-sidebar-backdrop");
 
-  if (toggle && sidebar) {
-    toggle.addEventListener("click", function () {
-      sidebar.classList.toggle("is-open");
-    });
+  function openDrawer() {
+    sidebar?.classList.add("is-open");
+    backdrop?.classList.add("is-open");
   }
+  function closeDrawer() {
+    sidebar?.classList.remove("is-open");
+    backdrop?.classList.remove("is-open");
+  }
+
+  if (toggle) toggle.addEventListener("click", openDrawer);
+  if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+  if (backdrop) backdrop.addEventListener("click", closeDrawer);
 });
 </script>
 
