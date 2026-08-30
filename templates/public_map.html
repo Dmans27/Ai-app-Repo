@@ -8,6 +8,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+  <style>
+    /* Cards are clickable here (fly the map to that pin), unlike the
+       plain per-list share page, so make that obvious. */
+    .public-place-slide{cursor:pointer;transition:transform 0.15s ease}
+    .public-place-slide:hover{transform:translateY(-2px)}
+  </style>
 </head>
 
 <body class="app-body public-list-body">
@@ -201,19 +207,47 @@
         ? [places[0].lng, places[0].lat]
         : [-87.6298, 41.8781];
 
+      function categoryColor(p) {
+        const c = (p.category || "").toLowerCase();
+        if (c.includes("coffee")) return "#C6935A";
+        if (c.includes("bar") || c.includes("cocktail")) return "#B368F7";
+        if (c.includes("wine")) return "#B4436C";
+        if (c.includes("rooftop")) return "#5AC8E8";
+        if (c.includes("shop")) return "#F5B301";
+        if (c.includes("restaurant") || c.includes("food")) return "#E2574C";
+        return "#7ee2bf";
+      }
+
+      function buildMarkerEl(color) {
+        const el = document.createElement("div");
+        el.style.cursor = "pointer";
+        el.style.filter = "drop-shadow(0 2px 4px rgba(0,0,0,0.45))";
+        el.innerHTML = `<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 1C6.8 1 1 6.7 1 13.7c0 9.6 13 21.3 13 21.3s13-11.7 13-21.3C27 6.7 21.2 1 14 1z" fill="${color}" stroke="#0b0c0d" stroke-width="1.5"/><circle cx="14" cy="13.5" r="5" fill="#0b0c0d" fill-opacity="0.85"/></svg>`;
+        return el;
+      }
+
       const map = new mapboxgl.Map({
         container: "public-list-map",
         style: styleUrl,
         center: defaultCenter,
-        zoom: places.length ? 3 : 1.5,
-        projection: "mercator",
+        zoom: places.length ? 1.4 : 0.6,
+        projection: "globe",
         pitch: 0,
-        bearing: 0,
+        bearing: -8,
         antialias: true
       });
 
-      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+      map.on("style.load", function () {
+        map.setFog({
+          color: "rgb(245,245,247)",
+          "high-color": "#f5f5f7",
+          "horizon-blend": 0.02,
+          "space-color": "rgb(245,245,247)",
+          "star-intensity": 0
+        });
+      });
 
+      const markers = [];
       const bounds = new mapboxgl.LngLatBounds();
 
       places.forEach((place) => {
@@ -227,26 +261,93 @@
           </div>
         `;
 
-        new mapboxgl.Marker()
+        const marker = new mapboxgl.Marker({ element: buildMarkerEl(categoryColor(place)) })
           .setLngLat([place.lng, place.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml))
+          .setPopup(new mapboxgl.Popup({ offset: 24 }).setHTML(popupHtml))
           .addTo(map);
 
+        marker._place = place;
+        markers.push(marker);
         bounds.extend([place.lng, place.lat]);
       });
 
+      let zoomedIn = false;
+
+      function setZoomedIn(next) {
+        if (next === zoomedIn) return;
+        zoomedIn = next;
+
+        map.setProjection(zoomedIn ? "mercator" : "globe");
+        map.setFog(zoomedIn ? {
+          color: "rgb(15,16,19)",
+          "high-color": "rgb(15,16,19)",
+          "horizon-blend": 0.02,
+          "space-color": "rgb(15,16,19)",
+          "star-intensity": 0
+        } : {
+          color: "rgb(245,245,247)",
+          "high-color": "#f5f5f7",
+          "horizon-blend": 0.02,
+          "space-color": "rgb(245,245,247)",
+          "star-intensity": 0
+        });
+      }
+
+      map.on("zoom", function () {
+        setZoomedIn(map.getZoom() > 5);
+      });
+
       map.on("load", function () {
-        if (places.length > 1) {
-          map.fitBounds(bounds, {
-            padding: 60,
-            maxZoom: 12
-          });
-        } else if (places.length === 1) {
-          map.flyTo({
-            center: [places[0].lng, places[0].lat],
-            zoom: 12
-          });
+        if (!map.getLayer("public-map-3d-buildings")) {
+          try {
+            map.addLayer({
+              id: "public-map-3d-buildings",
+              source: "composite",
+              "source-layer": "building",
+              filter: ["==", "extrude", "true"],
+              type: "fill-extrusion",
+              minzoom: 14,
+              paint: {
+                "fill-extrusion-color": "#2a2d31",
+                "fill-extrusion-height": ["get", "height"],
+                "fill-extrusion-base": ["get", "min_height"],
+                "fill-extrusion-opacity": 0.75
+              }
+            });
+          } catch (e) { /* style has no composite building layer — skip */ }
         }
+
+        if (places.length > 1) {
+          map.fitBounds(bounds, { padding: 60, maxZoom: 4 });
+        } else if (places.length === 1) {
+          map.easeTo({ center: [places[0].lng, places[0].lat], zoom: 3 });
+        }
+      });
+
+      // Clicking a card below the map flies in on that place, tilted and
+      // zoomed in just like the account map does.
+      document.querySelectorAll(".public-place-slide").forEach(function (slide) {
+        slide.addEventListener("click", function (e) {
+          if (e.target.closest("a")) return;
+
+          const lat = parseFloat(slide.dataset.lat);
+          const lng = parseFloat(slide.dataset.lng);
+          if (isNaN(lat) || isNaN(lng)) return;
+
+          map.flyTo({
+            center: [lng, lat],
+            zoom: 15,
+            pitch: 55,
+            bearing: -17,
+            duration: 1400,
+            essential: true
+          });
+
+          const match = markers.find(function (m) {
+            return Math.abs(m._place.lat - lat) < 0.0001 && Math.abs(m._place.lng - lng) < 0.0001;
+          });
+          if (match) setTimeout(function () { match.togglePopup(); }, 900);
+        });
       });
     });
   </script>
