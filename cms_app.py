@@ -3321,6 +3321,75 @@ def public_list_qr_png(slug):
     )
 
 
+@app.get("/u/<int:user_id>/map")
+def user_public_map(user_id):
+    """
+    A public, read-only page showing every place a user has saved across
+    all of their lists, plotted on one map — the "share my whole map"
+    feature. No login required to view; the shareable link/QR code itself
+    is the access control (only the owner can generate/copy it from their
+    Saved page).
+    """
+    owner = User.query.get_or_404(user_id)
+
+    lists = SavedList.query.filter_by(user_id=owner.id).all()
+
+    map_places = []
+    all_places = []
+
+    for saved_list in lists:
+        for place in saved_list.places:
+            all_places.append(place)
+            if place.latitude and place.longitude:
+                map_places.append({
+                    "name": place.name,
+                    "lat": float(place.latitude),
+                    "lng": float(place.longitude),
+                    "category": place.category or "",
+                    "address": place.address or "",
+                    "photo_url": place.photo_url or "",
+                })
+
+    return render_template(
+        "public_map.html",
+        owner=owner,
+        places=all_places,
+        map_places=map_places,
+        mapbox_token=os.environ.get("MAPBOX_TOKEN"),
+        mapbox_style_url=os.environ.get(
+            "MAPBOX_STYLE_URL",
+            "mapbox://styles/mapbox/dark-v11"
+        ),
+    )
+
+
+@app.get("/u/<int:user_id>/map/qr.png")
+def user_public_map_qr_png(user_id):
+    owner = User.query.get_or_404(user_id)
+
+    share_url = url_for("user_public_map", user_id=owner.id, _external=True)
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4
+    )
+
+    qr.add_data(share_url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        mimetype="image/png",
+        download_name=f"local-ai-map-{owner.id}-qr.png"
+    )
 
 
 
