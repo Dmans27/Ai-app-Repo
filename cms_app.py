@@ -3339,7 +3339,44 @@ def user_public_map(user_id):
 
     for saved_list in lists:
         for place in saved_list.places:
-            all_places.append(place)
+            # Resolve the matching directory listing (if any) so we can
+            # link "Show listing" back to its public listing page — same
+            # lookup priority used on the account map: listing_id first,
+            # then Google place_id, then a name match.
+            listing = None
+
+            if getattr(place, "listing_id", None):
+                listing = query_one(
+                    "SELECT slug FROM listings WHERE id = :id LIMIT 1",
+                    {"id": place.listing_id}
+                )
+
+            if not listing and getattr(place, "place_id", None):
+                listing = query_one(
+                    "SELECT slug FROM listings WHERE place_id = :place_id LIMIT 1",
+                    {"place_id": place.place_id}
+                )
+
+            if not listing and place.name:
+                listing = query_one(
+                    "SELECT slug FROM listings WHERE LOWER(name) = LOWER(:name) LIMIT 1",
+                    {"name": place.name}
+                )
+
+            place_dict = {
+                "name": place.name,
+                "address": place.address or "",
+                "website": place.website or "",
+                "category": place.category or "",
+                "photo_url": place.photo_url or "",
+                "notes": place.notes or "",
+                "latitude": place.latitude,
+                "longitude": place.longitude,
+                "slug": listing["slug"] if listing else None,
+            }
+
+            all_places.append(place_dict)
+
             if place.latitude and place.longitude:
                 map_places.append({
                     "name": place.name,

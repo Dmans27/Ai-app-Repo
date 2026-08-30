@@ -140,6 +140,15 @@
                   {% endif %}
 
                   <div class="public-place-slide__actions">
+                    {% if place.slug %}
+                      <a
+                        href="/listing/{{ place.slug }}"
+                        onclick="event.stopPropagation();"
+                      >
+                        Show listing
+                      </a>
+                    {% endif %}
+
                     {% if place.website %}
                       <a
                         href="{{ place.website }}"
