@@ -612,12 +612,24 @@
     }
 
     .listing-related-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      display: flex;
       gap: 16px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 2px 2px 8px;
+      margin: 0 -2px;
+    }
+
+    .listing-related-grid::-webkit-scrollbar {
+      display: none;
     }
 
         .related-card {
+      scroll-snap-align: start;
+      flex: 0 0 auto;
+      width: 260px;
       padding: 0;
       overflow: hidden;
       text-decoration: none;
@@ -702,9 +714,12 @@
 
       @media (max-width: 980px) {
       .listing-grid,
-      .listing-info-grid,
-      .listing-related-grid {
+      .listing-info-grid {
         grid-template-columns: 1fr;
+      }
+
+      .related-card {
+        width: min(82vw, 300px);
       }
 
       .listing-hero {
