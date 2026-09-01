@@ -29,6 +29,58 @@
       color: #ffffff;
       border-color: #111111;
     }
+
+    /* Fullscreen map modal (mobile "Map view") — this had no layout CSS at
+       all, so tapping "Map view" on mobile technically opened it, but it
+       rendered as an unstyled, zero-height inline block instead of a
+       visible fullscreen overlay, which looked like the button did
+       nothing. */
+    .fullscreen-map-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .fullscreen-map-modal[hidden] {
+      display: none;
+    }
+    .fullscreen-map-modal__header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      flex-shrink: 0;
+      padding: 12px 14px;
+      padding-top: calc(12px + env(safe-area-inset-top));
+      border-bottom: 1px solid #eee;
+    }
+    .fullscreen-map-modal__close {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #fullscreen-map-filter.map-category-filter {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-bottom: 1px solid #eee;
+    }
+    .fullscreen-map-modal__canvas {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+    }
+    body.map-modal-open {
+      overflow: hidden;
+    }
   </style>
 
   <meta name="theme-color" content="#111111">
@@ -981,7 +1033,7 @@ function wireFilterBar() {
     }
 
     async function getCurrentPositionForAi() {
-      return new Promise((resolve) => {
+      const geoPromise = new Promise((resolve) => {
         if (!navigator.geolocation) {
           resolve({ lat: null, lng: null });
           return;
@@ -1001,6 +1053,17 @@ function wireFilterBar() {
           }
         );
       });
+
+      // Belt-and-suspenders timeout: some native WebView wrappers (the
+      // TestFlight/Capacitor build) don't reliably honor the `timeout`
+      // option above, especially if the OS permission prompt itself never
+      // resolves — which left search spinning forever with no location and
+      // no fallback. This guarantees we move on after 6s no matter what.
+      const hardTimeout = new Promise((resolve) => {
+        setTimeout(() => resolve({ lat: null, lng: null }), 6000);
+      });
+
+      return Promise.race([geoPromise, hardTimeout]);
     }
 
     function createLoadingBubble() {
@@ -1949,17 +2012,29 @@ function buildResultRow(item, isInternal, index = 0) {
         const coords = await getCurrentPositionForAi();
         status.textContent = "Thinking...";
 
-        const response = await fetch("/ai-chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: message,
-            lat: coords.lat,
-            lng: coords.lng
-          })
-        });
+        // Hard cap on the network call too — if this never settles (seen
+        // in the TestFlight app hanging indefinitely), fail loudly with a
+        // real error instead of leaving the loading state up forever.
+        const controller = new AbortController();
+        const fetchTimeout = setTimeout(() => controller.abort(), 20000);
+
+        let response;
+        try {
+          response = await fetch("/ai-chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              message: message,
+              lat: coords.lat,
+              lng: coords.lng
+            }),
+            signal: controller.signal
+          });
+        } finally {
+          clearTimeout(fetchTimeout);
+        }
 
         const data = await response.json();
 
@@ -2008,7 +2083,9 @@ function buildResultRow(item, isInternal, index = 0) {
         setComposerExpanded(false);
       } catch (error) {
         removeLoadingBubble();
-        status.textContent = "There was a problem running the AI search.";
+        status.textContent = error && error.name === "AbortError"
+          ? "That search timed out. Please try again."
+          : "There was a problem running the AI search.";
         console.error("AI search error:", error);
       } finally {
         input.disabled = false;
