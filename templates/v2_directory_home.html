@@ -991,7 +991,9 @@ async function loadPlaces(query = '') {
   if (userLat) { params.append('lat', userLat); params.append('lng', userLng); }
 
   try {
-    const resp = await fetch(`/api/discover?${params}`);
+    const resp = await fetch(`/discover?${params}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
     const data = await resp.json();
     allPlaces = data.places || data.results || data.listings || [];
     renderPlaces(allPlaces);
