@@ -3915,7 +3915,7 @@ def home():
         default_saved_list_id = first_list.id if first_list else None
 
     return render_template(
-    "directory_home.html",
+    "v2_directory_home.html",
     articles=articles,
     article_style="spotlight",
     homepage_top_ads=homepage_top_ads,
