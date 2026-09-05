@@ -5413,6 +5413,10 @@ def discover_page():
 
     print("[DISCOVER_LISTINGS_COUNT]", len(listings), flush=True)
     print("[DISCOVER_DEFAULT_LIST_ID]", default_list_id, flush=True)
+    
+    
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"places": listings})
 
     return render_template(
         "discover.html",
