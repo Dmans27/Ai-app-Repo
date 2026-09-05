@@ -1086,7 +1086,10 @@ function escHtml(str) {
 }
 
 function escJson(obj) {
-  return "'" + JSON.stringify(obj).replace(/'/g,"\\'") + "'";
+  return "'" + JSON.stringify(obj)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, "\\'") + "'";
 }
 
 /* ── Filter pills ──────────────────────────────────────── */
