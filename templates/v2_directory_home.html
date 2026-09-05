@@ -1114,22 +1114,17 @@ if (searchForm) {
 if (userLat) { params.append('lat', userLat); params.append('lng', userLng); }
 if (locationOverrideValue || userCity) params.append('city', locationOverrideValue || userCity);
 
-const resp = await fetch(`/search?${params}`);
-      const data = await resp.json();
+const resp = await fetch(`/search?${params}`, {
+  headers: { 'X-Requested-With': 'XMLHttpRequest' }
+});
+const data = await resp.json();
 
-      if (data.ai_answer || data.answer) {
-        const answerEl = document.getElementById('ai-answer');
-        const answerText = document.getElementById('ai-answer-text');
-        answerEl.classList.add('is-visible');
-        answerText.textContent = data.ai_answer || data.answer;
-      }
-
-      const places = data.results || data.places || data.internal_results || [];
-      if (places.length) {
-        allPlaces = places;
-        renderPlaces(allPlaces);
-        if (map) addMapMarkers(allPlaces);
-      } else {
+const places = data.internal_results || data.external_results || [];
+if (places.length) {
+  allPlaces = places;
+  renderPlaces(allPlaces);
+  if (map) addMapMarkers(allPlaces);
+} else {
         loadPlaces(query);
       }
     } catch(e) {
