@@ -1110,16 +1110,11 @@ if (searchForm) {
     // Ask AI
     showLoading(true);
     try {
-      const resp = await fetch('/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query,
-          lat: userLat,
-          lng: userLng,
-          city: locationOverrideValue || userCity
-        })
-      });
+      const params = new URLSearchParams({ q: query });
+if (userLat) { params.append('lat', userLat); params.append('lng', userLng); }
+if (locationOverrideValue || userCity) params.append('city', locationOverrideValue || userCity);
+
+const resp = await fetch(`/search?${params}`);
       const data = await resp.json();
 
       if (data.ai_answer || data.answer) {
