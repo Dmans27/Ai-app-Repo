@@ -4008,14 +4008,21 @@ body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
 }
 
 .search-view-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 38px;
+  min-width: 46px;
   padding: 0 14px;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
   font-weight: 600;
+  cursor: pointer;
 }
+
+.search-view-toggle__btn svg { flex-shrink: 0; }
 
 .search-view-toggle__btn.is-active {
   background: #fff;
