@@ -3766,29 +3766,34 @@ margin: 10px 10px -86px 10px;
    ========================= */
 .composer-search-trigger {
   display: none;
-  width: 100%;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 52px;
-  padding: 6px 20px;
-  border-radius: 999px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
   border: 1px solid rgba(0,0,0,0.1);
   background: #ffffff;
   box-shadow:
-    0 2px 16px rgba(0,0,0,0.08),
+    0 2px 16px rgba(0,0,0,0.12),
     0 0 0 1px rgba(0,0,0,0.03);
   backdrop-filter: blur(14px);
   color: rgba(0,0,0,0.55);
-  font-size: 0.95rem;
-  font-weight: 600;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.15s ease;
+
+  /* Float centered at the bottom of the viewport, independent of the
+     composer's own (often full-width) layout. */
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  transform: translateX(-50%);
+  z-index: 960;
 }
 
 .composer-search-trigger svg { color: var(--brand); flex-shrink: 0; }
 
-.composer-search-trigger:active { transform: scale(0.98); }
+.composer-search-trigger:active { transform: translateX(-50%) scale(0.94); }
 
 .composer-search-trigger:focus-visible {
   outline: 2px solid var(--brand);
@@ -3797,21 +3802,25 @@ margin: 10px 10px -86px 10px;
 
 /* Only collapse to the trigger button once results are showing — the
    landing-page composer (before a first search) stays exactly as it
-   was, always visible. */
+   was, always visible.
+   !important here is required: the mobile/desktop "COMPOSER BAR ...
+   FIXED" rules above force `.ai-input-bar { display: flex !important; }`
+   at every breakpoint, which otherwise wins over this toggle regardless
+   of source order or selector specificity. */
 body.ai-chat-active #bottom-composer .ai-input-bar {
-  display: none;
+  display: none !important;
 }
 
 body.ai-chat-active #bottom-composer .composer-search-trigger {
-  display: flex;
+  display: flex !important;
 }
 
 body.ai-chat-active #bottom-composer.is-input-visible .ai-input-bar {
-  display: flex;
+  display: flex !important;
 }
 
 body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
-  display: none;
+  display: none !important;
 }
 
 
