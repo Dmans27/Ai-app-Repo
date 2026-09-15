@@ -3759,6 +3759,61 @@ margin: 10px 10px -86px 10px;
   backdrop-filter: blur(14px);
 }
 
+/* =========================
+   COMPOSER SEARCH TRIGGER
+   (collapses the results-page composer down to a single
+   "Search" button; tapping it reveals the real input again)
+   ========================= */
+.composer-search-trigger {
+  display: none;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 6px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #ffffff;
+  box-shadow:
+    0 2px 16px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(0,0,0,0.03);
+  backdrop-filter: blur(14px);
+  color: rgba(0,0,0,0.55);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.composer-search-trigger svg { color: var(--brand); flex-shrink: 0; }
+
+.composer-search-trigger:active { transform: scale(0.98); }
+
+.composer-search-trigger:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Only collapse to the trigger button once results are showing — the
+   landing-page composer (before a first search) stays exactly as it
+   was, always visible. */
+body.ai-chat-active #bottom-composer .ai-input-bar {
+  display: none;
+}
+
+body.ai-chat-active #bottom-composer .composer-search-trigger {
+  display: flex;
+}
+
+body.ai-chat-active #bottom-composer.is-input-visible .ai-input-bar {
+  display: flex;
+}
+
+body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
+  display: none;
+}
+
 
 /* Thinking glow while AI is searching */
 .chat-composer.is-loading .ai-input-bar::before {

@@ -881,6 +881,18 @@ function wireFilterBar() {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mobileSubmit.click(); }
       };
     }
+
+    if (mobileInput) {
+      mobileInput.addEventListener('focus', function () {
+        if (typeof setComposerExpanded === 'function') setComposerExpanded(true);
+      });
+      mobileInput.addEventListener('blur', function () {
+        if (!mobileInput.value.trim()) {
+          if (typeof setComposerExpanded === 'function') setComposerExpanded(false);
+          document.getElementById('bottom-composer')?.classList.remove('is-input-visible');
+        }
+      });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', initComposer);
@@ -924,6 +936,19 @@ function wireFilterBar() {
       <section class="app-composer-wrap" id="bottom-composer">
         <div class="chat-composer is-collapsed">
           <div class="chat-composer__inner">
+            <button
+              type="button"
+              id="composer-search-trigger"
+              class="composer-search-trigger"
+              aria-label="Open search"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+              </svg>
+              <span>Search</span>
+            </button>
+
             <div class="ai-input-bar">
               <textarea
                 id="ai-chat-input-mobile"
@@ -1016,6 +1041,12 @@ function wireFilterBar() {
       composer.classList.toggle("is-expanded", expanded);
       composer.classList.toggle("is-collapsed", !expanded);
     }
+
+    /* Shared refs for the results-page "collapse to search button" toggle.
+       Declared at script scope so both runAiSearch() and the
+       DOMContentLoaded setup below can see the same elements. */
+    const bottomComposerEl = document.getElementById("bottom-composer");
+    const composerMobileInput = document.getElementById("ai-chat-input-mobile");
 
     function autoResizeTextarea(textarea) {
       if (!textarea) return;
@@ -2008,6 +2039,8 @@ function buildResultRow(item, isInternal, index = 0) {
       resultsEl.innerHTML = "";
       messages.insertAdjacentHTML("beforeend", createLoadingBubble());
 
+      let searchSucceeded = false;
+
       try {
         const coords = await getCurrentPositionForAi();
         status.textContent = "Thinking...";
@@ -2081,6 +2114,10 @@ function buildResultRow(item, isInternal, index = 0) {
         }, 100);
 
         setComposerExpanded(false);
+        bottomComposerEl?.classList.remove("is-input-visible");
+        input.blur();
+        composerMobileInput?.blur();
+        searchSucceeded = true;
       } catch (error) {
         removeLoadingBubble();
         status.textContent = error && error.name === "AbortError"
@@ -2091,7 +2128,12 @@ function buildResultRow(item, isInternal, index = 0) {
         input.disabled = false;
         button.disabled = false;
         composer?.classList.remove("is-loading");
-        input.focus();
+        // Only pop the keyboard back up on failure, so a person can fix a
+        // typo and retry. A successful search collapses to the search
+        // trigger button instead (see bottomComposerEl above).
+        if (!searchSucceeded) {
+          input.focus();
+        }
       }
     }
 
@@ -2184,6 +2226,14 @@ function setChatUiState(isActive) {
       setComposerExpanded(false);
       wireSavePlaceButtons();
 
+      const composerSearchTrigger = document.getElementById("composer-search-trigger");
+
+      composerSearchTrigger?.addEventListener("click", function () {
+        bottomComposerEl?.classList.add("is-input-visible");
+        setComposerExpanded(true);
+        composerMobileInput?.focus();
+      });
+
       if (input) {
         autoResizeTextarea(input);
 
@@ -2194,6 +2244,7 @@ function setChatUiState(isActive) {
         input.addEventListener("blur", function () {
           if (!input.value.trim()) {
             setComposerExpanded(false);
+            bottomComposerEl?.classList.remove("is-input-visible");
           }
         });
 
