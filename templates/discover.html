@@ -144,6 +144,39 @@
       color: #7ee2bf;
     }
 
+    /* ── Directory switcher (which city's listings Discover shows) ── */
+    .disc-directory-switcher {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 34px;
+      padding: 0 12px 0 10px;
+      margin-bottom: 14px;
+      border-radius: 999px;
+      border: 0.5px solid rgba(16,163,127,0.35);
+      background: rgba(16,163,127,0.08);
+      max-width: 100%;
+    }
+
+    .disc-directory-switcher__icon {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .disc-directory-switcher__select {
+      border: none;
+      background: none;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0d8a6c;
+      max-width: 220px;
+      text-overflow: ellipsis;
+    }
+
     /* ── Results count ── */
     .disc-results-meta {
       font-size: 12px;
@@ -616,6 +649,17 @@
             <p class="disc-hero__sub">
               Restaurants, coffee shops, bars, and local businesses near you.
             </p>
+
+            <!-- Directory switcher: which city's listings are showing -->
+            <div class="disc-directory-switcher">
+              <span class="disc-directory-switcher__icon" aria-hidden="true">📍</span>
+              <select id="disc-city-select" class="disc-directory-switcher__select" aria-label="Choose directory">
+                <option value="" {% if not active_city %}selected{% endif %}>Use my location</option>
+                {% for c in available_cities %}
+                  <option value="{{ c }}" {% if active_city and c|lower == active_city|lower %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
 
             <!-- Search bar (unified composer style) -->
             <form class="disc-search-form" method="get" action="{{ url_for('discover_page') }}">
@@ -1170,6 +1214,95 @@ function renderDetailSlider(index = 0) {
   if (prev) prev.onclick = () => renderDetailSlider(detailIndex - 1);
   if (next) next.onclick = () => renderDetailSlider(detailIndex + 1);
 }
+</script>
+
+<script>
+  /* ══════════════════════════════════════════════════════════
+     DIRECTORY SWITCHER
+     Discover shows one city's listings at a time. By default that
+     city is picked automatically from the person's current location
+     (re-checked each time this page loads); picking a city from the
+     dropdown "pins" it in localStorage so it sticks until they
+     switch back to "Use my location".
+  ══════════════════════════════════════════════════════════ */
+  (function () {
+    const ACTIVE_CITY = {{ (active_city or "")|tojson }};
+    const PIN_KEY = "discoverPinnedCity";
+
+    function cityUrl(city) {
+      const url = new URL(window.location.href);
+      if (city) {
+        url.searchParams.set("city", city);
+      } else {
+        url.searchParams.delete("city");
+      }
+      return url.toString();
+    }
+
+    function sameCity(a, b) {
+      return (a || "").trim().toLowerCase() === (b || "").trim().toLowerCase();
+    }
+
+    const select = document.getElementById("disc-city-select");
+    if (select) {
+      select.addEventListener("change", function () {
+        const chosen = select.value;
+        try {
+          if (chosen) {
+            localStorage.setItem(PIN_KEY, chosen);
+          } else {
+            localStorage.removeItem(PIN_KEY);
+          }
+        } catch (e) {
+          /* localStorage unavailable — still navigate */
+        }
+        window.location.href = cityUrl(chosen);
+      });
+    }
+
+    let pinnedCity = null;
+    try {
+      pinnedCity = localStorage.getItem(PIN_KEY);
+    } catch (e) {
+      pinnedCity = null;
+    }
+
+    if (pinnedCity) {
+      // A person picked a specific directory earlier — respect it until
+      // they switch back to "Use my location", instead of overriding it
+      // with GPS every time they open the page.
+      if (!sameCity(pinnedCity, ACTIVE_CITY)) {
+        window.location.href = cityUrl(pinnedCity);
+      }
+      return;
+    }
+
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      async function (position) {
+        try {
+          const { latitude, longitude } = position.coords;
+          const resp = await fetch(
+            `/api/reverse-geocode-city?lat=${latitude}&lng=${longitude}`
+          );
+          if (!resp.ok) return;
+          const data = await resp.json();
+          const detectedCity = data && data.city;
+          if (detectedCity && !sameCity(detectedCity, ACTIVE_CITY)) {
+            window.location.href = cityUrl(detectedCity);
+          }
+        } catch (e) {
+          console.error("[DISCOVER_LOCATION_ERROR]", e);
+        }
+      },
+      function () {
+        // Permission denied or unavailable — leave Discover showing
+        // whatever it already rendered (all listings, or their pin).
+      },
+      { timeout: 8000, maximumAge: 10 * 60 * 1000 }
+    );
+  })();
 </script>
 
 </body>

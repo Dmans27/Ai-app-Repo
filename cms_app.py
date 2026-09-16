@@ -5332,10 +5332,71 @@ def privacy_policy():
     
     
     
+def reverse_geocode_city(lat, lng):
+    """Turn a lat/lng pair into a city name using Google's Geocoding API.
+    Used to auto-select which city's directory Discover shows."""
+    if not GOOGLE_MAPS_API_KEY or lat is None or lng is None:
+        return None
+
+    url = "https://maps.googleapis.com/maps/api/geocode/json"
+    params = {
+        "latlng": f"{lat},{lng}",
+        "key": GOOGLE_MAPS_API_KEY,
+        "language": "en",
+    }
+
+    try:
+        r = requests.get(url, params=params, timeout=15)
+        r.raise_for_status()
+        data = r.json()
+
+        print("[REVERSE_GEOCODE_CITY_RESPONSE_STATUS]", data.get("status"), flush=True)
+
+        if data.get("status") != "OK":
+            return None
+
+        results = data.get("results", []) or []
+
+        # Prefer an exact "locality" component (this is what Google calls a
+        # city). Some countries don't use "locality" for their cities, so
+        # fall back to postal_town / admin_area_level_2 if needed.
+        for result in results:
+            for comp in result.get("address_components", []) or []:
+                if "locality" in (comp.get("types") or []):
+                    return comp.get("long_name")
+
+        for result in results:
+            for comp in result.get("address_components", []) or []:
+                types = comp.get("types") or []
+                if "postal_town" in types or "administrative_area_level_2" in types:
+                    return comp.get("long_name")
+
+        return None
+
+    except Exception as e:
+        print("[REVERSE_GEOCODE_CITY_ERROR]", str(e), flush=True)
+        return None
+
+
+@app.route("/api/reverse-geocode-city")
+def api_reverse_geocode_city():
+    """Given ?lat=&lng=, return {"city": "..."} so the client can switch
+    the Discover directory to wherever the person currently is."""
+    try:
+        lat = float(request.args.get("lat"))
+        lng = float(request.args.get("lng"))
+    except (TypeError, ValueError):
+        return jsonify({"city": None}), 400
+
+    city = reverse_geocode_city(lat, lng)
+    return jsonify({"city": city})
+
+
 @app.route("/discover")
 def discover_page():
     q = (request.args.get("q") or "").strip().lower()
     category = (request.args.get("category") or "").strip().lower()
+    city = (request.args.get("city") or "").strip()
 
     default_list_id = None
 
@@ -5395,12 +5456,28 @@ def discover_page():
         """
         params["category"] = f"%{category}%"
 
+    if city:
+        sql += """
+          AND LOWER(COALESCE(city, '')) = LOWER(:city)
+        """
+        params["city"] = city
+
     sql += """
         ORDER BY name ASC
         LIMIT 1000
     """
 
     listings = query_all(sql, params)
+
+    available_cities = query_all("""
+        SELECT DISTINCT city
+        FROM listings
+        WHERE status = 'published'
+          AND city IS NOT NULL
+          AND TRIM(city) != ''
+        ORDER BY city ASC
+    """)
+    available_cities = [row["city"] for row in available_cities if row.get("city")]
 
     for listing in listings:
         if not listing.get("photo_url") and listing.get("photo_urls_json"):
@@ -5424,6 +5501,8 @@ def discover_page():
         listings=listings,
         q=q,
         active_category=category,
+        active_city=city,
+        available_cities=available_cities,
         default_list_id=default_list_id
     )
 
