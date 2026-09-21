@@ -3500,7 +3500,24 @@ def feed():
     LIMIT 50
 """)
 
+    # Surface friends' posts first. Uses the existing Friendship model
+    # (accepted requests, either direction) rather than a global feed.
+    friend_ids = set()
+    if current_user.is_authenticated:
+        accepted = Friendship.query.filter(
+            db.or_(
+                Friendship.requester_id == current_user.id,
+                Friendship.addressee_id == current_user.id
+            ),
+            Friendship.status == 'accepted'
+        ).all()
+        for f in accepted:
+            friend_ids.add(
+                f.addressee_id if f.requester_id == current_user.id else f.requester_id
+            )
+
     for post in posts:
+        post["is_friend"] = post.get("user_id") in friend_ids
         post["comments"] = query_all(
             """
             SELECT
@@ -3516,6 +3533,11 @@ def feed():
                 "post_id": post["id"]
             }
         )
+
+    if friend_ids:
+        # Stable sort: friends' posts float to the top, but each group
+        # (friends / everyone else) keeps its original newest-first order.
+        posts.sort(key=lambda p: not p["is_friend"])
 
     return render_template("feed.html", posts=posts)
 
