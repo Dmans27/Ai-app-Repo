@@ -378,7 +378,10 @@
           <section class="home-nearby-feed" id="home-nearby-feed-desktop">
             <div class="home-nearby-feed__head">
               <div class="home-nearby-feed__title">Nearby right now</div>
-              <div class="home-nearby-feed__city" id="home-nearby-city-desktop">Finding you…</div>
+              <div class="home-nearby-feed__head-right">
+                <div class="home-nearby-feed__city" id="home-nearby-city-desktop">Finding you…</div>
+                <a class="home-nearby-feed__add" href="/feed?compose=1" aria-label="Create a post">+</a>
+              </div>
             </div>
             <div class="home-nearby-feed__list" id="home-nearby-list-desktop">
               <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
@@ -478,6 +481,29 @@
         font-weight: 600;
         color: var(--brand, #10a37f);
       }
+      .home-nearby-feed__head-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .home-nearby-feed__add {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--brand, #10a37f);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1;
+        text-decoration: none;
+        transition: background 0.15s, transform 0.1s;
+      }
+      .home-nearby-feed__add:hover { background: var(--brand-strong, #0d8a6c); }
+      .home-nearby-feed__add:active { transform: scale(0.92); }
       .home-nearby-feed__list {
         max-height: 460px;
         overflow-y: auto;
@@ -573,7 +599,10 @@
 <section class="home-nearby-feed home-nearby-feed--mobile" id="home-nearby-feed-mobile">
   <div class="home-nearby-feed__head">
     <div class="home-nearby-feed__title">Nearby right now</div>
-    <div class="home-nearby-feed__city" id="home-nearby-city-mobile">Finding you…</div>
+    <div class="home-nearby-feed__head-right">
+      <div class="home-nearby-feed__city" id="home-nearby-city-mobile">Finding you…</div>
+      <a class="home-nearby-feed__add" href="/feed?compose=1" aria-label="Create a post">+</a>
+    </div>
   </div>
   <div class="home-nearby-feed__list" id="home-nearby-list-mobile">
     <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
