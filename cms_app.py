@@ -2912,6 +2912,13 @@ def create_feed_post():
                 {"post_id": new_post_id, "image_url": url, "position": position}
             )
 
+    # Posting from somewhere other than /feed (e.g. the home page's own
+    # compose sheet) can ask to land back there instead of on the feed —
+    # only a relative, same-site path is honored.
+    redirect_to = (request.form.get("redirect_to") or "").strip()
+    if redirect_to.startswith("/") and not redirect_to.startswith("//"):
+        return redirect(redirect_to)
+
     return redirect(url_for("feed"))
 
 

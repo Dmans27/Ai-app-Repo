@@ -375,13 +375,16 @@
             Find coffee, bars, dinner, shopping, and more.
           </p>
 
+          {% if current_user.is_authenticated %}
+          <div class="home-nearby-add-row">
+            <button type="button" class="home-nearby-add-btn" id="home-compose-open-desktop" aria-label="Create a post">+</button>
+          </div>
+          {% endif %}
+
           <section class="home-nearby-feed" id="home-nearby-feed-desktop">
             <div class="home-nearby-feed__head">
               <div class="home-nearby-feed__title">Nearby right now</div>
-              <div class="home-nearby-feed__head-right">
-                <div class="home-nearby-feed__city" id="home-nearby-city-desktop">Finding you…</div>
-                <a class="home-nearby-feed__add" href="/feed?compose=1" aria-label="Create a post">+</a>
-              </div>
+              <div class="home-nearby-feed__city" id="home-nearby-city-desktop">Finding you…</div>
             </div>
             <div class="home-nearby-feed__list" id="home-nearby-list-desktop">
               <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
@@ -481,29 +484,34 @@
         font-weight: 600;
         color: var(--brand, #10a37f);
       }
-      .home-nearby-feed__head-right {
+      .home-nearby-add-row {
+        width: 100%;
+        max-width: 760px;
+        margin: 0 auto;
         display: flex;
-        align-items: center;
-        gap: 10px;
+        justify-content: flex-end;
+        padding: 0 2px 10px;
       }
-      .home-nearby-feed__add {
+      .home-nearby-add-btn {
         flex-shrink: 0;
-        width: 24px;
-        height: 24px;
+        width: 46px;
+        height: 46px;
         border-radius: 50%;
         background: var(--brand, #10a37f);
         color: #fff;
+        border: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
+        font-size: 26px;
         font-weight: 800;
         line-height: 1;
-        text-decoration: none;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(16,163,127,0.35);
         transition: background 0.15s, transform 0.1s;
       }
-      .home-nearby-feed__add:hover { background: var(--brand-strong, #0d8a6c); }
-      .home-nearby-feed__add:active { transform: scale(0.92); }
+      .home-nearby-add-btn:hover { background: var(--brand-strong, #0d8a6c); }
+      .home-nearby-add-btn:active { transform: scale(0.92); }
       .home-nearby-feed__list {
         max-height: 460px;
         overflow-y: auto;
@@ -583,10 +591,229 @@
          against showing up alongside the desktop hero's feed. */
       @media (min-width: 1025px) {
         .home-nearby-feed--mobile { display: none !important; }
+        .home-nearby-add-row--mobile { display: none !important; }
       }
       @media (max-width: 1024px) {
         .desktop-page-header .home-nearby-feed { display: none !important; }
+        .desktop-page-header .home-nearby-add-row { display: none !important; }
       }
+
+      /* ═══════════════════════════════════════
+         HOME COMPOSE SHEET
+      ═══════════════════════════════════════ */
+      .home-compose-sheet[hidden] { display: none !important; }
+
+      .home-compose-sheet {
+        position: fixed; inset: 0;
+        z-index: 11000;
+      }
+
+      .home-compose-sheet__backdrop {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.58);
+        backdrop-filter: blur(5px);
+      }
+
+      .home-compose-sheet__panel {
+        position: absolute;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        width: min(680px, calc(100vw - 24px));
+        background: #1a1c21;
+        border: 0.5px solid rgba(255,255,255,0.1);
+        border-radius: 26px;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        padding: 18px;
+        animation: homeSheetUp 0.26s cubic-bezier(0.22,1,0.36,1) both;
+      }
+
+      @keyframes homeSheetUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+
+      .home-compose-sheet__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .home-compose-sheet__title {
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: #f5f5f7;
+      }
+
+      .home-compose-sheet__close {
+        width: 36px; height: 36px;
+        border: none; border-radius: 10px;
+        background: rgba(255,255,255,0.08);
+        color: #fff; font-size: 18px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s;
+      }
+      .home-compose-sheet__close:hover { background: rgba(255,255,255,0.14); }
+
+      .home-compose-form { display: flex; flex-direction: column; gap: 12px; }
+
+      .home-compose-user-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .home-compose-avatar {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(25,195,138,0.15);
+        border: 1px solid rgba(25,195,138,0.28);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 800; color: #7ee2bf;
+        flex-shrink: 0;
+      }
+
+      .home-compose-body-input {
+        flex: 1;
+        min-height: 72px;
+        padding: 12px 14px;
+        border: 0.5px solid rgba(255,255,255,0.09);
+        border-radius: 16px;
+        background: rgba(255,255,255,0.05);
+        color: #f5f5f7;
+        font-size: 15px;
+        line-height: 1.5;
+        outline: none;
+        resize: none;
+        font-family: inherit;
+        transition: border-color 0.18s;
+      }
+      .home-compose-body-input:focus { border-color: rgba(25,195,138,0.45); }
+      .home-compose-body-input::placeholder { color: rgba(255,255,255,0.25); }
+
+      .home-compose-extras { display: flex; flex-direction: column; gap: 10px; }
+
+      .home-compose-place-field { position: relative; }
+
+      .home-compose-city-row { display: flex; gap: 8px; }
+
+      .home-compose-city-input {
+        flex: 1;
+        width: 100%;
+        height: 44px;
+        padding: 0 14px;
+        border: 0.5px solid rgba(255,255,255,0.09);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        color: #f5f5f7;
+        font-size: 14px;
+        outline: none;
+        font-family: inherit;
+        transition: border-color 0.18s;
+      }
+      .home-compose-city-input:focus { border-color: rgba(25,195,138,0.45); }
+      .home-compose-city-input::placeholder { color: rgba(255,255,255,0.25); }
+
+      .home-compose-locate-btn {
+        flex-shrink: 0;
+        height: 44px;
+        padding: 0 14px;
+        border: 0.5px solid rgba(255,255,255,0.09);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.5);
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+        font-family: inherit;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      .home-compose-locate-btn:hover { border-color: rgba(25,195,138,0.4); color: #7ee2bf; }
+      .home-compose-locate-btn.is-loading { opacity: 0.6; pointer-events: none; }
+
+      .home-compose-place-results {
+        position: absolute;
+        left: 0; right: 0; top: calc(100% + 4px);
+        background: #1f2127;
+        border: 0.5px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        overflow-y: auto;
+        max-height: 220px;
+        z-index: 20;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      }
+      .home-compose-place-results[hidden] { display: none; }
+
+      .home-compose-place-result {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 10px 14px;
+        cursor: pointer;
+        border-bottom: 0.5px solid rgba(255,255,255,0.06);
+      }
+      .home-compose-place-result:last-child { border-bottom: none; }
+      .home-compose-place-result:hover { background: rgba(255,255,255,0.06); }
+      .home-compose-place-result__name { font-size: 13px; font-weight: 700; color: #f5f5f7; }
+      .home-compose-place-result__meta { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+      .home-compose-place-selected {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border: 0.5px solid rgba(25,195,138,0.35);
+        background: rgba(25,195,138,0.08);
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #7ee2bf;
+      }
+      .home-compose-place-selected[hidden] { display: none; }
+      .home-compose-place-selected button {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        font-size: 13px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .home-compose-file-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        border: 0.5px dashed rgba(255,255,255,0.14);
+        border-radius: 12px;
+        color: rgba(255,255,255,0.45);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      .home-compose-file-label:hover { border-color: rgba(25,195,138,0.4); color: #7ee2bf; }
+      .home-compose-file-input { display: none; }
+
+      .home-compose-submit-btn {
+        width: 100%;
+        height: 48px;
+        border: none;
+        border-radius: 14px;
+        background: #19c38a;
+        color: #07110d;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+      }
+      .home-compose-submit-btn:hover { background: #16ad7b; }
+      .home-compose-submit-btn:active { transform: scale(0.97); }
       </style>
 
       <div class="app-main__inner">
@@ -610,18 +837,94 @@
 <!-- Sibling of .mobile-home-hero (not nested inside it) so it stays visible
      after a search runs, since .mobile-home-hero gets display:none when
      body.ai-chat-active is set. -->
+{% if current_user.is_authenticated %}
+<div class="home-nearby-add-row home-nearby-add-row--mobile">
+  <button type="button" class="home-nearby-add-btn" id="home-compose-open-mobile" aria-label="Create a post">+</button>
+</div>
+{% endif %}
+
 <section class="home-nearby-feed home-nearby-feed--mobile" id="home-nearby-feed-mobile">
   <div class="home-nearby-feed__head">
     <div class="home-nearby-feed__title">Nearby right now</div>
-    <div class="home-nearby-feed__head-right">
-      <div class="home-nearby-feed__city" id="home-nearby-city-mobile">Finding you…</div>
-      <a class="home-nearby-feed__add" href="/feed?compose=1" aria-label="Create a post">+</a>
-    </div>
+    <div class="home-nearby-feed__city" id="home-nearby-city-mobile">Finding you…</div>
   </div>
   <div class="home-nearby-feed__list" id="home-nearby-list-mobile">
     <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
   </div>
 </section>
+
+<!-- ════════════════════════════════
+     HOME COMPOSE SHEET — posting right from the home page, no trip to /feed
+════════════════════════════════ -->
+{% if current_user.is_authenticated %}
+<div class="home-compose-sheet" id="home-compose-sheet" hidden>
+  <div class="home-compose-sheet__backdrop" id="home-compose-close"></div>
+
+  <div class="home-compose-sheet__panel">
+    <div class="home-compose-sheet__header">
+      <span class="home-compose-sheet__title">Create post</span>
+      <button class="home-compose-sheet__close" id="home-compose-close-btn" type="button" aria-label="Close">✕</button>
+    </div>
+
+    <form
+      action="{{ url_for('create_feed_post') }}"
+      method="post"
+      enctype="multipart/form-data"
+      class="home-compose-form"
+    >
+      <input type="hidden" name="redirect_to" value="/">
+
+      <div class="home-compose-user-row">
+        <div class="home-compose-avatar">
+          {{ (current_user.name or current_user.email or "U")[0]|upper }}
+        </div>
+        <textarea
+          class="home-compose-body-input"
+          name="body"
+          placeholder="Share something with the community…"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="home-compose-extras">
+        <div class="home-compose-place-field">
+          <input
+            type="text"
+            id="home-compose-place-input"
+            placeholder="🍽️ Tag a place (optional)"
+            class="home-compose-city-input"
+            autocomplete="off"
+          >
+          <input type="hidden" name="listing_id" id="home-compose-listing-id">
+          <div class="home-compose-place-results" id="home-compose-place-results" hidden></div>
+          <div class="home-compose-place-selected" id="home-compose-place-selected" hidden>
+            <span id="home-compose-place-selected-name"></span>
+            <button type="button" id="home-compose-place-clear" aria-label="Remove tagged place">✕</button>
+          </div>
+        </div>
+
+        <div class="home-compose-city-row">
+          <input
+            type="text"
+            name="city"
+            id="home-compose-city-input"
+            placeholder="📍 City (optional)"
+            class="home-compose-city-input"
+          >
+          <button type="button" class="home-compose-locate-btn" id="home-compose-locate-btn">📍 Use my location</button>
+        </div>
+
+        <label class="home-compose-file-label" id="home-compose-file-label">
+          📷 Add photos
+          <input type="file" name="photos" accept="image/*" multiple class="home-compose-file-input">
+        </label>
+      </div>
+
+      <button class="home-compose-submit-btn" type="submit">Post</button>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <div class="quick-scroll-wrap" style="display: none;">
   <div class="quick-scroll">
@@ -1738,6 +2041,167 @@ function buildResultRow(item, isInternal, index = 0) {
       );
     }
 
+    /* ── Home compose sheet: post right from the home page ── */
+    function escapeHomeComposeHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s == null ? "" : String(s);
+      return d.innerHTML;
+    }
+
+    function initHomeComposeSheet() {
+      const sheet         = document.getElementById("home-compose-sheet");
+      const openDesktop   = document.getElementById("home-compose-open-desktop");
+      const openMobile    = document.getElementById("home-compose-open-mobile");
+      const closeBackdrop = document.getElementById("home-compose-close");
+      const closeBtn      = document.getElementById("home-compose-close-btn");
+
+      if (!sheet) return;
+
+      function openSheet() {
+        sheet.hidden = false;
+        setTimeout(() => sheet.querySelector("textarea")?.focus(), 60);
+      }
+      function closeSheet() { sheet.hidden = true; }
+
+      openDesktop?.addEventListener("click", openSheet);
+      openMobile?.addEventListener("click", openSheet);
+      closeBackdrop?.addEventListener("click", closeSheet);
+      closeBtn?.addEventListener("click", closeSheet);
+      document.addEventListener("keydown", e => {
+        if (e.key === "Escape" && !sheet.hidden) closeSheet();
+      });
+
+      /* Use my location */
+      const locateBtn = document.getElementById("home-compose-locate-btn");
+      const cityInput = document.getElementById("home-compose-city-input");
+
+      locateBtn?.addEventListener("click", function () {
+        if (!navigator.geolocation) {
+          alert("Location isn't available in this browser.");
+          return;
+        }
+        locateBtn.textContent = "Locating…";
+        locateBtn.classList.add("is-loading");
+
+        navigator.geolocation.getCurrentPosition(
+          async function (pos) {
+            try {
+              const { latitude, longitude } = pos.coords;
+              const resp = await fetch(`/api/reverse-geocode-city?lat=${latitude}&lng=${longitude}`);
+              const data = await resp.json();
+              if (data.city && cityInput) {
+                cityInput.value = data.city;
+                locateBtn.textContent = "📍 " + data.city;
+              } else {
+                locateBtn.textContent = "📍 Use my location";
+              }
+            } catch (err) {
+              locateBtn.textContent = "📍 Use my location";
+            } finally {
+              locateBtn.classList.remove("is-loading");
+            }
+          },
+          function () {
+            locateBtn.textContent = "📍 Use my location";
+            locateBtn.classList.remove("is-loading");
+            alert("Couldn't get your location. You can still type a city in by hand.");
+          }
+        );
+      });
+
+      /* Tag a place */
+      const placeInput        = document.getElementById("home-compose-place-input");
+      const placeResults      = document.getElementById("home-compose-place-results");
+      const placeSelected     = document.getElementById("home-compose-place-selected");
+      const placeSelectedName = document.getElementById("home-compose-place-selected-name");
+      const placeClearBtn     = document.getElementById("home-compose-place-clear");
+      const listingIdInput    = document.getElementById("home-compose-listing-id");
+
+      let placeSearchTimer = null;
+
+      function clearPlaceResults() {
+        if (!placeResults) return;
+        placeResults.hidden = true;
+        placeResults.innerHTML = "";
+      }
+
+      function selectPlace(place) {
+        if (listingIdInput) listingIdInput.value = place.id;
+        if (placeSelectedName) {
+          placeSelectedName.textContent = place.name + (place.city ? ` · ${place.city}` : "");
+        }
+        if (placeSelected) placeSelected.hidden = false;
+        if (placeInput) { placeInput.value = ""; placeInput.hidden = true; }
+        clearPlaceResults();
+      }
+
+      placeInput?.addEventListener("input", function () {
+        const q = placeInput.value.trim();
+        clearTimeout(placeSearchTimer);
+        if (q.length < 2) { clearPlaceResults(); return; }
+
+        placeSearchTimer = setTimeout(async function () {
+          try {
+            const resp = await fetch(`/api/listings/search?q=${encodeURIComponent(q)}`);
+            const data = resp.ok ? await resp.json() : { results: [] };
+            const results = data.results || [];
+
+            if (!results.length) { clearPlaceResults(); return; }
+
+            placeResults.innerHTML = results.map(function (r) {
+              const name = escapeHomeComposeHtml(r.name || "");
+              const meta = escapeHomeComposeHtml([r.category, r.city].filter(Boolean).join(" · "));
+              return `
+                <div class="home-compose-place-result" data-id="${r.id}" data-name="${name}" data-city="${escapeHomeComposeHtml(r.city || "")}">
+                  <div class="home-compose-place-result__name">${name}</div>
+                  <div class="home-compose-place-result__meta">${meta}</div>
+                </div>`;
+            }).join("");
+            placeResults.hidden = false;
+
+            placeResults.querySelectorAll(".home-compose-place-result").forEach(function (el) {
+              el.addEventListener("click", function () {
+                selectPlace({ id: el.dataset.id, name: el.dataset.name, city: el.dataset.city });
+              });
+            });
+          } catch (e) {
+            clearPlaceResults();
+          }
+        }, 250);
+      });
+
+      placeClearBtn?.addEventListener("click", function () {
+        if (listingIdInput) listingIdInput.value = "";
+        if (placeSelected) placeSelected.hidden = true;
+        if (placeInput) placeInput.hidden = false;
+      });
+
+      document.addEventListener("click", function (e) {
+        if (
+          placeResults && !placeResults.hidden &&
+          placeInput && !placeInput.contains(e.target) &&
+          !placeResults.contains(e.target)
+        ) {
+          clearPlaceResults();
+        }
+      });
+
+      /* Photo count label */
+      document.querySelectorAll(".home-compose-file-input").forEach(input => {
+        const label = input.closest(".home-compose-file-label");
+        input.addEventListener("change", function () {
+          if (!label) return;
+          const count = input.files?.length || 0;
+          const textNode = label.childNodes[0];
+          if (!textNode || textNode.nodeType !== 3) return;
+
+          if (count === 0) textNode.textContent = "📷 Add photos";
+          else if (count === 1) textNode.textContent = "📷 " + input.files[0].name;
+          else textNode.textContent = `📷 ${count} photos selected`;
+        });
+      });
+    }
+
     function buildHomeGlobeMarkerEl(color) {
       const el = document.createElement("div");
       el.style.width = "16px";
@@ -2431,6 +2895,7 @@ function setChatUiState(isActive) {
 
       setChatUiState(false);
       initHomeNearbyFeed();
+      initHomeComposeSheet();
 
       if (desktopGreeting) desktopGreeting.textContent = greeting;
       if (mobileGreeting) mobileGreeting.textContent = greeting;
