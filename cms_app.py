@@ -5414,6 +5414,44 @@ def api_reverse_geocode_city():
     return jsonify({"city": city})
 
 
+@app.route("/api/feed/nearby")
+def api_feed_nearby():
+    """Recent public feed posts for a given city — powers the home page's
+    "Nearby right now" feed (replaces the old globe hero). Reuses the same
+    post shape as /feed so the client can render them the same way."""
+    city = (request.args.get("city") or "").strip()
+    if not city:
+        return jsonify({"posts": [], "city": None})
+
+    posts = query_all("""
+        SELECT
+            p.*,
+            COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name,
+            l.name AS listing_name,
+            (
+                SELECT COUNT(*)
+                FROM feed_post_likes
+                WHERE post_id = p.id
+            ) AS like_count,
+            (
+                SELECT COUNT(*)
+                FROM feed_post_comments
+                WHERE post_id = p.id
+            ) AS comment_count
+        FROM feed_posts p
+        LEFT JOIN "user" u
+            ON u.id = p.user_id
+        LEFT JOIN listings l
+            ON l.id = p.listing_id
+        WHERE p.is_public = 1
+          AND LOWER(COALESCE(p.city, '')) = LOWER(:city)
+        ORDER BY p.id DESC
+        LIMIT 20
+    """, {"city": city})
+
+    return jsonify({"posts": posts, "city": city})
+
+
 @app.route("/discover")
 def discover_page():
     q = (request.args.get("q") or "").strip().lower()

@@ -375,8 +375,14 @@
             Find coffee, bars, dinner, shopping, and more.
           </p>
 
-          <section class="home-globe-card">
-            <div id="home-globe-desktop" class="home-globe-canvas"></div>
+          <section class="home-nearby-feed" id="home-nearby-feed-desktop">
+            <div class="home-nearby-feed__head">
+              <div class="home-nearby-feed__title">Nearby right now</div>
+              <div class="home-nearby-feed__city" id="home-nearby-city-desktop">Finding you…</div>
+            </div>
+            <div class="home-nearby-feed__list" id="home-nearby-list-desktop">
+              <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
+            </div>
           </section>
 
           <!-- AI input bar lives HERE on desktop before first message -->
@@ -431,7 +437,7 @@
       /* ── Hide mobile hero + chips when chat is active ── */
       body.ai-chat-active .mobile-home-hero,
       body.ai-chat-active .quick-scroll-wrap,
-      body.ai-chat-active .home-globe-card {
+      body.ai-chat-active .home-nearby-feed {
         display: none !important;
         height: 0 !important;
         min-height: 0 !important;
@@ -445,43 +451,101 @@
         height: auto !important;
       }
 
-      /* ── Homepage globe card ── */
-      .home-globe-card {
+      /* ── Homepage nearby feed (replaces the old globe hero) ── */
+      .home-nearby-feed {
         width: 100%;
         max-width: 760px;
         margin: 4px auto 0;
         border-radius: 26px;
         overflow: hidden;
         background: #f5f5f7;
+        border: 0.5px solid rgba(0,0,0,0.08);
       }
-      .home-globe-canvas {
-        width: 100%;
-        height: 460px;
+      .home-nearby-feed__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 16px 20px 10px;
       }
-      .home-globe-canvas .mapboxgl-ctrl-logo,
-      .home-globe-canvas .mapboxgl-ctrl-attrib,
-      .home-globe-canvas .mapboxgl-ctrl-bottom-left,
-      .home-globe-canvas .mapboxgl-ctrl-top-right {
-        opacity: 0;
-        pointer-events: none;
+      .home-nearby-feed__title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #1d1d1f;
+        letter-spacing: -0.02em;
+      }
+      .home-nearby-feed__city {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--brand, #10a37f);
+      }
+      .home-nearby-feed__list {
+        max-height: 460px;
+        overflow-y: auto;
+        padding: 0 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .home-nearby-feed__empty {
+        padding: 28px 20px;
+        text-align: center;
+        color: rgba(0,0,0,0.4);
+        font-size: 13px;
+      }
+      .home-nearby-post {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: #ffffff;
+        border: 0.5px solid rgba(0,0,0,0.08);
+        border-radius: 14px;
+        padding: 10px 12px;
+        text-decoration: none;
+        color: inherit;
+      }
+      .home-nearby-post__avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(16,163,127,0.12);
+        color: var(--brand, #10a37f);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+      .home-nearby-post__body { min-width: 0; flex: 1; }
+      .home-nearby-post__name { font-size: 13px; font-weight: 700; color: #1d1d1f; }
+      .home-nearby-post__place { font-size: 12px; color: var(--brand, #10a37f); font-weight: 600; margin-top: 1px; }
+      .home-nearby-post__text {
+        font-size: 13px;
+        color: rgba(0,0,0,0.65);
+        margin-top: 3px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
       }
       @media (max-width: 1024px) {
-        .home-globe-card {
+        .home-nearby-feed {
           max-width: calc(100% - 40px);
         }
-        .home-globe-canvas {
-          height: 340px;
+        .home-nearby-feed__list {
+          max-height: 340px;
         }
       }
-      /* Only one globe instance should ever be visible at a time — the
-         mobile card lives outside .mobile-home-hero (so it survives the
+      /* Only one nearby-feed instance should ever be visible at a time —
+         the mobile card lives outside .mobile-home-hero (so it survives the
          ai-chat-active hide rule), so it needs its own explicit guard
-         against showing up alongside the desktop hero's globe. */
+         against showing up alongside the desktop hero's feed. */
       @media (min-width: 1025px) {
-        .home-globe-card--mobile { display: none !important; }
+        .home-nearby-feed--mobile { display: none !important; }
       }
       @media (max-width: 1024px) {
-        .desktop-page-header .home-globe-card { display: none !important; }
+        .desktop-page-header .home-nearby-feed { display: none !important; }
       }
       </style>
 
@@ -506,8 +570,14 @@
 <!-- Sibling of .mobile-home-hero (not nested inside it) so it stays visible
      after a search runs, since .mobile-home-hero gets display:none when
      body.ai-chat-active is set. -->
-<section class="home-globe-card home-globe-card--mobile">
-  <div id="home-globe-mobile" class="home-globe-canvas"></div>
+<section class="home-nearby-feed home-nearby-feed--mobile" id="home-nearby-feed-mobile">
+  <div class="home-nearby-feed__head">
+    <div class="home-nearby-feed__title">Nearby right now</div>
+    <div class="home-nearby-feed__city" id="home-nearby-city-mobile">Finding you…</div>
+  </div>
+  <div class="home-nearby-feed__list" id="home-nearby-list-mobile">
+    <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
+  </div>
 </section>
 
 <div class="quick-scroll-wrap" style="display: none;">
@@ -1523,6 +1593,100 @@ function buildResultRow(item, isInternal, index = 0) {
     let _homeGlobeMarkers = [];
     let _homeGlobeSpin = null;
 
+    /* ── Homepage "Nearby right now" feed (replaces the globe hero) ── */
+    function escapeHomeFeedHtml(s) {
+      const d = document.createElement("div");
+      d.textContent = s == null ? "" : String(s);
+      return d.innerHTML;
+    }
+
+    function renderHomeNearbyFeed(posts, cityLabel) {
+      const lists = [
+        document.getElementById("home-nearby-list-desktop"),
+        document.getElementById("home-nearby-list-mobile")
+      ].filter(Boolean);
+
+      const cityEls = [
+        document.getElementById("home-nearby-city-desktop"),
+        document.getElementById("home-nearby-city-mobile")
+      ].filter(Boolean);
+
+      cityEls.forEach(el => { el.textContent = cityLabel || ""; });
+
+      if (!posts || !posts.length) {
+        const emptyHtml = `<div class="home-nearby-feed__empty">${
+          cityLabel
+            ? `No posts in ${escapeHomeFeedHtml(cityLabel)} yet — be the first to share a spot.`
+            : "Turn on location to see what people are eating nearby."
+        }</div>`;
+        lists.forEach(list => { list.innerHTML = emptyHtml; });
+        return;
+      }
+
+      const html = posts.map(p => {
+        const name    = (p.user_name || "User").split(" ")[0];
+        const initial = (p.user_name || "U")[0].toUpperCase();
+        const place   = p.listing_name || p.title || "";
+        const text    = p.body || "";
+        return `
+          <a class="home-nearby-post" href="/feed">
+            <div class="home-nearby-post__avatar">${escapeHomeFeedHtml(initial)}</div>
+            <div class="home-nearby-post__body">
+              <div class="home-nearby-post__name">${escapeHomeFeedHtml(name)}</div>
+              ${place ? `<div class="home-nearby-post__place">${escapeHomeFeedHtml(place)}</div>` : ""}
+              ${text ? `<div class="home-nearby-post__text">${escapeHomeFeedHtml(text)}</div>` : ""}
+            </div>
+          </a>`;
+      }).join("");
+
+      lists.forEach(list => { list.innerHTML = html; });
+    }
+
+    async function loadHomeNearbyFeed(city) {
+      try {
+        const resp = await fetch(`/api/feed/nearby?city=${encodeURIComponent(city)}`);
+        if (!resp.ok) { renderHomeNearbyFeed([], city); return; }
+        const data = await resp.json();
+        renderHomeNearbyFeed(data.posts || [], data.city || city);
+      } catch (e) {
+        console.error("[HOME_NEARBY_FEED_ERROR]", e);
+        renderHomeNearbyFeed([], city);
+      }
+    }
+
+    function initHomeNearbyFeed() {
+      const fallbackCity = "{{ (current_user.home_city if current_user.is_authenticated and current_user.home_city else '') | e }}";
+
+      if (!navigator.geolocation) {
+        if (fallbackCity) loadHomeNearbyFeed(fallbackCity);
+        else renderHomeNearbyFeed([], "");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async function (position) {
+          try {
+            const { latitude, longitude } = position.coords;
+            const resp = await fetch(`/api/reverse-geocode-city?lat=${latitude}&lng=${longitude}`);
+            const data = resp.ok ? await resp.json() : {};
+            const city = (data && data.city) || fallbackCity;
+            if (city) loadHomeNearbyFeed(city);
+            else renderHomeNearbyFeed([], "");
+          } catch (e) {
+            console.error("[HOME_NEARBY_LOCATION_ERROR]", e);
+            if (fallbackCity) loadHomeNearbyFeed(fallbackCity);
+            else renderHomeNearbyFeed([], "");
+          }
+        },
+        function () {
+          // Permission denied or unavailable — fall back to profile city.
+          if (fallbackCity) loadHomeNearbyFeed(fallbackCity);
+          else renderHomeNearbyFeed([], "");
+        },
+        { timeout: 8000, maximumAge: 10 * 60 * 1000 }
+      );
+    }
+
     function buildHomeGlobeMarkerEl(color) {
       const el = document.createElement("div");
       el.style.width = "16px";
@@ -2215,7 +2379,7 @@ function setChatUiState(isActive) {
 
 
       setChatUiState(false);
-      initHomeGlobe();
+      initHomeNearbyFeed();
 
       if (desktopGreeting) desktopGreeting.textContent = greeting;
       if (mobileGreeting) mobileGreeting.textContent = greeting;
