@@ -314,6 +314,25 @@ def create_core_tables():
         """))
 
         # ---------------------------------------------------
+        # Feed Post Images (supports multiple photos per post;
+        # feed_posts.image_url is kept for older posts / as the
+        # "first photo" shorthand)
+        # ---------------------------------------------------
+        conn.execute(sql_text("""
+            CREATE TABLE IF NOT EXISTS feed_post_images (
+                id SERIAL PRIMARY KEY,
+                post_id INTEGER NOT NULL REFERENCES feed_posts(id) ON DELETE CASCADE,
+                image_url TEXT NOT NULL,
+                position INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """))
+        conn.execute(sql_text("""
+            CREATE INDEX IF NOT EXISTS idx_feed_post_images_post_id
+            ON feed_post_images (post_id);
+        """))
+
+        # ---------------------------------------------------
         # Feed Likes
         # ---------------------------------------------------
         conn.execute(sql_text("""
@@ -2811,10 +2830,15 @@ from io import BytesIO
 def create_feed_post():
     body = (request.form.get("body") or "").strip()
     city = (request.form.get("city") or "").strip()
-    photo = request.files.get("photo")
-    image_url = None
 
-    if photo and photo.filename:
+    listing_id_raw = (request.form.get("listing_id") or "").strip()
+    listing_id = int(listing_id_raw) if listing_id_raw.isdigit() else None
+
+    # Up to 6 photos per post.
+    photos = [p for p in request.files.getlist("photos") if p and p.filename][:6]
+    image_urls = []
+
+    for photo in photos:
         photo_bytes = photo.read()
 
         print("[FEED_PHOTO_NAME]", photo.filename, flush=True)
@@ -2822,32 +2846,38 @@ def create_feed_post():
         print("[FEED_PHOTO_BYTES]", len(photo_bytes), flush=True)
 
         if len(photo_bytes) == 0:
-            flash("The uploaded image was empty. Please choose another photo.")
-            return redirect(url_for("feed"))
+            continue
 
         content_type = photo.content_type or "image/jpeg"
         encoded_photo = base64.b64encode(photo_bytes).decode("utf-8")
         data_uri = f"data:{content_type};base64,{encoded_photo}"
 
-        upload_result = cloudinary.uploader.upload(
-            data_uri,
-            folder="localai/feed",
-            resource_type="image"
-        )
+        try:
+            upload_result = cloudinary.uploader.upload(
+                data_uri,
+                folder="localai/feed",
+                resource_type="image"
+            )
+            image_urls.append(upload_result["secure_url"])
+        except Exception as e:
+            print("[FEED_PHOTO_UPLOAD_ERROR]", str(e), flush=True)
 
-        image_url = upload_result["secure_url"]
-
-    if not body and not image_url:
-        flash("Write something or upload a photo.")
+    if photos and not image_urls:
+        flash("We couldn't upload your photo(s) — please try again.")
         return redirect(url_for("feed"))
 
-    execute(
+    if not body and not image_urls and not listing_id:
+        flash("Write something, add a photo, or tag a place.")
+        return redirect(url_for("feed"))
+
+    new_post_id = execute(
         """
         INSERT INTO feed_posts (
             user_id,
             post_type,
             body,
             image_url,
+            listing_id,
             city,
             is_public
         )
@@ -2856,18 +2886,31 @@ def create_feed_post():
             :post_type,
             :body,
             :image_url,
+            :listing_id,
             :city,
             1
         )
+        RETURNING id
         """,
         {
             "user_id": current_user.id,
-            "post_type": "photo" if image_url else "text",
+            "post_type": "photo" if image_urls else "text",
             "body": body or None,
-            "image_url": image_url,
+            "image_url": image_urls[0] if image_urls else None,
+            "listing_id": listing_id,
             "city": city or None
         }
     )
+
+    if new_post_id and image_urls:
+        for position, url in enumerate(image_urls):
+            execute(
+                """
+                INSERT INTO feed_post_images (post_id, image_url, position)
+                VALUES (:post_id, :image_url, :position)
+                """,
+                {"post_id": new_post_id, "image_url": url, "position": position}
+            )
 
     return redirect(url_for("feed"))
 
@@ -3479,7 +3522,9 @@ def feed():
     SELECT
         p.*,
         COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name,
+        u.profile_image_url AS user_photo,
         l.name AS listing_name,
+        l.slug AS listing_slug,
         (
             SELECT COUNT(*)
             FROM feed_post_likes
@@ -3532,6 +3577,13 @@ def feed():
             {
                 "post_id": post["id"]
             }
+        )
+        gallery = query_all(
+            "SELECT image_url FROM feed_post_images WHERE post_id = :post_id ORDER BY position ASC",
+            {"post_id": post["id"]}
+        )
+        post["images"] = [row["image_url"] for row in gallery] or (
+            [post["image_url"]] if post.get("image_url") else []
         )
 
     if friend_ids:
@@ -5414,6 +5466,32 @@ def api_reverse_geocode_city():
     return jsonify({"city": city})
 
 
+@app.route("/api/listings/search")
+def api_listings_search():
+    """Lightweight typeahead for the feed compose form: search published
+    listings by name/category/city so a post can be linked to a real
+    establishment."""
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 2:
+        return jsonify({"results": []})
+
+    results = search_internal_listings(q=q, limit=8)
+
+    return jsonify({
+        "results": [
+            {
+                "id": r.get("id"),
+                "name": r.get("name"),
+                "slug": r.get("slug"),
+                "city": r.get("city"),
+                "category": r.get("category"),
+                "photo_url": r.get("photo_url"),
+            }
+            for r in results[:8]
+        ]
+    })
+
+
 @app.route("/api/feed/nearby")
 def api_feed_nearby():
     """Recent public feed posts for a given city — powers the home page's
@@ -5427,7 +5505,9 @@ def api_feed_nearby():
         SELECT
             p.*,
             COALESCE(NULLIF(u.name, ''), u.email, 'User') AS user_name,
+            u.profile_image_url AS user_photo,
             l.name AS listing_name,
+            l.slug AS listing_slug,
             (
                 SELECT COUNT(*)
                 FROM feed_post_likes
@@ -5448,6 +5528,15 @@ def api_feed_nearby():
         ORDER BY p.id DESC
         LIMIT 20
     """, {"city": city})
+
+    for post in posts:
+        gallery = query_all(
+            "SELECT image_url FROM feed_post_images WHERE post_id = :post_id ORDER BY position ASC",
+            {"post_id": post["id"]}
+        )
+        post["images"] = [row["image_url"] for row in gallery] or (
+            [post["image_url"]] if post.get("image_url") else []
+        )
 
     return jsonify({"posts": posts, "city": city})
 

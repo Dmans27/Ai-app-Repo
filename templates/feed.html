@@ -343,6 +343,57 @@
     .compose-locate-btn:hover { border-color: rgba(25,195,138,0.4); color: var(--feed-avatar-c); }
     .compose-locate-btn.is-loading { opacity: 0.6; pointer-events: none; }
 
+    .compose-place-field { position: relative; }
+
+    .compose-place-results {
+      position: absolute;
+      left: 0; right: 0; top: calc(100% + 4px);
+      background: #1f2127;
+      border: 0.5px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      overflow-y: auto;
+      max-height: 220px;
+      z-index: 20;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    }
+    .compose-place-results[hidden] { display: none; }
+
+    .compose-place-result {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+    }
+    .compose-place-result:last-child { border-bottom: none; }
+    .compose-place-result:hover { background: rgba(255,255,255,0.06); }
+    .compose-place-result__name { font-size: 13px; font-weight: 700; color: var(--feed-text); }
+    .compose-place-result__meta { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    .compose-place-selected {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 0.5px solid rgba(25,195,138,0.35);
+      background: rgba(25,195,138,0.08);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--feed-avatar-c);
+    }
+    .compose-place-selected[hidden] { display: none; }
+    .compose-place-selected button {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
     .compose-file-label {
       display: flex;
       align-items: center;
@@ -439,6 +490,13 @@
       color: var(--feed-avatar-c);
     }
 
+    .post-avatar__img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+
     .post-meta { flex: 1; min-width: 0; }
 
     .post-name {
@@ -489,7 +547,7 @@
       overflow-wrap: anywhere;
     }
 
-    /* ── Post image ── */
+    /* ── Post image(s) ── */
     .post-image {
       width: 100%;
       display: block;
@@ -498,12 +556,40 @@
       background: #0f1013;
     }
 
+    .post-image-grid {
+      display: grid;
+      gap: 2px;
+      background: #0f1013;
+    }
+    .post-image-grid .post-image { max-height: none; height: 100%; aspect-ratio: 1 / 1; }
+
+    .post-image-grid--1 { grid-template-columns: 1fr; }
+    .post-image-grid--1 .post-image { aspect-ratio: 16 / 10; max-height: 380px; }
+
+    .post-image-grid--2 { grid-template-columns: 1fr 1fr; }
+
+    .post-image-grid--3 { grid-template-columns: 1fr 1fr; }
+    .post-image-grid--3 .post-image:first-child { grid-row: span 2; }
+
+    .post-image-grid--4 { grid-template-columns: 1fr 1fr; }
+
+    .post-image-more {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.75);
+      font-size: 18px;
+      font-weight: 800;
+      aspect-ratio: 1 / 1;
+    }
+
     /* ── Place pill ── */
     .post-place-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin: 0 14px 12px;
+      margin: 10px 14px 4px;
       padding: 7px 12px;
       border-radius: 999px;
       background: var(--feed-accent-bg);
@@ -511,7 +597,10 @@
       color: var(--feed-avatar-c);
       font-size: 12px;
       font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
     }
+    a.post-place-pill:hover { background: var(--feed-accent-bg-hover, var(--feed-accent-bg)); }
 
     /* ── Action bar ── */
     .post-actions {
@@ -834,6 +923,22 @@
         </div>
 
         <div class="compose-extras">
+          <div class="compose-place-field">
+            <input
+              type="text"
+              id="compose-place-input"
+              placeholder="🍽️ Tag a place (optional)"
+              class="compose-city-input"
+              autocomplete="off"
+            >
+            <input type="hidden" name="listing_id" id="compose-listing-id">
+            <div class="compose-place-results" id="compose-place-results" hidden></div>
+            <div class="compose-place-selected" id="compose-place-selected" hidden>
+              <span id="compose-place-selected-name"></span>
+              <button type="button" id="compose-place-clear" aria-label="Remove tagged place">✕</button>
+            </div>
+          </div>
+
           <div class="compose-city-row">
             <input
               type="text"
@@ -845,9 +950,9 @@
             <button type="button" class="compose-locate-btn" id="compose-locate-btn">📍 Use my location</button>
           </div>
 
-          <label class="compose-file-label">
-            📷 Add a photo
-            <input type="file" name="photo" accept="image/*" class="compose-file-input">
+          <label class="compose-file-label" id="compose-file-label">
+            📷 Add photos
+            <input type="file" name="photos" accept="image/*" multiple class="compose-file-input">
           </label>
         </div>
 
@@ -871,7 +976,11 @@
           <!-- Post header -->
           <div class="post-head">
             <div class="post-avatar {% if post.user_id == current_user.id %}post-avatar--accent{% endif %}">
+              {% if post.user_photo %}
+              <img class="post-avatar__img" src="{{ post.user_photo }}" alt="">
+              {% else %}
               {{ post.user_name[0]|upper if post.user_name else "U" }}
+              {% endif %}
             </div>
 
             <div class="post-meta">
@@ -884,25 +993,37 @@
             <button class="post-overflow" type="button" aria-label="More options">···</button>
           </div>
 
+          <!-- Place pill -->
+          {% if post.listing_name %}
+            {% if post.listing_slug %}
+            <a class="post-place-pill" href="/listing/{{ post.listing_slug }}">📍 {{ post.listing_name }}</a>
+            {% else %}
+            <div class="post-place-pill">📍 {{ post.listing_name }}</div>
+            {% endif %}
+          {% endif %}
+
           <!-- Body text -->
           {% if post.body %}
           <div class="post-body">{{ post.body }}</div>
           {% endif %}
 
-          <!-- Image -->
-          {% if post.image_url %}
-          <img
-            class="post-image"
-            src="{{ post.image_url }}"
-            alt="Post image"
-            loading="lazy"
-            onerror="this.style.display='none';"
-          >
-          {% endif %}
-
-          <!-- Place pill -->
-          {% if post.listing_name %}
-          <div class="post-place-pill">📍 {{ post.listing_name }}</div>
+          <!-- Image(s) -->
+          {% if post.images %}
+            {% set total = post.images|length %}
+            <div class="post-image-grid post-image-grid--{{ 4 if total >= 4 else total }}">
+              {% for img in post.images[:(3 if total >= 4 else total)] %}
+              <img
+                class="post-image"
+                src="{{ img }}"
+                alt="Post image"
+                loading="lazy"
+                onerror="this.style.display='none';"
+              >
+              {% endfor %}
+              {% if total >= 4 %}
+              <div class="post-image-more">+{{ total - 3 }}</div>
+              {% endif %}
+            </div>
           {% endif %}
 
           <!-- Action bar: like / comment / share -->
@@ -1098,6 +1219,90 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   });
 
+  /* ── Compose: tag an establishment ── */
+  const placeInput        = document.getElementById("compose-place-input");
+  const placeResults      = document.getElementById("compose-place-results");
+  const placeSelected     = document.getElementById("compose-place-selected");
+  const placeSelectedName = document.getElementById("compose-place-selected-name");
+  const placeClearBtn     = document.getElementById("compose-place-clear");
+  const listingIdInput    = document.getElementById("compose-listing-id");
+
+  let placeSearchTimer = null;
+
+  function clearPlaceResults() {
+    if (!placeResults) return;
+    placeResults.hidden = true;
+    placeResults.innerHTML = "";
+  }
+
+  function selectPlace(place) {
+    if (listingIdInput) listingIdInput.value = place.id;
+    if (placeSelectedName) {
+      placeSelectedName.textContent = place.name + (place.city ? ` · ${place.city}` : "");
+    }
+    if (placeSelected) placeSelected.hidden = false;
+    if (placeInput) { placeInput.value = ""; placeInput.hidden = true; }
+    clearPlaceResults();
+  }
+
+  placeInput?.addEventListener("input", function () {
+    const q = placeInput.value.trim();
+    clearTimeout(placeSearchTimer);
+
+    if (q.length < 2) { clearPlaceResults(); return; }
+
+    placeSearchTimer = setTimeout(async function () {
+      try {
+        const resp = await fetch(`/api/listings/search?q=${encodeURIComponent(q)}`);
+        const data = resp.ok ? await resp.json() : { results: [] };
+        const results = data.results || [];
+
+        if (!results.length) { clearPlaceResults(); return; }
+
+        placeResults.innerHTML = results.map(function (r) {
+          const name = escapeHomeFeedHtmlLocal(r.name || "");
+          const meta = escapeHomeFeedHtmlLocal([r.category, r.city].filter(Boolean).join(" · "));
+          return `
+            <div class="compose-place-result" data-id="${r.id}" data-name="${name}" data-city="${escapeHomeFeedHtmlLocal(r.city || "")}">
+              <div class="compose-place-result__name">${name}</div>
+              <div class="compose-place-result__meta">${meta}</div>
+            </div>`;
+        }).join("");
+        placeResults.hidden = false;
+
+        placeResults.querySelectorAll(".compose-place-result").forEach(function (el) {
+          el.addEventListener("click", function () {
+            selectPlace({ id: el.dataset.id, name: el.dataset.name, city: el.dataset.city });
+          });
+        });
+      } catch (e) {
+        clearPlaceResults();
+      }
+    }, 250);
+  });
+
+  placeClearBtn?.addEventListener("click", function () {
+    if (listingIdInput) listingIdInput.value = "";
+    if (placeSelected) placeSelected.hidden = true;
+    if (placeInput) placeInput.hidden = false;
+  });
+
+  document.addEventListener("click", function (e) {
+    if (
+      placeResults && !placeResults.hidden &&
+      placeInput && !placeInput.contains(e.target) &&
+      !placeResults.contains(e.target)
+    ) {
+      clearPlaceResults();
+    }
+  });
+
+  function escapeHomeFeedHtmlLocal(s) {
+    const d = document.createElement("div");
+    d.textContent = s == null ? "" : String(s);
+    return d.innerHTML;
+  }
+
   /* close sheet on Escape */
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && sheet && !sheet.hidden) closeSheet();
@@ -1125,13 +1330,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const label = input.closest(".compose-file-label");
     input.addEventListener("change", function () {
       if (!label) return;
-      const filename = input.files?.[0]?.name;
-      if (filename) {
-        const textNode = label.childNodes[0];
-        if (textNode && textNode.nodeType === 3) {
-          textNode.textContent = "📷 " + filename;
-        }
-      }
+      const count = input.files?.length || 0;
+      const textNode = label.childNodes[0];
+      if (!textNode || textNode.nodeType !== 3) return;
+
+      if (count === 0) textNode.textContent = "📷 Add photos";
+      else if (count === 1) textNode.textContent = "📷 " + input.files[0].name;
+      else textNode.textContent = `📷 ${count} photos selected`;
     });
   });
 
