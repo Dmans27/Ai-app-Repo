@@ -4050,41 +4050,8 @@ body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
   min-height: 360px;
 }
 
-/* =========================
-   MOBILE TAB BAR
-   ========================= */
-.mobile-tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  padding-bottom: env(safe-area-inset-bottom);
-  z-index: 960;
-  background: rgba(10, 12, 14, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--line-subtle);
-  
-
-  z-index: 960;
-}
-
-.mobile-tabbar__item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-size: 0.74rem;
-}
-
-.mobile-tabbar__item.is-active {
-  color: #1a1a1a;
-  font-weight: 700;
-}
+/* Mobile tab bar styles live in the consolidated block under
+   "MOBILE HEADER / TABBAR FIXES" further down this file. */
 
 /* =========================
    VISIBILITY HELPERS
@@ -4261,13 +4228,14 @@ body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
   right: 0;
   bottom: 0;
   z-index: 940;
+  display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
   background: rgba(18,18,18,0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--line-subtle);
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
 
 .mobile-tabbar__item {
@@ -4275,26 +4243,45 @@ body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   text-decoration: none;
-  color: var(--text-secondary);
-  font-size: 0.74rem;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.7rem;
   min-height: 56px;
+  transition: color 0.15s ease;
 }
 
 .mobile-tabbar__item.is-active {
-  color: #1a1a1a;
+  color: var(--brand);
   font-weight: 700;
 }
 
 .mobile-tabbar__icon {
-  font-size: 1rem;
-  line-height: 1;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: inherit;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mobile-tabbar__icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  display: block;
+}
+
+.mobile-tabbar__item.is-active .mobile-tabbar__icon {
+  background: rgba(16,163,127,0.16);
+  color: var(--brand);
 }
 
 .mobile-tabbar__label {
   line-height: 1;
-  color: #ffffff;
+  color: inherit;
 }
 
 /* =========================
