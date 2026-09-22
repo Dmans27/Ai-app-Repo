@@ -12,7 +12,7 @@ from functools import wraps
 from flask import redirect
 from models import UserSavedList
 import base64
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 
@@ -80,6 +80,18 @@ if database_url and database_url.startswith("postgres://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url or f"sqlite:///{SQLITE_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-change-me-please")
+
+# ── Keep users signed in across app restarts (closing the phone app / browser
+# shouldn't sign anyone out — only an explicit Log Out, or the cookie expiring
+# after a full year, should). DATABASE_URL is only set on Render, so local dev
+# (plain http://) still gets working cookies without the Secure flag. ──
+IS_PRODUCTION = bool(database_url)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=365)
+app.config["SESSION_COOKIE_SECURE"] = IS_PRODUCTION
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=365)
+app.config["REMEMBER_COOKIE_SECURE"] = IS_PRODUCTION
+app.config["REMEMBER_COOKIE_HTTPONLY"] = True
 
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
@@ -6297,7 +6309,8 @@ def signup():
         db.session.add(user)
         db.session.commit()
  
-        login_user(user)
+        session.permanent = True
+        login_user(user, remember=True)
         flash("Account created successfully.")
         return redirect(url_for("onboarding"))
  
@@ -6374,7 +6387,8 @@ def login():
             flash("Invalid email or password.")
             return redirect(url_for("login"))
 
-        login_user(user)
+        session.permanent = True
+        login_user(user, remember=True)
         flash("Welcome back.")
         return redirect(url_for("account"))
 
