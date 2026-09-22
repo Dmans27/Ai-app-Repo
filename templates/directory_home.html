@@ -434,6 +434,19 @@
           body:not(.ai-chat-active) #bottom-composer:not(.is-input-visible) .composer-search-trigger {
             display: none !important;
           }
+
+          /* Tapping the navbar's Search tab now opens the full chat page
+             (see setChatUiState(true) in the click handler below) while
+             the bottom tabbar stays on screen underneath it — so the
+             composer needs to clear the tabbar's ~76px height instead of
+             sitting at its usual 8px-from-bottom spot, or the two overlap. */
+          body.ai-chat-active #bottom-composer {
+            bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+          }
+
+          body.ai-chat-active .composer-search-trigger {
+            bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+          }
         }
 
         .hero-center {
@@ -2995,6 +3008,11 @@ function setChatUiState(isActive) {
       mobileTabbarSearch?.addEventListener("click", function (event) {
         if (!bottomComposerEl) return;
         event.preventDefault();
+        // Full-page chat: same "hide the landing page, show the empty
+        // conversation canvas" transition runAiSearch() makes once a
+        // query is submitted, just triggered up front with no message
+        // yet — the thread starts blank and ready to type into.
+        if (typeof setChatUiState === "function") setChatUiState(true);
         bottomComposerEl.classList.add("is-input-visible");
         setComposerExpanded(true);
         composerMobileInput?.focus();
