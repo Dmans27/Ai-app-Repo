@@ -422,6 +422,20 @@
           padding-bottom: 8px !important;
         }
 
+        @media (max-width: 1024px) {
+          /* Landing-page idle state: the AI search input used to always
+             sit at the bottom of the home page. Now it stays collapsed —
+             the bottom nav's Search tab is the only thing that opens it —
+             leaving the existing post-search collapse/expand behavior
+             (the body.ai-chat-active rules in styles.css) untouched. */
+          body:not(.ai-chat-active) #bottom-composer:not(.is-input-visible) .ai-input-bar {
+            display: none !important;
+          }
+          body:not(.ai-chat-active) #bottom-composer:not(.is-input-visible) .composer-search-trigger {
+            display: none !important;
+          }
+        }
+
         .hero-center {
           display: flex;
           flex-direction: column;
@@ -1413,7 +1427,7 @@ function wireFilterBar() {
           <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg></span>
           <span class="mobile-tabbar__label">Discover</span>
         </a>
-        <a href="/" class="mobile-tabbar__item">
+        <a href="/" class="mobile-tabbar__item" id="mobile-tabbar-search">
           <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
           <span class="mobile-tabbar__label">Search</span>
         </a>
@@ -2968,6 +2982,20 @@ function setChatUiState(isActive) {
 
       composerSearchTrigger?.addEventListener("click", function () {
         bottomComposerEl?.classList.add("is-input-visible");
+        setComposerExpanded(true);
+        composerMobileInput?.focus();
+      });
+
+      /* Bottom nav "Search" tab: on the home page this opens the AI
+         input in place instead of navigating (there's nowhere else to
+         go — it's already pointed at "/"). From any other page it just
+         follows its normal href to get here first. */
+      const mobileTabbarSearch = document.getElementById("mobile-tabbar-search");
+
+      mobileTabbarSearch?.addEventListener("click", function (event) {
+        if (!bottomComposerEl) return;
+        event.preventDefault();
+        bottomComposerEl.classList.add("is-input-visible");
         setComposerExpanded(true);
         composerMobileInput?.focus();
       });
