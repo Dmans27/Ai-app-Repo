@@ -456,7 +456,7 @@
           text-align: center;
           gap: 14px;
           width: 100%;
-          max-width: 1100px;
+          max-width: 680px;
         }
 
         .hero-composer {
@@ -489,7 +489,7 @@
          widget of compact rows. ── */
       .home-nearby-feed {
         width: 100%;
-        max-width: 1100px;
+        max-width: 680px;
         margin: 4px auto 0;
       }
       .home-nearby-feed__head {
@@ -511,7 +511,7 @@
       }
       .home-nearby-add-row {
         width: 100%;
-        max-width: 1100px;
+        max-width: 680px;
         margin: 0 auto;
         display: flex;
         justify-content: center;
@@ -538,7 +538,7 @@
       .home-nearby-add-btn:hover { background: var(--brand-strong, #0d8a6c); }
       .home-nearby-add-btn:active { transform: scale(0.92); }
       .home-nearby-feed__list {
-        padding: 0 2px 28px;
+        padding: 0 0 28px;
         display: flex;
         flex-direction: column;
         gap: 18px;
@@ -729,11 +729,6 @@
       .home-nearby-post__action-btn--liked:hover { background: #0d8a6c; color: #fff; }
       .home-nearby-post__action-btn--share { margin-left: auto; }
       .home-nearby-post__action-icon { font-size: 13px; line-height: 1; }
-      @media (max-width: 1024px) {
-        .home-nearby-feed {
-          max-width: calc(100% - 40px);
-        }
-      }
       /* Only one nearby-feed instance should ever be visible at a time —
          the mobile card lives outside .mobile-home-hero (so it survives the
          ai-chat-active hide rule), so it needs its own explicit guard
