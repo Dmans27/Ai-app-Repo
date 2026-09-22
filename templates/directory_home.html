@@ -383,6 +383,9 @@
             <div class="home-nearby-feed__list" id="home-nearby-list-desktop">
               <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
             </div>
+            <div class="home-nearby-feed__sentinel" id="home-nearby-sentinel-desktop">
+              <div class="home-nearby-feed__loading" data-role="loading-indicator" hidden>Loading more…</div>
+            </div>
           </section>
 
           <!-- AI input bar lives HERE on desktop before first message -->
@@ -729,6 +732,19 @@
       .home-nearby-post__action-btn--liked:hover { background: #0d8a6c; color: #fff; }
       .home-nearby-post__action-btn--share { margin-left: auto; }
       .home-nearby-post__action-icon { font-size: 13px; line-height: 1; }
+      .home-nearby-feed__sentinel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 20px;
+        padding: 4px 0 24px;
+      }
+      .home-nearby-feed__loading {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: rgba(0,0,0,0.4);
+      }
+      .home-nearby-feed__loading[hidden] { display: none; }
       /* Only one nearby-feed instance should ever be visible at a time —
          the mobile card lives outside .mobile-home-hero (so it survives the
          ai-chat-active hide rule), so it needs its own explicit guard
@@ -976,6 +992,9 @@
   </div>
   <div class="home-nearby-feed__list" id="home-nearby-list-mobile">
     <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
+  </div>
+  <div class="home-nearby-feed__sentinel" id="home-nearby-sentinel-mobile">
+    <div class="home-nearby-feed__loading" data-role="loading-indicator" hidden>Loading more…</div>
   </div>
 </section>
 
@@ -2095,11 +2114,108 @@ function buildResultRow(item, isInternal, index = 0) {
       return d.innerHTML;
     }
 
-    function renderHomeNearbyFeed(posts, cityLabel) {
-      const lists = [
+    /* Pagination state for the "Nearby right now" feed. */
+    let _homeNearbyState = { city: null, beforeId: null, hasMore: false, loading: false };
+
+    function homeNearbyLists() {
+      return [
         document.getElementById("home-nearby-list-desktop"),
         document.getElementById("home-nearby-list-mobile")
       ].filter(Boolean);
+    }
+
+    function setHomeNearbyLoading(isLoading) {
+      document.querySelectorAll('[data-role="loading-indicator"]').forEach(el => {
+        el.hidden = !isLoading;
+      });
+    }
+
+    function buildHomeNearbyPostHtml(p) {
+      const name     = (p.user_name || "User").split(" ")[0];
+      const initial  = (p.user_name || "U")[0].toUpperCase();
+      const place    = p.listing_name || p.title || "";
+      const slug     = p.listing_slug || "";
+      const category = p.listing_category || "";
+      const timeAgo  = p.time_ago || "";
+      const text     = p.body || "";
+      const photo    = p.user_photo || "";
+      const pic      = (p.images && p.images[0]) || p.image_url || "";
+      const likeCount    = Number(p.like_count || 0);
+      const commentCount = Number(p.comment_count || 0);
+      const likedByMe    = !!p.liked_by_me;
+      const deepLink = `/feed#post-${p.id}`;
+
+      const avatarHtml = photo
+        ? `<img src="${escapeHomeFeedHtml(photo)}" alt="" class="home-nearby-post__avatar-img" onerror="this.style.display='none';">`
+        : escapeHomeFeedHtml(initial);
+
+      const targetHtml = place
+        ? `<span class="home-nearby-post__headline-verb">shared</span> ${
+            slug
+              ? `<a class="home-nearby-post__headline-target" href="/listing/${escapeHomeFeedHtml(slug)}">${escapeHomeFeedHtml(place)}</a>`
+              : `<span class="home-nearby-post__headline-target">${escapeHomeFeedHtml(place)}</span>`
+          }`
+        : `<span class="home-nearby-post__headline-verb">shared an update</span>`;
+
+      const friendBadgeHtml = p.is_friend
+        ? `<span class="home-nearby-post__friend-badge">Friend</span>`
+        : "";
+
+      const sublineHtml = category
+        ? `<span class="home-nearby-post__subline-category">${escapeHomeFeedHtml(category)}</span><span class="home-nearby-post__subline-dot">·</span><span>${escapeHomeFeedHtml(timeAgo)}</span>`
+        : `<span>${escapeHomeFeedHtml(timeAgo)}</span>`;
+
+      const statsHidden = (!likeCount && !commentCount) ? "hidden" : "";
+
+      return `
+        <article class="home-nearby-post" id="home-nearby-post-${p.id}" data-post-id="${p.id}">
+          <a class="home-nearby-post__link" href="${deepLink}">
+            <div class="home-nearby-post__head">
+              <div class="home-nearby-post__avatar">${avatarHtml}</div>
+              <div class="home-nearby-post__headtext">
+                <div class="home-nearby-post__headline">
+                  <span class="home-nearby-post__headline-name">${escapeHomeFeedHtml(name)}</span>
+                  ${targetHtml}
+                  ${friendBadgeHtml}
+                </div>
+                <div class="home-nearby-post__subline">${sublineHtml}</div>
+              </div>
+            </div>
+            ${text ? `<div class="home-nearby-post__text">${escapeHomeFeedHtml(text)}</div>` : ""}
+            ${pic ? `<img src="${escapeHomeFeedHtml(pic)}" alt="" class="home-nearby-post__photo" loading="lazy" onerror="this.style.display='none';">` : ""}
+          </a>
+          <div class="home-nearby-post__stats" ${statsHidden}>
+            <span class="home-nearby-post__stats-item home-nearby-post__stats-item--likes" data-role="like-stat" ${likeCount ? "" : "hidden"}>
+              ❤ <span data-role="like-count">${likeCount}</span>
+            </span>
+            <span class="home-nearby-post__stats-item" data-role="comment-stat" ${commentCount ? "" : "hidden"}>
+              <span data-role="comment-count">${commentCount}</span> comment${commentCount !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div class="home-nearby-post__actions">
+            <button
+              class="home-nearby-post__action-btn home-nearby-post__action-btn--like ${likedByMe ? "home-nearby-post__action-btn--liked" : ""}"
+              type="button"
+              aria-label="Like"
+              data-liked="${likedByMe ? "1" : "0"}"
+            >
+              <span class="home-nearby-post__action-icon">${likedByMe ? "♥" : "♡"}</span>
+              <span class="home-nearby-post__action-label">${likedByMe ? "Liked" : "Like"}</span>
+            </button>
+            <a class="home-nearby-post__action-btn home-nearby-post__action-btn--comment" href="${deepLink}">
+              <span class="home-nearby-post__action-icon">💬</span>
+              <span class="home-nearby-post__action-label">Comment</span>
+            </a>
+            <button class="home-nearby-post__action-btn home-nearby-post__action-btn--share" type="button" aria-label="Share">
+              <span class="home-nearby-post__action-icon">↗</span>
+              <span class="home-nearby-post__action-label">Share</span>
+            </button>
+          </div>
+        </article>`;
+    }
+
+    function renderHomeNearbyFeed(posts, cityLabel) {
+      const lists = homeNearbyLists();
 
       const cityEls = [
         document.getElementById("home-nearby-city-desktop"),
@@ -2118,92 +2234,21 @@ function buildResultRow(item, isInternal, index = 0) {
         return;
       }
 
-      const html = posts.map(p => {
-        const name     = (p.user_name || "User").split(" ")[0];
-        const initial  = (p.user_name || "U")[0].toUpperCase();
-        const place    = p.listing_name || p.title || "";
-        const slug     = p.listing_slug || "";
-        const category = p.listing_category || "";
-        const timeAgo  = p.time_ago || "";
-        const text     = p.body || "";
-        const photo    = p.user_photo || "";
-        const pic      = (p.images && p.images[0]) || p.image_url || "";
-        const likeCount    = Number(p.like_count || 0);
-        const commentCount = Number(p.comment_count || 0);
-        const likedByMe    = !!p.liked_by_me;
-        const deepLink = `/feed#post-${p.id}`;
-
-        const avatarHtml = photo
-          ? `<img src="${escapeHomeFeedHtml(photo)}" alt="" class="home-nearby-post__avatar-img" onerror="this.style.display='none';">`
-          : escapeHomeFeedHtml(initial);
-
-        const targetHtml = place
-          ? `<span class="home-nearby-post__headline-verb">shared</span> ${
-              slug
-                ? `<a class="home-nearby-post__headline-target" href="/listing/${escapeHomeFeedHtml(slug)}">${escapeHomeFeedHtml(place)}</a>`
-                : `<span class="home-nearby-post__headline-target">${escapeHomeFeedHtml(place)}</span>`
-            }`
-          : `<span class="home-nearby-post__headline-verb">shared an update</span>`;
-
-        const friendBadgeHtml = p.is_friend
-          ? `<span class="home-nearby-post__friend-badge">Friend</span>`
-          : "";
-
-        const sublineHtml = category
-          ? `<span class="home-nearby-post__subline-category">${escapeHomeFeedHtml(category)}</span><span class="home-nearby-post__subline-dot">·</span><span>${escapeHomeFeedHtml(timeAgo)}</span>`
-          : `<span>${escapeHomeFeedHtml(timeAgo)}</span>`;
-
-        const statsHidden = (!likeCount && !commentCount) ? "hidden" : "";
-
-        return `
-          <article class="home-nearby-post" id="home-nearby-post-${p.id}" data-post-id="${p.id}">
-            <a class="home-nearby-post__link" href="${deepLink}">
-              <div class="home-nearby-post__head">
-                <div class="home-nearby-post__avatar">${avatarHtml}</div>
-                <div class="home-nearby-post__headtext">
-                  <div class="home-nearby-post__headline">
-                    <span class="home-nearby-post__headline-name">${escapeHomeFeedHtml(name)}</span>
-                    ${targetHtml}
-                    ${friendBadgeHtml}
-                  </div>
-                  <div class="home-nearby-post__subline">${sublineHtml}</div>
-                </div>
-              </div>
-              ${text ? `<div class="home-nearby-post__text">${escapeHomeFeedHtml(text)}</div>` : ""}
-              ${pic ? `<img src="${escapeHomeFeedHtml(pic)}" alt="" class="home-nearby-post__photo" loading="lazy" onerror="this.style.display='none';">` : ""}
-            </a>
-            <div class="home-nearby-post__stats" ${statsHidden}>
-              <span class="home-nearby-post__stats-item home-nearby-post__stats-item--likes" data-role="like-stat" ${likeCount ? "" : "hidden"}>
-                ❤ <span data-role="like-count">${likeCount}</span>
-              </span>
-              <span class="home-nearby-post__stats-item" data-role="comment-stat" ${commentCount ? "" : "hidden"}>
-                <span data-role="comment-count">${commentCount}</span> comment${commentCount !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <div class="home-nearby-post__actions">
-              <button
-                class="home-nearby-post__action-btn home-nearby-post__action-btn--like ${likedByMe ? "home-nearby-post__action-btn--liked" : ""}"
-                type="button"
-                aria-label="Like"
-                data-liked="${likedByMe ? "1" : "0"}"
-              >
-                <span class="home-nearby-post__action-icon">${likedByMe ? "♥" : "♡"}</span>
-                <span class="home-nearby-post__action-label">${likedByMe ? "Liked" : "Like"}</span>
-              </button>
-              <a class="home-nearby-post__action-btn home-nearby-post__action-btn--comment" href="${deepLink}">
-                <span class="home-nearby-post__action-icon">💬</span>
-                <span class="home-nearby-post__action-label">Comment</span>
-              </a>
-              <button class="home-nearby-post__action-btn home-nearby-post__action-btn--share" type="button" aria-label="Share">
-                <span class="home-nearby-post__action-icon">↗</span>
-                <span class="home-nearby-post__action-label">Share</span>
-              </button>
-            </div>
-          </article>`;
-      }).join("");
+      const html = posts.map(buildHomeNearbyPostHtml).join("");
 
       lists.forEach(list => {
         list.innerHTML = html;
+        wireHomeNearbyFeedActions(list);
+      });
+    }
+
+    /* Appends the next page of posts to the end of each list — used by
+       infinite scroll, as opposed to renderHomeNearbyFeed's full replace. */
+    function appendHomeNearbyPosts(posts) {
+      if (!posts || !posts.length) return;
+      const html = posts.map(buildHomeNearbyPostHtml).join("");
+      homeNearbyLists().forEach(list => {
+        list.insertAdjacentHTML("beforeend", html);
         wireHomeNearbyFeedActions(list);
       });
     }
@@ -2286,15 +2331,67 @@ function buildResultRow(item, isInternal, index = 0) {
     }
 
     async function loadHomeNearbyFeed(city) {
+      _homeNearbyState = { city, beforeId: null, hasMore: false, loading: true };
+      setHomeNearbyLoading(true);
       try {
         const resp = await fetch(`/api/feed/nearby?city=${encodeURIComponent(city)}`);
         if (!resp.ok) { renderHomeNearbyFeed([], city); return; }
         const data = await resp.json();
         renderHomeNearbyFeed(data.posts || [], data.city || city);
+        _homeNearbyState.city = data.city || city;
+        _homeNearbyState.hasMore = !!data.has_more;
+        _homeNearbyState.beforeId = data.next_before_id || null;
       } catch (e) {
         console.error("[HOME_NEARBY_FEED_ERROR]", e);
         renderHomeNearbyFeed([], city);
+      } finally {
+        _homeNearbyState.loading = false;
+        setHomeNearbyLoading(false);
       }
+    }
+
+    /* Fetches the next page (older posts) and appends it — called when the
+       sentinel at the bottom of either list scrolls into view. */
+    async function loadMoreHomeNearbyPosts() {
+      if (_homeNearbyState.loading || !_homeNearbyState.hasMore || !_homeNearbyState.city) return;
+      _homeNearbyState.loading = true;
+      setHomeNearbyLoading(true);
+      try {
+        const params = new URLSearchParams({ city: _homeNearbyState.city });
+        if (_homeNearbyState.beforeId) params.set("before_id", _homeNearbyState.beforeId);
+        const resp = await fetch(`/api/feed/nearby?${params.toString()}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        appendHomeNearbyPosts(data.posts || []);
+        _homeNearbyState.hasMore = !!data.has_more;
+        _homeNearbyState.beforeId = data.next_before_id || null;
+      } catch (e) {
+        console.error("[HOME_NEARBY_LOAD_MORE_ERROR]", e);
+      } finally {
+        _homeNearbyState.loading = false;
+        setHomeNearbyLoading(false);
+      }
+    }
+
+    /* Watches the sentinel element at the end of each list — when it
+       scrolls into view (near-viewport, via rootMargin), fetch the next
+       page. Works for the mobile list's own internal scroll container
+       and the normal page-scroll on desktop, since IntersectionObserver's
+       default (viewport) root already accounts for clipping ancestors. */
+    function initHomeNearbyInfiniteScroll() {
+      const sentinels = [
+        document.getElementById("home-nearby-sentinel-desktop"),
+        document.getElementById("home-nearby-sentinel-mobile")
+      ].filter(Boolean);
+      if (!sentinels.length || !("IntersectionObserver" in window)) return;
+
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) loadMoreHomeNearbyPosts();
+        });
+      }, { rootMargin: "600px 0px" });
+
+      sentinels.forEach(el => observer.observe(el));
     }
 
     function initHomeNearbyFeed() {
@@ -3184,6 +3281,7 @@ function setChatUiState(isActive) {
 
       setChatUiState(false);
       initHomeNearbyFeed();
+      initHomeNearbyInfiniteScroll();
       initHomeComposeSheet();
 
       if (desktopGreeting) desktopGreeting.textContent = greeting;

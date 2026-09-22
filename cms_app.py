@@ -5559,15 +5559,23 @@ def api_listings_search():
     })
 
 
+PAGE_SIZE_FEED_NEARBY = 20
+
+
 @app.route("/api/feed/nearby")
 def api_feed_nearby():
     """Recent public feed posts for a given city — powers the home page's
     "Nearby right now" feed (replaces the old globe hero). Reuses the same
-    post shape as /feed so the client can render them the same way."""
+    post shape as /feed so the client can render them the same way.
+
+    Cursor-paginated: pass ?before_id=<id of the oldest post already shown>
+    to fetch the next page (older posts). Fetches one extra row to know
+    whether there's more without a separate COUNT query."""
     city = (request.args.get("city") or "").strip()
     if not city:
-        return jsonify({"posts": [], "city": None})
+        return jsonify({"posts": [], "city": None, "has_more": False})
 
+    before_id = request.args.get("before_id", type=int)
     viewer_id = current_user.id if current_user.is_authenticated else -1
 
     posts = query_all("""
@@ -5600,9 +5608,18 @@ def api_feed_nearby():
             ON l.id = p.listing_id
         WHERE p.is_public = 1
           AND LOWER(COALESCE(p.city, '')) = LOWER(:city)
+          AND (:before_id IS NULL OR p.id < :before_id)
         ORDER BY p.id DESC
-        LIMIT 20
-    """, {"city": city, "viewer_id": viewer_id})
+        LIMIT :limit
+    """, {
+        "city": city,
+        "viewer_id": viewer_id,
+        "before_id": before_id,
+        "limit": PAGE_SIZE_FEED_NEARBY + 1
+    })
+
+    has_more = len(posts) > PAGE_SIZE_FEED_NEARBY
+    posts = posts[:PAGE_SIZE_FEED_NEARBY]
 
     friend_ids = set()
     if current_user.is_authenticated:
@@ -5629,7 +5646,12 @@ def api_feed_nearby():
             [post["image_url"]] if post.get("image_url") else []
         )
 
-    return jsonify({"posts": posts, "city": city})
+    return jsonify({
+        "posts": posts,
+        "city": city,
+        "has_more": has_more,
+        "next_before_id": posts[-1]["id"] if posts and has_more else None
+    })
 
 
 @app.route("/discover")
