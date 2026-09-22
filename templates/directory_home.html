@@ -550,6 +550,7 @@
       .home-nearby-post {
         display: flex;
         flex-direction: column;
+        flex-shrink: 0;
         background: #ffffff;
         border: 0.5px solid rgba(0,0,0,0.08);
         border-radius: 18px;
@@ -1402,6 +1403,29 @@ function wireFilterBar() {
           </div>
         </div>
       </section>
+
+      <nav class="mobile-tabbar mobile-only">
+        <a href="/" class="mobile-tabbar__item is-active">
+          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg></span>
+          <span class="mobile-tabbar__label">Home</span>
+        </a>
+        <a href="/discover" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg></span>
+          <span class="mobile-tabbar__label">Discover</span>
+        </a>
+        <a href="/" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <span class="mobile-tabbar__label">Search</span>
+        </a>
+        <a href="{{ url_for('feed') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="15" rx="1.5"/><path d="M17 8h2.5A1.5 1.5 0 0 1 21 9.5V18a2 2 0 0 1-2 2H7"/><path d="M6.5 9h8M6.5 12.5h8M6.5 16h5"/></svg></span>
+          <span class="mobile-tabbar__label">Feed</span>
+        </a>
+        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
+          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20c1.3-3.8 4.4-6 7.5-6s6.2 2.2 7.5 6"/></svg></span>
+          <span class="mobile-tabbar__label">Account</span>
+        </a>
+      </nav>
     </main>
   </div>
 
