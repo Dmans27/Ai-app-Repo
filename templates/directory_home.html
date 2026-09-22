@@ -579,20 +579,26 @@
         flex-direction: column;
         flex-shrink: 0;
         background: #ffffff;
-        border: 0.5px solid rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.08);
         border-radius: 18px;
         overflow: hidden;
+        box-shadow: 0 1px 3px rgba(20,20,25,0.06);
+        transition: border-color 0.18s, box-shadow 0.18s;
+      }
+      .home-nearby-post:hover {
+        border-color: rgba(16,163,127,0.4);
+        box-shadow: 0 6px 16px rgba(20,20,25,0.1);
+      }
+      .home-nearby-post__link {
+        display: block;
         text-decoration: none;
         color: inherit;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        transition: box-shadow 0.18s, transform 0.1s;
       }
-      .home-nearby-post:hover { box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
       .home-nearby-post__head {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 16px 18px 10px;
+        padding: 16px 18px 0;
       }
       .home-nearby-post__avatar {
         width: 44px;
@@ -614,20 +620,52 @@
         object-fit: cover;
       }
       .home-nearby-post__headtext { min-width: 0; flex: 1; }
-      .home-nearby-post__name {
+      .home-nearby-post__headline {
         font-size: 15px;
-        font-weight: 700;
+        line-height: 1.35;
         color: #1d1d1f;
-        letter-spacing: -0.01em;
       }
-      .home-nearby-post__place {
-        font-size: 13px;
+      .home-nearby-post__headline-name { font-weight: 800; }
+      .home-nearby-post__headline-verb {
+        font-weight: 500;
+        color: rgba(0,0,0,0.55);
+      }
+      .home-nearby-post__headline-target {
+        font-weight: 800;
+        color: inherit;
+      }
+      .home-nearby-post__friend-badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: rgba(16,163,127,0.18);
         color: var(--brand, #10a37f);
-        font-weight: 600;
-        margin-top: 2px;
+        font-size: 10px;
+        font-weight: 700;
+        vertical-align: middle;
+      }
+      .home-nearby-post__subline {
+        font-size: 12px;
+        color: rgba(0,0,0,0.45);
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .home-nearby-post__subline-dot { opacity: 0.6; }
+      .home-nearby-post__subline-category {
+        font-size: 11px;
+        font-weight: 700;
+        color: #10a37f;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
       }
       .home-nearby-post__text {
-        padding: 2px 18px 14px;
+        padding: 10px 18px 12px;
         font-size: 15px;
         line-height: 1.55;
         color: rgba(0,0,0,0.78);
@@ -644,6 +682,53 @@
         display: block;
         background: #f0f0f0;
       }
+      .home-nearby-post__stats {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 18px 0;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: rgba(0,0,0,0.5);
+      }
+      .home-nearby-post__stats-item { display: flex; align-items: center; gap: 5px; }
+      .home-nearby-post__stats-item--likes { color: #e0294a; }
+      .home-nearby-post__stats[hidden],
+      .home-nearby-post__stats-item[hidden] { display: none !important; }
+      .home-nearby-post__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 18px 16px;
+      }
+      .home-nearby-post__action-btn {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 27px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: #f5f5f7;
+        color: #3c3c43;
+        font-size: 10.5px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+      }
+      .home-nearby-post__action-btn:hover { background: #ebebee; color: #14151a; }
+      .home-nearby-post__action-btn:active { transform: scale(0.95); }
+      .home-nearby-post__action-btn--liked {
+        background: #10a37f;
+        border-color: transparent;
+        color: #fff;
+      }
+      .home-nearby-post__action-btn--liked:hover { background: #0d8a6c; color: #fff; }
+      .home-nearby-post__action-btn--share { margin-left: auto; }
+      .home-nearby-post__action-icon { font-size: 13px; line-height: 1; }
       @media (max-width: 1024px) {
         .home-nearby-feed {
           max-width: calc(100% - 40px);
@@ -2039,32 +2124,170 @@ function buildResultRow(item, isInternal, index = 0) {
       }
 
       const html = posts.map(p => {
-        const name    = (p.user_name || "User").split(" ")[0];
-        const initial = (p.user_name || "U")[0].toUpperCase();
-        const place   = p.listing_name || p.title || "";
-        const text    = p.body || "";
-        const photo   = p.user_photo || "";
-        const pic     = (p.images && p.images[0]) || p.image_url || "";
+        const name     = (p.user_name || "User").split(" ")[0];
+        const initial  = (p.user_name || "U")[0].toUpperCase();
+        const place    = p.listing_name || p.title || "";
+        const slug     = p.listing_slug || "";
+        const category = p.listing_category || "";
+        const timeAgo  = p.time_ago || "";
+        const text     = p.body || "";
+        const photo    = p.user_photo || "";
+        const pic      = (p.images && p.images[0]) || p.image_url || "";
+        const likeCount    = Number(p.like_count || 0);
+        const commentCount = Number(p.comment_count || 0);
+        const likedByMe    = !!p.liked_by_me;
+        const deepLink = `/feed#post-${p.id}`;
 
         const avatarHtml = photo
           ? `<img src="${escapeHomeFeedHtml(photo)}" alt="" class="home-nearby-post__avatar-img" onerror="this.style.display='none';">`
           : escapeHomeFeedHtml(initial);
 
+        const targetHtml = place
+          ? `<span class="home-nearby-post__headline-verb">shared</span> ${
+              slug
+                ? `<a class="home-nearby-post__headline-target" href="/listing/${escapeHomeFeedHtml(slug)}">${escapeHomeFeedHtml(place)}</a>`
+                : `<span class="home-nearby-post__headline-target">${escapeHomeFeedHtml(place)}</span>`
+            }`
+          : `<span class="home-nearby-post__headline-verb">shared an update</span>`;
+
+        const friendBadgeHtml = p.is_friend
+          ? `<span class="home-nearby-post__friend-badge">Friend</span>`
+          : "";
+
+        const sublineHtml = category
+          ? `<span class="home-nearby-post__subline-category">${escapeHomeFeedHtml(category)}</span><span class="home-nearby-post__subline-dot">·</span><span>${escapeHomeFeedHtml(timeAgo)}</span>`
+          : `<span>${escapeHomeFeedHtml(timeAgo)}</span>`;
+
+        const statsHidden = (!likeCount && !commentCount) ? "hidden" : "";
+
         return `
-          <a class="home-nearby-post" href="/feed">
-            <div class="home-nearby-post__head">
-              <div class="home-nearby-post__avatar">${avatarHtml}</div>
-              <div class="home-nearby-post__headtext">
-                <div class="home-nearby-post__name">${escapeHomeFeedHtml(name)}</div>
-                ${place ? `<div class="home-nearby-post__place">📍 ${escapeHomeFeedHtml(place)}</div>` : ""}
+          <article class="home-nearby-post" id="home-nearby-post-${p.id}" data-post-id="${p.id}">
+            <a class="home-nearby-post__link" href="${deepLink}">
+              <div class="home-nearby-post__head">
+                <div class="home-nearby-post__avatar">${avatarHtml}</div>
+                <div class="home-nearby-post__headtext">
+                  <div class="home-nearby-post__headline">
+                    <span class="home-nearby-post__headline-name">${escapeHomeFeedHtml(name)}</span>
+                    ${targetHtml}
+                    ${friendBadgeHtml}
+                  </div>
+                  <div class="home-nearby-post__subline">${sublineHtml}</div>
+                </div>
               </div>
+              ${text ? `<div class="home-nearby-post__text">${escapeHomeFeedHtml(text)}</div>` : ""}
+              ${pic ? `<img src="${escapeHomeFeedHtml(pic)}" alt="" class="home-nearby-post__photo" loading="lazy" onerror="this.style.display='none';">` : ""}
+            </a>
+            <div class="home-nearby-post__stats" ${statsHidden}>
+              <span class="home-nearby-post__stats-item home-nearby-post__stats-item--likes" data-role="like-stat" ${likeCount ? "" : "hidden"}>
+                ❤ <span data-role="like-count">${likeCount}</span>
+              </span>
+              <span class="home-nearby-post__stats-item" data-role="comment-stat" ${commentCount ? "" : "hidden"}>
+                <span data-role="comment-count">${commentCount}</span> comment${commentCount !== 1 ? "s" : ""}
+              </span>
             </div>
-            ${text ? `<div class="home-nearby-post__text">${escapeHomeFeedHtml(text)}</div>` : ""}
-            ${pic ? `<img src="${escapeHomeFeedHtml(pic)}" alt="" class="home-nearby-post__photo" loading="lazy" onerror="this.style.display='none';">` : ""}
-          </a>`;
+            <div class="home-nearby-post__actions">
+              <button
+                class="home-nearby-post__action-btn home-nearby-post__action-btn--like ${likedByMe ? "home-nearby-post__action-btn--liked" : ""}"
+                type="button"
+                aria-label="Like"
+                data-liked="${likedByMe ? "1" : "0"}"
+              >
+                <span class="home-nearby-post__action-icon">${likedByMe ? "♥" : "♡"}</span>
+                <span class="home-nearby-post__action-label">${likedByMe ? "Liked" : "Like"}</span>
+              </button>
+              <a class="home-nearby-post__action-btn home-nearby-post__action-btn--comment" href="${deepLink}">
+                <span class="home-nearby-post__action-icon">💬</span>
+                <span class="home-nearby-post__action-label">Comment</span>
+              </a>
+              <button class="home-nearby-post__action-btn home-nearby-post__action-btn--share" type="button" aria-label="Share">
+                <span class="home-nearby-post__action-icon">↗</span>
+                <span class="home-nearby-post__action-label">Share</span>
+              </button>
+            </div>
+          </article>`;
       }).join("");
 
-      lists.forEach(list => { list.innerHTML = html; });
+      lists.forEach(list => {
+        list.innerHTML = html;
+        wireHomeNearbyFeedActions(list);
+      });
+    }
+
+    /* ── Wire like/share on the (re-rendered) nearby-feed cards.
+       Event delegation on the list container so it keeps working across
+       innerHTML replacements from subsequent loadHomeNearbyFeed() calls. ── */
+    function wireHomeNearbyFeedActions(listEl) {
+      if (!listEl || listEl.dataset.wired === "1") return;
+      listEl.dataset.wired = "1";
+
+      listEl.addEventListener("click", async function (e) {
+        const likeBtn = e.target.closest(".home-nearby-post__action-btn--like");
+        const shareBtn = e.target.closest(".home-nearby-post__action-btn--share");
+        if (!likeBtn && !shareBtn) return;
+
+        const card = e.target.closest(".home-nearby-post");
+        const postId = card?.dataset.postId;
+        if (!postId) return;
+
+        const authEl = document.getElementById("page-auth-state");
+        const isAuthenticated = authEl?.dataset.authenticated === "true";
+        const loginUrl = authEl?.dataset.loginUrl || "/login";
+
+        if (likeBtn) {
+          if (!isAuthenticated) { window.location.href = loginUrl; return; }
+          likeBtn.disabled = true;
+
+          try {
+            const resp = await fetch(`/feed/${postId}/like`, {
+              method: "POST",
+              headers: { "X-Requested-With": "fetch" }
+            });
+            if (resp.ok) {
+              const data = await resp.json();
+              const icon = likeBtn.querySelector(".home-nearby-post__action-icon");
+              const label = likeBtn.querySelector(".home-nearby-post__action-label");
+              likeBtn.classList.toggle("home-nearby-post__action-btn--liked", data.liked);
+              likeBtn.dataset.liked = data.liked ? "1" : "0";
+              if (icon) icon.textContent = data.liked ? "♥" : "♡";
+              if (label) label.textContent = data.liked ? "Liked" : "Like";
+
+              const statsEl = card.querySelector(".home-nearby-post__stats");
+              const likeStatEl = card.querySelector('[data-role="like-stat"]');
+              const likeCountEl = card.querySelector('[data-role="like-count"]');
+              if (likeCountEl) likeCountEl.textContent = data.like_count;
+              if (likeStatEl) {
+                likeStatEl.hidden = data.like_count === 0;
+                if (statsEl && statsEl.hidden && !likeStatEl.hidden) statsEl.hidden = false;
+              }
+            }
+          } catch (err) {
+            /* ignore — button just stays in its previous state */
+          } finally {
+            likeBtn.disabled = false;
+          }
+          return;
+        }
+
+        if (shareBtn) {
+          const url = `${window.location.origin}/feed#post-${postId}`;
+          const icon = shareBtn.querySelector(".home-nearby-post__action-icon");
+
+          if (navigator.share) {
+            try { await navigator.share({ url, title: "Local AI" }); } catch (err) {}
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(url);
+            if (icon) {
+              const original = icon.textContent;
+              icon.textContent = "✓";
+              setTimeout(() => { icon.textContent = original; }, 1400);
+            }
+          } catch (err) {
+            window.prompt("Copy this link:", url);
+          }
+        }
+      });
     }
 
     async function loadHomeNearbyFeed(city) {

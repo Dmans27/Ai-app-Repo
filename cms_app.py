@@ -5604,7 +5604,22 @@ def api_feed_nearby():
         LIMIT 20
     """, {"city": city, "viewer_id": viewer_id})
 
+    friend_ids = set()
+    if current_user.is_authenticated:
+        accepted = Friendship.query.filter(
+            db.or_(
+                Friendship.requester_id == current_user.id,
+                Friendship.addressee_id == current_user.id
+            ),
+            Friendship.status == 'accepted'
+        ).all()
+        for f in accepted:
+            friend_ids.add(
+                f.addressee_id if f.requester_id == current_user.id else f.requester_id
+            )
+
     for post in posts:
+        post["is_friend"] = post.get("user_id") in friend_ids
         post["time_ago"] = relative_time(post.get("created_at"))
         gallery = query_all(
             "SELECT image_url FROM feed_post_images WHERE post_id = :post_id ORDER BY position ASC",
