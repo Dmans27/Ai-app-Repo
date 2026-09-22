@@ -2955,11 +2955,14 @@ def update_profile_photo():
 @login_required
 def comment_feed_post(post_id):
     body = (request.form.get("body") or "").strip()
+    wants_json = request.headers.get("X-Requested-With") == "fetch"
 
     if not body:
+        if wants_json:
+            return jsonify({"error": "Comment can't be empty."}), 400
         return redirect(url_for("feed"))
 
-    execute(
+    new_comment_id = execute(
         """
         INSERT INTO feed_post_comments (
             post_id,
@@ -2971,6 +2974,7 @@ def comment_feed_post(post_id):
             :user_id,
             :body
         )
+        RETURNING id
         """,
         {
             "post_id": post_id,
@@ -2979,7 +2983,54 @@ def comment_feed_post(post_id):
         }
     )
 
+    if wants_json:
+        comment_count = query_one(
+            "SELECT COUNT(*) AS c FROM feed_post_comments WHERE post_id = :post_id",
+            {"post_id": post_id}
+        )["c"]
+        return jsonify({
+            "comment": {
+                "id": new_comment_id,
+                "body": body,
+                "user_name": (current_user.name or current_user.email or "User").split(" ")[0]
+            },
+            "comment_count": comment_count
+        })
+
     return redirect(url_for("feed"))
+
+
+@app.post("/feed/<int:post_id>/like")
+@login_required
+def toggle_feed_post_like(post_id):
+    existing = query_one(
+        "SELECT id FROM feed_post_likes WHERE post_id = :post_id AND user_id = :user_id",
+        {"post_id": post_id, "user_id": current_user.id}
+    )
+
+    if existing:
+        execute(
+            "DELETE FROM feed_post_likes WHERE post_id = :post_id AND user_id = :user_id",
+            {"post_id": post_id, "user_id": current_user.id}
+        )
+        liked = False
+    else:
+        execute(
+            """
+            INSERT INTO feed_post_likes (post_id, user_id)
+            VALUES (:post_id, :user_id)
+            ON CONFLICT (post_id, user_id) DO NOTHING
+            """,
+            {"post_id": post_id, "user_id": current_user.id}
+        )
+        liked = True
+
+    like_count = query_one(
+        "SELECT COUNT(*) AS c FROM feed_post_likes WHERE post_id = :post_id",
+        {"post_id": post_id}
+    )["c"]
+
+    return jsonify({"liked": liked, "like_count": like_count})
     
     
     
@@ -3525,6 +3576,8 @@ def directory_page(slug):
     
 @app.get("/feed")
 def feed():
+    viewer_id = current_user.id if current_user.is_authenticated else -1
+
     posts = query_all("""
     SELECT
         p.*,
@@ -3532,6 +3585,7 @@ def feed():
         u.profile_image_url AS user_photo,
         l.name AS listing_name,
         l.slug AS listing_slug,
+        l.category AS listing_category,
         (
             SELECT COUNT(*)
             FROM feed_post_likes
@@ -3541,7 +3595,12 @@ def feed():
             SELECT COUNT(*)
             FROM feed_post_comments
             WHERE post_id = p.id
-        ) AS comment_count
+        ) AS comment_count,
+        EXISTS(
+            SELECT 1
+            FROM feed_post_likes
+            WHERE post_id = p.id AND user_id = :viewer_id
+        ) AS liked_by_me
     FROM feed_posts p
     LEFT JOIN "user" u
         ON u.id = p.user_id
@@ -3550,7 +3609,7 @@ def feed():
     WHERE p.is_public = 1
     ORDER BY p.id DESC
     LIMIT 50
-""")
+""", {"viewer_id": viewer_id})
 
     # Surface friends' posts first. Uses the existing Friendship model
     # (accepted requests, either direction) rather than a global feed.
@@ -3570,6 +3629,7 @@ def feed():
 
     for post in posts:
         post["is_friend"] = post.get("user_id") in friend_ids
+        post["time_ago"] = relative_time(post.get("created_at"))
         post["comments"] = query_all(
             """
             SELECT
@@ -5508,6 +5568,8 @@ def api_feed_nearby():
     if not city:
         return jsonify({"posts": [], "city": None})
 
+    viewer_id = current_user.id if current_user.is_authenticated else -1
+
     posts = query_all("""
         SELECT
             p.*,
@@ -5515,6 +5577,7 @@ def api_feed_nearby():
             u.profile_image_url AS user_photo,
             l.name AS listing_name,
             l.slug AS listing_slug,
+            l.category AS listing_category,
             (
                 SELECT COUNT(*)
                 FROM feed_post_likes
@@ -5524,7 +5587,12 @@ def api_feed_nearby():
                 SELECT COUNT(*)
                 FROM feed_post_comments
                 WHERE post_id = p.id
-            ) AS comment_count
+            ) AS comment_count,
+            EXISTS(
+                SELECT 1
+                FROM feed_post_likes
+                WHERE post_id = p.id AND user_id = :viewer_id
+            ) AS liked_by_me
         FROM feed_posts p
         LEFT JOIN "user" u
             ON u.id = p.user_id
@@ -5534,9 +5602,10 @@ def api_feed_nearby():
           AND LOWER(COALESCE(p.city, '')) = LOWER(:city)
         ORDER BY p.id DESC
         LIMIT 20
-    """, {"city": city})
+    """, {"city": city, "viewer_id": viewer_id})
 
     for post in posts:
+        post["time_ago"] = relative_time(post.get("created_at"))
         gallery = query_all(
             "SELECT image_url FROM feed_post_images WHERE post_id = :post_id ORDER BY position ASC",
             {"post_id": post["id"]}
