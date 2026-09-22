@@ -1003,12 +1003,15 @@ def save_message(conversation_id, role, content):
     )
 
 def load_messages(conversation_id, limit=12):
-    return query_all(
+    """Most recent `limit` messages, oldest-first (so they read naturally
+    when joined into a prompt) — used to give the AI chat planner real
+    conversation context instead of re-deriving intent from scratch."""
+    rows = query_all(
         """
         SELECT role, content
         FROM conversation_messages
         WHERE conversation_id = :conversation_id
-        ORDER BY id ASC
+        ORDER BY id DESC
         LIMIT :limit
         """,
         {
@@ -1016,6 +1019,9 @@ def load_messages(conversation_id, limit=12):
             "limit": limit
         }
     )
+    rows = rows_to_dicts(rows)
+    rows.reverse()
+    return rows
 
 def load_state(conversation):
     raw = conversation.get("state_json") or "{}"
@@ -2590,6 +2596,187 @@ from flask import request, jsonify
 from flask_login import current_user
 
 
+AI_CHAT_PLAN_FORMAT = {
+    "type": "json_schema",
+    "name": "ai_chat_plan",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["intent", "reply", "search_query", "category_hint", "city"],
+        "properties": {
+            "intent": {
+                "type": "string",
+                "enum": ["search", "clarify"]
+            },
+            "reply": {
+                "type": "string",
+                "description": "Only used when intent is 'clarify' — a short, warm, specific reply or question. Empty string when intent is 'search'."
+            },
+            "search_query": {
+                "type": "string",
+                "description": "A natural-language search phrase capturing what the user wants (vibe, dietary needs, group size, budget, occasion, etc). Empty string when intent is 'clarify'."
+            },
+            "category_hint": {
+                "type": "string",
+                "description": "Single best-guess category word for filtering, e.g. 'coffee', 'restaurant', 'bar', 'pizza', 'sushi', 'shopping'. Empty string if unclear."
+            },
+            "city": {
+                "type": "string",
+                "description": "Only set this if the user explicitly named a NEW city or area in their latest message. Otherwise leave as empty string so we keep using the location we already have."
+            }
+        }
+    }
+}
+
+
+def plan_ai_chat_turn(user_message: str, history: list, has_location: bool, known_city: str = None) -> dict:
+    """LLM call #1: understands the user's free-form message (given recent
+    conversation history) and decides whether we have enough to search, or
+    need to ask something first. Replaces the old fixed-keyword state
+    machine so arbitrary phrasing (dietary needs, vibe, "like X but cheaper",
+    group size, budget, etc) actually gets understood instead of silently
+    ignored."""
+    fallback = {
+        "intent": "search",
+        "reply": "",
+        "search_query": user_message,
+        "category_hint": "",
+        "city": ""
+    }
+
+    history_lines = "\n".join(
+        f"{m['role']}: {m['content']}" for m in history[-8:]
+    ) or "(no earlier messages)"
+
+    if known_city:
+        location_note = f"We already know the user's area: {known_city}."
+    elif has_location:
+        location_note = "We have the user's current coordinates but not a named city."
+    else:
+        location_note = "We do NOT have any location for the user yet."
+
+    prompt = f"""
+You are the query-understanding step for Mutual Eats, a food & drink discovery app.
+Only food, drinks, cafes, bars, and related local spots are in scope — nothing else.
+
+Conversation so far:
+{history_lines}
+
+Latest user message:
+{user_message}
+
+{location_note}
+
+Decide:
+- If you have enough to search (a location, and at least a general sense of
+  what they want), set intent to "search" and fill in search_query (a
+  natural-language phrase capturing vibe, dietary needs, group size, budget,
+  occasion — anything relevant) and category_hint (one general category word).
+- If you do NOT have a location at all (see note above) and the user hasn't
+  named one in this message, set intent to "clarify" and write a short,
+  specific, friendly reply asking what city or area they're in.
+- If the message is too vague to search even with a location (e.g. just
+  "hi"), set intent to "clarify" and ask a short, natural follow-up question
+  — never a generic canned line, actually respond to what they said.
+- Only fill in "city" if the user explicitly named a NEW city or area in
+  their latest message. Leave it blank otherwise so we keep using the known
+  location.
+- Never fill in both a clarify reply and a search_query in the same response.
+""".strip()
+
+    try:
+        resp = client.responses.create(
+            model="gpt-5-mini",
+            input=[
+                {
+                    "role": "system",
+                    "content": "Return JSON only, matching the provided schema. No markdown, no extra text."
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_output_tokens=500,
+            reasoning={"effort": "low"},
+            text={"format": AI_CHAT_PLAN_FORMAT},
+            store=False,
+        )
+        raw = response_text(resp)
+        plan = safe_json_loads(raw)
+        if plan.get("intent") not in ("search", "clarify"):
+            return fallback
+        return plan
+    except Exception as e:
+        print("[AI_CHAT_PLAN_ERROR]", str(e), flush=True)
+        return fallback
+
+
+def compose_ai_chat_reply(user_message: str, results: list, searched_city: str = None) -> str:
+    """LLM call #2: writes the actual reply text, grounded only in the real
+    search results we found — never invents places. Replaces the old fixed
+    "Here are some good {category} in {city}" template."""
+    if not results:
+        area = f" in {searched_city}" if searched_city else " nearby"
+        return f"I couldn't find any strong matches{area} yet. Try a different category, or a broader area."
+
+    candidates = []
+    for r in results[:10]:
+        bits = [r.get("name") or "Unnamed place"]
+        if r.get("category"):
+            bits.append(f"category: {r['category']}")
+        rating = r.get("avg_rating") or r.get("rating")
+        if rating:
+            bits.append(f"rating: {rating}")
+        if r.get("city"):
+            bits.append(f"city: {r['city']}")
+        if r.get("description"):
+            bits.append(f"description: {r['description'][:160]}")
+        if r.get("distance_miles") is not None:
+            bits.append(f"{r['distance_miles']} mi away")
+        candidates.append(" | ".join(bits))
+
+    candidates_block = "\n".join(f"- {c}" for c in candidates)
+
+    prompt = f"""
+You are a warm, knowledgeable local food & drink concierge for Mutual Eats.
+
+The user asked: "{user_message}"
+
+Here are the real candidate places we found (only use these — never mention
+a place that isn't in this list):
+{candidates_block}
+
+Write a short, natural, conversational reply (2-4 sentences, no markdown, no
+bullet points — this is a chat bubble) recommending 2-4 of the strongest
+matches by name, with a brief reason each grounded in the data above. Sound
+like a knowledgeable local friend, not a search engine.
+""".strip()
+
+    try:
+        resp = client.responses.create(
+            model="gpt-5-mini",
+            input=[
+                {
+                    "role": "system",
+                    "content": "Plain text only. No markdown, no JSON, no bullet points."
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_output_tokens=300,
+            reasoning={"effort": "low"},
+            store=False,
+        )
+        text = response_text(resp)
+        if text:
+            return text
+    except Exception as e:
+        print("[AI_CHAT_COMPOSE_ERROR]", str(e), flush=True)
+
+    # Fallback: still real, still not a hallucination — just less personalized.
+    top_names = [r.get("name") for r in results[:4] if r.get("name")]
+    area = f" in {searched_city}" if searched_city else ""
+    return f"Here are some good options{area}. I'd start with {', '.join(top_names)}."
+
+
 @app.post("/ai-chat")
 def ai_chat():
     try:
@@ -2603,45 +2790,27 @@ def ai_chat():
 
         user_id = current_user.id if current_user.is_authenticated else None
 
- 
-
         conversation = load_or_create_conversation(user_id=user_id)
         conversation_id = conversation["id"]
 
+        state = load_state(conversation)
+        history = load_messages(conversation_id, limit=12)
+
         save_message(conversation_id, "user", message)
 
-        state = load_state(conversation)
-        state = maybe_reset_state_for_new_topic(state, message)
+        known_city = (state.get("city") or "").strip() or None
+        has_location = bool(known_city or state.get("lat") or (lat is not None and lng is not None))
 
-        if is_broad_query(message):
-            state["category"] = detect_category_from_message(message) or state.get("category")
-            state["vibe"] = None
-            state["purpose"] = None
-            state["last_followup"] = None
+        plan = plan_ai_chat_turn(message, history, has_location, known_city)
 
-        state = update_state_from_message(state, message, lat=lat, lng=lng)
-
-        ask_followup, followup_question, followup_key = should_ask_followup(state)
-
-        if ask_followup:
-            if state.get("last_followup") == followup_key:
-                if followup_key == "food_vibe":
-                    followup_question = "Would you prefer something casual, quick, lively, or more date-night?"
-                elif followup_key == "coffee_vibe":
-                    followup_question = "Do you want a popular coffee shop, somewhere quiet to work, or something quick?"
-                elif followup_key == "location":
-                    followup_question = "What area are you in so I can narrow it down?"
-                elif followup_key == "category":
-                    followup_question = "What type of place are you in the mood for?"
-
-            state["last_followup"] = followup_key
+        if plan.get("intent") == "clarify":
+            reply = plan.get("reply") or "What city or area are you in? I need a location to narrow it down."
             save_state(conversation_id, state)
-            save_message(conversation_id, "assistant", followup_question)
-
+            save_message(conversation_id, "assistant", reply)
             return jsonify({
                 "conversation_id": conversation_id,
-                "reply": followup_question,
-                "summary": followup_question,
+                "reply": reply,
+                "summary": reply,
                 "needs_clarification": True,
                 "results": [],
                 "featured_internal": [],
@@ -2650,14 +2819,18 @@ def ai_chat():
                 "state": state
             })
 
-        state["last_followup"] = None
-        save_state(conversation_id, state)
+        new_city = (plan.get("city") or "").strip()
+        if new_city:
+            state["city"] = new_city
+            state["lat"] = None
+            state["lng"] = None
 
         searched_city = (state.get("city") or "").strip() or None
         user_lat, user_lng, location_source = resolve_search_location(state, lat=lat, lng=lng)
 
         if user_lat is None or user_lng is None:
             no_location_reply = "What city or area are you in? I need a location to narrow it down."
+            save_state(conversation_id, state)
             save_message(conversation_id, "assistant", no_location_reply)
             return jsonify({
                 "conversation_id": conversation_id,
@@ -2671,90 +2844,52 @@ def ai_chat():
                 "state": state
             })
 
-        # Simpler queries for better matches
-        category = (state.get("category") or "").strip().lower()
-        vibe = (state.get("vibe") or "").strip().lower()
-        purpose = (state.get("purpose") or "").strip().lower()
+        state["lat"] = user_lat
+        state["lng"] = user_lng
+        save_state(conversation_id, state)
 
-        internal_query = category
-        google_query = category
-
-        if category == "coffee":
-            internal_query = "coffee"
-            if purpose == "work" or vibe == "quiet":
-                google_query = "quiet coffee shop"
-            elif purpose == "quick":
-                google_query = "quick coffee shop"
-            elif purpose == "popular":
-                google_query = "quick coffee shop"
-            else:
-                google_query = "coffee shop"
-
-        elif category in ["restaurants", "restaurant"]:
-            internal_query = "restaurant"
-            if vibe == "date-night":
-                google_query = "date night restaurant"
-            elif purpose == "quick":
-                google_query = "quick restaurant"
-            else:
-                google_query = "restaurant"
-
-        elif category == "bars":
-            internal_query = "bar"
-            if vibe == "lively":
-                google_query = "lively bar"
-            else:
-                google_query = "bar"
-
-        elif category == "shopping":
-            internal_query = "shopping"
-            google_query = "shopping"
-
-        elif not category:
-            internal_query = build_query_from_state(state)
-            google_query = internal_query
+        category_hint = (plan.get("category_hint") or "").strip().lower()
+        search_query = (plan.get("search_query") or "").strip() or message
 
         internal_results = []
         external_results = []
 
         try:
             internal_results = search_internal_listings(
-                internal_results = enrich_internal_results_with_ratings(internal_results),
-                q=internal_query,
+                q=category_hint or search_query,
                 lat=user_lat,
                 lng=user_lng,
                 limit=20
             )
+            internal_results = enrich_internal_results_with_ratings(internal_results)
         except Exception as e:
             print("[AI_CHAT_INTERNAL_ERROR]", str(e), flush=True)
             internal_results = []
 
         try:
-            if google_query:
-                external_results = google_places_text_search(
-                    query=google_query,
-                    lat=user_lat,
-                    lng=user_lng,
-                    limit=20
-                )
+            external_results = google_places_text_search(
+                query=search_query,
+                lat=user_lat,
+                lng=user_lng,
+                limit=20
+            )
         except Exception as e:
             print("[AI_CHAT_EXTERNAL_ERROR]", str(e), flush=True)
             external_results = []
 
-        print("[AI_CHAT_CATEGORY]", category, flush=True)
-        print("[AI_CHAT_INTERNAL_QUERY]", internal_query, flush=True)
-        print("[AI_CHAT_GOOGLE_QUERY]", google_query, flush=True)
+        print("[AI_CHAT_CATEGORY_HINT]", category_hint, flush=True)
+        print("[AI_CHAT_SEARCH_QUERY]", search_query, flush=True)
         print("[AI_CHAT_INTERNAL_COUNT]", len(internal_results), flush=True)
         print("[AI_CHAT_EXTERNAL_COUNT]", len(external_results), flush=True)
 
         featured_internal, regular_internal, external_results, results = bucket_results(
             internal_results=internal_results,
             external_results=external_results,
-            query=internal_query or google_query,
+            query=category_hint or search_query,
             searched_city=searched_city
         )
 
-        reply = build_recommendation_reply(state, results)
+        reply = compose_ai_chat_reply(message, results, searched_city)
         save_message(conversation_id, "assistant", reply)
 
         return jsonify({
@@ -2776,13 +2911,12 @@ def ai_chat():
             "state": state
         })
 
-    
     except Exception as e:
         print("[AI_CHAT_ERROR]", str(e), flush=True)
         print(traceback.format_exc(), flush=True)
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 @app.post("/lists/<int:list_id>/save")
 @login_required
 def save_public_list(list_id):
