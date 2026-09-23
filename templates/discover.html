@@ -753,6 +753,87 @@
       .disc-map-wrap { height: 420px; }
       .disc-nearby-section { padding: 26px 24px 4px; }
     }
+
+    /* ── Mobile: full-page map, single "Closest to you" carousel overlaid on
+       its bottom edge, whole page fits in one viewport (no scrolling) ── */
+    @media (max-width: 1024px) {
+      .page-discover .mobile-screen {
+        height: 100dvh;
+        overflow: hidden;
+      }
+
+      .page-discover .mobile-content.discover-page-content {
+        height: calc(100dvh - var(--header-h));
+        overflow: hidden;
+        padding: 0;
+      }
+
+      .page-discover .discover-shell {
+        height: 100%;
+        position: relative;
+      }
+
+      .page-discover .disc-map-section {
+        position: absolute;
+        inset: 0;
+        padding: 10px 10px 0;
+      }
+
+      .page-discover .disc-map-wrap {
+        height: 100%;
+      }
+
+      .page-discover .disc-map__status {
+        top: 10px;
+        bottom: auto;
+      }
+
+      .page-discover .disc-nearby-section {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 0 0 calc(var(--tabbar-h, 78px) + env(safe-area-inset-bottom) + 8px);
+      }
+
+      .page-discover .disc-nearby-section__title {
+        display: none;
+      }
+
+      .page-discover .disc-hcard {
+        aspect-ratio: auto;
+        height: 42vh;
+        min-height: 190px;
+        max-height: 300px;
+      }
+
+      .page-discover .disc-hcarousel__dots {
+        background: rgba(0,0,0,0.4);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        border-radius: 999px;
+        padding: 6px 10px;
+        width: fit-content;
+        margin: 8px auto 0;
+      }
+
+      .page-discover .disc-hcarousel__dot {
+        background: rgba(255,255,255,0.45);
+      }
+
+      .page-discover .disc-hcarousel__dot.is-active {
+        background: #ffffff;
+      }
+
+      .page-discover .disc-nearby-loading,
+      .page-discover .disc-nearby-empty {
+        color: #fff;
+        background: rgba(0,0,0,0.55);
+        border-radius: 14px;
+        margin: 0 16px;
+        padding: 14px;
+      }
+    }
   </style>
 </head>
 
@@ -875,14 +956,10 @@
             </div>
           </section>
 
-          <!-- ── Picked for you: personalized picks, grounded in the user's AI chat history ── -->
-          <section class="disc-nearby-section" id="disc-picked-section" hidden>
-            <p class="disc-nearby-section__title">Picked for you</p>
-            <div class="disc-hcarousel" id="disc-picked-grid"></div>
-            <div class="disc-hcarousel__dots" id="disc-picked-dots" hidden></div>
-          </section>
-
-          <!-- ── Closest to you: every nearby place, distance-sorted ── -->
+          <!-- ── Closest to you: nearby places, with any personalized picks (a short
+               reason grounded in the user's AI chat history) surfaced first.
+               Overlays the bottom of the map on mobile so the whole page fits
+               without scrolling. ── -->
           <section class="disc-nearby-section">
             <p class="disc-nearby-section__title">Closest to you</p>
             <div class="disc-hcarousel" id="disc-nearby-grid">
@@ -1222,30 +1299,21 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderFeeds(places) {
-    const pickedSection = document.getElementById("disc-picked-section");
-    const pickedGrid = document.getElementById("disc-picked-grid");
-    const pickedDots = document.getElementById("disc-picked-dots");
     const nearbyGrid = document.getElementById("disc-nearby-grid");
     const nearbyDots = document.getElementById("disc-nearby-dots");
 
-    const picked = places.filter((p) => p.reason);
-    const rest = places.filter((p) => !p.reason);
+    // One combined, single-row carousel (so it fits at the bottom of the map
+    // without scrolling): personalized picks first — each still shows its
+    // reason badge — then everything else in the distance order the API
+    // already gave us.
+    const ordered = places.filter((p) => p.reason).concat(places.filter((p) => !p.reason));
 
-    pickedGrid.innerHTML = "";
     nearbyGrid.innerHTML = "";
 
-    if (picked.length) {
-      pickedSection.hidden = false;
-      picked.forEach((place) => pickedGrid.appendChild(buildHeroCardEl(place)));
-      setupCarouselDots(pickedGrid, pickedDots, picked.length);
+    if (ordered.length) {
+      ordered.forEach((place) => nearbyGrid.appendChild(buildHeroCardEl(place)));
+      setupCarouselDots(nearbyGrid, nearbyDots, ordered.length);
     } else {
-      pickedSection.hidden = true;
-    }
-
-    if (rest.length) {
-      rest.forEach((place) => nearbyGrid.appendChild(buildHeroCardEl(place)));
-      setupCarouselDots(nearbyGrid, nearbyDots, rest.length);
-    } else if (!picked.length) {
       nearbyGrid.innerHTML = `<p class="disc-nearby-empty">No published places near you yet — check back soon.</p>`;
     }
   }
