@@ -5800,12 +5800,214 @@ def api_feed_nearby():
     })
 
 
+def get_user_chat_history_text(user_id, max_messages: int = 40, max_chars: int = 2500) -> str:
+    """Pulls a user's recent AI-chat messages (across all their conversations)
+    so Discover's personalization step can ground picks in what they've
+    actually told the AI chat they want — not just distance."""
+    if not user_id:
+        return ""
+
+    rows = query_all(
+        """
+        SELECT cm.role, cm.content
+        FROM conversation_messages cm
+        JOIN conversations c ON c.id = cm.conversation_id
+        WHERE c.user_id = :user_id
+        ORDER BY cm.id DESC
+        LIMIT :limit
+        """,
+        {"user_id": user_id, "limit": max_messages}
+    )
+    rows = rows_to_dicts(rows)
+    rows.reverse()
+
+    lines = []
+    for row in rows:
+        role = row.get("role") or "user"
+        content = (row.get("content") or "").strip()
+        if not content:
+            continue
+        lines.append(f"{role}: {content}")
+
+    text = "\n".join(lines)
+    if len(text) > max_chars:
+        text = text[-max_chars:]
+    return text
+
+
+NEARBY_PERSONALIZATION_FORMAT = {
+    "type": "json_schema",
+    "name": "nearby_personalization",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["picks"],
+        "properties": {
+            "picks": {
+                "type": "array",
+                "maxItems": 6,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["id", "reason"],
+                    "properties": {
+                        "id": {"type": "integer"},
+                        "reason": {
+                            "type": "string",
+                            "description": "Short (under 12 words), specific reason grounded in what the user has said, e.g. 'You've mentioned wanting quiet coffee spots'."
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+def personalize_nearby_places(history_text: str, candidates: list) -> dict:
+    """LLM call: given a user's real AI-chat history and a list of real
+    nearby places, picks a handful worth featuring as 'Picked for you' with
+    a short grounded reason each. Only ever chooses ids we hand it — never
+    invents a place. Returns {listing_id: reason}."""
+    if not history_text or not candidates:
+        return {}
+
+    candidate_lines = []
+    for c in candidates[:30]:
+        if c.get("id") is None:
+            continue
+        bits = [f"id={c['id']}", c.get("name") or "Unnamed"]
+        if c.get("category"):
+            bits.append(f"category={c['category']}")
+        if c.get("distance_miles") is not None:
+            bits.append(f"{c['distance_miles']} mi away")
+        if c.get("rating"):
+            bits.append(f"rating={c['rating']}")
+        candidate_lines.append(" | ".join(bits))
+
+    if not candidate_lines:
+        return {}
+
+    candidates_block = "\n".join(f"- {c}" for c in candidate_lines)
+
+    prompt = f"""
+You are the personalization step for Mutual Eats' Discover page. The user
+has chatted with our AI recommender before — here is that real history:
+
+{history_text}
+
+Here are real nearby places we found (only choose from these — never invent
+a place or an id that isn't listed):
+{candidates_block}
+
+Pick up to 4 places from the list above that this specific user would most
+likely love, based on what they've told the AI chat before (vibe, dietary
+needs, favorite categories, budget, occasion, etc). For each pick, give a
+short reason (under 12 words) that references what they said, e.g. "you've
+mentioned wanting quiet coffee spots". If nothing in their history gives a
+real signal, return an empty list rather than guessing.
+""".strip()
+
+    try:
+        resp = client.responses.create(
+            model="gpt-5-mini",
+            input=[
+                {
+                    "role": "system",
+                    "content": "Return JSON only, matching the provided schema. No markdown, no extra text."
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_output_tokens=500,
+            reasoning={"effort": "low"},
+            text={"format": NEARBY_PERSONALIZATION_FORMAT},
+            store=False,
+        )
+        raw = response_text(resp)
+        parsed = safe_json_loads(raw)
+        picks = parsed.get("picks") or []
+        valid_ids = {c["id"] for c in candidates if c.get("id") is not None}
+        reason_map = {}
+        for p in picks:
+            pid = p.get("id")
+            reason = (p.get("reason") or "").strip()
+            if pid in valid_ids and reason:
+                reason_map[pid] = reason
+        return reason_map
+    except Exception as e:
+        print("[NEARBY_PERSONALIZATION_ERROR]", str(e), flush=True)
+        return {}
+
+
+@app.get("/api/discover/nearby")
+def api_discover_nearby():
+    """Powers the redesigned Discover page: given the user's precise
+    coordinates, returns real nearby listings (distance-sorted) plus, for
+    signed-in users with real chat history, a short grounded 'reason' on
+    whichever picks the personalization step chose."""
+    try:
+        lat = request.args.get("lat", type=float)
+        lng = request.args.get("lng", type=float)
+
+        if lat is None or lng is None:
+            return jsonify({"error": "lat and lng are required."}), 400
+
+        results = search_internal_listings(
+            q="",
+            lat=lat,
+            lng=lng,
+            limit=30,
+            max_distance_miles=50
+        )
+        results = enrich_internal_results_with_ratings(results)
+
+        reason_map = {}
+        if current_user.is_authenticated:
+            try:
+                history_text = get_user_chat_history_text(current_user.id)
+                reason_map = personalize_nearby_places(history_text, results)
+            except Exception as e:
+                print("[DISCOVER_NEARBY_PERSONALIZATION_ERROR]", str(e), flush=True)
+                reason_map = {}
+
+        places = []
+        for r in results:
+            places.append({
+                "id": r.get("id"),
+                "name": r.get("name"),
+                "slug": r.get("slug"),
+                "category": r.get("category"),
+                "city": r.get("city"),
+                "state": r.get("state"),
+                "address": r.get("address"),
+                "website": r.get("website"),
+                "latitude": r.get("latitude"),
+                "longitude": r.get("longitude"),
+                "place_id": r.get("place_id"),
+                "photo_url": r.get("photo_url"),
+                "distance_miles": r.get("distance_miles"),
+                "rating": r.get("rating"),
+                "review_count": r.get("review_count"),
+                "reason": reason_map.get(r.get("id"), "")
+            })
+
+        print("[DISCOVER_NEARBY_COUNT]", len(places), flush=True)
+        print("[DISCOVER_NEARBY_PERSONALIZED_COUNT]", len(reason_map), flush=True)
+
+        return jsonify({
+            "places": places,
+            "personalized_count": len(reason_map)
+        })
+
+    except Exception as e:
+        print("[DISCOVER_NEARBY_ERROR]", str(e), flush=True)
+        print(traceback.format_exc(), flush=True)
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/discover")
 def discover_page():
-    q = (request.args.get("q") or "").strip().lower()
-    category = (request.args.get("category") or "").strip().lower()
-    city = (request.args.get("city") or "").strip()
-
     default_list_id = None
 
     if current_user.is_authenticated:
@@ -5825,93 +6027,15 @@ def discover_page():
 
         default_list_id = default_list.id
 
-    sql = """
-        SELECT
-            id,
-            name,
-            slug,
-            category,
-            address,
-            city,
-            state,
-            website,
-            latitude,
-            longitude,
-            place_id,
-            COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url,
-            photo_urls_json
-        FROM listings
-        WHERE status = 'published'
-    """
-
-    params = {}
-
-    if q:
-        sql += """
-          AND (
-            LOWER(COALESCE(name, '')) LIKE :q
-            OR LOWER(COALESCE(category, '')) LIKE :q
-            OR LOWER(COALESCE(address, '')) LIKE :q
-            OR LOWER(COALESCE(city, '')) LIKE :q
-            OR LOWER(COALESCE(state, '')) LIKE :q
-          )
-        """
-        params["q"] = f"%{q}%"
-
-    if category:
-        sql += """
-          AND LOWER(COALESCE(category, '')) LIKE :category
-        """
-        params["category"] = f"%{category}%"
-
-    if city:
-        sql += """
-          AND LOWER(COALESCE(city, '')) = LOWER(:city)
-        """
-        params["city"] = city
-
-    sql += """
-        ORDER BY name ASC
-        LIMIT 1000
-    """
-
-    listings = query_all(sql, params)
-
-    available_cities = query_all("""
-        SELECT DISTINCT city
-        FROM listings
-        WHERE status = 'published'
-          AND city IS NOT NULL
-          AND TRIM(city) != ''
-        ORDER BY city ASC
-    """)
-    available_cities = [row["city"] for row in available_cities if row.get("city")]
-
-    for listing in listings:
-        if not listing.get("photo_url") and listing.get("photo_urls_json"):
-            try:
-                photos = json.loads(listing["photo_urls_json"]) or []
-                if photos:
-                    listing["photo_url"] = photos[0]
-            except Exception as e:
-                print("[DISCOVER_PHOTO_JSON_ERROR]", str(e), flush=True)
-
-    print("[DISCOVER_LISTINGS_COUNT]", len(listings), flush=True)
-    print("[DISCOVER_DEFAULT_LIST_ID]", default_list_id, flush=True)
-    
-    
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return jsonify({"places": listings})
-
     return render_template(
         "discover.html",
         page_title="Discover",
-        listings=listings,
-        q=q,
-        active_category=category,
-        active_city=city,
-        available_cities=available_cities,
-        default_list_id=default_list_id
+        default_list_id=default_list_id,
+        mapbox_token=os.environ.get("MAPBOX_TOKEN"),
+        mapbox_style_url=os.environ.get(
+            "MAPBOX_STYLE_URL",
+            "mapbox://styles/mapbox/light-v11"
+        ),
     )
 
 
