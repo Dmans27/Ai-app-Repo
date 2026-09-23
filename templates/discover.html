@@ -763,7 +763,7 @@
       }
 
       .page-discover .mobile-content.discover-page-content {
-        height: calc(100dvh - var(--header-h));
+        height: 100dvh;
         overflow: hidden;
         padding: 0;
       }
@@ -776,16 +776,33 @@
       .page-discover .disc-map-section {
         position: absolute;
         inset: 0;
-        padding: 10px 0 0;
+        padding: 0;
       }
 
       .page-discover .disc-map-wrap {
         height: 100%;
+        border-radius: 0;
       }
 
       .page-discover .disc-map__status {
-        top: 10px;
+        top: calc(var(--header-h) + 8px);
         bottom: auto;
+      }
+
+      /* Float the header (hamburger + account picture) over the map instead
+         of pushing it down — same positions, just transparent and on top */
+      .page-discover .mobile-app-header.disc-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: transparent !important;
+        z-index: 950;
+      }
+
+      /* Keep Mapbox's own zoom control clear of the floating account icon */
+      .page-discover .mapboxgl-ctrl-top-right {
+        top: calc(var(--header-h) + 8px) !important;
       }
 
       .page-discover .disc-nearby-section {
@@ -934,8 +951,7 @@
         <button class="mobile-app-header__icon disc-hamburger" id="app-sidebar-toggle" type="button" aria-label="Open menu"><span></span><span></span><span></span></button>
 
         <div class="mobile-app-header__center">
-          <div class="mobile-app-header__title">Discover</div>
-          <div class="mobile-app-header__subtitle">Local directory</div>
+          
         </div>
 
         {% if current_user.is_authenticated %}
