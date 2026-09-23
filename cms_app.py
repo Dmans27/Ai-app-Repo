@@ -2710,10 +2710,14 @@ Decide:
         return fallback
 
 
-def compose_ai_chat_reply(user_message: str, results: list, searched_city: str = None) -> str:
+def compose_ai_chat_reply(user_message: str, results: list, searched_city: str = None, profile_text: str = "") -> str:
     """LLM call #2: writes the actual reply text, grounded only in the real
-    search results we found — never invents places. Replaces the old fixed
-    "Here are some good {category} in {city}" template."""
+    search results we found — never invents places. Also leans on the
+    user's stated account preferences (favorite categories, budget style,
+    intent, home city from onboarding), when available, so picks and tone
+    match who they said they are, not just what they typed this message.
+    Replaces the old fixed "Here are some good {category} in {city}"
+    template."""
     if not results:
         area = f" in {searched_city}" if searched_city else " nearby"
         return f"I couldn't find any strong matches{area} yet. Try a different category, or a broader area."
@@ -2736,11 +2740,18 @@ def compose_ai_chat_reply(user_message: str, results: list, searched_city: str =
 
     candidates_block = "\n".join(f"- {c}" for c in candidates)
 
+    profile_block = (
+        f"\nWhat we know about this user from their account (set at signup) "
+        f"— use it to favor matches that fit, but never let it override what "
+        f"they're actually asking for right now:\n{profile_text}\n"
+        if profile_text else ""
+    )
+
     prompt = f"""
 You are a warm, knowledgeable local food & drink concierge for Mutual Eats.
 
 The user asked: "{user_message}"
-
+{profile_block}
 Here are the real candidate places we found (only use these — never mention
 a place that isn't in this list):
 {candidates_block}
@@ -2889,7 +2900,8 @@ def ai_chat():
             searched_city=searched_city
         )
 
-        reply = compose_ai_chat_reply(message, results, searched_city)
+        profile_text = get_user_profile_text(current_user) if current_user.is_authenticated else ""
+        reply = compose_ai_chat_reply(message, results, searched_city, profile_text)
         save_message(conversation_id, "assistant", reply)
 
         return jsonify({
@@ -5835,6 +5847,36 @@ def get_user_chat_history_text(user_id, max_messages: int = 40, max_chars: int =
     return text
 
 
+def get_user_profile_text(user) -> str:
+    """Builds a short readable summary of a user's ONBOARDING preferences —
+    favorite categories, budget style, stated intent, home city — captured
+    at signup but (until now) never actually fed into any recommendation
+    prompt. This is a stable baseline signal, unlike chat history, which
+    rolls off as it ages."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return ""
+
+    bits = []
+
+    try:
+        categories = json.loads(user.favorite_categories) if user.favorite_categories else []
+    except (ValueError, TypeError):
+        categories = []
+    if categories:
+        bits.append(f"Favorite categories: {', '.join(categories)}")
+
+    if user.budget_style:
+        bits.append(f"Budget style: {user.budget_style}")
+
+    if user.intent_type:
+        bits.append(f"Primary use case: {user.intent_type}")
+
+    if user.home_city:
+        bits.append(f"Home city: {user.home_city}")
+
+    return "\n".join(bits)
+
+
 NEARBY_PERSONALIZATION_FORMAT = {
     "type": "json_schema",
     "name": "nearby_personalization",
@@ -5865,12 +5907,16 @@ NEARBY_PERSONALIZATION_FORMAT = {
 }
 
 
-def personalize_nearby_places(history_text: str, candidates: list) -> dict:
-    """LLM call: given a user's real AI-chat history and a list of real
-    nearby places, picks a handful worth featuring as 'Picked for you' with
-    a short grounded reason each. Only ever chooses ids we hand it — never
-    invents a place. Returns {listing_id: reason}."""
-    if not history_text or not candidates:
+def personalize_nearby_places(history_text: str, candidates: list, profile_text: str = "") -> dict:
+    """LLM call: given a user's real AI-chat history, their stated account
+    preferences (favorite categories, budget style, intent, home city from
+    onboarding), and a list of real nearby places, picks a handful worth
+    featuring as 'Picked for you' with a short grounded reason each. Only
+    ever chooses ids we hand it — never invents a place. Returns
+    {listing_id: reason}."""
+    if not history_text and not profile_text:
+        return {}
+    if not candidates:
         return {}
 
     candidate_lines = []
@@ -5891,22 +5937,32 @@ def personalize_nearby_places(history_text: str, candidates: list) -> dict:
 
     candidates_block = "\n".join(f"- {c}" for c in candidate_lines)
 
-    prompt = f"""
-You are the personalization step for Mutual Eats' Discover page. The user
-has chatted with our AI recommender before — here is that real history:
+    signal_sections = []
+    if profile_text:
+        signal_sections.append(f"Stated preferences from their account (set at signup):\n{profile_text}")
+    if history_text:
+        signal_sections.append(f"Their real AI chat history:\n{history_text}")
+    signal_block = "\n\n".join(signal_sections)
 
-{history_text}
+    prompt = f"""
+You are the personalization step for Mutual Eats' Discover page. Here is
+what we actually know about this user — never guess beyond it:
+
+{signal_block}
 
 Here are real nearby places we found (only choose from these — never invent
 a place or an id that isn't listed):
 {candidates_block}
 
 Pick up to 4 places from the list above that this specific user would most
-likely love, based on what they've told the AI chat before (vibe, dietary
-needs, favorite categories, budget, occasion, etc). For each pick, give a
-short reason (under 12 words) that references what they said, e.g. "you've
-mentioned wanting quiet coffee spots". If nothing in their history gives a
-real signal, return an empty list rather than guessing.
+likely love, based on what they've told us (vibe, dietary needs, favorite
+categories, budget, occasion, etc). Account preferences are a reliable
+baseline signal; chat history, when present, is more specific and should
+take priority where the two point in different directions. For each pick,
+give a short reason (under 12 words) that references a real signal, e.g.
+"matches your favorite: wine bars" or "you've mentioned wanting quiet
+coffee spots". If nothing above gives a real signal, return an empty list
+rather than guessing.
 """.strip()
 
     try:
@@ -5966,7 +6022,8 @@ def api_discover_nearby():
         if current_user.is_authenticated:
             try:
                 history_text = get_user_chat_history_text(current_user.id)
-                reason_map = personalize_nearby_places(history_text, results)
+                profile_text = get_user_profile_text(current_user)
+                reason_map = personalize_nearby_places(history_text, results, profile_text)
             except Exception as e:
                 print("[DISCOVER_NEARBY_PERSONALIZATION_ERROR]", str(e), flush=True)
                 reason_map = {}
