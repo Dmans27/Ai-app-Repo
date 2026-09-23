@@ -641,6 +641,11 @@
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
+        /* Explicit full-width + border-box so the card always matches the
+           width of the "Nearby right now" head row above it, instead of
+           leaving a gap on one side. */
+        width: 100% !important;
+        box-sizing: border-box !important;
         background: #ffffff;
         border: 1px solid rgba(0,0,0,0.08);
         border-radius: 18px;
