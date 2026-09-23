@@ -478,7 +478,7 @@
 
           .app-main__inner {
             height: 100svh;
-            padding: calc(var(--header-h) + 8px) 14px 0;
+            padding: calc(var(--header-h) + env(safe-area-inset-top) + 14px) 14px 0;
           }
 
           .chat-page {
@@ -489,9 +489,12 @@
              (styles.css) since the header used to sit in normal flow —
              now that the header floats over everything at all times, keep
              the same top clearance in both states so nothing renders
-             underneath the floating icons. */
+             underneath the floating icons. safe-area-inset-top matters
+             here: on a notched/Dynamic-Island phone the header actually
+             renders taller than --header-h alone accounts for, since the
+             header's own top padding grows with the notch. */
           body.ai-chat-active .app-main__inner {
-            padding-top: calc(var(--header-h) + 8px) !important;
+            padding-top: calc(var(--header-h) + env(safe-area-inset-top) + 14px) !important;
           }
         }
 
