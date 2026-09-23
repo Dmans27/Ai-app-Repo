@@ -974,11 +974,85 @@
       }
       .home-compose-submit-btn:hover { background: #16ad7b; }
       .home-compose-submit-btn:active { transform: scale(0.97); }
+
+      /* ── Home greeting bubble: a small typed-out "Hello, {name}!" chat
+         bubble in the top-left of the mobile hero area, above the "+"
+         button. Reserves real (flex-shrink:0) space above the nearby
+         feed rather than floating over it, so it never overlaps other
+         controls; the feed's own internal scroll absorbs the height. ── */
+      .home-greet-bubble {
+        display: none;
+      }
+
+      @media (max-width: 1024px) {
+        .home-greet-bubble {
+          display: flex;
+          align-items: center;
+          align-self: flex-start;
+          flex-shrink: 0;
+          max-width: 84%;
+          margin: 4px 0 14px;
+          padding: 12px 16px;
+          border-radius: 18px 18px 18px 4px;
+          background: #ffffff;
+          border: 1px solid rgba(0,0,0,0.08);
+          box-shadow: 0 4px 14px rgba(20,20,25,0.08);
+          color: #1d1d1f;
+          font-size: 14.5px;
+          font-weight: 700;
+          line-height: 1.35;
+        }
+
+        .home-greet-cursor {
+          margin-left: 1px;
+          font-weight: 400;
+          color: var(--brand, #10a37f);
+          animation: home-greet-blink 0.9s step-end infinite;
+        }
+
+        .home-greet-cursor.is-done {
+          animation: none;
+          opacity: 0;
+        }
+
+        @keyframes home-greet-blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+      }
       </style>
 
       <div class="app-main__inner">
         <section class="chat-page is-empty" id="chat-page">
-<!-- (mobile-home-hero greeting removed to give the feed more room) -->
+{% if current_user.is_authenticated %}
+  {% set _greet_src = (current_user.name or current_user.email or "") %}
+  {% set _greet_first = _greet_src.split(" ")[0] if _greet_src else "" %}
+  {% set _greet_text = ("Hello, " ~ _greet_first ~ "! Where do you want to go today?") if _greet_first else "Hello!" %}
+{% else %}
+  {% set _greet_text = "Hello!" %}
+{% endif %}
+<div class="home-greet-bubble" id="home-greet-bubble">
+  <span class="home-greet-text" id="home-greet-text" data-full-text="{{ _greet_text }}"></span><span class="home-greet-cursor" id="home-greet-cursor" aria-hidden="true">|</span>
+</div>
+<script>
+(function () {
+  var el = document.getElementById("home-greet-text");
+  var cursor = document.getElementById("home-greet-cursor");
+  var full = el ? (el.getAttribute("data-full-text") || "") : "";
+  if (!el || !full) return;
+  var i = 0;
+  function tick() {
+    el.textContent = full.slice(0, i);
+    i += 1;
+    if (i <= full.length) {
+      setTimeout(tick, 32);
+    } else if (cursor) {
+      cursor.classList.add("is-done");
+    }
+  }
+  tick();
+})();
+</script>
 {% if current_user.is_authenticated %}
 <div class="home-nearby-add-row home-nearby-add-row--mobile">
   <button type="button" class="home-nearby-add-btn" id="home-compose-open-mobile" aria-label="Create a post">+</button>
