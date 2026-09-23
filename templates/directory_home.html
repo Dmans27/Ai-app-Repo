@@ -452,6 +452,49 @@
           }
         }
 
+        @media (max-width: 1024px) {
+          /* ── Full-page feed: no header bar — the hamburger and account
+             icon float transparently in their same corner positions
+             (same treatment as the Discover page), with the feed running
+             edge-to-edge underneath them instead of starting below a
+             website-style title bar. ── */
+          .mobile-app-header.mobile-only {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: transparent !important;
+            border-bottom: none !important;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            z-index: 950;
+          }
+
+          .mobile-app-header__title,
+          .mobile-app-header__subtitle {
+            display: none;
+          }
+
+          .app-main__inner {
+            height: 100svh;
+            padding: calc(var(--header-h) + 8px) 14px 0;
+          }
+
+          .chat-page {
+            height: 100%;
+          }
+
+          /* The AI-chat-active state normally zeroes this padding out
+             (styles.css) since the header used to sit in normal flow —
+             now that the header floats over everything at all times, keep
+             the same top clearance in both states so nothing renders
+             underneath the floating icons. */
+          body.ai-chat-active .app-main__inner {
+            padding-top: calc(var(--header-h) + 8px) !important;
+          }
+        }
+
         .hero-center {
           display: flex;
           flex-direction: column;
