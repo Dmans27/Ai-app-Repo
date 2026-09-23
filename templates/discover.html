@@ -608,6 +608,146 @@
       text-align: center;
     }
 
+
+    /* ── Hero cards: horizontal, one-at-a-time, big photo with bottom info overlay ── */
+    .disc-hcarousel {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 0 16px 4px;
+    }
+    .disc-hcarousel::-webkit-scrollbar { display: none; }
+
+    .disc-hcard {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      aspect-ratio: 4 / 5;
+      background: #eef1ef;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(20,20,25,0.14);
+    }
+    .disc-hcard.is-selected {
+      box-shadow: 0 0 0 3px rgba(16,163,127,0.55), 0 4px 16px rgba(20,20,25,0.14);
+    }
+
+    .disc-hcard__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .disc-hcard__img-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      background: linear-gradient(135deg, #eafaf3 0%, #dcf3e8 100%);
+    }
+
+    /* Opacity overlay: gradient scrim at the bottom of the photo, info sits on top */
+    .disc-hcard__overlay {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 48px 16px 16px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 35%, rgba(0,0,0,0.8) 100%);
+      color: #fff;
+    }
+    .disc-hcard__reason {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(123,63,228,0.55);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      border-radius: 8px;
+      padding: 4px 9px;
+      margin-bottom: 8px;
+    }
+    .disc-hcard__name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      margin: 0 0 4px;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.35);
+    }
+    .disc-hcard__meta {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin: 0 0 12px;
+    }
+    .disc-hcard__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .disc-hcard__btn {
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.18);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .disc-hcard__btn:hover { background: rgba(255,255,255,0.3); }
+    .disc-hcard__btn--primary {
+      background: #10a37f;
+      border-color: transparent;
+    }
+    .disc-hcard__btn--primary:hover { background: #0d8a6c; }
+
+    .disc-hcarousel__dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 0 2px;
+    }
+    .disc-hcarousel__dots[hidden] { display: none; }
+    .disc-hcarousel__dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.15);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .disc-hcarousel__dot.is-active {
+      background: #10a37f;
+      transform: scale(1.35);
+    }
+
+    @media (min-width: 700px) {
+      .disc-hcard { aspect-ratio: 16 / 10; }
+    }
+    @media (min-width: 1025px) {
+      .disc-hcarousel { padding: 0 24px 4px; }
+    }
+
     @media (min-width: 1025px) {
       .disc-map-section { padding: 20px 24px 0; }
       .disc-map-wrap { height: 420px; }
@@ -738,15 +878,17 @@
           <!-- ── Picked for you: personalized picks, grounded in the user's AI chat history ── -->
           <section class="disc-nearby-section" id="disc-picked-section" hidden>
             <p class="disc-nearby-section__title">Picked for you</p>
-            <div class="disc-grid" id="disc-picked-grid"></div>
+            <div class="disc-hcarousel" id="disc-picked-grid"></div>
+            <div class="disc-hcarousel__dots" id="disc-picked-dots" hidden></div>
           </section>
 
           <!-- ── Closest to you: every nearby place, distance-sorted ── -->
           <section class="disc-nearby-section">
             <p class="disc-nearby-section__title">Closest to you</p>
-            <div class="disc-grid" id="disc-nearby-grid">
+            <div class="disc-hcarousel" id="disc-nearby-grid">
               <p class="disc-nearby-loading" id="disc-nearby-loading">Finding places near you…</p>
             </div>
+            <div class="disc-hcarousel__dots" id="disc-nearby-dots" hidden></div>
           </section>
 
 
@@ -895,16 +1037,16 @@ document.addEventListener("DOMContentLoaded", function () {
     form.submit();
   }
 
-  function buildCardEl(place) {
+  function buildHeroCardEl(place) {
     const card = document.createElement("div");
-    card.className = "disc-card";
+    card.className = "disc-hcard";
     card.dataset.placeId = place.id;
 
     const emoji = categoryEmoji(place.category);
     const photoHtml = place.photo_url
-      ? `<img class="disc-card__img" src="${escapeHtml(place.photo_url)}" alt="${escapeHtml(place.name)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-         <div class="disc-card__img-placeholder" style="display:none;">${emoji}</div>`
-      : `<div class="disc-card__img-placeholder">${emoji}</div>`;
+      ? `<img class="disc-hcard__img" src="${escapeHtml(place.photo_url)}" alt="${escapeHtml(place.name)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <div class="disc-hcard__img-placeholder" style="display:none;">${emoji}</div>`
+      : `<div class="disc-hcard__img-placeholder">${emoji}</div>`;
 
     const metaBits = [];
     if (place.category) metaBits.push(escapeHtml(place.category.replace(/_/g, " ")));
@@ -912,30 +1054,31 @@ document.addEventListener("DOMContentLoaded", function () {
     if (place.rating) metaBits.push(`★ ${place.rating}`);
 
     const reasonHtml = place.reason
-      ? `<div class="disc-card__reason">✨ ${escapeHtml(place.reason)}</div>`
+      ? `<div class="disc-hcard__reason">✨ ${escapeHtml(place.reason)}</div>`
       : "";
 
     const listingUrl = `/listing/${encodeURIComponent(place.slug || "")}`;
 
     let saveActionHtml = "";
     if (CONFIG.isAuthenticated && CONFIG.defaultListId) {
-      saveActionHtml = `<button type="button" class="disc-card__btn disc-card__btn--save" aria-label="Save ${escapeHtml(place.name)}">+ Save</button>`;
+      saveActionHtml = `<button type="button" class="disc-hcard__btn disc-hcard__btn--save" aria-label="Save ${escapeHtml(place.name)}">+ Save</button>`;
     } else if (!CONFIG.isAuthenticated) {
-      saveActionHtml = `<a href="${CONFIG.loginUrl}" class="disc-card__btn" onclick="event.stopPropagation();" aria-label="Log in to save ${escapeHtml(place.name)}">+ Save</a>`;
+      saveActionHtml = `<a href="${CONFIG.loginUrl}" class="disc-hcard__btn" onclick="event.stopPropagation();" aria-label="Log in to save ${escapeHtml(place.name)}">+ Save</a>`;
     }
 
     const directionsHtml = place.address
-      ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" class="disc-card__btn" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="Directions to ${escapeHtml(place.name)}">Directions</a>`
+      ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" class="disc-hcard__btn" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="Directions to ${escapeHtml(place.name)}">Directions</a>`
       : "";
 
+    // Big photo, opacity overlay pinned to the bottom holding the info (TripAdvisor-style pin card)
     card.innerHTML = `
       ${photoHtml}
-      <div class="disc-card__body">
-        <div class="disc-card__name">${escapeHtml(place.name)}</div>
-        <div class="disc-card__meta">${metaBits.join(" · ")}</div>
+      <div class="disc-hcard__overlay">
         ${reasonHtml}
-        <div class="disc-card__actions">
-          <a href="${listingUrl}" class="disc-card__btn disc-card__btn--primary" onclick="event.stopPropagation();">View</a>
+        <div class="disc-hcard__name">${escapeHtml(place.name)}</div>
+        <div class="disc-hcard__meta">${metaBits.join(" · ")}</div>
+        <div class="disc-hcard__actions">
+          <a href="${listingUrl}" class="disc-hcard__btn disc-hcard__btn--primary" onclick="event.stopPropagation();">View</a>
           ${saveActionHtml}
           ${directionsHtml}
         </div>
@@ -943,7 +1086,7 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
 
     if (CONFIG.isAuthenticated && CONFIG.defaultListId) {
-      const saveBtn = card.querySelector(".disc-card__btn--save");
+      const saveBtn = card.querySelector(".disc-hcard__btn--save");
       if (saveBtn) {
         saveBtn.addEventListener("click", function (e) {
           e.stopPropagation();
@@ -962,14 +1105,14 @@ document.addEventListener("DOMContentLoaded", function () {
   function highlightPlace(placeId, opts) {
     opts = opts || {};
 
-    document.querySelectorAll(".disc-card.is-selected").forEach((el) => el.classList.remove("is-selected"));
+    document.querySelectorAll(".disc-hcard.is-selected").forEach((el) => el.classList.remove("is-selected"));
     Object.values(state.markers).forEach((m) => m.getElement().classList.remove("is-active"));
 
-    const card = document.querySelector(`.disc-card[data-place-id="${placeId}"]`);
+    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
     if (card) {
       card.classList.add("is-selected");
       if (opts.scrollIntoView) {
-        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
       }
     }
 
@@ -982,6 +1125,40 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     state.activeId = placeId;
+  }
+
+  /* ── Horizontal carousel dot indicators: syncs to scroll position ── */
+  function setupCarouselDots(carouselEl, dotsEl, count) {
+    if (!carouselEl || !dotsEl) return;
+
+    dotsEl.innerHTML = "";
+
+    if (count <= 1 || count > 12) {
+      dotsEl.hidden = true;
+      return;
+    }
+    dotsEl.hidden = false;
+
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement("span");
+      dot.className = "disc-hcarousel__dot" + (i === 0 ? " is-active" : "");
+      dotsEl.appendChild(dot);
+    }
+
+    let ticking = false;
+    carouselEl.addEventListener("scroll", () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const firstCard = carouselEl.querySelector(".disc-hcard");
+        const cardWidth = firstCard ? firstCard.getBoundingClientRect().width + 12 : carouselEl.clientWidth;
+        const index = Math.max(0, Math.min(count - 1, Math.round(carouselEl.scrollLeft / cardWidth)));
+        dotsEl.querySelectorAll(".disc-hcarousel__dot").forEach((dot, i) => {
+          dot.classList.toggle("is-active", i === index);
+        });
+        ticking = false;
+      });
+    }, { passive: true });
   }
 
   function initMap(centerLat, centerLng) {
@@ -1047,7 +1224,9 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderFeeds(places) {
     const pickedSection = document.getElementById("disc-picked-section");
     const pickedGrid = document.getElementById("disc-picked-grid");
+    const pickedDots = document.getElementById("disc-picked-dots");
     const nearbyGrid = document.getElementById("disc-nearby-grid");
+    const nearbyDots = document.getElementById("disc-nearby-dots");
 
     const picked = places.filter((p) => p.reason);
     const rest = places.filter((p) => !p.reason);
@@ -1057,13 +1236,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (picked.length) {
       pickedSection.hidden = false;
-      picked.forEach((place) => pickedGrid.appendChild(buildCardEl(place)));
+      picked.forEach((place) => pickedGrid.appendChild(buildHeroCardEl(place)));
+      setupCarouselDots(pickedGrid, pickedDots, picked.length);
     } else {
       pickedSection.hidden = true;
     }
 
     if (rest.length) {
-      rest.forEach((place) => nearbyGrid.appendChild(buildCardEl(place)));
+      rest.forEach((place) => nearbyGrid.appendChild(buildHeroCardEl(place)));
+      setupCarouselDots(nearbyGrid, nearbyDots, rest.length);
     } else if (!picked.length) {
       nearbyGrid.innerHTML = `<p class="disc-nearby-empty">No published places near you yet — check back soon.</p>`;
     }
