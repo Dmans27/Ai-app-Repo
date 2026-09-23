@@ -477,8 +477,17 @@
           }
 
           .app-main__inner {
+            /* !important is required here: static/css/styles.css has an
+               unscoped, no-media-query `.app-main__inner { padding: 0 24px
+               !important; }` rule that otherwise silently wins over this
+               one regardless of specificity or source order, since
+               !important always beats a non-!important declaration. That
+               rule was why the landing/idle state never actually picked up
+               any of the earlier clearance fixes here — only the
+               ai-chat-active override below (which already had !important)
+               was taking effect. */
             height: 100svh;
-            padding: calc(var(--header-h) + env(safe-area-inset-top) + 40px) 14px 0;
+            padding: calc(var(--header-h) + env(safe-area-inset-top) + 40px) 14px 0 !important;
           }
 
           .chat-page {
