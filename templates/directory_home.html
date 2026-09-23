@@ -470,10 +470,13 @@
         @media (min-width: 1025px) {
           .hero-composer { display: none !important; }
         }
-      /* ── Hide mobile hero + chips when chat is active ── */
+      /* ── Hide mobile hero + chips + the "create a post" button when
+         chat is active — none of them are needed once the conversation
+         view is open. ── */
       body.ai-chat-active .mobile-home-hero,
       body.ai-chat-active .quick-scroll-wrap,
-      body.ai-chat-active .home-nearby-feed {
+      body.ai-chat-active .home-nearby-feed,
+      body.ai-chat-active .home-nearby-add-row {
         display: none !important;
         height: 0 !important;
         min-height: 0 !important;
