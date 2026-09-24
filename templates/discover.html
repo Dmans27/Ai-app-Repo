@@ -628,8 +628,9 @@
     }
     .disc-detail-panel[hidden] { display: none; }
     .disc-detail-panel.is-open {
-      max-height: 420px;
+      max-height: 70vh;
       opacity: 1;
+      overflow-y: auto;
     }
     .disc-detail-panel__inner {
       position: relative;
@@ -711,6 +712,63 @@
       text-decoration: none;
     }
     .disc-detail-panel__cta:hover { background: #0d8a6c; }
+
+    .disc-detail-panel__reviews {
+      margin: 4px 0 16px;
+    }
+    .disc-detail-panel__reviews-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #14151a;
+      margin: 0 0 8px;
+    }
+    .disc-detail-panel__reviews-loading,
+    .disc-detail-panel__reviews-empty {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.4);
+      margin: 0 0 8px;
+    }
+    .disc-detail-panel__review {
+      padding: 10px 0;
+      border-top: 1px solid rgba(0,0,0,0.07);
+    }
+    .disc-detail-panel__review:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+    .disc-detail-panel__review-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 3px;
+    }
+    .disc-detail-panel__review-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #14151a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .disc-detail-panel__review-stars {
+      font-size: 11px;
+      color: #f5a623;
+      letter-spacing: 1px;
+      flex: 0 0 auto;
+    }
+    .disc-detail-panel__review-body {
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: rgba(0,0,0,0.7);
+    }
+    .disc-detail-panel__reviews-attribution {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.3);
+      margin: 6px 0 0;
+    }
 
     .disc-card__reason {
       font-size: 11px;
@@ -1377,6 +1435,9 @@ document.addEventListener("DOMContentLoaded", function () {
           ${ratingHtml}
           ${phoneHtml}
         </div>
+        <div class="disc-detail-panel__reviews" id="disc-detail-panel-reviews">
+          <p class="disc-detail-panel__reviews-loading">Loading reviews…</p>
+        </div>
         <a href="${listingUrl}" class="disc-detail-panel__cta">Go to business page</a>
       </div>
     `;
@@ -1397,6 +1458,50 @@ document.addEventListener("DOMContentLoaded", function () {
         thumb.classList.add("is-selected");
       });
     });
+
+    loadGoogleReviews(place);
+  }
+
+  // Fetches Google's own reviews for this place (first 4-5, with reviewer
+  // name/rating/comment) and fills them into the panel once they arrive.
+  // Guarded by state.detailPlaceId in case the panel has since moved on to
+  // a different place before this request comes back.
+  function loadGoogleReviews(place) {
+    fetch(`/api/places/${encodeURIComponent(place.id)}/google-reviews`, {
+      headers: { "Accept": "application/json" }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (state.detailPlaceId !== place.id) return;
+        const reviewsEl = document.getElementById("disc-detail-panel-reviews");
+        if (!reviewsEl) return;
+
+        const reviews = (data.reviews || []).slice(0, 5);
+
+        if (!reviews.length) {
+          reviewsEl.innerHTML = `<p class="disc-detail-panel__reviews-empty">No Google reviews yet.</p>`;
+          return;
+        }
+
+        reviewsEl.innerHTML = `
+          <p class="disc-detail-panel__reviews-title">What people are saying</p>
+          ${reviews.map((r) => `
+            <div class="disc-detail-panel__review">
+              <div class="disc-detail-panel__review-head">
+                <span class="disc-detail-panel__review-name">${escapeHtml(r.author_name || "Google user")}</span>
+                <span class="disc-detail-panel__review-stars">${"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating || 0))))}</span>
+              </div>
+              <div class="disc-detail-panel__review-body">${escapeHtml(r.text || "")}</div>
+            </div>
+          `).join("")}
+          <p class="disc-detail-panel__reviews-attribution">Reviews via Google</p>
+        `;
+      })
+      .catch(() => {
+        if (state.detailPlaceId !== place.id) return;
+        const reviewsEl = document.getElementById("disc-detail-panel-reviews");
+        if (reviewsEl) reviewsEl.innerHTML = `<p class="disc-detail-panel__reviews-empty">Couldn\'t load reviews right now.</p>`;
+      });
   }
 
   // Returns the URL currently shown on a card's big hero photo, if any.

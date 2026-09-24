@@ -5169,6 +5169,100 @@ def api_place_reviews(place_identifier):
 
 
 # ------------------------------------------------------------------
+# GET /api/places/<place_id>/google-reviews
+#
+# Google's OWN reviews for a place (separate from listing_comments, which
+# are reviews written by our own users). Fetched live from the Places API
+# every time -- Google's terms only allow caching review content briefly,
+# so rather than storing it in Postgres this keeps a short in-memory cache
+# just long enough to avoid re-fetching the same popular place on every
+# single pageview.
+# ------------------------------------------------------------------
+
+_google_reviews_cache = {}  # place_id -> (fetched_at_epoch, reviews_list)
+GOOGLE_REVIEWS_CACHE_TTL_SECONDS = 600  # 10 minutes
+
+
+def get_google_place_reviews(place_id):
+    """Up to 5 of Google's own reviews for a place_id, freshly fetched from
+    the Places API (New) `reviews` field."""
+    if not place_id or not GOOGLE_MAPS_API_KEY:
+        return []
+
+    cached = _google_reviews_cache.get(place_id)
+    if cached and (time.time() - cached[0]) < GOOGLE_REVIEWS_CACHE_TTL_SECONDS:
+        return cached[1]
+
+    try:
+        url = f"https://places.googleapis.com/v1/places/{place_id}"
+        headers = {
+            "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+            "X-Goog-FieldMask": "reviews"
+        }
+        r = requests.get(url, headers=headers, timeout=15)
+
+        if not r.ok:
+            print("[GOOGLE_REVIEWS_STATUS]", place_id, r.status_code, r.text, flush=True)
+            return []
+
+        data = r.json()
+
+    except Exception as e:
+        print("[GOOGLE_REVIEWS_ERROR]", place_id, str(e), flush=True)
+        return []
+
+    raw_reviews = data.get("reviews") or []
+    reviews = []
+
+    for rv in raw_reviews[:5]:
+        author_attribution = rv.get("authorAttribution") or {}
+        text_obj = rv.get("text") or {}
+        reviews.append({
+            "author_name": author_attribution.get("displayName") or "Google user",
+            "author_photo_url": author_attribution.get("photoUri") or "",
+            "rating": rv.get("rating"),
+            "text": text_obj.get("text") or "",
+            "relative_time": rv.get("relativePublishTimeDescription") or ""
+        })
+
+    _google_reviews_cache[place_id] = (time.time(), reviews)
+    return reviews
+
+
+@app.get("/api/places/<place_identifier>/google-reviews")
+def api_place_google_reviews(place_identifier):
+    """
+    place_identifier resolution matches /api/places/<id>/reviews above:
+    numeric listing id, Google place_id, or slug.
+    """
+    listing = None
+
+    if place_identifier.isdigit():
+        listing = query_one(
+            "SELECT id, place_id FROM listings WHERE id = :id AND status = 'published'",
+            {"id": int(place_identifier)}
+        )
+
+    if not listing:
+        listing = query_one(
+            "SELECT id, place_id FROM listings WHERE place_id = :pid AND status = 'published'",
+            {"pid": place_identifier}
+        )
+
+    if not listing:
+        listing = query_one(
+            "SELECT id, place_id FROM listings WHERE slug = :slug AND status = 'published'",
+            {"slug": place_identifier}
+        )
+
+    if not listing or not listing.get("place_id"):
+        return jsonify({"reviews": []})
+
+    reviews = get_google_place_reviews(listing["place_id"])
+    return jsonify({"reviews": reviews})
+
+
+# ------------------------------------------------------------------
 # POST /reviews/create
 #
 # Submits a new review from the popup write-a-review form.
