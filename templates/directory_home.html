@@ -490,6 +490,19 @@
             padding: calc(var(--header-h) + env(safe-area-inset-top) + 10px) 14px 0 !important;
           }
 
+          /* .app-main is a flex item inside .app-shell (a row-direction
+             flex container). It never got its own flex-grow/width, so it
+             was shrink-wrapping to its content's width instead of filling
+             the row — the sidebar is position:fixed (out of flow) so
+             there's no real sibling competing for that space, it was just
+             sitting unused on the right. That's the actual cause of the
+             right-side gap on the feed (head row AND cards both, evenly —
+             not a per-card width problem, which is why forcing width on
+             .home-nearby-post alone didn't fix it). */
+          .app-main {
+            width: 100% !important;
+          }
+
           .chat-page {
             height: 100%;
           }
