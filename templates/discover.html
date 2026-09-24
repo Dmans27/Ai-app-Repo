@@ -1213,7 +1213,23 @@ document.addEventListener("DOMContentLoaded", function () {
     if (marker) {
       marker.getElement().classList.add("is-active");
       if (opts.flyTo && state.map) {
-        state.map.flyTo({ center: marker.getLngLat(), zoom: Math.max(state.map.getZoom(), 14), duration: 500 });
+        let offsetY = 0;
+        const mapWrapEl = document.querySelector(".disc-map-wrap");
+        const cardOverlayEl = document.querySelector(".disc-nearby-section");
+        if (mapWrapEl && cardOverlayEl) {
+          const mapRect = mapWrapEl.getBoundingClientRect();
+          const cardRect = cardOverlayEl.getBoundingClientRect();
+          // How much of the map's bottom the card overlay is currently
+          // covering (0 if the overlay is hidden/empty).
+          const coveredHeight = Math.max(0, mapRect.bottom - cardRect.top);
+          offsetY = -(coveredHeight / 2);
+        }
+        state.map.flyTo({
+          center: marker.getLngLat(),
+          zoom: Math.max(state.map.getZoom(), 14),
+          duration: 500,
+          offset: [0, offsetY]
+        });
       }
     }
 
@@ -1302,7 +1318,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .addTo(state.map);
 
       el.addEventListener("click", () => {
-        highlightPlace(place.id, { scrollIntoView: true });
+        highlightPlace(place.id, { scrollIntoView: true, flyTo: true });
       });
 
       state.markers[place.id] = marker;
