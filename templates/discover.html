@@ -611,16 +611,21 @@
       margin: 0 4px 12px;
     }
 
-    /* -- "View" detail panel: a brief description card that expands below
-       the hero carousel (photos, rating, phone, then a CTA to the full
-       business page). Height-animated via max-height so the panel -- and
-       the card carousel above it -- visibly "push up" as it opens, since
+    /* -- "View" detail panel: reuses the app's existing dark "place detail
+       sheet" look (see .pds-* in static/css/styles.css, used on the
+       AI-search home page) so a place looks the same everywhere in the
+       app -- inline here instead of a full-screen sheet. Sits flush under
+       the hero card (no gap, square top corners) so the two read as one
+       card popping open, not two separate cards. Height-animated via
+       max-height so it visibly "pushes up" the carousel above it, since
        .disc-nearby-section is bottom-anchored on mobile. -- */
     .disc-detail-panel {
-      margin: 10px 16px 0;
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 -6px 24px rgba(20,20,25,0.14);
+      margin: 0 16px;
+      background: #13151a;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-top: none;
+      border-radius: 0 0 22px 22px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.35);
       max-height: 0;
       opacity: 0;
       overflow: hidden;
@@ -634,18 +639,18 @@
     }
     .disc-detail-panel__inner {
       position: relative;
-      padding: 40px 16px 16px;
+      padding: 40px 16px 18px;
     }
     .disc-detail-panel__close {
       position: absolute;
       top: 10px;
       right: 12px;
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       border: none;
-      background: rgba(0,0,0,0.06);
-      color: rgba(0,0,0,0.55);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
       font-size: 13px;
       line-height: 1;
       cursor: pointer;
@@ -655,54 +660,106 @@
     }
     .disc-detail-panel__photos {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      margin: 0 0 12px;
+      margin: 0 0 14px;
     }
     .disc-detail-panel__photos::-webkit-scrollbar { display: none; }
     .disc-detail-panel__photos img {
       flex: 0 0 auto;
-      width: 84px;
-      height: 84px;
-      border-radius: 12px;
+      width: 72px;
+      height: 56px;
+      border-radius: 10px;
       object-fit: cover;
-      background: #eef1ef;
+      background: #1b1d22;
       cursor: pointer;
+      opacity: 0.75;
       border: 2px solid transparent;
-      transition: border-color 0.15s, transform 0.15s;
+      transition: opacity 0.15s, border-color 0.15s, transform 0.15s;
     }
     .disc-detail-panel__photos img.is-selected {
+      opacity: 1;
       border-color: #10a37f;
-      transform: scale(0.96);
+      transform: scale(1.02);
     }
-    .disc-detail-panel__info {
+    .disc-detail-panel__rating-card {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-      gap: 12px;
-      margin: 0 0 14px;
+      gap: 14px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      margin: 0 0 12px;
     }
-    .disc-detail-panel__rating {
-      font-size: 13px;
+    .disc-detail-panel__rating-score {
+      font-size: 30px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      flex-shrink: 0;
+    }
+    .disc-detail-panel__rating-right { flex: 1; min-width: 0; }
+    .disc-detail-panel__rating-stars {
+      font-size: 14px;
+      color: #f5b301;
+      letter-spacing: 1px;
+    }
+    .disc-detail-panel__rating-count {
+      font-size: 11.5px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 3px;
+    }
+    .disc-detail-panel__actions {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 16px;
+    }
+    .disc-detail-panel__action-btn {
+      height: 40px;
+      border-radius: 12px;
+      border: none;
+      font-size: 12.5px;
       font-weight: 800;
-      color: #14151a;
-    }
-    .disc-detail-panel__rating span {
-      font-weight: 600;
-      color: rgba(0,0,0,0.4);
-    }
-    .disc-detail-panel__phone {
-      font-size: 13px;
-      font-weight: 700;
-      color: #10a37f;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
       text-decoration: none;
+      padding: 0 10px;
+      flex: 1;
+      min-width: 0;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .disc-detail-panel__action-btn:active { transform: scale(0.96); }
+    .disc-detail-panel__action-btn--primary {
+      background: #10a37f;
+      color: #fff;
+    }
+    .disc-detail-panel__action-btn--primary:hover { background: #0d8a6c; }
+    .disc-detail-panel__action-btn--ghost {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .disc-detail-panel__action-btn--ghost:hover { background: rgba(255,255,255,0.14); }
+    .disc-detail-panel__action-btn--icon {
+      flex: 0 0 auto;
+      width: 40px;
+      padding: 0;
+    }
+    .disc-detail-panel__action-btn--icon.is-saved {
+      background: rgba(16,163,127,0.22);
+      color: #10a37f;
     }
     .disc-detail-panel__cta {
       display: block;
-      height: 42px;
-      line-height: 42px;
+      height: 44px;
+      line-height: 44px;
       border-radius: 999px;
       background: #10a37f;
       color: #fff;
@@ -721,18 +778,19 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      background: rgba(16,163,127,0.08);
+      background: rgba(255,255,255,0.06);
       border: none;
       border-radius: 12px;
       padding: 10px 12px;
       font-size: 12.5px;
       font-weight: 700;
-      color: #0d8a6c;
+      color: #fff;
       cursor: pointer;
     }
     .disc-detail-panel__reviews-toggle-arrow {
       display: inline-block;
       transition: transform 0.2s;
+      color: rgba(255,255,255,0.5);
     }
     .disc-detail-panel__reviews-toggle[aria-expanded="true"] .disc-detail-panel__reviews-toggle-arrow {
       transform: rotate(180deg);
@@ -743,31 +801,41 @@
       transition: max-height 0.25s ease;
     }
     .disc-detail-panel__reviews-list.is-open {
-      max-height: 260px;
+      max-height: 280px;
       overflow-y: auto;
       margin-top: 10px;
-    }
-    .disc-detail-panel__reviews-title {
-      font-size: 12px;
-      font-weight: 800;
-      color: #14151a;
-      margin: 0 0 8px;
     }
     .disc-detail-panel__reviews-loading,
     .disc-detail-panel__reviews-empty {
       font-size: 12px;
       font-weight: 600;
-      color: rgba(0,0,0,0.4);
+      color: rgba(255,255,255,0.35);
       margin: 0 0 8px;
     }
     .disc-detail-panel__review {
-      padding: 10px 0;
-      border-top: 1px solid rgba(0,0,0,0.07);
+      display: flex;
+      gap: 10px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
     .disc-detail-panel__review:first-of-type {
       border-top: none;
       padding-top: 0;
     }
+    .disc-detail-panel__review-avatar {
+      flex: 0 0 auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(16,163,127,0.22);
+      color: #10a37f;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .disc-detail-panel__review-body-wrap { flex: 1; min-width: 0; }
     .disc-detail-panel__review-head {
       display: flex;
       align-items: center;
@@ -778,27 +846,27 @@
     .disc-detail-panel__review-name {
       font-size: 12.5px;
       font-weight: 700;
-      color: #14151a;
+      color: #fff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .disc-detail-panel__review-stars {
       font-size: 11px;
-      color: #f5a623;
+      color: #f5b301;
       letter-spacing: 1px;
       flex: 0 0 auto;
     }
     .disc-detail-panel__review-body {
       font-size: 12.5px;
       line-height: 1.45;
-      color: rgba(0,0,0,0.7);
+      color: rgba(255,255,255,0.65);
     }
     .disc-detail-panel__reviews-attribution {
       font-size: 10.5px;
       font-weight: 600;
-      color: rgba(0,0,0,0.3);
-      margin: 6px 0 0;
+      color: rgba(255,255,255,0.3);
+      margin: 8px 0 0;
     }
 
     .disc-card__reason {
@@ -1448,13 +1516,35 @@ document.addEventListener("DOMContentLoaded", function () {
       ? `<div class="disc-detail-panel__photos">${photos.map((url) => `<img class="${url === currentCardUrl ? "is-selected" : ""}" src="${escapeHtml(url)}" data-url="${escapeHtml(url)}" alt="${escapeHtml(place.name)}" loading="lazy">`).join("")}</div>`
       : "";
 
-    const ratingHtml = place.rating
-      ? `<div class="disc-detail-panel__rating">★ ${escapeHtml(String(place.rating))}${place.review_count ? ` <span>(${escapeHtml(String(place.review_count))} reviews)</span>` : ""}</div>`
+    const roundedRating = Math.max(0, Math.min(5, Math.round(place.rating || 0)));
+    const ratingCardHtml = place.rating
+      ? `<div class="disc-detail-panel__rating-card">
+           <div class="disc-detail-panel__rating-score">${escapeHtml(String(place.rating))}</div>
+           <div class="disc-detail-panel__rating-right">
+             <div class="disc-detail-panel__rating-stars">${"★".repeat(roundedRating)}${"☆".repeat(5 - roundedRating)}</div>
+             <div class="disc-detail-panel__rating-count">${place.review_count ? `${escapeHtml(String(place.review_count))} review${Number(place.review_count) === 1 ? "" : "s"}` : "No reviews yet"}</div>
+           </div>
+         </div>`
       : "";
 
-    const phoneHtml = place.phone
-      ? `<a class="disc-detail-panel__phone" href="tel:${escapeHtml(String(place.phone).replace(/[^\d+]/g, ""))}" onclick="event.stopPropagation();">📞 ${escapeHtml(place.phone)}</a>`
+    const directionsBtnHtml = place.address
+      ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--primary" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="Directions to ${escapeHtml(place.name)}">📍 Directions</a>`
       : "";
+
+    const websiteBtnHtml = place.website
+      ? `<a href="${escapeHtml(place.website)}" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--ghost" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="${escapeHtml(place.name)} website">🌐 Website</a>`
+      : "";
+
+    const callBtnHtml = place.phone
+      ? `<a href="tel:${escapeHtml(String(place.phone).replace(/[^\d+]/g, ""))}" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--ghost" onclick="event.stopPropagation();" aria-label="Call ${escapeHtml(place.name)}">📞 Call</a>`
+      : "";
+
+    let saveBtnHtml = "";
+    if (CONFIG.isAuthenticated && CONFIG.defaultListId) {
+      saveBtnHtml = `<button type="button" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--icon disc-detail-panel__action-btn--save" aria-label="Save ${escapeHtml(place.name)}">📌</button>`;
+    } else if (!CONFIG.isAuthenticated) {
+      saveBtnHtml = `<a href="${CONFIG.loginUrl}" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--icon" onclick="event.stopPropagation();" aria-label="Log in to save ${escapeHtml(place.name)}">📌</a>`;
+    }
 
     const listingUrl = `/listing/${encodeURIComponent(place.slug || "")}`;
 
@@ -1462,9 +1552,12 @@ document.addEventListener("DOMContentLoaded", function () {
       <div class="disc-detail-panel__inner">
         <button type="button" class="disc-detail-panel__close" aria-label="Close details">✕</button>
         ${photosHtml}
-        <div class="disc-detail-panel__info">
-          ${ratingHtml}
-          ${phoneHtml}
+        ${ratingCardHtml}
+        <div class="disc-detail-panel__actions">
+          ${directionsBtnHtml}
+          ${websiteBtnHtml}
+          ${callBtnHtml}
+          ${saveBtnHtml}
         </div>
         <div class="disc-detail-panel__reviews">
           <button type="button" class="disc-detail-panel__reviews-toggle" id="disc-detail-panel-reviews-toggle" aria-expanded="false">
@@ -1493,6 +1586,16 @@ document.addEventListener("DOMContentLoaded", function () {
         thumb.classList.add("is-selected");
       });
     });
+
+    if (CONFIG.isAuthenticated && CONFIG.defaultListId) {
+      const saveBtn = panelEl.querySelector(".disc-detail-panel__action-btn--save");
+      if (saveBtn) {
+        saveBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          submitSavePlace(place);
+        });
+      }
+    }
 
     const reviewsToggle = panelEl.querySelector("#disc-detail-panel-reviews-toggle");
     if (reviewsToggle) {
@@ -1552,6 +1655,12 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  function reviewerInitials(name) {
+    const cleaned = (name || "").trim();
+    if (!cleaned) return "?";
+    return cleaned.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  }
+
   function renderReviewsList(reviews) {
     const listEl = document.getElementById("disc-detail-panel-reviews-list");
     if (!listEl) return;
@@ -1564,11 +1673,14 @@ document.addEventListener("DOMContentLoaded", function () {
     listEl.innerHTML = `
       ${reviews.map((r) => `
         <div class="disc-detail-panel__review">
-          <div class="disc-detail-panel__review-head">
-            <span class="disc-detail-panel__review-name">${escapeHtml(r.author_name || "Google user")}</span>
-            <span class="disc-detail-panel__review-stars">${"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating || 0))))}</span>
+          <div class="disc-detail-panel__review-avatar">${escapeHtml(reviewerInitials(r.author_name))}</div>
+          <div class="disc-detail-panel__review-body-wrap">
+            <div class="disc-detail-panel__review-head">
+              <span class="disc-detail-panel__review-name">${escapeHtml(r.author_name || "Google user")}</span>
+              <span class="disc-detail-panel__review-stars">${"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating || 0))))}</span>
+            </div>
+            <div class="disc-detail-panel__review-body">${escapeHtml(r.text || "")}</div>
           </div>
-          <div class="disc-detail-panel__review-body">${escapeHtml(r.text || "")}</div>
         </div>
       `).join("")}
       <p class="disc-detail-panel__reviews-attribution">Reviews via Google</p>
@@ -1710,6 +1822,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     let ticking = false;
+    let lastIndex = 0;
     carouselEl.addEventListener("scroll", () => {
       if (ticking) return;
       ticking = true;
@@ -1720,9 +1833,27 @@ document.addEventListener("DOMContentLoaded", function () {
         dotsEl.querySelectorAll(".disc-hcarousel__dot").forEach((dot, i) => {
           dot.classList.toggle("is-active", i === index);
         });
+        if (index !== lastIndex) {
+          lastIndex = index;
+          syncDetailPanelToCarouselIndex(index);
+        }
         ticking = false;
       });
     }, { passive: true });
+  }
+
+  // Keeps the detail panel following the carousel as it's swiped. Does
+  // nothing unless the panel is already open -- swiping when it's closed
+  // behaves exactly as before.
+  function syncDetailPanelToCarouselIndex(index) {
+    if (state.detailPlaceId == null) return;
+
+    const place = state.orderedPlaces && state.orderedPlaces[index];
+    if (!place || place.id === state.detailPlaceId) return;
+
+    renderDetailPanelContent(place);
+    state.detailPlaceId = place.id;
+    updateViewButtonLabels();
   }
 
   function initMap(centerLat, centerLng) {
@@ -1794,6 +1925,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // reason badge — then everything else in the distance order the API
     // already gave us.
     const ordered = places.filter((p) => p.reason).concat(places.filter((p) => !p.reason));
+    state.orderedPlaces = ordered;
 
     nearbyGrid.innerHTML = "";
 
