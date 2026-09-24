@@ -402,6 +402,20 @@ def create_core_tables():
             ADD COLUMN IF NOT EXISTS place_id TEXT;
         """))
 
+        # Google's own star rating + review count for a listing, captured at
+        # import time (or by a backfill pass) from the Places API. Kept
+        # separate from listing_comments (our own users' reviews) so the two
+        # never get mixed together in one average.
+        conn.execute(sql_text("""
+            ALTER TABLE listings
+            ADD COLUMN IF NOT EXISTS google_rating DOUBLE PRECISION;
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE listings
+            ADD COLUMN IF NOT EXISTS google_rating_count INTEGER;
+        """))
+
         # photo_url was originally VARCHAR(500); newer Google Places API photo
         # URLs are often longer than that and were failing to save with a
         # silent 500 error. Widen it to unbounded text.
@@ -2331,7 +2345,9 @@ def search_internal_listings(
             longitude,
             COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url,
             photo_urls_json,
-            card_image_url
+            card_image_url,
+            google_rating,
+            google_rating_count
         FROM listings
         WHERE status = 'published'
     """
@@ -5359,6 +5375,12 @@ def enrich_internal_results_with_ratings(results: list) -> list:
         if lid and lid in rating_map:
             result["rating"]       = rating_map[lid]["rating"]
             result["review_count"] = rating_map[lid]["review_count"]
+        elif result.get("google_rating"):
+            # No reviews from our own users yet -- most listings right after
+            # import -- so fall back to the rating Google already has for
+            # this business rather than showing nothing.
+            result["rating"]       = float(result["google_rating"])
+            result["review_count"] = int(result.get("google_rating_count") or 0)
         else:
             # Keep None so the popup knows there are no reviews yet
             result.setdefault("rating", None)
