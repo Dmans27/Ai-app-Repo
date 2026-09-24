@@ -668,6 +668,13 @@
       border-radius: 12px;
       object-fit: cover;
       background: #eef1ef;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .disc-detail-panel__photos img.is-selected {
+      border-color: #10a37f;
+      transform: scale(0.96);
     }
     .disc-detail-panel__info {
       display: flex;
@@ -1338,12 +1345,18 @@ document.addEventListener("DOMContentLoaded", function () {
     const panelEl = getDetailPanelEl();
     if (!panelEl) return;
 
-    const photos = (place.photos && place.photos.length)
-      ? place.photos
-      : (place.photo_url ? [place.photo_url] : []);
+    // Build the gallery from the extra photos, making sure the photo
+    // currently shown on the big card (place.photo_url) is in the list too
+    // so it can be highlighted/reselected, without duplicating it.
+    const photos = (place.photos && place.photos.length) ? place.photos.slice() : [];
+    if (place.photo_url && photos.indexOf(place.photo_url) === -1) {
+      photos.unshift(place.photo_url);
+    }
+
+    const currentCardUrl = getCardPhotoUrl(place.id) || place.photo_url;
 
     const photosHtml = photos.length
-      ? `<div class="disc-detail-panel__photos">${photos.map((url) => `<img src="${escapeHtml(url)}" alt="${escapeHtml(place.name)}" loading="lazy">`).join("")}</div>`
+      ? `<div class="disc-detail-panel__photos">${photos.map((url) => `<img class="${url === currentCardUrl ? "is-selected" : ""}" src="${escapeHtml(url)}" data-url="${escapeHtml(url)}" alt="${escapeHtml(place.name)}" loading="lazy">`).join("")}</div>`
       : "";
 
     const ratingHtml = place.rating
@@ -1375,6 +1388,51 @@ document.addEventListener("DOMContentLoaded", function () {
         closeDetailPanel();
       });
     }
+
+    panelEl.querySelectorAll(".disc-detail-panel__photos img").forEach((thumb) => {
+      thumb.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setCardPhoto(place.id, thumb.dataset.url);
+        panelEl.querySelectorAll(".disc-detail-panel__photos img").forEach((t) => t.classList.remove("is-selected"));
+        thumb.classList.add("is-selected");
+      });
+    });
+  }
+
+  // Returns the URL currently shown on a card's big hero photo, if any.
+  function getCardPhotoUrl(placeId) {
+    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
+    if (!card) return null;
+    const img = card.querySelector(".disc-hcard__img");
+    return img ? img.getAttribute("src") : null;
+  }
+
+  // Swaps the big photo on a hero card to the given URL. Cards built from a
+  // place with no photo_url only have the emoji placeholder (no <img> yet),
+  // so this creates the <img> on demand the first time a gallery photo is
+  // picked.
+  function setCardPhoto(placeId, url) {
+    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
+    if (!card || !url) return;
+
+    let img = card.querySelector(".disc-hcard__img");
+    const placeholder = card.querySelector(".disc-hcard__img-placeholder");
+
+    if (!img) {
+      img = document.createElement("img");
+      img.className = "disc-hcard__img";
+      img.alt = "";
+      img.loading = "lazy";
+      img.onerror = function () {
+        this.style.display = "none";
+        if (placeholder) placeholder.style.display = "flex";
+      };
+      card.insertBefore(img, card.firstChild);
+    }
+
+    img.src = url;
+    img.style.display = "";
+    if (placeholder) placeholder.style.display = "none";
   }
 
   function updateViewButtonLabels() {
