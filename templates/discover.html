@@ -881,6 +881,13 @@
     .disc-hcarousel__dots.is-panel-open {
       display: none;
     }
+    /* Removes the carousel's bottom breathing-room padding while a panel's
+       open, so there's no empty strip left between the card's (now square)
+       bottom edge and the panel's (zero-margin) top edge for the map to
+       show through. */
+    .disc-hcarousel.is-panel-open {
+      padding-bottom: 0;
+    }
 
     .disc-card__reason {
       font-size: 11px;
@@ -1813,15 +1820,18 @@ document.addEventListener("DOMContentLoaded", function () {
   function setCardConnectedToPanel(placeId) {
     document.querySelectorAll(".disc-hcard.has-panel-open").forEach((el) => el.classList.remove("has-panel-open"));
     const dotsEl = document.getElementById("disc-nearby-dots");
+    const carouselEl = document.getElementById("disc-nearby-grid");
 
     if (placeId == null) {
       if (dotsEl) dotsEl.classList.remove("is-panel-open");
+      if (carouselEl) carouselEl.classList.remove("is-panel-open");
       return;
     }
 
     const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
     if (card) card.classList.add("has-panel-open");
     if (dotsEl) dotsEl.classList.add("is-panel-open");
+    if (carouselEl) carouselEl.classList.add("is-panel-open");
   }
 
   function openDetailPanel(place) {
