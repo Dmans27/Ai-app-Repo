@@ -930,6 +930,39 @@
     .disc-hcard.is-selected {
       box-shadow: 0 0 0 3px rgba(16,163,127,0.55), 0 4px 16px rgba(20,20,25,0.14);
     }
+    /* Swipe-up hint: replaces the old "View" button. Swiping up (or down to
+       close) anywhere on the card opens/closes the detail panel below it;
+       this chevron is just a visible cue plus a small tappable fallback for
+       anyone who doesn't try swiping. Its direction flips to hint "swipe
+       down" once the panel's open, via the same has-panel-open class the
+       card/panel connection already uses. */
+    .disc-hcard__swipe-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 8px;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 22px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      z-index: 2;
+      transition: transform 0.25s ease, background 0.15s;
+    }
+    .disc-hcard__swipe-hint:hover { background: rgba(255,255,255,0.32); }
+    .disc-hcard.has-panel-open .disc-hcard__swipe-hint {
+      transform: translateX(-50%) rotate(180deg);
+      background: rgba(16,163,127,0.85);
+    }
 
     .disc-hcard__img {
       position: absolute;
@@ -1471,11 +1504,11 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="disc-hcard__name">${escapeHtml(place.name)}</div>
         <div class="disc-hcard__meta">${metaBits.join(" · ")}</div>
         <div class="disc-hcard__actions">
-          <button type="button" class="disc-hcard__btn disc-hcard__btn--primary disc-hcard__btn--view" data-place-id="${place.id}">View</button>
           ${saveActionHtml}
           ${directionsHtml}
         </div>
       </div>
+      <button type="button" class="disc-hcard__swipe-hint" aria-label="Swipe up for details">⌃</button>
     `;
 
     if (CONFIG.isAuthenticated && CONFIG.defaultListId) {
@@ -1488,13 +1521,51 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    const viewBtn = card.querySelector(".disc-hcard__btn--view");
-    if (viewBtn) {
-      viewBtn.addEventListener("click", function (e) {
+    // Small tappable fallback for anyone who doesn't try swiping.
+    const swipeHint = card.querySelector(".disc-hcard__swipe-hint");
+    if (swipeHint) {
+      swipeHint.addEventListener("click", function (e) {
         e.stopPropagation();
         toggleDetailPanel(place);
       });
     }
+
+    // Swipe up anywhere on the card to open its details, swipe down to
+    // close them. Only acts once a gesture is clearly more vertical than
+    // horizontal, and never calls preventDefault, so swiping between cards
+    // (native horizontal scroll-snap on the carousel) is untouched.
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isVerticalSwipe = null;
+
+    card.addEventListener("touchstart", function (e) {
+      if (!e.touches || !e.touches.length) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isVerticalSwipe = null;
+    }, { passive: true });
+
+    card.addEventListener("touchmove", function (e) {
+      if (!e.touches || !e.touches.length) return;
+      const dx = e.touches[0].clientX - touchStartX;
+      const dy = e.touches[0].clientY - touchStartY;
+      if (isVerticalSwipe === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+        isVerticalSwipe = Math.abs(dy) > Math.abs(dx);
+      }
+    }, { passive: true });
+
+    card.addEventListener("touchend", function (e) {
+      if (!e.changedTouches || !e.changedTouches.length) return;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+
+      if (isVerticalSwipe && dy <= -40 && state.detailPlaceId !== place.id) {
+        openDetailPanel(place);
+      } else if (isVerticalSwipe && dy >= 40 && state.detailPlaceId === place.id) {
+        closeDetailPanel();
+      }
+
+      isVerticalSwipe = null;
+    }, { passive: true });
 
     card.addEventListener("click", function () {
       highlightPlace(place.id, { flyTo: true });
@@ -1736,13 +1807,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (placeholder) placeholder.style.display = "none";
   }
 
-  function updateViewButtonLabels() {
-    document.querySelectorAll(".disc-hcard__btn--view").forEach((btn) => {
-      const isOpenForThis = String(state.detailPlaceId) === btn.dataset.placeId;
-      btn.textContent = isOpenForThis ? "Hide" : "View";
-    });
-  }
-
   // Marks whichever hero card the panel currently belongs to so its bottom
   // corners can square off to meet the panel with no visible step, and
   // hides/shows the dot indicators (which sat in that same gap) to match.
@@ -1771,7 +1835,6 @@ document.addEventListener("DOMContentLoaded", function () {
     panelEl.classList.add("is-open");
     state.detailPlaceId = place.id;
     setCardConnectedToPanel(place.id);
-    updateViewButtonLabels();
   }
 
   function closeDetailPanel() {
@@ -1780,7 +1843,6 @@ document.addEventListener("DOMContentLoaded", function () {
     panelEl.classList.remove("is-open");
     state.detailPlaceId = null;
     setCardConnectedToPanel(null);
-    updateViewButtonLabels();
     window.setTimeout(() => {
       if (!panelEl.classList.contains("is-open")) panelEl.hidden = true;
     }, 360);
@@ -1886,7 +1948,6 @@ document.addEventListener("DOMContentLoaded", function () {
     renderDetailPanelContent(place);
     state.detailPlaceId = place.id;
     setCardConnectedToPanel(place.id);
-    updateViewButtonLabels();
   }
 
   function initMap(centerLat, centerLng) {
