@@ -869,6 +869,19 @@
       margin: 8px 0 0;
     }
 
+    /* The card the open panel belongs to loses its rounded bottom corners
+       so it flows directly into the panel's square top -- one continuous
+       shape instead of two stacked rounded rectangles with a visible step
+       between them. */
+    .disc-hcard.has-panel-open {
+      border-radius: 22px 22px 0 0;
+    }
+    /* The dot indicators sat in that same gap; hide them while the panel
+       is open since the panel itself now makes clear which card is active. */
+    .disc-hcarousel__dots.is-panel-open {
+      display: none;
+    }
+
     .disc-card__reason {
       font-size: 11px;
       font-weight: 600;
@@ -1730,6 +1743,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Marks whichever hero card the panel currently belongs to so its bottom
+  // corners can square off to meet the panel with no visible step, and
+  // hides/shows the dot indicators (which sat in that same gap) to match.
+  function setCardConnectedToPanel(placeId) {
+    document.querySelectorAll(".disc-hcard.has-panel-open").forEach((el) => el.classList.remove("has-panel-open"));
+    const dotsEl = document.getElementById("disc-nearby-dots");
+
+    if (placeId == null) {
+      if (dotsEl) dotsEl.classList.remove("is-panel-open");
+      return;
+    }
+
+    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
+    if (card) card.classList.add("has-panel-open");
+    if (dotsEl) dotsEl.classList.add("is-panel-open");
+  }
+
   function openDetailPanel(place) {
     const panelEl = getDetailPanelEl();
     if (!panelEl) return;
@@ -1740,6 +1770,7 @@ document.addEventListener("DOMContentLoaded", function () {
     void panelEl.offsetHeight;
     panelEl.classList.add("is-open");
     state.detailPlaceId = place.id;
+    setCardConnectedToPanel(place.id);
     updateViewButtonLabels();
   }
 
@@ -1748,6 +1779,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!panelEl) return;
     panelEl.classList.remove("is-open");
     state.detailPlaceId = null;
+    setCardConnectedToPanel(null);
     updateViewButtonLabels();
     window.setTimeout(() => {
       if (!panelEl.classList.contains("is-open")) panelEl.hidden = true;
@@ -1853,6 +1885,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     renderDetailPanelContent(place);
     state.detailPlaceId = place.id;
+    setCardConnectedToPanel(place.id);
     updateViewButtonLabels();
   }
 
