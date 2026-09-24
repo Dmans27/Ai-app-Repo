@@ -610,6 +610,101 @@
       color: #14151a;
       margin: 0 4px 12px;
     }
+
+    /* -- "View" detail panel: a brief description card that expands below
+       the hero carousel (photos, rating, phone, then a CTA to the full
+       business page). Height-animated via max-height so the panel -- and
+       the card carousel above it -- visibly "push up" as it opens, since
+       .disc-nearby-section is bottom-anchored on mobile. -- */
+    .disc-detail-panel {
+      margin: 10px 16px 0;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 -6px 24px rgba(20,20,25,0.14);
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, opacity 0.25s ease;
+    }
+    .disc-detail-panel[hidden] { display: none; }
+    .disc-detail-panel.is-open {
+      max-height: 420px;
+      opacity: 1;
+    }
+    .disc-detail-panel__inner {
+      position: relative;
+      padding: 40px 16px 16px;
+    }
+    .disc-detail-panel__close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.06);
+      color: rgba(0,0,0,0.55);
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .disc-detail-panel__photos {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      margin: 0 0 12px;
+    }
+    .disc-detail-panel__photos::-webkit-scrollbar { display: none; }
+    .disc-detail-panel__photos img {
+      flex: 0 0 auto;
+      width: 84px;
+      height: 84px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #eef1ef;
+    }
+    .disc-detail-panel__info {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 14px;
+    }
+    .disc-detail-panel__rating {
+      font-size: 13px;
+      font-weight: 800;
+      color: #14151a;
+    }
+    .disc-detail-panel__rating span {
+      font-weight: 600;
+      color: rgba(0,0,0,0.4);
+    }
+    .disc-detail-panel__phone {
+      font-size: 13px;
+      font-weight: 700;
+      color: #10a37f;
+      text-decoration: none;
+    }
+    .disc-detail-panel__cta {
+      display: block;
+      height: 42px;
+      line-height: 42px;
+      border-radius: 999px;
+      background: #10a37f;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      text-decoration: none;
+    }
+    .disc-detail-panel__cta:hover { background: #0d8a6c; }
+
     .disc-card__reason {
       font-size: 11px;
       font-weight: 600;
@@ -1004,6 +1099,7 @@
               <p class="disc-nearby-loading" id="disc-nearby-loading">Finding places near you…</p>
             </div>
             <div class="disc-hcarousel__dots" id="disc-nearby-dots" hidden></div>
+            <div class="disc-detail-panel" id="disc-detail-panel" hidden></div>
           </section>
 
 
@@ -1118,7 +1214,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const state = {
     map: null,
     markers: {}, // placeId -> mapboxgl.Marker
-    activeId: null
+    places: {}, // placeId -> full place object, for the "View" detail panel
+    activeId: null,
+    detailPlaceId: null // which place's detail panel is open right now, if any
   };
 
   function submitSavePlace(place) {
@@ -1156,6 +1254,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const card = document.createElement("div");
     card.className = "disc-hcard";
     card.dataset.placeId = place.id;
+    // Keep the full place object around (phone, photos, rating...) so the
+    // "View" detail panel can look it up by id when its button is clicked.
+    state.places[place.id] = place;
 
     const emoji = categoryEmoji(place.category);
     const photoHtml = place.photo_url
@@ -1193,7 +1294,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="disc-hcard__name">${escapeHtml(place.name)}</div>
         <div class="disc-hcard__meta">${metaBits.join(" · ")}</div>
         <div class="disc-hcard__actions">
-          <a href="${listingUrl}" class="disc-hcard__btn disc-hcard__btn--primary" onclick="event.stopPropagation();">View</a>
+          <button type="button" class="disc-hcard__btn disc-hcard__btn--primary disc-hcard__btn--view" data-place-id="${place.id}">View</button>
           ${saveActionHtml}
           ${directionsHtml}
         </div>
@@ -1210,11 +1311,109 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    const viewBtn = card.querySelector(".disc-hcard__btn--view");
+    if (viewBtn) {
+      viewBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleDetailPanel(place);
+      });
+    }
+
     card.addEventListener("click", function () {
       highlightPlace(place.id, { flyTo: true });
     });
 
     return card;
+  }
+
+  /* -- "View" detail panel: brief description card that expands below the
+     hero carousel with more photos, rating, and phone, plus a CTA to the
+     full business page. One panel is shared by the whole carousel; it's
+     just re-populated with whichever place's "View" button was tapped. -- */
+  function getDetailPanelEl() {
+    return document.getElementById("disc-detail-panel");
+  }
+
+  function renderDetailPanelContent(place) {
+    const panelEl = getDetailPanelEl();
+    if (!panelEl) return;
+
+    const photos = (place.photos && place.photos.length)
+      ? place.photos
+      : (place.photo_url ? [place.photo_url] : []);
+
+    const photosHtml = photos.length
+      ? `<div class="disc-detail-panel__photos">${photos.map((url) => `<img src="${escapeHtml(url)}" alt="${escapeHtml(place.name)}" loading="lazy">`).join("")}</div>`
+      : "";
+
+    const ratingHtml = place.rating
+      ? `<div class="disc-detail-panel__rating">★ ${escapeHtml(String(place.rating))}${place.review_count ? ` <span>(${escapeHtml(String(place.review_count))} reviews)</span>` : ""}</div>`
+      : "";
+
+    const phoneHtml = place.phone
+      ? `<a class="disc-detail-panel__phone" href="tel:${escapeHtml(String(place.phone).replace(/[^\d+]/g, ""))}" onclick="event.stopPropagation();">📞 ${escapeHtml(place.phone)}</a>`
+      : "";
+
+    const listingUrl = `/listing/${encodeURIComponent(place.slug || "")}`;
+
+    panelEl.innerHTML = `
+      <div class="disc-detail-panel__inner">
+        <button type="button" class="disc-detail-panel__close" aria-label="Close details">✕</button>
+        ${photosHtml}
+        <div class="disc-detail-panel__info">
+          ${ratingHtml}
+          ${phoneHtml}
+        </div>
+        <a href="${listingUrl}" class="disc-detail-panel__cta">Go to business page</a>
+      </div>
+    `;
+
+    const closeBtn = panelEl.querySelector(".disc-detail-panel__close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        closeDetailPanel();
+      });
+    }
+  }
+
+  function updateViewButtonLabels() {
+    document.querySelectorAll(".disc-hcard__btn--view").forEach((btn) => {
+      const isOpenForThis = String(state.detailPlaceId) === btn.dataset.placeId;
+      btn.textContent = isOpenForThis ? "Hide" : "View";
+    });
+  }
+
+  function openDetailPanel(place) {
+    const panelEl = getDetailPanelEl();
+    if (!panelEl) return;
+    renderDetailPanelContent(place);
+    panelEl.hidden = false;
+    // Force a reflow so the browser registers the max-height:0 starting
+    // point before we add the class that animates it open.
+    void panelEl.offsetHeight;
+    panelEl.classList.add("is-open");
+    state.detailPlaceId = place.id;
+    updateViewButtonLabels();
+  }
+
+  function closeDetailPanel() {
+    const panelEl = getDetailPanelEl();
+    if (!panelEl) return;
+    panelEl.classList.remove("is-open");
+    state.detailPlaceId = null;
+    updateViewButtonLabels();
+    window.setTimeout(() => {
+      if (!panelEl.classList.contains("is-open")) panelEl.hidden = true;
+    }, 360);
+  }
+
+  function toggleDetailPanel(place) {
+    if (state.detailPlaceId === place.id) {
+      closeDetailPanel();
+    } else {
+      openDetailPanel(place);
+    }
   }
 
   function highlightPlace(placeId, opts) {

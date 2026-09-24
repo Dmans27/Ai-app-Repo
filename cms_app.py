@@ -6054,6 +6054,19 @@ def api_discover_nearby():
 
         places = []
         for r in results:
+            # The detail panel on the Discover card ("View" button) needs a
+            # phone number and a gallery of extra photos beyond the single
+            # cover photo_url. Both already come back from
+            # search_internal_listings()'s SQL (phone, photo_urls_json) —
+            # they just weren't being forwarded to the frontend yet.
+            extra_photos = []
+            photo_urls_raw = r.get("photo_urls_json")
+            if photo_urls_raw:
+                try:
+                    extra_photos = json.loads(photo_urls_raw) or []
+                except (TypeError, ValueError):
+                    extra_photos = []
+
             places.append({
                 "id": r.get("id"),
                 "name": r.get("name"),
@@ -6062,11 +6075,13 @@ def api_discover_nearby():
                 "city": r.get("city"),
                 "state": r.get("state"),
                 "address": r.get("address"),
+                "phone": r.get("phone"),
                 "website": r.get("website"),
                 "latitude": r.get("latitude"),
                 "longitude": r.get("longitude"),
                 "place_id": r.get("place_id"),
                 "photo_url": r.get("photo_url"),
+                "photos": extra_photos,
                 "distance_miles": r.get("distance_miles"),
                 "rating": r.get("rating"),
                 "review_count": r.get("review_count"),
