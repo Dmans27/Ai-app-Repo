@@ -716,6 +716,37 @@
     .disc-detail-panel__reviews {
       margin: 4px 0 16px;
     }
+    .disc-detail-panel__reviews-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: rgba(16,163,127,0.08);
+      border: none;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #0d8a6c;
+      cursor: pointer;
+    }
+    .disc-detail-panel__reviews-toggle-arrow {
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    .disc-detail-panel__reviews-toggle[aria-expanded="true"] .disc-detail-panel__reviews-toggle-arrow {
+      transform: rotate(180deg);
+    }
+    .disc-detail-panel__reviews-list {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+    }
+    .disc-detail-panel__reviews-list.is-open {
+      max-height: 260px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
     .disc-detail-panel__reviews-title {
       font-size: 12px;
       font-weight: 800;
@@ -1435,8 +1466,12 @@ document.addEventListener("DOMContentLoaded", function () {
           ${ratingHtml}
           ${phoneHtml}
         </div>
-        <div class="disc-detail-panel__reviews" id="disc-detail-panel-reviews">
-          <p class="disc-detail-panel__reviews-loading">Loading reviews…</p>
+        <div class="disc-detail-panel__reviews">
+          <button type="button" class="disc-detail-panel__reviews-toggle" id="disc-detail-panel-reviews-toggle" aria-expanded="false">
+            <span>Reviews</span>
+            <span class="disc-detail-panel__reviews-toggle-arrow">▾</span>
+          </button>
+          <div class="disc-detail-panel__reviews-list" id="disc-detail-panel-reviews-list"></div>
         </div>
         <a href="${listingUrl}" class="disc-detail-panel__cta">Go to business page</a>
       </div>
@@ -1459,49 +1494,85 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
-    loadGoogleReviews(place);
+    const reviewsToggle = panelEl.querySelector("#disc-detail-panel-reviews-toggle");
+    if (reviewsToggle) {
+      reviewsToggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleReviewsList(place);
+      });
+    }
   }
 
-  // Fetches Google's own reviews for this place (first 4-5, with reviewer
-  // name/rating/comment) and fills them into the panel once they arrive.
-  // Guarded by state.detailPlaceId in case the panel has since moved on to
-  // a different place before this request comes back.
-  function loadGoogleReviews(place) {
+  // Small in-memory cache so switching the reviews list closed then open
+  // again (for the same place) doesn't re-fetch from Google every time.
+  const _googleReviewsCache = {};
+
+  // Reviews stay collapsed until explicitly opened -- both to avoid an
+  // unnecessary fetch for every "View" tap, and because the fully-expanded
+  // list used to push the panel tall enough to cover the hero card/photo
+  // above it, leaving nothing else on screen to interact with.
+  function toggleReviewsList(place) {
+    const toggleBtn = document.getElementById("disc-detail-panel-reviews-toggle");
+    const listEl = document.getElementById("disc-detail-panel-reviews-list");
+    if (!toggleBtn || !listEl) return;
+
+    const isOpen = listEl.classList.contains("is-open");
+
+    if (isOpen) {
+      listEl.classList.remove("is-open");
+      toggleBtn.setAttribute("aria-expanded", "false");
+      return;
+    }
+
+    listEl.classList.add("is-open");
+    toggleBtn.setAttribute("aria-expanded", "true");
+
+    if (_googleReviewsCache[place.id]) {
+      renderReviewsList(_googleReviewsCache[place.id]);
+      return;
+    }
+
+    listEl.innerHTML = `<p class="disc-detail-panel__reviews-loading">Loading reviews…</p>`;
+
     fetch(`/api/places/${encodeURIComponent(place.id)}/google-reviews`, {
       headers: { "Accept": "application/json" }
     })
       .then((res) => res.json())
       .then((data) => {
-        if (state.detailPlaceId !== place.id) return;
-        const reviewsEl = document.getElementById("disc-detail-panel-reviews");
-        if (!reviewsEl) return;
-
         const reviews = (data.reviews || []).slice(0, 5);
-
-        if (!reviews.length) {
-          reviewsEl.innerHTML = `<p class="disc-detail-panel__reviews-empty">No Google reviews yet.</p>`;
-          return;
-        }
-
-        reviewsEl.innerHTML = `
-          <p class="disc-detail-panel__reviews-title">What people are saying</p>
-          ${reviews.map((r) => `
-            <div class="disc-detail-panel__review">
-              <div class="disc-detail-panel__review-head">
-                <span class="disc-detail-panel__review-name">${escapeHtml(r.author_name || "Google user")}</span>
-                <span class="disc-detail-panel__review-stars">${"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating || 0))))}</span>
-              </div>
-              <div class="disc-detail-panel__review-body">${escapeHtml(r.text || "")}</div>
-            </div>
-          `).join("")}
-          <p class="disc-detail-panel__reviews-attribution">Reviews via Google</p>
-        `;
+        _googleReviewsCache[place.id] = reviews;
+        // Bail if the panel moved on to a different place while this was in flight.
+        if (state.detailPlaceId !== place.id) return;
+        renderReviewsList(reviews);
       })
       .catch(() => {
         if (state.detailPlaceId !== place.id) return;
-        const reviewsEl = document.getElementById("disc-detail-panel-reviews");
-        if (reviewsEl) reviewsEl.innerHTML = `<p class="disc-detail-panel__reviews-empty">Couldn\'t load reviews right now.</p>`;
+        const currentListEl = document.getElementById("disc-detail-panel-reviews-list");
+        if (currentListEl) currentListEl.innerHTML = `<p class="disc-detail-panel__reviews-empty">Couldn\'t load reviews right now.</p>`;
       });
+  }
+
+  function renderReviewsList(reviews) {
+    const listEl = document.getElementById("disc-detail-panel-reviews-list");
+    if (!listEl) return;
+
+    if (!reviews.length) {
+      listEl.innerHTML = `<p class="disc-detail-panel__reviews-empty">No Google reviews yet.</p>`;
+      return;
+    }
+
+    listEl.innerHTML = `
+      ${reviews.map((r) => `
+        <div class="disc-detail-panel__review">
+          <div class="disc-detail-panel__review-head">
+            <span class="disc-detail-panel__review-name">${escapeHtml(r.author_name || "Google user")}</span>
+            <span class="disc-detail-panel__review-stars">${"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating || 0))))}</span>
+          </div>
+          <div class="disc-detail-panel__review-body">${escapeHtml(r.text || "")}</div>
+        </div>
+      `).join("")}
+      <p class="disc-detail-panel__reviews-attribution">Reviews via Google</p>
+    `;
   }
 
   // Returns the URL currently shown on a card's big hero photo, if any.
