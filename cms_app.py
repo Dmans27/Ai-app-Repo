@@ -2351,10 +2351,34 @@ def search_internal_listings(
         """
         params["term"] = f"%{q_lower}%"
 
-    sql += """
-        ORDER BY featured DESC, name ASC
-        LIMIT :limit
-    """
+    # When we have the caller's coordinates, order by real distance in SQL
+    # *before* the LIMIT is applied. The old "ORDER BY featured DESC, name
+    # ASC LIMIT N" filled its whole fetch window alphabetically across ALL
+    # cities combined — so once the table held enough listings from one
+    # city, a different city's listings could get squeezed out of the
+    # fetched rows entirely before distance was ever considered in Python,
+    # even though real nearby places existed. Ordering by distance here
+    # means the LIMIT window is always populated with the genuinely
+    # closest published listings first, regardless of city or alphabetics.
+    if lat is not None and lng is not None:
+        sql += """
+            AND latitude IS NOT NULL AND longitude IS NOT NULL
+            ORDER BY
+                featured DESC,
+                (3958.8 * acos(LEAST(1.0, GREATEST(-1.0,
+                    cos(radians(:lat)) * cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(:lng)) +
+                    sin(radians(:lat)) * sin(radians(latitude))
+                )))) ASC
+        """
+        params["lat"] = lat
+        params["lng"] = lng
+    else:
+        sql += """
+            ORDER BY featured DESC, name ASC
+        """
+
+    sql += " LIMIT :limit"
     params["limit"] = limit * 4
 
     results = query_all(sql, params)
