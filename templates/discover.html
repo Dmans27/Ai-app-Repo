@@ -791,6 +791,7 @@
       display: inline-block;
       transition: transform 0.2s;
       color: rgba(255,255,255,0.5);
+      top: calc(env(safe-area-inset-top) + 100px);
     }
     .disc-detail-panel__reviews-toggle[aria-expanded="true"] .disc-detail-panel__reviews-toggle-arrow {
       transform: rotate(180deg);
@@ -1884,22 +1885,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if (marker) {
       marker.getElement().classList.add("is-active");
       if (opts.flyTo && state.map) {
-        let offsetY = 0;
-        const mapWrapEl = document.querySelector(".disc-map-wrap");
-        const cardOverlayEl = document.querySelector(".disc-nearby-section");
-        if (mapWrapEl && cardOverlayEl) {
-          const mapRect = mapWrapEl.getBoundingClientRect();
-          const cardRect = cardOverlayEl.getBoundingClientRect();
-          // How much of the map's bottom the card overlay is currently
-          // covering (0 if the overlay is hidden/empty).
-          const coveredHeight = Math.max(0, mapRect.bottom - cardRect.top);
-          offsetY = -(coveredHeight / 2);
-        }
         state.map.flyTo({
           center: marker.getLngLat(),
           zoom: Math.max(state.map.getZoom(), 14),
           duration: 500,
-          offset: [0, offsetY]
+          offset: [0, cardOverlayOffsetY()]
         });
       }
     }
@@ -1960,6 +1950,20 @@ document.addEventListener("DOMContentLoaded", function () {
     setCardConnectedToPanel(place.id);
   }
 
+  // How far up (negative px) a map camera target needs to be nudged so it
+  // isn't hidden behind the "Closest to you" card overlay that sits over
+  // the bottom of the map on mobile. 0 if the overlay is hidden/empty, or
+  // on desktop layouts where it isn't a bottom overlay at all.
+  function cardOverlayOffsetY() {
+    const mapWrapEl = document.querySelector(".disc-map-wrap");
+    const cardOverlayEl = document.querySelector(".disc-nearby-section");
+    if (!mapWrapEl || !cardOverlayEl) return 0;
+    const mapRect = mapWrapEl.getBoundingClientRect();
+    const cardRect = cardOverlayEl.getBoundingClientRect();
+    const coveredHeight = Math.max(0, mapRect.bottom - cardRect.top);
+    return -(coveredHeight / 2);
+  }
+
   function initMap(centerLat, centerLng) {
     const container = document.getElementById("disc-map");
     if (!container || typeof mapboxgl === "undefined" || !mapboxgl.accessToken) return null;
@@ -1970,6 +1974,17 @@ document.addEventListener("DOMContentLoaded", function () {
       center: [centerLng, centerLat],
       zoom: 13
     });
+
+    // Frame the view right away so the user's own location doesn't start
+    // out underneath the card overlay -- this uses whatever the overlay's
+    // height is at this instant (usually just the "Finding places near
+    // you..." loading line), and gets corrected again in loadNearby()
+    // once the real nearby-places cards have rendered and the overlay's
+    // true height is known.
+    const initialOffsetY = cardOverlayOffsetY();
+    if (initialOffsetY) {
+      map.jumpTo({ center: [centerLng, centerLat], zoom: 13, offset: [0, initialOffsetY] });
+    }
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
@@ -2066,6 +2081,17 @@ document.addEventListener("DOMContentLoaded", function () {
         setStatus(null);
         plotPlaces(places);
         renderFeeds(places);
+
+        // Now that the real cards are in the DOM, the overlay has its
+        // true final height -- re-frame the view above it if needed.
+        if (state.map) {
+          requestAnimationFrame(() => {
+            const offsetY = cardOverlayOffsetY();
+            if (offsetY) {
+              state.map.easeTo({ center: [lng, lat], offset: [0, offsetY], duration: 300 });
+            }
+          });
+        }
       })
       .catch((err) => {
         console.error("[DISCOVER_NEARBY_FETCH_ERROR]", err);
