@@ -102,6 +102,7 @@
     /* MAPBOX CUSTOMIZATIONS */
     .acct-map-pin{cursor:pointer;transform-origin:bottom center;transition:transform 0.15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45))}
     .acct-map-pin:hover{transform:scale(1.15)}
+    .acct-you-marker{width:16px;height:16px;border-radius:50%;background:#2f7dff;border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,125,255,0.35),0 1px 4px rgba(0,0,0,0.3);}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-content{background:transparent;box-shadow:none;padding:0;color:#f2f2f2;border-radius:0;}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-tip{border-top-color:#16181b;border-bottom-color:#16181b}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.8);font-size:16px;padding:2px 6px;z-index:3}
@@ -322,6 +323,7 @@ document.addEventListener("DOMContentLoaded",function(){
   const token="{{ mapbox_token }}",styleUrl="{{ mapbox_style_url or 'mapbox://styles/mapbox/dark-v11' }}",places=JSON.parse(document.getElementById("map-data").textContent||"[]");
   if(!token)return;
   let aC="all",aL="all",aR=0,mk=[];
+  let userLoc=null,youMarker=null; // browser geolocation, once resolved -- lets the map auto-zoom to where you already are instead of starting zoomed all the way out
   const carouselEl=document.getElementById("acct-map-carousel");
   let activeCardIdx=-1,carouselScrollTimer=null;
   const listWrap=document.getElementById("acct-listing-wrap");
@@ -489,7 +491,7 @@ document.addEventListener("DOMContentLoaded",function(){
     // projection with small/degenerate boxes, so we just fly to the
     // average point at a fixed close zoom instead.)
     if(aL==="all"){
-      map.easeTo({center:dc,zoom:globeZoom,pitch:0,bearing:-8,duration:1100,essential:true});
+      flyHome();
       return;
     }
     if(!fl.length)return;
@@ -506,6 +508,34 @@ document.addEventListener("DOMContentLoaded",function(){
         map.jumpTo({center:[avgLng,avgLat],zoom:targetZoom,pitch:targetPitch,bearing:-17});
       }
     },1000);
+  }
+  function flyHome(){
+    // "All cities" home view: the user's current location once we have it,
+    // so opening Saved zooms straight into the area you're already in --
+    // no manual zooming needed. Falls back to the old globe overview when
+    // geolocation isn't available or hasn't resolved yet.
+    if(userLoc){
+      map.flyTo({center:userLoc,zoom:12.5,pitch:0,bearing:-8,duration:1400,essential:true});
+    }else{
+      map.easeTo({center:dc,zoom:globeZoom,pitch:0,bearing:-8,duration:1100,essential:true});
+    }
+  }
+  function requestUserLocation(){
+    if(!navigator.geolocation)return;
+    navigator.geolocation.getCurrentPosition(function(pos){
+      userLoc=[pos.coords.longitude,pos.coords.latitude];
+      if(youMarker){
+        youMarker.setLngLat(userLoc);
+      }else{
+        const youEl=document.createElement("div");
+        youEl.className="acct-you-marker";
+        youMarker=new mapboxgl.Marker({element:youEl}).setLngLat(userLoc).addTo(map);
+      }
+      if(aL==="all")flyHome();
+    },function(){
+      /* denied/unavailable -- keep the existing globe overview, nothing
+         else on the page depends on this succeeding */
+    },{enableHighAccuracy:true,timeout:10000,maximumAge:5*60*1000});
   }
   function updateCarousel(fl){
     if(!carouselEl)return;
@@ -668,6 +698,7 @@ document.addEventListener("DOMContentLoaded",function(){
   });
   map.on("load",function(){
     rn();
+    requestUserLocation();
     if(!map.getLayer("acct-3d-buildings")){
       try{
         map.addLayer({
