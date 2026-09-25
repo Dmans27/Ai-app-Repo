@@ -5,741 +5,406 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ listing.name }}</title>
   <link rel="stylesheet" href="/static/css/styles.css">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
 
   <style>
 
-
+/* ============================================================
+   Business listing page -- light, clean card stack.
+   One column, one card per concern (profile header, photos,
+   map, nearby similar places, reviews, write a review, claim
+   this business), all sharing the same card shell so the page
+   reads as one consistent system instead of a two-column
+   desktop layout bolted onto a mobile app.
+   ============================================================ */
 
 .listing-app-main {
-  background: #f5f5f7;
-  color: #111827;
+  background: #f6f7f5;
+  color: #14151a;
 }
 
 .listing-page {
-  max-width: 760px;
-  padding: 18px 14px 120px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 14px 14px 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
+.listing-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(20,21,26,0.55);
+  text-decoration: none;
+  padding: 2px 2px 0;
+}
+.listing-back-link:hover { color: #14151a; }
+
+/* -- Shared card shell -- every section on this page is one of these -- */
 .listing-card {
-  background: #15171c;
-  border: 1px solid rgba(255,255,255,.08);
-  color: #fff;
-}
-
-.listing-title,
-.listing-section-title,
-.listing-sidebar-card h3,
-.listing-comments-card h3,
-.related-card__title {
-  color: #fff;
-}
-
-.listing-summary,
-.listing-subtitle,
-.listing-detail-value,
-.listing-context p,
-.listing-map-address,
-.related-card__desc,
-.related-card__meta {
-  color: rgba(255,255,255,.62);
-}
-
-.listing-hero {
-  grid-template-columns: 1fr;
-  border-radius: 28px;
-  overflow: hidden;
-}
-
-.listing-hero__image {
+  background: #ffffff;
   border-radius: 22px;
+  box-shadow: 0 4px 16px rgba(20,20,25,0.07);
+  padding: 20px 18px;
+}
+.listing-card--flush { padding: 0; overflow: hidden; }
+
+.listing-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #14151a;
+  margin: 0 0 12px;
 }
 
-.mobile-app-header__avatar-img {
+.listing-btn {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(20,21,26,0.12);
+  background: #f2f3f1;
+  color: #14151a;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+}
+.listing-btn:hover { background: #e7e9e6; }
+.listing-btn:active { transform: scale(0.97); }
+.listing-btn--primary {
+  background: #10a37f;
+  border-color: transparent;
+  color: #fff;
+}
+.listing-btn--primary:hover { background: #0d8a6c; }
+.listing-btn--ghost {
+  background: transparent;
+}
+
+/* -- 1) Header card: avatar, name, category / distance / rating -- */
+.listing-header-card {
+  text-align: center;
+}
+.listing-avatar-wrap {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #eafaf3 0%, #dcf3e8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  box-shadow: 0 2px 10px rgba(20,20,25,0.14);
+}
+.listing-avatar-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
+  display: block;
 }
-
-
-
-
-.listing-rating-input {
-  display: grid;
+.listing-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #14151a;
+  margin: 0 0 6px;
+}
+.listing-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(20,21,26,0.55);
+  margin: 0 0 4px;
+}
+.listing-meta-row .is-dark { color: #14151a; }
+.listing-meta-dot { opacity: 0.35; }
+.listing-meta-star { color: #f5a623; }
+.listing-meta-source {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(20,21,26,0.4);
+  background: rgba(20,21,26,0.06);
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin-left: 2px;
+}
+.listing-summary {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(20,21,26,0.6);
+  margin: 12px auto 16px;
+  max-width: 440px;
+}
+.listing-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.listing-rating-label {
-  font-size: 14px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.listing-stars-input {
-  display: flex;
-  gap: 6px;
-}
-
-.star-btn {
-  border: 0;
-  background: transparent;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
-  color: #d1d5db;
-  padding: 0;
-}
-
-.star-btn.is-active {
-  color: #f59e0b;
-}
-
-.listing-comment__stars {
-  display: flex;
-  gap: 2px;
-  margin-top: 4px;
-}
-
-.comment-star {
-  font-size: 16px;
-  color: #d1d5db;
-}
-
-.comment-star.is-filled {
-  color: #f59e0b;
-}
-
-
-
-
-.listing-gallery-card {
-  padding: 24px;
-}
-
-.listing-gallery-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
+/* -- 2) Photo gallery card -- */
 .listing-slider {
   position: relative;
 }
-
 .listing-slider__viewport {
-  position: relative;
-  width: 100%;
-  height: 420px;
-  border-radius: 20px;
+  border-radius: 16px;
   overflow: hidden;
-  background: #f3f4f6;
+  aspect-ratio: 4 / 3;
+  background: #eef1ef;
+  position: relative;
 }
-
 .listing-slide {
   position: absolute;
   inset: 0;
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.25s ease;
+  pointer-events: none;
 }
-
-.listing-slide.is-active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
+.listing-slide.is-active { opacity: 1; pointer-events: auto; }
 .listing-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-
 .listing-slider__arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 3;
-  width: 46px;
-  height: 46px;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(17, 24, 39, 0.85);
-  color: #fff;
-  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  font-size: 15px;
+  z-index: 2;
 }
-
-.listing-slider__arrow--left {
-  left: 16px;
-}
-
-.listing-slider__arrow--right {
-  right: 16px;
-}
-
+.listing-slider__arrow--left { left: 10px; }
+.listing-slider__arrow--right { right: 10px; }
 .listing-thumbs {
   display: flex;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-top: 10px;
+  scrollbar-width: none;
 }
-
+.listing-thumbs::-webkit-scrollbar { display: none; }
 .listing-thumb {
-  border: 2px solid transparent;
-  background: transparent;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid transparent;
   padding: 0;
   cursor: pointer;
-  flex: 0 0 auto;
+  background: #eef1ef;
+  opacity: 0.55;
+  transition: opacity 0.15s, border-color 0.15s;
 }
+.listing-thumb.is-active { opacity: 1; border-color: #10a37f; }
+.listing-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.listing-thumb.is-active {
-  border-color: #10a37f;
-}
-
-.listing-thumb img {
-  width: 92px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: 10px;
-  display: block;
-}
-
-@media (max-width: 980px) {
-  .listing-slider__viewport {
-    height: 280px;
-  }
-}
-
-
-
-    .listing-map-card {
-  padding: 24px;
-}
-
-
+/* -- 3) Map card -- */
 .listing-map-frame {
   width: 100%;
-  height: 360px; /* or 400px if you want bigger */
-  border-radius: 18px;
-  overflow: hidden;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-
-  display: block;
+  height: 200px;
+  background: #eef1ef;
 }
-
-.listing-map-frame iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
+#listing-mapbox { width: 100%; height: 100%; }
+.listing-map-pin { font-size: 26px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35)); }
+.listing-map-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px 16px;
 }
-
-.listing-map-frame {
-  width: 100%;
-  height: 360px;
-  border-radius: 18px;
-  overflow: hidden;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-}
-
 .listing-map-address {
-  margin: 14px 0 0;
-  color: #4b5563;
-  line-height: 1.6;
+  font-size: 12.5px;
+  color: rgba(20,21,26,0.6);
+  line-height: 1.4;
 }
 
-
-
-    .listing-right-rail {
-  display: grid;
-  gap: 20px;
-  align-self: start;
-  position: sticky;
-  top: 24px;
+/* -- 4) Nearby similar places card -- */
+.listing-related-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -18px;
+  padding: 0 18px 2px;
+}
+.listing-related-scroll::-webkit-scrollbar { display: none; }
+.related-card {
+  flex: 0 0 134px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f6f7f5;
+  border: 1px solid rgba(20,21,26,0.06);
+}
+.related-card__image {
+  width: 100%;
+  height: 88px;
+  object-fit: cover;
+  display: block;
+  background: #eef1ef;
+}
+.related-card__body { padding: 8px 10px 10px; }
+.related-card__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #14151a;
+  margin: 0 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.related-card__meta {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(20,21,26,0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-    .listing-comments-card {
-      padding: 24px;
-      position: sticky;
-    }
-
-    .listing-comments-card h3 {
-      margin: 0 0 16px;
-      font-size: 18px;
-      color: #111827;
-    }
-
-    .listing-comment-form {
-      display: grid;
-      gap: 12px;
-      margin-bottom: 22px;
-    }
-
-    .listing-comment-form input,
-    .listing-comment-form textarea {
-      width: 100%;
-      border: 1px solid #d1d5db;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font: inherit;
-      color: #111827;
-      background: #fff;
-      box-sizing: border-box;
-    }
-
-    .listing-comment-form textarea {
-      resize: vertical;
-      min-height: 120px;
-    }
-
-    .listing-comments-list {
-      display: grid;
-      gap: 14px;
-    }
-
-    .listing-comment {
-      border-top: 1px solid #e5e7eb;
-      padding-top: 14px;
-    }
-
-    .listing-comment:first-child {
-      border-top: 0;
-      padding-top: 0;
-    }
-
-    .listing-comment__meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: #6b7280;
-    }
-
-    .listing-comment p {
-      margin: 0;
-      color: #374151;
-      line-height: 1.7;
-    }
-
-
-
-        .listing-hero {
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
-      gap: 24px;
-      padding: 28px;
-      align-items: center;
-    }
-
-    .listing-hero__media {
-      width: 100%;
-    }
-
-    .listing-hero__image {
-      width: 100%;
-      height: 100%;
-      min-height: 260px;
-      max-height: 320px;
-      object-fit: cover;
-      border-radius: 18px;
-      display: block;
-      background: #f3f4f6;
-    }
-
-    .listing-hero__content {
-      min-width: 0;
-    }
-
-
-    .listing-page {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 65px 20px 56px;
-    }
-
-    .listing-breadcrumbs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 20px;
-    }
-
-    .listing-breadcrumbs a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .listing-breadcrumbs a:hover {
-      color: #111827;
-    }
-
-    .listing-back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      color: #111827;
-      font-weight: 600;
-      margin-bottom: 18px;
-    }
-
-    .listing-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
-  gap: 24px;
-  align-items: start;
+/* -- 5) Reviews card -- */
+.listing-reviews-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.listing-reviews-summary__score {
+  font-size: 26px;
+  font-weight: 800;
+  color: #14151a;
+}
+.listing-reviews-summary__meta {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(20,21,26,0.5);
+}
+.listing-review {
+  display: flex;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(20,21,26,0.07);
+}
+.listing-review:first-of-type { border-top: none; padding-top: 0; }
+.listing-review__avatar {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(16,163,127,0.12);
+  color: #0d8a6c;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.listing-review__body { min-width: 0; flex: 1; }
+.listing-review__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.listing-review__name { font-size: 13px; font-weight: 700; color: #14151a; }
+.listing-review__date { font-size: 11px; color: rgba(20,21,26,0.4); }
+.listing-review__stars { font-size: 11px; letter-spacing: 1px; margin-bottom: 4px; }
+.comment-star { color: rgba(20,21,26,0.18); }
+.comment-star.is-filled { color: #f5a623; }
+.listing-review__text { font-size: 13px; line-height: 1.5; color: rgba(20,21,26,0.72); }
+.listing-empty {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(20,21,26,0.4);
+  text-align: center;
+  padding: 10px 0;
 }
 
-    .listing-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-    }
+/* -- 6) Write a review card -- */
+.listing-comment-form { display: flex; flex-direction: column; gap: 10px; }
+.listing-comment-form input,
+.listing-comment-form textarea {
+  border: 1px solid rgba(20,21,26,0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #14151a;
+  background: #f6f7f5;
+}
+.listing-comment-form input:focus,
+.listing-comment-form textarea:focus {
+  outline: none;
+  border-color: #10a37f;
+  background: #fff;
+}
+.listing-comment-form textarea { resize: vertical; }
+.listing-rating-input { display: flex; align-items: center; gap: 10px; }
+.listing-rating-label { font-size: 12.5px; font-weight: 700; color: rgba(20,21,26,0.6); }
+.listing-stars-input { display: flex; gap: 2px; }
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: rgba(20,21,26,0.18);
+  cursor: pointer;
+  padding: 0 1px;
+  line-height: 1;
+}
+.star-btn.is-active { color: #f5a623; }
+.listing-rating-summary { font-size: 12px; font-weight: 700; color: rgba(20,21,26,0.5); }
 
-    .listing-hero {
-      padding: 28px;
-    }
+/* -- 7) Claim / promote card -- */
+.listing-claim-card { text-align: center; }
+.listing-claim-card h3 { font-size: 16px; font-weight: 800; color: #14151a; margin: 0 0 8px; }
+.listing-claim-card p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(20,21,26,0.6);
+  margin: 0 0 16px;
+}
+.listing-claim-card .listing-header-actions { justify-content: center; }
 
-    .listing-hero__badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
+@media (min-width: 700px) {
+  .listing-page { max-width: 640px; }
+}
 
-    .listing-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #f3f4f6;
-      color: #111827;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .listing-badge--featured {
-      background: #ecfeff;
-      color: #0f766e;
-    }
-
-    .listing-badge--category {
-      background: rgba(16,163,127,0.1);
-      color: #0f6e56;
-    }
-
-    .listing-title {
-      font-size: clamp(2rem, 4vw, 3rem);
-      line-height: 1.05;
-      margin: 0 0 10px;
-      color: #111827;
-    }
-
-    .listing-subtitle {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      color: #4b5563;
-      font-size: 15px;
-      margin-bottom: 18px;
-    }
-
-    .listing-summary {
-      color: #374151;
-      font-size: 16px;
-      line-height: 1.7;
-      margin: 0 0 24px;
-      max-width: 720px;
-    }
-
-    .listing-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .listing-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 46px;
-      padding: 0 18px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 700;
-      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-    }
-
-    .listing-btn:hover {
-      transform: translateY(-1px);
-    }
-
-    .listing-btn--primary {
-      background: #10a37f;
-      color: #fff;
-      box-shadow: 0 10px 20px rgba(16, 163, 127, 0.22);
-    }
-    .listing-btn--primary:hover {
-      background: #0d8a6c;
-    }
-
-    .listing-btn--secondary {
-      background: #fff;
-      color: #111827;
-      border: 1px solid #d1d5db;
-    }
-
-    .listing-btn--ghost {
-      background: #f9fafb;
-      color: #111827;
-      border: 1px solid #e5e7eb;
-    }
-
-    .listing-sidebar-card {
-      padding: 24px;
-      position: sticky;
-      top: 24px;
-    }
-
-    .listing-sidebar-card h3 {
-      margin: 0 0 14px;
-      font-size: 18px;
-      color: #111827;
-    }
-
-    .listing-detail-list {
-      display: grid;
-      gap: 14px;
-    }
-
-    .listing-detail-item {
-      padding-bottom: 14px;
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .listing-detail-item:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
-    }
-
-    .listing-detail-label {
-      display: block;
-      font-size: 12px;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: #6b7280;
-      margin-bottom: 5px;
-      font-weight: 700;
-    }
-
-    .listing-detail-value,
-    .listing-detail-value a {
-      color: #111827;
-      text-decoration: none;
-      line-height: 1.6;
-      word-break: break-word;
-    }
-
-    .listing-detail-value a:hover {
-      text-decoration: underline;
-    }
-
-    .listing-section {
-      margin-top: 15px;
-    }
-
-    .listing-section-title {
-      font-size: 22px;
-      margin: 0 0 14px;
-      color: #111827;
-    }
-
-    .listing-info-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .info-card {
-      padding: 22px;
-    }
-
-    .info-card h3 {
-      margin: 0 0 10px;
-      font-size: 18px;
-      color: #111827;
-    }
-
-    .info-card p,
-    .info-card li,
-    .info-card a {
-      color: #4b5563;
-      line-height: 1.7;
-      text-decoration: none;
-    }
-
-    .info-card a:hover {
-      text-decoration: underline;
-    }
-
-    .info-card ul {
-      margin: 0;
-      padding-left: 18px;
-    }
-
-    .listing-context {
-      padding: 24px;
-    }
-
-    .listing-context p {
-      margin: 0;
-      color: #374151;
-      line-height: 1.8;
-    }
-
-    .listing-related-grid {
-      display: flex;
-      gap: 16px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      padding: 2px 2px 8px;
-      margin: 0 -2px;
-    }
-
-    .listing-related-grid::-webkit-scrollbar {
-      display: none;
-    }
-
-        .related-card {
-      scroll-snap-align: start;
-      flex: 0 0 auto;
-      width: 260px;
-      padding: 0;
-      overflow: hidden;
-      text-decoration: none;
-      color: inherit;
-      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-    }
-
-    .related-card__image {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      display: block;
-      background: #f3f4f6;
-    }
-
-    .related-card__body {
-      padding: 20px;
-    }
-
-    .related-card__desc {
-      color: #4b5563;
-      line-height: 1.7;
-      margin: 0 0 14px;
-    }
-
-    .related-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
-      border-color: #d1d5db;
-    }
-
-    .related-card__top {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      margin-bottom: 10px;
-    }
-
-    .related-card__title {
-      margin: 0;
-      font-size: 18px;
-      color: #111827;
-    }
-
-    .related-card__meta {
-      color: #6b7280;
-      font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 14px;
-    }
-
-    .related-card__cta {
-      color: #10a37f;
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .listing-claim {
-      padding: 24px;
-      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-      border: 1px solid #e5e7eb;
-      border-radius: 20px;
-    }
-
-    .listing-claim h3 {
-      margin: 0 0 10px;
-      font-size: 22px;
-      color: #111827;
-    }
-
-    .listing-claim p {
-      margin: 0 0 16px;
-      color: #4b5563;
-      line-height: 1.7;
-      max-width: 720px;
-    }
-
-    .listing-empty {
-      color: #6b7280;
-    }
-
-      @media (max-width: 980px) {
-      .listing-grid,
-      .listing-info-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .related-card {
-        width: min(82vw, 300px);
-      }
-
-      .listing-hero {
-        grid-template-columns: 1fr;
-      }
-
-      .listing-hero__image {
-        max-height: 260px;
-      }
-
-      .listing-sidebar-card {
-        position: static;
-      }
-
-      /* Leave room for the fixed bottom tab bar and drop the desktop-sized
-         top padding now that the mobile header sits directly above. */
-      .listing-page {
-        padding: 18px 16px 120px;
-      }
-    }
   </style>
 </head>
 <body class="app-body page-listing">
@@ -880,332 +545,201 @@
     ← Back to results
   </a>
 
-  <div class="listing-breadcrumbs">
-    <a href="/">Home</a>
-    <span>/</span>
-    <a href="/search?q={{ (listing.category or 'business')|urlencode }}">
-      {{ (listing.category or "Business")|replace('_', ' ')|title }}
-    </a>
-    {% if listing.city %}
-      <span>/</span>
-      <a href="/search?q={{ ((listing.category or 'business') ~ ' in ' ~ listing.city)|urlencode }}">
-        {{ listing.city }}{% if listing.state %}, {{ listing.state }}{% endif %}
-      </a>
-    {% endif %}
-    <span>/</span>
-    <span>{{ listing.name }}</span>
-  </div>
+  {% set hero_photo = listing.photo_url or (listing_photos[0] if listing_photos else None) %}
+  {% set has_internal_reviews = rating_summary and rating_summary.comment_count %}
+  {% set has_google_rating = listing.google_rating and not has_internal_reviews %}
 
-  <div class="listing-grid">
-    <div class="listing-left-column">
-      {% set hero_photo = listing.photo_url or (listing_photos[0] if listing_photos else None) %}
-      <section class="listing-card listing-hero">
-        {% if hero_photo %}
-          <div class="listing-hero__media">
-            <img
-              src="{{ hero_photo }}"
-              alt="{{ listing.name }}"
-              class="listing-hero__image"
-              loading="lazy"
-            >
-          </div>
+  <!-- 1) Header card -->
+  <section class="listing-card listing-header-card">
+    <div class="listing-avatar-wrap">
+      {% if hero_photo %}
+        <img src="{{ hero_photo }}" alt="{{ listing.name }}" loading="lazy">
+      {% else %}
+        {{ category_icon(listing.category) }}
+      {% endif %}
+    </div>
+
+    <h1 class="listing-name">{{ listing.name }}</h1>
+
+    <div class="listing-meta-row">
+      <span>{{ category_icon(listing.category) }} {{ (listing.category or "Local business")|replace('_', ' ')|title }}</span>
+      <span class="listing-meta-dot">·</span>
+      <span class="is-dark js-listing-distance" data-fallback="{{ listing.city or 'Nearby' }}{% if listing.state %}, {{ listing.state }}{% endif %}">{{ listing.city or "Nearby" }}{% if listing.state %}, {{ listing.state }}{% endif %}</span>
+      {% if has_internal_reviews %}
+        <span class="listing-meta-dot">·</span>
+        <span class="is-dark"><span class="listing-meta-star">★</span> {{ rating_summary.avg_rating }} ({{ rating_summary.comment_count }})</span>
+      {% elif listing.google_rating %}
+        <span class="listing-meta-dot">·</span>
+        <span class="is-dark"><span class="listing-meta-star">★</span> {{ listing.google_rating }}{% if listing.google_rating_count %} ({{ listing.google_rating_count }}){% endif %}</span>
+        <span class="listing-meta-source">Google</span>
+      {% endif %}
+    </div>
+
+    {% if listing.description %}
+      <p class="listing-summary">{{ listing.description }}</p>
+    {% endif %}
+
+    <div class="listing-header-actions">
+      {% if listing.website %}
+        <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn listing-btn--primary">Website</a>
+      {% endif %}
+      {% if listing.phone %}
+        <a href="tel:{{ listing.phone }}" class="listing-btn">Call</a>
+      {% endif %}
+      {% if listing.address %}
+        <a href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}" target="_blank" rel="noopener" class="listing-btn">Directions</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- 2) Photo gallery card -->
+  {% if listing_photos %}
+    <section class="listing-card">
+      <h2 class="listing-section-title">Photos</h2>
+
+      <div class="listing-slider" data-slider>
+        {% if listing_photos|length > 1 %}
+          <button class="listing-slider__arrow listing-slider__arrow--left" type="button" data-prev aria-label="Previous photo">←</button>
         {% endif %}
 
-        <div class="listing-hero__content">
-          <div class="listing-hero__badges">
-            <span class="listing-badge listing-badge--category">
-              {{ category_icon(listing.category) }}
-              {{ (listing.category or "Local business")|replace('_', ' ')|title }}
-            </span>
-
-            {% if listing.featured %}
-              <span class="listing-badge listing-badge--featured">Featured listing</span>
-            {% endif %}
-
-            <span class="listing-badge">
-              {{ listing.city or "Local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}
-            </span>
-          </div>
-
-          <h1 class="listing-title">{{ listing.name }}</h1>
-
-          <div class="listing-subtitle">
-            <span>{{ (listing.category or "Local business")|replace('_', ' ')|title }}</span>
-            <span>•</span>
-            <span>{{ listing.city or "Local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}</span>
-          </div>
-
-          <p class="listing-summary">
-            {% if listing.description %}
-              {{ listing.description }}
-            {% else %}
-              Explore this {{ (listing.category or "local business")|replace('_', ' ')|lower }}
-              in {{ listing.city or "the area" }}{% if listing.state %}, {{ listing.state }}{% endif %}.
-              View contact details, location information, and similar nearby businesses.
-            {% endif %}
-          </p>
-
-          <div class="listing-actions">
-            {% if listing.website %}
-              <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn listing-btn--primary">
-                Visit website
-              </a>
-            {% endif %}
-
-            {% if listing.phone %}
-              <a href="tel:{{ listing.phone }}" class="listing-btn listing-btn--secondary">
-                Call now
-              </a>
-            {% endif %}
-
-            {% if listing.address %}
-              <a
-                href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}"
-                target="_blank"
-                rel="noopener"
-                class="listing-btn listing-btn--ghost"
-              >
-                Get directions
-              </a>
-            {% endif %}
-          </div>
-        </div>
-      </section>
-
-      {% if listing_photos %}
-        <section class="listing-section">
-          <div class="listing-card listing-gallery-card">
-            <div class="listing-gallery-header">
-              <h2 class="listing-section-title">Photo gallery</h2>
+        <div class="listing-slider__viewport">
+          {% for photo in listing_photos %}
+            <div class="listing-slide {% if loop.first %}is-active{% endif %}" data-slide>
+              <img src="{{ photo }}" alt="{{ listing.name }} photo {{ loop.index }}" loading="lazy">
             </div>
-
-            <div class="listing-slider" data-slider>
-              <button class="listing-slider__arrow listing-slider__arrow--left" type="button" data-prev aria-label="Previous photo">
-                ←
-              </button>
-
-              <div class="listing-slider__viewport">
-                {% for photo in listing_photos %}
-                  <div class="listing-slide {% if loop.first %}is-active{% endif %}" data-slide>
-                    <img src="{{ photo }}" alt="{{ listing.name }} photo {{ loop.index }}" loading="lazy">
-                  </div>
-                {% endfor %}
-              </div>
-
-              <button class="listing-slider__arrow listing-slider__arrow--right" type="button" data-next aria-label="Next photo">
-                →
-              </button>
-            </div>
-
-            {% if listing_photos|length > 1 %}
-              <div class="listing-thumbs">
-                {% for photo in listing_photos %}
-                  <button
-                    type="button"
-                    class="listing-thumb {% if loop.first %}is-active{% endif %}"
-                    data-thumb-index="{{ loop.index0 }}"
-                    aria-label="Show photo {{ loop.index }}"
-                  >
-                    <img src="{{ photo }}" alt="{{ listing.name }} thumbnail {{ loop.index }}" loading="lazy">
-                  </button>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-        </section>
-      {% endif %}
-
-
-
- <section class="listing-card listing-comments-card">
-        <h3>Comments</h3>
-
-        <form method="post" action="/listing/{{ listing.slug }}/comments" class="listing-comment-form">
-  <input
-    type="text"
-    name="author_name"
-    placeholder="Your name"
-    required
-  >
-
-  <input
-    type="email"
-    name="author_email"
-    placeholder="Your email (optional)"
-  >
-
-  <div class="listing-rating-input">
-    <label class="listing-rating-label">Your rating</label>
-
-    <div class="listing-stars-input" id="listing-stars-input">
-      <input type="hidden" name="rating" id="rating-value" value="0">
-
-      <button type="button" class="star-btn" data-value="1" aria-label="1 star">★</button>
-      <button type="button" class="star-btn" data-value="2" aria-label="2 stars">★</button>
-      <button type="button" class="star-btn" data-value="3" aria-label="3 stars">★</button>
-      <button type="button" class="star-btn" data-value="4" aria-label="4 stars">★</button>
-      <button type="button" class="star-btn" data-value="5" aria-label="5 stars">★</button>
-    </div>
-  </div>
-
-
-{% if rating_summary is defined and rating_summary and rating_summary.comment_count %}
-  <div class="listing-rating-summary">
-    {{ rating_summary.avg_rating }} ★ · {{ rating_summary.comment_count }} review{% if rating_summary.comment_count != 1 %}s{% endif %}
-  </div>
-{% endif %}
-
-  <textarea
-    name="body"
-    rows="5"
-    placeholder="Share your experience or thoughts about this business"
-    required
-  ></textarea>
-
-  <button type="submit" class="listing-btn listing-btn--primary">
-    Post comment
-  </button>
-</form>
-
-        <div class="listing-comments-list">
-          {% if comments %}
-            {% for comment in comments %}
-  <article class="listing-comment">
-    <div class="listing-comment__meta">
-      <div>
-        <strong>{{ comment.author_name }}</strong>
-        <div class="listing-comment__stars" aria-label="{{ comment.rating }} out of 5 stars">
-          {% for i in range(1, 6) %}
-            <span class="comment-star {% if i <= comment.rating %}is-filled{% endif %}">★</span>
           {% endfor %}
         </div>
+
+        {% if listing_photos|length > 1 %}
+          <button class="listing-slider__arrow listing-slider__arrow--right" type="button" data-next aria-label="Next photo">→</button>
+        {% endif %}
       </div>
-      <span>{{ comment.created_at[:10] }}</span>
-    </div>
-    <p>{{ comment.body }}</p>
-  </article>
-{% endfor %}
-          {% else %}
-            <p class="listing-empty">No comments yet. Be the first to leave one.</p>
-          {% endif %}
+
+      {% if listing_photos|length > 1 %}
+        <div class="listing-thumbs">
+          {% for photo in listing_photos %}
+            <button type="button" class="listing-thumb {% if loop.first %}is-active{% endif %}" data-thumb-index="{{ loop.index0 }}" aria-label="Show photo {{ loop.index }}">
+              <img src="{{ photo }}" alt="{{ listing.name }} thumbnail {{ loop.index }}" loading="lazy">
+            </button>
+          {% endfor %}
         </div>
-      </section>
-
-
-
-      <section class="listing-section">
-        <div class="listing-card listing-context">
-          <h2 class="listing-section-title">Local context</h2>
-          <p>
-            This business is listed under
-            <strong>{{ (listing.category or "local business")|replace('_', ' ')|title }}</strong>
-            in
-            <strong>{{ listing.city or "the local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}</strong>.
-            Use this page to compare the business quickly, visit the website, call directly,
-            or keep exploring similar businesses nearby.
-          </p>
-        </div>
-      </section>
-
-      {% if related %}
-        <section class="listing-section">
-          <h2 class="listing-section-title">
-            Similar businesses in {{ listing.city or "this area" }}
-          </h2>
-
-          <div class="listing-related-grid">
-            {% for r in related %}
-              <a href="/listing/{{ r.slug }}" class="listing-card related-card">
-                {% if r.photo_url %}
-                  <img
-                    src="{{ r.photo_url }}"
-                    alt="{{ r.name }}"
-                    class="related-card__image"
-                    loading="lazy"
-                  >
-                {% endif %}
-
-                <div class="related-card__body">
-                  <div class="related-card__top">
-                    <div>
-                      <h3 class="related-card__title">{{ r.name }}</h3>
-                    </div>
-                    {% if r.featured %}
-                      <span class="listing-badge listing-badge--featured">Featured</span>
-                    {% endif %}
-                  </div>
-
-                  <div class="related-card__meta">
-                    {{ category_icon(r.category) }}
-                    {{ (r.category or "Local business")|replace('_', ' ')|title }}
-                    ·
-                    {{ r.city }}{% if r.state %}, {{ r.state }}{% endif %}
-                  </div>
-
-                  {% if r.description %}
-                    <p class="related-card__desc">{{ r.description[:120] }}{% if r.description|length > 120 %}...{% endif %}</p>
-                  {% endif %}
-
-                  <div class="related-card__cta">View listing →</div>
-                </div>
-              </a>
-            {% endfor %}
-          </div>
-        </section>
       {% endif %}
+    </section>
+  {% endif %}
 
-      <section class="listing-section">
-        <div class="listing-claim">
-          <h3>Own this business?</h3>
-          <p>
-            Want to update details, improve this listing, or promote your business more prominently in the directory?
-            This area can become your claim-listing or promote-business conversion section.
-          </p>
+  <!-- 3) Map card -->
+  {% if listing.latitude and listing.longitude %}
+    <section class="listing-card listing-card--flush">
+      <div style="padding:20px 18px 12px;">
+        <h2 class="listing-section-title" style="margin-bottom:0;">Location</h2>
+      </div>
+      <div class="listing-map-frame" id="listing-mapbox"></div>
+      <div class="listing-map-footer">
+        {% if listing.address %}<p class="listing-map-address">{{ listing.address }}</p>{% endif %}
+        <a href="https://www.google.com/maps/search/?api=1&query={{ (listing.address or (listing.latitude ~ ',' ~ listing.longitude))|urlencode }}" target="_blank" rel="noopener" class="listing-btn" style="flex-shrink:0;">Directions</a>
+      </div>
+    </section>
+  {% elif listing.address %}
+    <section class="listing-card">
+      <h2 class="listing-section-title">Location</h2>
+      <p class="listing-map-address">{{ listing.address }}</p>
+    </section>
+  {% endif %}
 
-          <div class="listing-actions">
-            <a href="/p/contact" class="listing-btn listing-btn--primary">Contact us</a>
-            <a href="https://buy.stripe.com/test_5kQ3cxfEe6Bg2qifsn0VO00" class="listing-btn listing-btn--secondary">
-              Promote your business
-            </a>
+  <!-- 4) Nearby similar places card -->
+  {% if related %}
+    <section class="listing-card">
+      <h2 class="listing-section-title">Similar places nearby</h2>
+      <div class="listing-related-scroll">
+        {% for r in related %}
+          <a href="/listing/{{ r.slug }}" class="related-card">
+            {% if r.photo_url %}
+              <img src="{{ r.photo_url }}" alt="{{ r.name }}" class="related-card__image" loading="lazy">
+            {% else %}
+              <div class="related-card__image" style="display:flex;align-items:center;justify-content:center;font-size:26px;">{{ category_icon(r.category) }}</div>
+            {% endif %}
+            <div class="related-card__body">
+              <div class="related-card__title">{{ r.name }}</div>
+              <div class="related-card__meta">{{ (r.category or "Local business")|replace('_', ' ')|title }}</div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+  <!-- 5) Reviews card -->
+  <section class="listing-card">
+    <h2 class="listing-section-title">Reviews</h2>
+
+    {% if has_internal_reviews %}
+      <div class="listing-reviews-summary">
+        <span class="listing-reviews-summary__score">{{ rating_summary.avg_rating }}</span>
+        <span class="listing-reviews-summary__meta">★ · {{ rating_summary.comment_count }} review{% if rating_summary.comment_count != 1 %}s{% endif %}</span>
+      </div>
+    {% elif listing.google_rating %}
+      <div class="listing-reviews-summary">
+        <span class="listing-reviews-summary__score">{{ listing.google_rating }}</span>
+        <span class="listing-reviews-summary__meta">★ · {{ listing.google_rating_count or 0 }} Google review{% if listing.google_rating_count != 1 %}s{% endif %}</span>
+      </div>
+    {% endif %}
+
+    {% if comments %}
+      {% for comment in comments %}
+        <article class="listing-review">
+          <div class="listing-review__avatar">{{ (comment.author_name or "?")[:1]|upper }}</div>
+          <div class="listing-review__body">
+            <div class="listing-review__head">
+              <span class="listing-review__name">{{ comment.author_name }}</span>
+              <span class="listing-review__date">{{ comment.created_at[:10] }}</span>
+            </div>
+            <div class="listing-review__stars" aria-label="{{ comment.rating }} out of 5 stars">
+              {% for i in range(1, 6) %}<span class="comment-star {% if i <= comment.rating %}is-filled{% endif %}">★</span>{% endfor %}
+            </div>
+            <p class="listing-review__text">{{ comment.body }}</p>
           </div>
+        </article>
+      {% endfor %}
+    {% else %}
+      <p class="listing-empty">No reviews yet. Be the first to leave one below.</p>
+    {% endif %}
+  </section>
+
+  <!-- 6) Write a review card -->
+  <section class="listing-card">
+    <h2 class="listing-section-title">Write a review</h2>
+
+    <form method="post" action="/listing/{{ listing.slug }}/comments" class="listing-comment-form">
+      <input type="text" name="author_name" placeholder="Your name" required>
+      <input type="email" name="author_email" placeholder="Your email (optional)">
+
+      <div class="listing-rating-input">
+        <label class="listing-rating-label">Your rating</label>
+        <div class="listing-stars-input" id="listing-stars-input">
+          <input type="hidden" name="rating" id="rating-value" value="0">
+          <button type="button" class="star-btn" data-value="1" aria-label="1 star">★</button>
+          <button type="button" class="star-btn" data-value="2" aria-label="2 stars">★</button>
+          <button type="button" class="star-btn" data-value="3" aria-label="3 stars">★</button>
+          <button type="button" class="star-btn" data-value="4" aria-label="4 stars">★</button>
+          <button type="button" class="star-btn" data-value="5" aria-label="5 stars">★</button>
         </div>
-      </section>
+      </div>
+
+      <textarea name="body" rows="4" placeholder="Share your experience or thoughts about this business" required></textarea>
+
+      <button type="submit" class="listing-btn listing-btn--primary">Post review</button>
+    </form>
+  </section>
+
+  <!-- 7) Claim / promote card -->
+  <section class="listing-card listing-claim-card">
+    <h3>Own this business?</h3>
+    <p>Want to update details, improve this listing, or promote your business more prominently in the directory?</p>
+    <div class="listing-header-actions">
+      <a href="/p/contact" class="listing-btn listing-btn--primary">Contact us</a>
+      <a href="https://buy.stripe.com/test_5kQ3cxfEe6Bg2qifsn0VO00" class="listing-btn">Promote your business</a>
     </div>
-
-    <aside class="listing-right-rail">
-      {% if listing.latitude and listing.longitude %}
-        <section class="listing-card listing-map-card">
-          <h2 class="listing-section-title">Location</h2>
-
-          <div class="listing-map-frame">
-            <iframe
-              src="https://www.google.com/maps?q={{ listing.latitude }},{{ listing.longitude }}&z=15&output=embed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade">
-            </iframe>
-          </div>
-
-          {% if listing.address %}
-            <p class="listing-map-address">{{ listing.address }}</p>
-          {% endif %}
-        </section>
-      {% elif listing.address %}
-        <section class="listing-card listing-map-card">
-          <h2 class="listing-section-title">Location</h2>
-
-          <div class="listing-map-frame">
-            <iframe
-              src="https://www.google.com/maps?q={{ listing.address|urlencode }}&z=15&output=embed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade">
-            </iframe>
-          </div>
-
-          <p class="listing-map-address">{{ listing.address }}</p>
-        </section>
-      {% endif %}
-    </aside>
-  </div>
+  </section>
 </section>
 
       <nav class="mobile-tabbar mobile-only">
@@ -1340,7 +874,57 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 </script>
 
+{% if listing.latitude and listing.longitude %}
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+{% endif %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const LISTING_LAT = {{ listing.latitude if listing.latitude is not none else "null" }};
+    const LISTING_LNG = {{ listing.longitude if listing.longitude is not none else "null" }};
 
+    // -- Small embedded Mapbox pin, matching the map used on Discover. --
+    const mapEl = document.getElementById("listing-mapbox");
+    if (mapEl && typeof mapboxgl !== "undefined" && LISTING_LAT != null && LISTING_LNG != null) {
+      const MAPBOX_TOKEN = "{{ mapbox_token or '' }}";
+      const MAPBOX_STYLE = "{{ mapbox_style_url or '' }}";
+      if (MAPBOX_TOKEN) {
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        const map = new mapboxgl.Map({
+          container: "listing-mapbox",
+          style: MAPBOX_STYLE || "mapbox://styles/mapbox/light-v11",
+          center: [LISTING_LNG, LISTING_LAT],
+          zoom: 14,
+          scrollZoom: false,
+          attributionControl: false
+        });
+        map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+        const pin = document.createElement("div");
+        pin.className = "listing-map-pin";
+        pin.textContent = "📍";
+        new mapboxgl.Marker({ element: pin, anchor: "bottom" }).setLngLat([LISTING_LNG, LISTING_LAT]).addTo(map);
+      }
+    }
+
+    // -- Live distance from the visitor, falling back to the city/state
+    //    already in the markup if geolocation is denied or unavailable. --
+    const distEls = document.querySelectorAll(".js-listing-distance");
+    if (distEls.length && LISTING_LAT != null && LISTING_LNG != null && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        const R = 3958.8;
+        const toRad = (d) => (d * Math.PI) / 180;
+        const dLat = toRad(LISTING_LAT - pos.coords.latitude);
+        const dLon = toRad(LISTING_LNG - pos.coords.longitude);
+        const a = Math.sin(dLat / 2) ** 2 +
+          Math.cos(toRad(pos.coords.latitude)) * Math.cos(toRad(LISTING_LAT)) * Math.sin(dLon / 2) ** 2;
+        const miles = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const label = miles < 0.1 ? "Nearby" : `${miles.toFixed(1)} mi`;
+        distEls.forEach((el) => { el.textContent = label; });
+      }, function () {
+        // Denied or unavailable -- leave the server-rendered city/state fallback in place.
+      }, { maximumAge: 300000, timeout: 8000 });
+    }
+  });
+</script>
 
 </body>
 </html>

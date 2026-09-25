@@ -4956,7 +4956,12 @@ def listing_page(slug):
         related=related,
         comments=comments,
         listing_photos=listing_photos,
-        rating_summary=rating_summary
+        rating_summary=rating_summary,
+        mapbox_token=os.environ.get("MAPBOX_TOKEN"),
+        mapbox_style_url=os.environ.get(
+            "MAPBOX_STYLE_URL",
+            "mapbox://styles/mapbox/light-v11"
+        ),
     )
     
     
