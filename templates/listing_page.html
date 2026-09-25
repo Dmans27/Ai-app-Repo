@@ -216,17 +216,12 @@
 /* -- 3) Map card -- */
 .listing-map-frame {
   width: 100%;
-  height: 200px;
+  height: 240px;
   background: #eef1ef;
+  border-radius: 22px;
+  overflow: hidden;
 }
 .listing-map-pin { font-size: 26px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35)); }
-.listing-map-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 18px 16px;
-}
 .listing-map-address {
   font-size: 12.5px;
   color: rgba(20,21,26,0.6);
@@ -634,16 +629,7 @@
 
   <!-- 3) Map card -->
   {% if listing.latitude and listing.longitude %}
-    <section class="listing-card listing-card--flush">
-      <div style="padding:20px 18px 12px;">
-        <h2 class="listing-section-title" style="margin-bottom:0;">Location</h2>
-      </div>
-      <div class="listing-map-frame" id="listing-mapbox"></div>
-      <div class="listing-map-footer">
-        {% if listing.address %}<p class="listing-map-address">{{ listing.address }}</p>{% endif %}
-        <a href="https://www.google.com/maps/search/?api=1&query={{ (listing.address or (listing.latitude ~ ',' ~ listing.longitude))|urlencode }}" target="_blank" rel="noopener" class="listing-btn" style="flex-shrink:0;">Directions</a>
-      </div>
-    </section>
+    <div class="listing-map-frame" id="listing-mapbox"></div>
   {% elif listing.address %}
     <section class="listing-card">
       <h2 class="listing-section-title">Location</h2>
