@@ -133,15 +133,15 @@
       <button
         class="app-sidebar__new-search"
         type="button"
-        onclick="window.location.href='/'"
+        onclick="window.location.href='{{ url_for('home') }}'"
       >
         + New search
       </button>
 
 <nav class="app-sidebar__nav">
-  <a href="/" class="app-sidebar__link is-active">Home</a>
+  <a href="{{ url_for('home') }}" class="app-sidebar__link is-active">Home</a>
   <a href="/discover" class="app-sidebar__link">Discover</a>
-  <a href="/" class="app-sidebar__link">Search</a>
+  <a href="{{ url_for('home') }}" class="app-sidebar__link">Search</a>
   <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
   <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="app-sidebar__link">Account</a>
   <a href="/admin" class="app-sidebar__link">Admin</a>
@@ -150,7 +150,7 @@
       <div class="app-sidebar__section-label">Account</div>
 
       <div class="app-sidebar__footer">
-        <a href="/" class="app-sidebar__footer-link">Home</a>
+        <a href="{{ url_for('home') }}" class="app-sidebar__footer-link">Home</a>
         <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
 
         {% if current_user.is_authenticated %}
@@ -301,15 +301,15 @@
       <button
         class="mobile-drawer__new-search"
         type="button"
-        onclick="window.location.href='/'"
+        onclick="window.location.href='{{ url_for('home') }}'"
       >
         + New search
       </button>
 
 <nav class="mobile-drawer__nav">
-  <a href="/" class="mobile-drawer__link is-active">Home</a>
+  <a href="{{ url_for('home') }}" class="mobile-drawer__link is-active">Home</a>
   <a href="/discover" class="mobile-drawer__link">Discover</a>
-  <a href="/" class="mobile-drawer__link">Search</a>
+  <a href="{{ url_for('home') }}" class="mobile-drawer__link">Search</a>
   <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
   <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-drawer__link">Account</a>
   <a href="/admin" class="mobile-drawer__link">Admin</a>
@@ -318,7 +318,7 @@
       <div class="mobile-drawer__section-label">Account</div>
 
       <div class="mobile-drawer__footer">
-        <a href="/" class="mobile-drawer__footer-link">Home</a>
+        <a href="{{ url_for('home') }}" class="mobile-drawer__footer-link">Home</a>
         <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
 
         {% if current_user.is_authenticated %}
@@ -1633,7 +1633,7 @@ function wireFilterBar() {
       </section>
 
       <nav class="mobile-tabbar mobile-only">
-        <a href="/" class="mobile-tabbar__item is-active">
+        <a href="{{ url_for('home') }}" class="mobile-tabbar__item is-active">
           <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg></span>
           <span class="mobile-tabbar__label">Home</span>
         </a>
@@ -1641,7 +1641,7 @@ function wireFilterBar() {
           <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg></span>
           <span class="mobile-tabbar__label">Discover</span>
         </a>
-        <a href="/" class="mobile-tabbar__item" id="mobile-tabbar-search">
+        <a href="{{ url_for('home') }}" class="mobile-tabbar__item" id="mobile-tabbar-search">
           <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
           <span class="mobile-tabbar__label">Search</span>
         </a>

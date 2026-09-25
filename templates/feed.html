@@ -889,7 +889,7 @@
       <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
     </div>
     <nav class="mobile-drawer__nav">
-      <a href="/"                                      class="mobile-drawer__link">🏠 Home</a>
+      <a href="{{ url_for('home') }}"                                      class="mobile-drawer__link">🏠 Home</a>
       <a href="{{ url_for('feed') }}"                  class="mobile-drawer__link is-active">📰 Feed</a>
       <a href="/discover"                              class="mobile-drawer__link">🗺️ Discover</a>
       <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
@@ -1174,7 +1174,7 @@
        MOBILE TAB BAR
   ════════════════════════════════ -->
   <nav class="feed-tabbar">
-    <a href="/" class="feed-tabbar__item">
+    <a href="{{ url_for('home') }}" class="feed-tabbar__item">
       <span class="feed-tabbar__icon">🏠</span>
       <span>Home</span>
     </a>
@@ -1182,7 +1182,7 @@
       <span class="feed-tabbar__icon">🗺️</span>
       <span>Discover</span>
     </a>
-    <a href="/" class="feed-tabbar__item">
+    <a href="{{ url_for('home') }}" class="feed-tabbar__item">
       <span class="feed-tabbar__icon">🔎</span>
       <span>Search</span>
     </a>

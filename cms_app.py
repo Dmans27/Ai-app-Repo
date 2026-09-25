@@ -4245,7 +4245,7 @@ def ai_job_status(job_id):
     
     
     
-@app.get("/")
+@app.get("/ai-search")
 def home():
     articles = query_all("""
         SELECT id, slug, title, description, updated_at, card_image_url
@@ -6258,6 +6258,7 @@ def api_discover_nearby():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/")
 @app.route("/discover")
 def discover_page():
     default_list_id = None

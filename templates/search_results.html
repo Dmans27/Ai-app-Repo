@@ -35,7 +35,7 @@
     </div>
 
 <div class="app-sidebar__bottom">
-  <a href="/" class="app-sidebar__footer-link">Home</a>
+  <a href="{{ url_for('home') }}" class="app-sidebar__footer-link">Home</a>
   <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
 
   {% if current_user.is_authenticated %}
@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       <div id="hamburger" class="hamburger" role="button" aria-label="Toggle menu" aria-expanded="false" tabindex="0">☰</div>
 <ul id="menu" class="menu collapsed">
-  <li><a href="/">Home</a></li>
+  <li><a href="{{ url_for('home') }}">Home</a></li>
 
   {% if current_user.is_authenticated %}
     <li><a href="{{ url_for('account') }}">Account</a></li>
