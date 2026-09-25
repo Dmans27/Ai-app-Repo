@@ -496,9 +496,9 @@
     border-radius: 0;
   }
 
-  /* Hero + photos strip shrink way down, and the map fills whatever
-     screen space is left -- top, left, right, and bottom -- instead of
-     a tall hero card pushing the map below the fold. */
+  /* The map fills whatever screen space is left below the hero -- top,
+     left, right, and bottom. The hero itself only gets a modest trim off
+     its height (not a full redesign of its proportions/type). */
   .listing-fold {
     display: flex;
     flex-direction: column;
@@ -507,19 +507,14 @@
   .listing-hero-wrap { flex: 0 0 auto; }
   .listing-hero-card {
     aspect-ratio: auto;
-    height: 190px;
+    height: 400px;
   }
-  .listing-hero-card__overlay { padding: 30px 14px 12px; }
-  .listing-hero-card__name { font-size: 18px; }
-  .listing-hero-card__meta { margin-bottom: 8px; }
   .listing-hero-card__save {
     /* Clears the floating header's account icon (safe-area-inset-top,
        or 10px on non-notch devices, plus the header's own height). */
     top: calc(max(10px, env(safe-area-inset-top)) + 54px);
     right: 16px;
   }
-  .listing-photos-panel__inner { padding: 10px 14px 12px; }
-  .listing-thumb { flex-basis: 60px; width: 60px; height: 60px; border-radius: 12px; }
   .listing-map-frame {
     flex: 1 1 auto;
     min-height: 0;
