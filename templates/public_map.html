@@ -39,6 +39,78 @@
     .pub-map-popup__thumb{scroll-snap-align:start;flex-shrink:0;width:50px;height:50px;padding:0;border:1.5px solid transparent;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.08);cursor:pointer;}
     .pub-map-popup__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
     .pub-map-popup__thumb.is-active{border-color:#7ee2bf;}
+
+    /* Full-page map: the map IS the page, with a transparent floating
+       header/owner-badge/CTA row hovering on top instead of the old
+       scrolling stack of a huge title + a separate map card. */
+    html, body.public-list-body{height:100%;}
+    body.public-list-body{margin:0;overflow:hidden;}
+    .public-list-shell{max-width:none;margin:0;padding-bottom:0;height:100vh;height:100dvh;position:relative;overflow:hidden;}
+
+    .public-list-header{
+      position:absolute;top:0;left:0;right:0;z-index:30;
+      padding:14px 16px;border-bottom:none;
+      background:linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+    }
+    .public-list-header .public-list-menu-btn,
+    .public-list-header .public-list-header-avatar{
+      width:42px;height:42px;border-radius:14px;
+      background:rgba(28,28,30,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    }
+    .pub-header-spacer{flex:1;}
+    .pub-share-btn{
+      width:42px;height:42px;border-radius:14px;border:none;flex-shrink:0;margin-right:10px;
+      background:rgba(28,28,30,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+      transition:background 0.15s;
+    }
+    .pub-share-btn:hover{background:rgba(28,28,30,0.92);}
+
+    .pub-share-panel{
+      position:absolute;top:64px;right:16px;z-index:40;width:240px;
+      background:#1c1c1e;border-radius:18px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.5);
+      padding:16px;display:none;flex-direction:column;gap:10px;text-align:center;
+    }
+    .pub-share-panel.is-open{display:flex;}
+    .pub-share-panel__title{font-size:13px;font-weight:800;color:#fff;margin:0;}
+    .pub-share-panel__desc{font-size:11.5px;color:rgba(255,255,255,0.55);margin:-4px 0 2px;line-height:1.4;}
+    .pub-share-panel__qr{width:150px;height:150px;margin:0 auto;border-radius:12px;border:0.5px solid rgba(255,255,255,0.12);}
+    .pub-share-panel__link-row{display:flex;gap:6px;align-items:center;}
+    .pub-share-panel__link{flex:1;min-width:0;height:30px;padding:0 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .pub-share-panel__copy{flex-shrink:0;height:30px;padding:0 10px;border-radius:8px;border:none;background:#10a37f;color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
+    .pub-share-panel__copy.is-copied{background:#0d8a6c;}
+
+    .pub-owner-badge{
+      position:absolute;top:64px;left:16px;z-index:20;
+      display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;
+      background:rgba(28,28,30,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      color:#fff;max-width:calc(100vw - 32px);
+    }
+    .pub-owner-badge__avatar{
+      width:26px;height:26px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#2c2c2e;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+    }
+    .pub-owner-badge__avatar img{width:100%;height:100%;object-fit:cover;}
+    .pub-owner-badge__name{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    .public-list-main{position:relative;height:100%;}
+    .public-list-map{
+      position:absolute;inset:0;width:100%;height:100%;border-radius:0;
+    }
+
+    .pub-cta-row{
+      position:absolute;left:0;right:0;bottom:0;z-index:20;
+      display:flex;justify-content:center;gap:8px;
+      padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+      background:linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+    }
+    .pub-cta{
+      padding:9px 16px;border-radius:999px;background:rgba(28,28,30,0.82);
+      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      color:#fff;text-decoration:none;font-size:12.5px;font-weight:700;
+      border:0.5px solid rgba(255,255,255,0.14);
+    }
+    .pub-cta.is-primary{background:#34c759;color:#000;border-color:transparent;}
   </style>
 </head>
 
@@ -49,10 +121,9 @@
         ☰
       </button>
 
-      <a href="/" class="public-list-brand">
-        <strong>Local AI</strong>
-        <span>Shared map</span>
-      </a>
+      <div class="pub-header-spacer"></div>
+
+      <button type="button" class="pub-share-btn" id="pub-share-toggle" aria-label="Share this map">🔗</button>
 
       <a
         href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
@@ -69,51 +140,41 @@
       </a>
     </header>
 
+    <div class="pub-share-panel" id="pub-share-panel">
+      <p class="pub-share-panel__title">Share this map</p>
+      <p class="pub-share-panel__desc">Anyone with this link can view {{ (owner.name or "this user") if owner else "this user" }}'s saved places.</p>
+      {% if owner %}
+        <img class="pub-share-panel__qr" src="{{ url_for('user_public_map_qr_png', user_id=owner.id) }}" alt="QR code linking to this map" loading="lazy">
+      {% endif %}
+      <div class="pub-share-panel__link-row">
+        <input class="pub-share-panel__link" id="pub-share-link" type="text" readonly value="{{ url_for('user_public_map', user_id=owner.id, _external=True) if owner else request.url }}">
+        <button type="button" class="pub-share-panel__copy" id="pub-share-copy">Copy</button>
+      </div>
+    </div>
+
+    <div class="pub-owner-badge">
+      <span class="pub-owner-badge__avatar">
+        {% if owner and owner.profile_image_url %}
+          <img src="{{ owner.profile_image_url }}" alt="{{ owner.name or owner.email }}">
+        {% else %}
+          {{ (owner.name or owner.email or "U")[0]|upper if owner else "U" }}
+        {% endif %}
+      </span>
+      <span class="pub-owner-badge__name">Shared by {{ owner.name or "a Local AI user" if owner else "a Local AI user" }}</span>
+    </div>
+
     <main class="public-list-main">
-      <section class="public-list-owner-card">
-        <div class="public-list-owner-avatar">
-          {% if owner and owner.profile_image_url %}
-            <img src="{{ owner.profile_image_url }}" alt="{{ owner.name or owner.email }}">
-          {% else %}
-            <span>{{ (owner.name or owner.email or "U")[0]|upper if owner else "U" }}</span>
-          {% endif %}
-        </div>
+      <div id="public-list-map" class="public-list-map"></div>
 
-        <div class="public-list-owner-copy">
-          <p>Shared by</p>
-          <h2>{{ owner.name or "Local AI User" if owner else "Local AI User" }}</h2>
-        </div>
-      </section>
+      <div class="pub-cta-row">
+        <a href="/" class="pub-cta">Find places</a>
 
-      <section class="public-list-hero">
-        <p class="public-list-eyebrow">Public map</p>
-
-        <h1>{{ owner.name or "Local AI User" }}'s saved places</h1>
-
-        <p class="public-list-meta">
-          {{ places|length }} place{% if places|length != 1 %}s{% endif %} saved · Local AI
-        </p>
-
-        <div class="public-list-cta-row">
-          <a href="/" class="public-list-cta is-primary">
-            Find places
-          </a>
-
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('account') }}" class="public-list-cta">
-              Save your own
-            </a>
-          {% else %}
-            <a href="{{ url_for('signup') }}" class="public-list-cta">
-              Join Local AI
-            </a>
-          {% endif %}
-        </div>
-      </section>
-
-      <section class="public-list-map-card">
-        <div id="public-list-map" class="public-list-map"></div>
-      </section>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="pub-cta is-primary">Save your own</a>
+        {% else %}
+          <a href="{{ url_for('signup') }}" class="pub-cta is-primary">Join Local AI</a>
+        {% endif %}
+      </div>
     </main>
   </div>
 
@@ -123,6 +184,46 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
+      const shareToggle = document.getElementById("pub-share-toggle");
+      const sharePanel = document.getElementById("pub-share-panel");
+      const shareCopyBtn = document.getElementById("pub-share-copy");
+      const shareLinkInput = document.getElementById("pub-share-link");
+
+      if (shareToggle && sharePanel) {
+        shareToggle.addEventListener("click", function (e) {
+          e.stopPropagation();
+          sharePanel.classList.toggle("is-open");
+        });
+        document.addEventListener("click", function (e) {
+          if (!e.target.closest("#pub-share-panel") && !e.target.closest("#pub-share-toggle")) {
+            sharePanel.classList.remove("is-open");
+          }
+        });
+      }
+      if (shareCopyBtn && shareLinkInput) {
+        shareCopyBtn.addEventListener("click", function () {
+          shareLinkInput.select();
+          shareLinkInput.setSelectionRange(0, 99999);
+          const done = function () {
+            shareCopyBtn.textContent = "Copied!";
+            shareCopyBtn.classList.add("is-copied");
+            setTimeout(function () {
+              shareCopyBtn.textContent = "Copy";
+              shareCopyBtn.classList.remove("is-copied");
+            }, 1600);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareLinkInput.value).then(done).catch(function () {
+              document.execCommand("copy");
+              done();
+            });
+          } else {
+            document.execCommand("copy");
+            done();
+          }
+        });
+      }
+
       const mapEl = document.getElementById("public-list-map");
 
       if (!mapEl || typeof mapboxgl === "undefined") return;
