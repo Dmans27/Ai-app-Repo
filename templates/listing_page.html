@@ -699,6 +699,16 @@
           <input type="hidden" name="photo_url" value="{{ hero_photo or '' }}">
           <input type="hidden" name="city" value="{{ listing.city or '' }}">
           <button type="submit" class="listing-hero-card__btn listing-hero-card__btn--primary listing-hero-card__save">+ Save</button>
+        </form>
+      {% endif %}
+
+      {% if current_user.is_authenticated and listing.place_id %}
+        <form method="post" action="{{ url_for('claim_business') }}" style="display:contents;">
+          <input type="hidden" name="place_id" value="{{ listing.place_id }}">
+          <input type="hidden" name="name" value="{{ listing.name }}">
+          <input type="hidden" name="address" value="{{ listing.address or '' }}">
+          <input type="hidden" name="website" value="{{ listing.website or '' }}">
+          <input type="hidden" name="category" value="{{ listing.category or '' }}">
           <button type="submit" class="listing-hero-card__btn listing-hero-card__btn--primary listing-hero-card__claim">Claim</button>
         </form>
       {% endif %}
