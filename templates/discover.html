@@ -1221,7 +1221,7 @@
     <div class="app-sidebar__section-label">Account</div>
 
     <div class="app-sidebar__footer">
-      <a href="{{ url_for('home') }}" class="app-sidebar__footer-link">Home</a>
+      
       <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('account') }}" class="app-sidebar__footer-link">Account</a>
