@@ -32,17 +32,6 @@
   gap: 14px;
 }
 
-.listing-back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(20,21,26,0.55);
-  text-decoration: none;
-  padding: 2px 2px 0;
-}
-.listing-back-link:hover { color: #14151a; }
 
 /* -- Shared card shell -- every section on this page is one of these -- */
 .listing-card {
@@ -457,6 +446,51 @@
   .listing-page { max-width: 640px; }
 }
 
+@media (max-width: 1024px) {
+  /* Float the hamburger + account picture over the hero photo instead of
+     a white title bar above it -- same positions, just transparent and
+     on top, exactly like the header floats over the map on Discover. */
+  .lp-float-header.mobile-app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 950;
+  }
+  .lp-float-header .mobile-app-header__icon,
+  .lp-float-header .mobile-app-header__icon--link {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.85);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border: 0.5px solid rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .lp-float-header .mobile-app-header__icon--link {
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  /* Hero card fills the top of the page and both sides -- no white gutter
+     around it -- while the rest of the card stack below keeps its normal
+     inset margins. */
+  .listing-page { padding-top: 0; }
+  .listing-hero-wrap {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
+  .listing-hero-card,
+  .listing-hero-card.has-panel-open,
+  .listing-photos-panel {
+    border-radius: 0;
+  }
+}
+
   </style>
 </head>
 <body class="app-body page-listing">
@@ -552,7 +586,11 @@
 
     <main class="mobile-screen listing-app-main">
 
-      <header class="mobile-app-header mobile-only">
+      <!-- Floats transparently over the hero photo below instead of a
+           white title bar -- no title/subtitle, just the hamburger and
+           account picture, same treatment as the header over the map on
+           Discover. -->
+      <header class="mobile-app-header mobile-only lp-float-header">
         <button
           class="mobile-app-header__icon"
           id="app-sidebar-toggle"
@@ -562,15 +600,7 @@
           ☰
         </button>
 
-        <div class="mobile-app-header__center">
-          <div class="mobile-app-header__title">
-            {{ listing.name }}
-          </div>
-
-          <div class="mobile-app-header__subtitle">
-            {{ (listing.category or "Local business")|replace('_', ' ')|title }}
-          </div>
-        </div>
+        <div class="mobile-app-header__center"></div>
 
         <a
           href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
@@ -590,13 +620,6 @@
       </header>
 
    <section class="mobile-content listing-page">
-  <a
-    href="/search?q={{ ((listing.category or 'business') ~ ' in ' ~ (listing.city or ''))|urlencode }}"
-    class="listing-back-link"
-  >
-    ← Back to results
-  </a>
-
   {% set hero_photo = listing.photo_url or (listing_photos[0] if listing_photos else None) %}
   {% set has_internal_reviews = rating_summary and rating_summary.comment_count %}
   {% set has_google_rating = listing.google_rating and not has_internal_reviews %}
