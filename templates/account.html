@@ -104,20 +104,27 @@
     .acct-map-pin:hover{transform:scale(1.15)}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-content{background:transparent;box-shadow:none;padding:0;color:#f2f2f2;border-radius:0;}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-tip{border-top-color:#16181b;border-bottom-color:#16181b}
-    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.6);font-size:16px;padding:2px 6px;z-index:2}
+    .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.8);font-size:16px;padding:2px 6px;z-index:3}
     .mapboxgl-popup.acct-map-popup .mapboxgl-popup-close-button:hover{color:#fff;background:none}
-    .acct-map-popup__card{background:#16181b;border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
-    .acct-map-popup__head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+    .acct-map-popup__wrap{width:230px;}
+    .acct-map-popup__card{position:relative;width:230px;height:170px;border-radius:14px;overflow:hidden;background:#16181b;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .acct-map-popup__photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .acct-map-popup__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;background:#20232a;}
+    .acct-map-popup__scrim{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0) 32%, rgba(0,0,0,0.88) 100%);pointer-events:none;}
+    .acct-map-popup__overlay{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;}
+    .acct-map-popup__head{display:flex;align-items:center;gap:8px;margin-bottom:2px}
     .acct-map-popup__dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-    .acct-map-popup__name{font-size:14px;font-weight:800;color:#ffffff;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .acct-map-popup__cat{font-size:11px;color:#7ee2bf;text-transform:capitalize;margin:0 0 4px}
-    .acct-map-popup__addr{font-size:12px;color:rgba(255,255,255,0.55);margin:0 0 10px;max-width:210px}
+    .acct-map-popup__name{font-size:14px;font-weight:800;color:#ffffff;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
+    .acct-map-popup__cat{font-size:11px;color:#8ff2ce;text-transform:capitalize;margin:0 0 2px}
+    .acct-map-popup__addr{font-size:11.5px;color:rgba(255,255,255,0.75);margin:0 0 8px;max-width:206px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .acct-map-popup__actions{display:flex;gap:6px}
-    .acct-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.18);border:0.5px solid rgba(16,163,127,0.4);color:#7ee2bf;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
-    .acct-map-popup__btn:hover{background:rgba(16,163,127,0.3)}
-    .acct-map-popup__gallery{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:26px 0 0;padding:2px;max-width:280px}
+    .acct-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.24);border:0.5px solid rgba(16,163,127,0.55);color:#8ff2ce;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
+    .acct-map-popup__btn:hover{background:rgba(16,163,127,0.4)}
+    .acct-map-popup__gallery{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:8px 0 0;padding:2px;max-width:230px}
     .acct-map-popup__gallery::-webkit-scrollbar{display:none}
-    .acct-map-popup__gallery img{scroll-snap-align:start;flex-shrink:0;width:130px;height:130px;object-fit:cover;border-radius:14px;background:rgba(255,255,255,0.06);box-shadow:0 6px 16px rgba(0,0,0,0.5);}
+    .acct-map-popup__thumb{scroll-snap-align:start;flex-shrink:0;width:50px;height:50px;padding:0;border:1.5px solid transparent;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.08);cursor:pointer;}
+    .acct-map-popup__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .acct-map-popup__thumb.is-active{border-color:#7ee2bf;}
 
     /* Below-map listing strip — visible at globe/overview zoom, hides once you zoom into a city */
     .acct-listing-wrap{overflow:hidden;transition:max-height 0.35s ease,opacity 0.25s ease,margin 0.35s ease;max-height:340px;opacity:1;margin:0 0 12px;}
@@ -342,9 +349,39 @@ document.addEventListener("DOMContentLoaded",function(){
     const rt=pr(p);
     const dirUrl=p.address?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`:"";
     const photos=(Array.isArray(p.photo_urls)&&p.photo_urls.length?p.photo_urls:(p.photo_url?[p.photo_url]:[])).slice(0,10);
-    const gallery=photos.length?`<div class="acct-map-popup__gallery">${photos.map(u=>`<img src="${escapeHtml(u)}" alt="" loading="lazy" onerror="this.remove()">`).join("")}</div>`:"";
-    return`<div class="acct-map-popup__card"><div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div></div>${gallery}`;
+    const heroPhoto=photos[0]||"";
+    const photoBlock=heroPhoto
+      ?`<img class="acct-map-popup__photo" src="${escapeHtml(heroPhoto)}" alt="" onerror="this.remove()">`
+      :`<div class="acct-map-popup__placeholder">📍</div>`;
+    const gallery=photos.length>1?`<div class="acct-map-popup__gallery">${photos.map((u,i)=>`<button type="button" class="acct-map-popup__thumb${i===0?" is-active":""}" data-photo-url="${escapeHtml(u)}" aria-label="Show photo ${i+1}"><img src="${escapeHtml(u)}" alt="" loading="lazy"></button>`).join("")}</div>`:"";
+    return`<div class="acct-map-popup__wrap"><div class="acct-map-popup__card">${photoBlock}<div class="acct-map-popup__scrim"></div><div class="acct-map-popup__overlay"><div class="acct-map-popup__head"><span class="acct-map-popup__dot" style="background:${dot}"></span><strong class="acct-map-popup__name">${escapeHtml(p.name||"")}</strong></div>${p.category||rt!=null?`<p class="acct-map-popup__cat">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</p>`:""}${p.address?`<p class="acct-map-popup__addr">${escapeHtml(p.address)}</p>`:""}<div class="acct-map-popup__actions">${dirUrl?`<a href="${dirUrl}" target="_blank" rel="noopener" class="acct-map-popup__btn">Directions</a>`:""}</div></div></div>${gallery}</div>`;
   }
+
+  // Popups are re-inserted per marker click, so wire the thumbnail-click
+  // -> swap-the-background-photo behavior once, via delegation, instead of
+  // per-popup listeners.
+  document.addEventListener("click", function(e){
+    const thumb=e.target.closest(".acct-map-popup__thumb");
+    if(!thumb)return;
+    const wrap=thumb.closest(".acct-map-popup__wrap");
+    if(!wrap)return;
+    const url=thumb.getAttribute("data-photo-url");
+    if(!url)return;
+    const photoEl=wrap.querySelector(".acct-map-popup__photo");
+    const placeholderEl=wrap.querySelector(".acct-map-popup__placeholder");
+    if(photoEl){
+      photoEl.src=url;
+    }else if(placeholderEl){
+      const img=document.createElement("img");
+      img.className="acct-map-popup__photo";
+      img.alt="";
+      img.src=url;
+      placeholderEl.replaceWith(img);
+    }
+    wrap.querySelectorAll(".acct-map-popup__thumb").forEach(function(b){
+      b.classList.toggle("is-active", b===thumb);
+    });
+  });
 
   function nm(v){return String(v||"").trim().toLowerCase();}
   function ll(p){if(p.city&&p.city.trim())return p.city.trim();const pts=(p.address||"").split(",").map(s=>s.trim());return pts.length>=2?pts[1]:"";}
