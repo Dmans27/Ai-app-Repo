@@ -466,6 +466,7 @@
     border: none !important;
     box-shadow: none !important;
     z-index: 950;
+    padding-top: calc(env(safe-area-inset-top) + 44px);
   }
   .lp-float-header .mobile-app-header__icon,
   .lp-float-header .mobile-app-header__icon--link {
@@ -510,10 +511,10 @@
     height: 400px;
   }
   .listing-hero-card__save {
-    /* Well clear of the floating header's account icon (safe-area-inset-top,
-       or 10px on non-notch devices, plus the header's own height, plus
-       extra breathing room). */
-    top: calc(max(10px, env(safe-area-inset-top)) + 100px);
+    /* Well clear of the floating header's account icon (safe-area-inset-top
+       plus the header's own -- now taller -- height, plus extra breathing
+       room). */
+    top: calc(env(safe-area-inset-top) + 140px);
     right: 16px;
   }
   .listing-map-frame {
