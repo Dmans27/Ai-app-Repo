@@ -177,6 +177,12 @@
   border-color: transparent;
 }
 .listing-hero-card__btn--primary:hover { background: #0d8a6c; }
+.listing-hero-card__save {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+}
 
 .listing-photos-panel {
   background: #13151a;
@@ -226,6 +232,59 @@
   font-size: 12.5px;
   color: rgba(20,21,26,0.6);
   line-height: 1.4;
+}
+
+/* -- Top reviews popup, opened from the hero card's "Reviews" button --
+   so the top reviews are one tap away without scrolling to the full
+   Reviews section further down the page. -- */
+.listing-reviews-modal { position: fixed; inset: 0; z-index: 970; }
+.listing-reviews-modal[hidden] { display: none; }
+.listing-reviews-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,12,0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.listing-reviews-modal__sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  max-height: 78vh;
+  background: #ffffff;
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -12px 32px rgba(0,0,0,0.25);
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+.listing-reviews-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.listing-reviews-modal__close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: #f2f3f1;
+  color: #14151a;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.listing-reviews-modal__list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 2px;
 }
 
 /* -- 4) Nearby similar places card -- */
@@ -381,6 +440,17 @@
 
 @media (min-width: 700px) {
   .listing-page { max-width: 640px; }
+
+  .listing-reviews-modal__sheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(480px, calc(100vw - 48px));
+    max-height: 80vh;
+    border-radius: 22px;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -423,6 +493,38 @@
   }
   .listing-hero-card,
   .listing-photos-panel {
+    border-radius: 0;
+  }
+
+  /* Hero + photos strip shrink way down, and the map fills whatever
+     screen space is left -- top, left, right, and bottom -- instead of
+     a tall hero card pushing the map below the fold. */
+  .listing-fold {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+  }
+  .listing-hero-wrap { flex: 0 0 auto; }
+  .listing-hero-card {
+    aspect-ratio: auto;
+    height: 190px;
+  }
+  .listing-hero-card__overlay { padding: 30px 14px 12px; }
+  .listing-hero-card__name { font-size: 18px; }
+  .listing-hero-card__meta { margin-bottom: 8px; }
+  .listing-hero-card__save {
+    /* Clears the floating header's account icon (safe-area-inset-top,
+       or 10px on non-notch devices, plus the header's own height). */
+    top: calc(max(10px, env(safe-area-inset-top)) + 54px);
+    right: 16px;
+  }
+  .listing-photos-panel__inner { padding: 10px 14px 12px; }
+  .listing-thumb { flex-basis: 60px; width: 60px; height: 60px; border-radius: 12px; }
+  .listing-map-frame {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
     border-radius: 0;
   }
 }
@@ -564,12 +666,28 @@
        cards. Swiping up (or tapping the chevron) reveals a dark panel
        underneath for browsing photos -- tapping a photo swaps the hero
        image, exactly like Discover. -->
+  <div class="listing-fold" id="listing-fold">
   <div class="listing-hero-wrap">
     <section class="listing-hero-card" id="listing-hero-card">
       {% if hero_photo %}
         <img id="listing-hero-photo" class="listing-hero-card__img" src="{{ hero_photo }}" alt="{{ listing.name }}" loading="lazy">
       {% else %}
         <div class="listing-hero-card__placeholder">{{ category_icon(listing.category) }}</div>
+      {% endif %}
+
+      {% if current_user.is_authenticated and default_list_id %}
+        <form method="post" action="/lists/{{ default_list_id }}/save-place" style="display:contents;">
+          <input type="hidden" name="name" value="{{ listing.name }}">
+          <input type="hidden" name="address" value="{{ listing.address or '' }}">
+          <input type="hidden" name="website" value="{{ listing.website or '' }}">
+          <input type="hidden" name="category" value="{{ listing.category or '' }}">
+          <input type="hidden" name="latitude" value="{{ listing.latitude if listing.latitude is not none else '' }}">
+          <input type="hidden" name="longitude" value="{{ listing.longitude if listing.longitude is not none else '' }}">
+          <input type="hidden" name="listing_id" value="{{ listing.id }}">
+          <input type="hidden" name="photo_url" value="{{ hero_photo or '' }}">
+          <input type="hidden" name="city" value="{{ listing.city or '' }}">
+          <button type="submit" class="listing-hero-card__btn listing-hero-card__btn--primary listing-hero-card__save">+ Save</button>
+        </form>
       {% endif %}
 
       <div class="listing-hero-card__overlay">
@@ -584,20 +702,6 @@
           {% endif %}
         </div>
         <div class="listing-hero-card__actions">
-          {% if current_user.is_authenticated and default_list_id %}
-            <form method="post" action="/lists/{{ default_list_id }}/save-place" style="display:contents;">
-              <input type="hidden" name="name" value="{{ listing.name }}">
-              <input type="hidden" name="address" value="{{ listing.address or '' }}">
-              <input type="hidden" name="website" value="{{ listing.website or '' }}">
-              <input type="hidden" name="category" value="{{ listing.category or '' }}">
-              <input type="hidden" name="latitude" value="{{ listing.latitude if listing.latitude is not none else '' }}">
-              <input type="hidden" name="longitude" value="{{ listing.longitude if listing.longitude is not none else '' }}">
-              <input type="hidden" name="listing_id" value="{{ listing.id }}">
-              <input type="hidden" name="photo_url" value="{{ hero_photo or '' }}">
-              <input type="hidden" name="city" value="{{ listing.city or '' }}">
-              <button type="submit" class="listing-hero-card__btn listing-hero-card__btn--primary">+ Save</button>
-            </form>
-          {% endif %}
           {% if listing.address %}
             <a href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}" target="_blank" rel="noopener" class="listing-hero-card__btn" onclick="event.stopPropagation();">Directions</a>
           {% endif %}
@@ -606,6 +710,9 @@
           {% endif %}
           {% if listing.phone %}
             <a href="tel:{{ listing.phone }}" class="listing-hero-card__btn" onclick="event.stopPropagation();">Call</a>
+          {% endif %}
+          {% if comments %}
+            <button type="button" class="listing-hero-card__btn" id="listing-reviews-open" onclick="event.stopPropagation();">Reviews{% if has_internal_reviews %} · ★ {{ rating_summary.avg_rating }}{% endif %}</button>
           {% endif %}
         </div>
       </div>
@@ -635,6 +742,45 @@
       <h2 class="listing-section-title">Location</h2>
       <p class="listing-map-address">{{ listing.address }}</p>
     </section>
+  {% endif %}
+  </div>
+
+  <!-- Top reviews popup -- opened from the "Reviews" button in the hero
+       card's action row, one tap away instead of scrolling all the way
+       down to the full Reviews section. -->
+  {% if comments %}
+    <div class="listing-reviews-modal" id="listing-reviews-modal" hidden>
+      <div class="listing-reviews-modal__backdrop" id="listing-reviews-backdrop"></div>
+      <div class="listing-reviews-modal__sheet" role="dialog" aria-modal="true" aria-label="Top reviews">
+        <div class="listing-reviews-modal__head">
+          <h2 class="listing-section-title" style="margin:0;">Top reviews</h2>
+          <button type="button" class="listing-reviews-modal__close" id="listing-reviews-close" aria-label="Close">✕</button>
+        </div>
+        {% if has_internal_reviews %}
+          <div class="listing-reviews-summary">
+            <span class="listing-reviews-summary__score">{{ rating_summary.avg_rating }}</span>
+            <span class="listing-reviews-summary__meta">★ · {{ rating_summary.comment_count }} review{% if rating_summary.comment_count != 1 %}s{% endif %}</span>
+          </div>
+        {% endif %}
+        <div class="listing-reviews-modal__list">
+          {% for comment in comments[:10] %}
+            <article class="listing-review">
+              <div class="listing-review__avatar">{{ (comment.author_name or "?")[:1]|upper }}</div>
+              <div class="listing-review__body">
+                <div class="listing-review__head">
+                  <span class="listing-review__name">{{ comment.author_name }}</span>
+                  <span class="listing-review__date">{{ comment.created_at[:10] }}</span>
+                </div>
+                <div class="listing-review__stars" aria-label="{{ comment.rating }} out of 5 stars">
+                  {% for i in range(1, 6) %}<span class="comment-star {% if i <= comment.rating %}is-filled{% endif %}">★</span>{% endfor %}
+                </div>
+                <p class="listing-review__text">{{ comment.body }}</p>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   {% endif %}
 
   <!-- 4) Nearby similar places card -->
@@ -889,6 +1035,32 @@ document.addEventListener("DOMContentLoaded", function () {
         // Denied or unavailable -- leave the server-rendered city/state fallback in place.
       }, { maximumAge: 300000, timeout: 8000 });
     }
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("listing-reviews-modal");
+    const openBtn = document.getElementById("listing-reviews-open");
+    const closeBtn = document.getElementById("listing-reviews-close");
+    const backdrop = document.getElementById("listing-reviews-backdrop");
+    if (!modal || !openBtn) return;
+
+    function openModal() {
+      modal.hidden = false;
+      document.body.style.overflow = "hidden";
+    }
+    function closeModal() {
+      modal.hidden = true;
+      document.body.style.overflow = "";
+    }
+
+    openBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      openModal();
+    });
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    if (backdrop) backdrop.addEventListener("click", closeModal);
   });
 </script>
 
