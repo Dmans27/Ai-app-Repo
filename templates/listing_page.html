@@ -100,15 +100,11 @@
 }
 .listing-hero-card {
   position: relative;
-  border-radius: 22px;
+  border-radius: 22px 22px 0 0;
   overflow: hidden;
   aspect-ratio: 4 / 5;
   background: #eef1ef;
   box-shadow: 0 4px 16px rgba(20,20,25,0.14);
-  transition: border-radius 0.2s ease;
-}
-.listing-hero-card.has-panel-open {
-  border-radius: 22px 22px 0 0;
 }
 .listing-hero-card__img {
   position: absolute;
@@ -182,69 +178,16 @@
 }
 .listing-hero-card__btn--primary:hover { background: #0d8a6c; }
 
-.listing-hero-card__swipe-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 8px;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 22px;
-  border-radius: 999px;
-  border: none;
-  background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-  z-index: 2;
-  transition: transform 0.25s ease, background 0.15s;
-}
-.listing-hero-card__swipe-hint:hover { background: rgba(255,255,255,0.32); }
-.listing-hero-card.has-panel-open .listing-hero-card__swipe-hint {
-  transform: translateX(-50%) rotate(180deg);
-  background: rgba(16,163,127,0.85);
-}
-
 .listing-photos-panel {
   background: #13151a;
   border: 1px solid rgba(255,255,255,0.09);
   border-top: none;
   border-radius: 0 0 22px 22px;
   box-shadow: 0 12px 28px rgba(0,0,0,0.35);
-  max-height: 0;
-  opacity: 0;
   overflow: hidden;
-  transition: max-height 0.35s ease, opacity 0.25s ease;
-}
-.listing-photos-panel[hidden] { display: none; }
-.listing-photos-panel.is-open {
-  max-height: 220px;
-  opacity: 1;
 }
 .listing-photos-panel__inner {
-  position: relative;
   padding: 18px 18px 20px;
-}
-.listing-photos-panel__close {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .listing-photos-panel__row {
   display: flex;
@@ -485,7 +428,6 @@
     margin-left: calc(50% - 50vw);
   }
   .listing-hero-card,
-  .listing-hero-card.has-panel-open,
   .listing-photos-panel {
     border-radius: 0;
   }
@@ -674,15 +616,11 @@
         </div>
       </div>
 
-      {% if listing_photos and listing_photos|length > 1 %}
-        <button type="button" class="listing-hero-card__swipe-hint" id="listing-photos-toggle" aria-label="Show photos">⌃</button>
-      {% endif %}
     </section>
 
     {% if listing_photos and listing_photos|length > 1 %}
-      <div class="listing-photos-panel" id="listing-photos-panel" hidden>
+      <div class="listing-photos-panel">
         <div class="listing-photos-panel__inner">
-          <button type="button" class="listing-photos-panel__close" id="listing-photos-close" aria-label="Close photos">✕</button>
           <div class="listing-photos-panel__row">
             {% for photo in listing_photos %}
               <button type="button" class="listing-thumb {% if loop.first %}is-active{% endif %}" data-photo-url="{{ photo }}" aria-label="Show photo {{ loop.index }}">
@@ -907,87 +845,6 @@ document.addEventListener("DOMContentLoaded", function () {
         thumbs.forEach((t) => t.classList.toggle("is-active", t === thumb));
       });
     });
-  });
-</script>
-
-<script>
-  // Swipe up on the hero card (or tap the chevron) to reveal the photos
-  // panel underneath, same interaction as the Discover cards. Swipe down,
-  // tap the chevron again, or tap the panel's close button to hide it.
-  document.addEventListener("DOMContentLoaded", function () {
-    const heroCard = document.getElementById("listing-hero-card");
-    const panel = document.getElementById("listing-photos-panel");
-    const toggleBtn = document.getElementById("listing-photos-toggle");
-    const closeBtn = document.getElementById("listing-photos-close");
-    if (!heroCard || !panel) return;
-
-    function openPanel() {
-      panel.hidden = false;
-      void panel.offsetHeight;
-      panel.classList.add("is-open");
-      heroCard.classList.add("has-panel-open");
-    }
-    function closePanel() {
-      panel.classList.remove("is-open");
-      heroCard.classList.remove("has-panel-open");
-      window.setTimeout(() => {
-        if (!panel.classList.contains("is-open")) panel.hidden = true;
-      }, 360);
-    }
-    function togglePanel() {
-      if (panel.classList.contains("is-open")) {
-        closePanel();
-      } else {
-        openPanel();
-      }
-    }
-
-    if (toggleBtn) {
-      toggleBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        togglePanel();
-      });
-    }
-    if (closeBtn) {
-      closeBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        closePanel();
-      });
-    }
-
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let isVerticalSwipe = null;
-
-    heroCard.addEventListener("touchstart", function (e) {
-      if (!e.touches || !e.touches.length) return;
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      isVerticalSwipe = null;
-    }, { passive: true });
-
-    heroCard.addEventListener("touchmove", function (e) {
-      if (!e.touches || !e.touches.length) return;
-      const dx = e.touches[0].clientX - touchStartX;
-      const dy = e.touches[0].clientY - touchStartY;
-      if (isVerticalSwipe === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-        isVerticalSwipe = Math.abs(dy) > Math.abs(dx);
-      }
-    }, { passive: true });
-
-    heroCard.addEventListener("touchend", function (e) {
-      if (!e.changedTouches || !e.changedTouches.length) return;
-      const dy = e.changedTouches[0].clientY - touchStartY;
-      const isOpen = panel.classList.contains("is-open");
-
-      if (isVerticalSwipe && dy <= -40 && !isOpen) {
-        openPanel();
-      } else if (isVerticalSwipe && dy >= 40 && isOpen) {
-        closePanel();
-      }
-
-      isVerticalSwipe = null;
-    }, { passive: true });
   });
 </script>
 
