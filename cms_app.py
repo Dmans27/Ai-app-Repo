@@ -4890,6 +4890,24 @@ def listing_page(slug):
     if not listing:
         abort(404)
 
+    default_list_id = None
+    if current_user.is_authenticated:
+        default_list = SavedList.query.filter_by(user_id=current_user.id) \
+            .order_by(SavedList.created_at.asc()) \
+            .first()
+
+        if not default_list:
+            default_list = SavedList(
+                user_id=current_user.id,
+                title="My Places",
+                description="Places I saved from Local AI",
+                is_public=False
+            )
+            db.session.add(default_list)
+            db.session.commit()
+
+        default_list_id = default_list.id
+
     related = query_all(
         """
         SELECT *
@@ -4957,6 +4975,7 @@ def listing_page(slug):
         comments=comments,
         listing_photos=listing_photos,
         rating_summary=rating_summary,
+        default_list_id=default_list_id,
         mapbox_token=os.environ.get("MAPBOX_TOKEN"),
         mapbox_style_url=os.environ.get(
             "MAPBOX_STYLE_URL",

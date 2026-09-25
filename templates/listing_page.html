@@ -91,68 +91,11 @@
   background: transparent;
 }
 
-/* -- 1) Header card: avatar, name, category / distance / rating -- */
-.listing-header-card {
-  text-align: center;
-}
-.listing-avatar-wrap {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  margin: 0 auto 14px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #eafaf3 0%, #dcf3e8 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  box-shadow: 0 2px 10px rgba(20,20,25,0.14);
-}
-.listing-avatar-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.listing-name {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: #14151a;
-  margin: 0 0 6px;
-}
-.listing-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(20,21,26,0.55);
-  margin: 0 0 4px;
-}
-.listing-meta-row .is-dark { color: #14151a; }
-.listing-meta-dot { opacity: 0.35; }
-.listing-meta-star { color: #f5a623; }
-.listing-meta-source {
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: rgba(20,21,26,0.4);
-  background: rgba(20,21,26,0.06);
-  border-radius: 6px;
-  padding: 2px 6px;
-  margin-left: 2px;
-}
-.listing-summary {
-  font-size: 13px;
-  line-height: 1.5;
-  color: rgba(20,21,26,0.6);
-  margin: 12px auto 16px;
-  max-width: 440px;
-}
+/* -- 1&2) Hero card: same look and swipe-up interaction as the Discover
+   cards -- full-bleed photo, dark gradient overlay holding name / meta /
+   actions, and a swipe-up (or tap the chevron) reveal panel underneath
+   for browsing photos. Ported from discover.html's .disc-hcard /
+   .disc-detail-panel so this page's top card matches Discover exactly. -- */
 .listing-header-actions {
   display: flex;
   align-items: center;
@@ -160,70 +103,179 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.listing-meta-star { color: #f5a623; }
 
-/* -- 2) Photo gallery card -- */
-.listing-slider {
-  position: relative;
+.listing-hero-wrap {
+  display: flex;
+  flex-direction: column;
 }
-.listing-slider__viewport {
-  border-radius: 16px;
+.listing-hero-card {
+  position: relative;
+  border-radius: 22px;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 5;
   background: #eef1ef;
-  position: relative;
+  box-shadow: 0 4px 16px rgba(20,20,25,0.14);
+  transition: border-radius 0.2s ease;
 }
-.listing-slide {
+.listing-hero-card.has-panel-open {
+  border-radius: 22px 22px 0 0;
+}
+.listing-hero-card__img {
   position: absolute;
   inset: 0;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-.listing-slide.is-active { opacity: 1; pointer-events: auto; }
-.listing-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: opacity 0.15s ease;
 }
-.listing-slider__arrow {
+.listing-hero-card__placeholder {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255,255,255,0.85);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 15px;
-  z-index: 2;
+  font-size: 64px;
+  background: linear-gradient(135deg, #eafaf3 0%, #dcf3e8 100%);
 }
-.listing-slider__arrow--left { left: 10px; }
-.listing-slider__arrow--right { right: 10px; }
-.listing-thumbs {
+.listing-hero-card__overlay {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 48px 18px 18px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 35%, rgba(0,0,0,0.8) 100%);
+  color: #fff;
+}
+.listing-hero-card__name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0 0 4px;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.35);
+}
+.listing-hero-card__meta {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0 0 12px;
+}
+.listing-hero-card__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
-  padding-top: 10px;
-  scrollbar-width: none;
 }
-.listing-thumbs::-webkit-scrollbar { display: none; }
+.listing-hero-card__btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.18);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.listing-hero-card__btn:hover { background: rgba(255,255,255,0.3); }
+.listing-hero-card__btn--primary {
+  background: #10a37f;
+  border-color: transparent;
+}
+.listing-hero-card__btn--primary:hover { background: #0d8a6c; }
+
+.listing-hero-card__swipe-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.25s ease, background 0.15s;
+}
+.listing-hero-card__swipe-hint:hover { background: rgba(255,255,255,0.32); }
+.listing-hero-card.has-panel-open .listing-hero-card__swipe-hint {
+  transform: translateX(-50%) rotate(180deg);
+  background: rgba(16,163,127,0.85);
+}
+
+.listing-photos-panel {
+  background: #13151a;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-top: none;
+  border-radius: 0 0 22px 22px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.25s ease;
+}
+.listing-photos-panel[hidden] { display: none; }
+.listing-photos-panel.is-open {
+  max-height: 220px;
+  opacity: 1;
+}
+.listing-photos-panel__inner {
+  position: relative;
+  padding: 18px 18px 20px;
+}
+.listing-photos-panel__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.listing-photos-panel__row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-top: 4px;
+}
+.listing-photos-panel__row::-webkit-scrollbar { display: none; }
 .listing-thumb {
-  flex: 0 0 56px;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  flex: 0 0 84px;
+  width: 84px;
+  height: 84px;
+  border-radius: 14px;
   overflow: hidden;
   border: 2px solid transparent;
   padding: 0;
   cursor: pointer;
-  background: #eef1ef;
-  opacity: 0.55;
+  background: #22252c;
+  opacity: 0.6;
   transition: opacity 0.15s, border-color 0.15s;
 }
 .listing-thumb.is-active { opacity: 1; border-color: #10a37f; }
@@ -549,83 +601,76 @@
   {% set has_internal_reviews = rating_summary and rating_summary.comment_count %}
   {% set has_google_rating = listing.google_rating and not has_internal_reviews %}
 
-  <!-- 1) Header card -->
-  <section class="listing-card listing-header-card">
-    <div class="listing-avatar-wrap">
+  <!-- 1&2) Hero card: same look and swipe-up interaction as the Discover
+       cards. Swiping up (or tapping the chevron) reveals a dark panel
+       underneath for browsing photos -- tapping a photo swaps the hero
+       image, exactly like Discover. -->
+  <div class="listing-hero-wrap">
+    <section class="listing-hero-card" id="listing-hero-card">
       {% if hero_photo %}
-        <img src="{{ hero_photo }}" alt="{{ listing.name }}" loading="lazy">
+        <img id="listing-hero-photo" class="listing-hero-card__img" src="{{ hero_photo }}" alt="{{ listing.name }}" loading="lazy">
       {% else %}
-        {{ category_icon(listing.category) }}
+        <div class="listing-hero-card__placeholder">{{ category_icon(listing.category) }}</div>
       {% endif %}
-    </div>
 
-    <h1 class="listing-name">{{ listing.name }}</h1>
-
-    <div class="listing-meta-row">
-      <span>{{ category_icon(listing.category) }} {{ (listing.category or "Local business")|replace('_', ' ')|title }}</span>
-      <span class="listing-meta-dot">·</span>
-      <span class="is-dark js-listing-distance" data-fallback="{{ listing.city or 'Nearby' }}{% if listing.state %}, {{ listing.state }}{% endif %}">{{ listing.city or "Nearby" }}{% if listing.state %}, {{ listing.state }}{% endif %}</span>
-      {% if has_internal_reviews %}
-        <span class="listing-meta-dot">·</span>
-        <span class="is-dark"><span class="listing-meta-star">★</span> {{ rating_summary.avg_rating }} ({{ rating_summary.comment_count }})</span>
-      {% elif listing.google_rating %}
-        <span class="listing-meta-dot">·</span>
-        <span class="is-dark"><span class="listing-meta-star">★</span> {{ listing.google_rating }}{% if listing.google_rating_count %} ({{ listing.google_rating_count }}){% endif %}</span>
-        <span class="listing-meta-source">Google</span>
-      {% endif %}
-    </div>
-
-    {% if listing.description %}
-      <p class="listing-summary">{{ listing.description }}</p>
-    {% endif %}
-
-    <div class="listing-header-actions">
-      {% if listing.website %}
-        <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn listing-btn--primary">Website</a>
-      {% endif %}
-      {% if listing.phone %}
-        <a href="tel:{{ listing.phone }}" class="listing-btn">Call</a>
-      {% endif %}
-      {% if listing.address %}
-        <a href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}" target="_blank" rel="noopener" class="listing-btn">Directions</a>
-      {% endif %}
-    </div>
-  </section>
-
-  <!-- 2) Photo gallery card -->
-  {% if listing_photos %}
-    <section class="listing-card">
-      <h2 class="listing-section-title">Photos</h2>
-
-      <div class="listing-slider" data-slider>
-        {% if listing_photos|length > 1 %}
-          <button class="listing-slider__arrow listing-slider__arrow--left" type="button" data-prev aria-label="Previous photo">←</button>
-        {% endif %}
-
-        <div class="listing-slider__viewport">
-          {% for photo in listing_photos %}
-            <div class="listing-slide {% if loop.first %}is-active{% endif %}" data-slide>
-              <img src="{{ photo }}" alt="{{ listing.name }} photo {{ loop.index }}" loading="lazy">
-            </div>
-          {% endfor %}
+      <div class="listing-hero-card__overlay">
+        <div class="listing-hero-card__name">{{ listing.name }}</div>
+        <div class="listing-hero-card__meta">
+          {{ (listing.category or "Local business")|replace('_', ' ')|title }}
+          · <span class="js-listing-distance" data-fallback="{{ listing.city or 'Nearby' }}{% if listing.state %}, {{ listing.state }}{% endif %}">{{ listing.city or "Nearby" }}{% if listing.state %}, {{ listing.state }}{% endif %}</span>
+          {% if has_internal_reviews %}
+            · <span class="listing-meta-star">★</span> {{ rating_summary.avg_rating }}
+          {% elif listing.google_rating %}
+            · <span class="listing-meta-star">★</span> {{ listing.google_rating }}
+          {% endif %}
         </div>
-
-        {% if listing_photos|length > 1 %}
-          <button class="listing-slider__arrow listing-slider__arrow--right" type="button" data-next aria-label="Next photo">→</button>
-        {% endif %}
+        <div class="listing-hero-card__actions">
+          {% if current_user.is_authenticated and default_list_id %}
+            <form method="post" action="/lists/{{ default_list_id }}/save-place" style="display:contents;">
+              <input type="hidden" name="name" value="{{ listing.name }}">
+              <input type="hidden" name="address" value="{{ listing.address or '' }}">
+              <input type="hidden" name="website" value="{{ listing.website or '' }}">
+              <input type="hidden" name="category" value="{{ listing.category or '' }}">
+              <input type="hidden" name="latitude" value="{{ listing.latitude if listing.latitude is not none else '' }}">
+              <input type="hidden" name="longitude" value="{{ listing.longitude if listing.longitude is not none else '' }}">
+              <input type="hidden" name="listing_id" value="{{ listing.id }}">
+              <input type="hidden" name="photo_url" value="{{ hero_photo or '' }}">
+              <input type="hidden" name="city" value="{{ listing.city or '' }}">
+              <button type="submit" class="listing-hero-card__btn listing-hero-card__btn--primary">+ Save</button>
+            </form>
+          {% endif %}
+          {% if listing.address %}
+            <a href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}" target="_blank" rel="noopener" class="listing-hero-card__btn" onclick="event.stopPropagation();">Directions</a>
+          {% endif %}
+          {% if listing.website %}
+            <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-hero-card__btn" onclick="event.stopPropagation();">Website</a>
+          {% endif %}
+          {% if listing.phone %}
+            <a href="tel:{{ listing.phone }}" class="listing-hero-card__btn" onclick="event.stopPropagation();">Call</a>
+          {% endif %}
+        </div>
       </div>
 
-      {% if listing_photos|length > 1 %}
-        <div class="listing-thumbs">
-          {% for photo in listing_photos %}
-            <button type="button" class="listing-thumb {% if loop.first %}is-active{% endif %}" data-thumb-index="{{ loop.index0 }}" aria-label="Show photo {{ loop.index }}">
-              <img src="{{ photo }}" alt="{{ listing.name }} thumbnail {{ loop.index }}" loading="lazy">
-            </button>
-          {% endfor %}
-        </div>
+      {% if listing_photos and listing_photos|length > 1 %}
+        <button type="button" class="listing-hero-card__swipe-hint" id="listing-photos-toggle" aria-label="Show photos">⌃</button>
       {% endif %}
     </section>
-  {% endif %}
+
+    {% if listing_photos and listing_photos|length > 1 %}
+      <div class="listing-photos-panel" id="listing-photos-panel" hidden>
+        <div class="listing-photos-panel__inner">
+          <button type="button" class="listing-photos-panel__close" id="listing-photos-close" aria-label="Close photos">✕</button>
+          <div class="listing-photos-panel__row">
+            {% for photo in listing_photos %}
+              <button type="button" class="listing-thumb {% if loop.first %}is-active{% endif %}" data-photo-url="{{ photo }}" aria-label="Show photo {{ loop.index }}">
+                <img src="{{ photo }}" alt="{{ listing.name }} photo {{ loop.index }}" loading="lazy">
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 
   <!-- 3) Map card -->
   {% if listing.latitude and listing.longitude %}
@@ -827,50 +872,99 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const slider = document.querySelector("[data-slider]");
-    if (!slider) return;
-
-    const slides = Array.from(slider.querySelectorAll("[data-slide]"));
-    const prevBtn = slider.querySelector("[data-prev]");
-    const nextBtn = slider.querySelector("[data-next]");
-    const thumbs = Array.from(document.querySelectorAll("[data-thumb-index]"));
-
-    let currentIndex = 0;
-
-    function renderSlide(index) {
-      slides.forEach((slide, i) => {
-        slide.classList.toggle("is-active", i === index);
-      });
-
-      thumbs.forEach((thumb, i) => {
-        thumb.classList.toggle("is-active", i === index);
-      });
-
-      currentIndex = index;
-    }
-
-    if (prevBtn) {
-      prevBtn.addEventListener("click", function () {
-        const nextIndex = (currentIndex - 1 + slides.length) % slides.length;
-        renderSlide(nextIndex);
-      });
-    }
-
-    if (nextBtn) {
-      nextBtn.addEventListener("click", function () {
-        const nextIndex = (currentIndex + 1) % slides.length;
-        renderSlide(nextIndex);
-      });
-    }
+    const heroPhoto = document.getElementById("listing-hero-photo");
+    const thumbs = Array.from(document.querySelectorAll(".listing-thumb[data-photo-url]"));
+    if (!heroPhoto || !thumbs.length) return;
 
     thumbs.forEach((thumb) => {
       thumb.addEventListener("click", function () {
-        const index = Number(thumb.getAttribute("data-thumb-index"));
-        renderSlide(index);
+        const url = thumb.getAttribute("data-photo-url");
+        if (!url) return;
+        heroPhoto.src = url;
+        thumbs.forEach((t) => t.classList.toggle("is-active", t === thumb));
       });
     });
+  });
+</script>
 
-    renderSlide(0);
+<script>
+  // Swipe up on the hero card (or tap the chevron) to reveal the photos
+  // panel underneath, same interaction as the Discover cards. Swipe down,
+  // tap the chevron again, or tap the panel's close button to hide it.
+  document.addEventListener("DOMContentLoaded", function () {
+    const heroCard = document.getElementById("listing-hero-card");
+    const panel = document.getElementById("listing-photos-panel");
+    const toggleBtn = document.getElementById("listing-photos-toggle");
+    const closeBtn = document.getElementById("listing-photos-close");
+    if (!heroCard || !panel) return;
+
+    function openPanel() {
+      panel.hidden = false;
+      void panel.offsetHeight;
+      panel.classList.add("is-open");
+      heroCard.classList.add("has-panel-open");
+    }
+    function closePanel() {
+      panel.classList.remove("is-open");
+      heroCard.classList.remove("has-panel-open");
+      window.setTimeout(() => {
+        if (!panel.classList.contains("is-open")) panel.hidden = true;
+      }, 360);
+    }
+    function togglePanel() {
+      if (panel.classList.contains("is-open")) {
+        closePanel();
+      } else {
+        openPanel();
+      }
+    }
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        togglePanel();
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        closePanel();
+      });
+    }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isVerticalSwipe = null;
+
+    heroCard.addEventListener("touchstart", function (e) {
+      if (!e.touches || !e.touches.length) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      isVerticalSwipe = null;
+    }, { passive: true });
+
+    heroCard.addEventListener("touchmove", function (e) {
+      if (!e.touches || !e.touches.length) return;
+      const dx = e.touches[0].clientX - touchStartX;
+      const dy = e.touches[0].clientY - touchStartY;
+      if (isVerticalSwipe === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+        isVerticalSwipe = Math.abs(dy) > Math.abs(dx);
+      }
+    }, { passive: true });
+
+    heroCard.addEventListener("touchend", function (e) {
+      if (!e.changedTouches || !e.changedTouches.length) return;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const isOpen = panel.classList.contains("is-open");
+
+      if (isVerticalSwipe && dy <= -40 && !isOpen) {
+        openPanel();
+      } else if (isVerticalSwipe && dy >= 40 && isOpen) {
+        closePanel();
+      }
+
+      isVerticalSwipe = null;
+    }, { passive: true });
   });
 </script>
 
@@ -902,6 +996,13 @@ document.addEventListener("DOMContentLoaded", function () {
         pin.className = "listing-map-pin";
         pin.textContent = "📍";
         new mapboxgl.Marker({ element: pin, anchor: "bottom" }).setLngLat([LISTING_LNG, LISTING_LAT]).addTo(map);
+        // Belt-and-suspenders: if the card's real width wasn't settled yet
+        // when the map was constructed, this snaps the canvas to the
+        // correct size instead of leaving it blank/mis-sized.
+        map.once("load", () => map.resize());
+        window.addEventListener("resize", () => map.resize());
+      } else {
+        console.warn("[listing map] MAPBOX_TOKEN is not set for this page -- the map can't render without it.");
       }
     }
 
