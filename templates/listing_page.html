@@ -184,6 +184,14 @@
   z-index: 4;
 }
 
+.listing-hero-card__btn--primary:hover { background: #0d8a6c; }
+.listing-hero-card__claim {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+}
+
 .listing-photos-panel {
   background: #13151a;
   border: 1px solid rgba(255,255,255,0.09);
@@ -517,6 +525,13 @@
     top: calc(env(safe-area-inset-top) + 100px);
     right: 16px;
   }
+  .listing-hero-card__claim {
+    /* Well clear of the floating header's account icon (safe-area-inset-top
+       plus the header's own -- now taller -- height, plus extra breathing
+       room). */
+    top: calc(env(safe-area-inset-top) + 130px);
+    right: 16px;
+  }
   .listing-map-frame {
     flex: 1 1 auto;
     min-height: 0;
@@ -684,6 +699,7 @@
           <input type="hidden" name="photo_url" value="{{ hero_photo or '' }}">
           <input type="hidden" name="city" value="{{ listing.city or '' }}">
           <button type="submit" class="listing-hero-card__btn listing-hero-card__btn--primary listing-hero-card__save">+ Save</button>
+          <button type="submit" class="listing-hero-card__btn listing-hero-card__btn--primary listing-hero-card__claim">Claim</button>
         </form>
       {% endif %}
 
