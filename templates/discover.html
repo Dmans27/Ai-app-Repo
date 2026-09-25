@@ -1140,6 +1140,13 @@
         top: calc(var(--header-h) + 8px) !important;
       }
 
+      /* This page's tab bar only has 4 items (no separate Home tab) --
+         the shared bar's grid assumes 5, which left a dead column on the
+         right instead of centering these 4. */
+      .page-discover .mobile-tabbar {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
       .page-discover .disc-nearby-section {
         position: absolute;
         left: 0;
