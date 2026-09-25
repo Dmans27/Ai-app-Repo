@@ -4642,9 +4642,12 @@ body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
 }
 
 .public-list-map{
-  height:280px;
+  height:460px;
   border-radius:26px;
   overflow:hidden;
+}
+@media (max-width:640px){
+  .public-list-map{ height:400px; }
 }
 
 .public-list-section-heading{

@@ -9,10 +9,36 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
   <style>
-    /* Cards are clickable here (fly the map to that pin), unlike the
-       plain per-list share page, so make that obvious. */
-    .public-place-slide{cursor:pointer;transition:transform 0.15s ease}
-    .public-place-slide:hover{transform:translateY(-2px)}
+    .pub-map-pin{cursor:pointer;transform-origin:bottom center;transition:transform 0.15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45))}
+    .pub-map-pin:hover{transform:scale(1.15)}
+    .pub-map-you-marker{width:16px;height:16px;border-radius:50%;background:#2f7dff;border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,125,255,0.35),0 1px 4px rgba(0,0,0,0.3);}
+
+    /* Photo-hero popup: the selected photo fills the card as a full-bleed
+       background, with the info overlaid on top via a dark gradient scrim
+       -- same treatment as the account map / listing page hero cards. */
+    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-content{background:transparent;box-shadow:none;padding:0;color:#f2f2f2;border-radius:0;}
+    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-tip{border-top-color:#16181b;border-bottom-color:#16181b}
+    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.8);font-size:16px;padding:2px 6px;z-index:3}
+    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-close-button:hover{color:#fff;background:none}
+    .pub-map-popup__wrap{width:230px;}
+    .pub-map-popup__card{position:relative;width:230px;height:170px;border-radius:14px;overflow:hidden;background:#16181b;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+    .pub-map-popup__photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .pub-map-popup__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;background:#20232a;}
+    .pub-map-popup__scrim{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0) 32%, rgba(0,0,0,0.88) 100%);pointer-events:none;}
+    .pub-map-popup__overlay{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;}
+    .pub-map-popup__head{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+    .pub-map-popup__dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .pub-map-popup__name{font-size:14px;font-weight:800;color:#ffffff;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
+    .pub-map-popup__cat{font-size:11px;color:#8ff2ce;text-transform:capitalize;margin:0 0 2px}
+    .pub-map-popup__addr{font-size:11.5px;color:rgba(255,255,255,0.75);margin:0 0 8px;max-width:206px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pub-map-popup__actions{display:flex;gap:6px}
+    .pub-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.24);border:0.5px solid rgba(16,163,127,0.55);color:#8ff2ce;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
+    .pub-map-popup__btn:hover{background:rgba(16,163,127,0.4)}
+    .pub-map-popup__gallery{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:8px 0 0;padding:2px;max-width:230px}
+    .pub-map-popup__gallery::-webkit-scrollbar{display:none}
+    .pub-map-popup__thumb{scroll-snap-align:start;flex-shrink:0;width:50px;height:50px;padding:0;border:1.5px solid transparent;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.08);cursor:pointer;}
+    .pub-map-popup__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .pub-map-popup__thumb.is-active{border-color:#7ee2bf;}
   </style>
 </head>
 
@@ -88,107 +114,6 @@
       <section class="public-list-map-card">
         <div id="public-list-map" class="public-list-map"></div>
       </section>
-
-      <section class="public-list-carousel-section">
-        <div class="public-list-section-heading">
-          <h2>Pinned locations</h2>
-          <span>{{ places|length }} spots</span>
-        </div>
-
-        {% if places %}
-          <div class="public-list-carousel">
-            {% for place in places %}
-              <article
-                class="public-place-slide"
-                data-lat="{{ place.latitude or '' }}"
-                data-lng="{{ place.longitude or '' }}"
-              >
-                {% if place.photo_url %}
-                  <img
-                    src="{{ place.photo_url }}"
-                    alt="{{ place.name }}"
-                    class="public-place-slide__image"
-                  >
-                {% else %}
-                  <img
-                    src="/static/img/default-business.jpg"
-                    alt="{{ place.name }}"
-                    class="public-place-slide__image"
-                  >
-                {% endif %}
-
-                <div class="public-place-slide__body">
-                  <h3>{{ place.name }}</h3>
-
-                  {% if place.category %}
-                    <p class="public-place-slide__category">
-                      {{ category_icon(place.category) }}
-                      {{ (place.category or "Local business")|replace('_', ' ')|title }}
-                    </p>
-                  {% endif %}
-
-                  {% if place.address %}
-                    <p class="public-place-slide__address">
-                      {{ place.address }}
-                    </p>
-                  {% endif %}
-
-                  {% if place.notes %}
-                    <p class="public-place-slide__notes">
-                      {{ place.notes }}
-                    </p>
-                  {% endif %}
-
-                  <div class="public-place-slide__actions">
-                    {% if place.slug %}
-                      <a
-                        href="/listing/{{ place.slug }}"
-                        onclick="event.stopPropagation();"
-                      >
-                        Show listing
-                      </a>
-                    {% endif %}
-
-                    {% if place.website %}
-                      <a
-                        href="{{ place.website }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Website
-                      </a>
-                    {% endif %}
-
-                    {% if place.latitude and place.longitude %}
-                      <a
-                        href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="is-primary"
-                      >
-                        Directions
-                      </a>
-                    {% elif place.address %}
-                      <a
-                        href="https://www.google.com/maps/search/?api=1&query={{ place.address|urlencode }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="is-primary"
-                      >
-                        Directions
-                      </a>
-                    {% endif %}
-                  </div>
-                </div>
-              </article>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p class="public-list-empty">
-            This user hasn't saved any places yet.
-          </p>
-        {% endif %}
-      </section>
     </main>
   </div>
 
@@ -212,12 +137,12 @@
 
       mapboxgl.accessToken = token;
 
-      const defaultCenter = places.length
-        ? [places[0].lng, places[0].lat]
-        : [-87.6298, 41.8781];
+      function escapeHtml(v) {
+        return String(v || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      }
 
       function categoryColor(p) {
-        const c = (p.category || "").toLowerCase();
+        const c = [p.category, p.cuisine].join(" ").toLowerCase();
         if (c.includes("coffee")) return "#C6935A";
         if (c.includes("bar") || c.includes("cocktail")) return "#B368F7";
         if (c.includes("wine")) return "#B4436C";
@@ -229,17 +154,74 @@
 
       function buildMarkerEl(color) {
         const el = document.createElement("div");
-        el.style.cursor = "pointer";
-        el.style.filter = "drop-shadow(0 2px 4px rgba(0,0,0,0.45))";
+        el.className = "pub-map-pin";
         el.innerHTML = `<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 1C6.8 1 1 6.7 1 13.7c0 9.6 13 21.3 13 21.3s13-11.7 13-21.3C27 6.7 21.2 1 14 1z" fill="${color}" stroke="#0b0c0d" stroke-width="1.5"/><circle cx="14" cy="13.5" r="5" fill="#0b0c0d" fill-opacity="0.85"/></svg>`;
         return el;
       }
 
+      function pr(p) {
+        return p.rating != null && p.rating !== "" ? Number(p.rating) : null;
+      }
+
+      // Photo-hero popup: the first saved photo fills the card as a
+      // full-bleed background, name/category/rating/address/Directions
+      // overlaid on top via a dark gradient scrim, and a thumbnail row
+      // underneath lets you click through the rest -- same pattern as the
+      // account map and the listing page hero card.
+      function popupHtml(p) {
+        const dot = categoryColor(p);
+        const rt = pr(p);
+        const dirUrl = p.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}` : "";
+        const photos = (Array.isArray(p.photo_urls) && p.photo_urls.length ? p.photo_urls : (p.photo_url ? [p.photo_url] : [])).slice(0, 10);
+        const heroPhoto = photos[0] || "";
+        const photoBlock = heroPhoto
+          ? `<img class="pub-map-popup__photo" src="${escapeHtml(heroPhoto)}" alt="" onerror="this.remove()">`
+          : `<div class="pub-map-popup__placeholder">📍</div>`;
+        const gallery = photos.length > 1
+          ? `<div class="pub-map-popup__gallery">${photos.map((u, i) => `<button type="button" class="pub-map-popup__thumb${i === 0 ? " is-active" : ""}" data-photo-url="${escapeHtml(u)}" aria-label="Show photo ${i + 1}"><img src="${escapeHtml(u)}" alt="" loading="lazy"></button>`).join("")}</div>`
+          : "";
+        return `<div class="pub-map-popup__wrap"><div class="pub-map-popup__card">${photoBlock}<div class="pub-map-popup__scrim"></div><div class="pub-map-popup__overlay"><div class="pub-map-popup__head"><span class="pub-map-popup__dot" style="background:${dot}"></span><strong class="pub-map-popup__name">${escapeHtml(p.name || "")}</strong></div>${p.category || rt != null ? `<p class="pub-map-popup__cat">${escapeHtml(p.category || "")}${p.category && rt != null ? " · " : ""}${rt != null ? "★ " + rt.toFixed(1) : ""}</p>` : ""}${p.address ? `<p class="pub-map-popup__addr">${escapeHtml(p.address)}</p>` : ""}<div class="pub-map-popup__actions">${dirUrl ? `<a href="${dirUrl}" target="_blank" rel="noopener" class="pub-map-popup__btn">Directions</a>` : ""}</div></div></div>${gallery}</div>`;
+      }
+
+      // Popups are recreated per marker click, so wire the
+      // thumbnail-click -> swap-the-background-photo behavior once, via
+      // delegation, instead of per-popup listeners.
+      document.addEventListener("click", function (e) {
+        const thumb = e.target.closest(".pub-map-popup__thumb");
+        if (!thumb) return;
+        const wrap = thumb.closest(".pub-map-popup__wrap");
+        if (!wrap) return;
+        const url = thumb.getAttribute("data-photo-url");
+        if (!url) return;
+        const photoEl = wrap.querySelector(".pub-map-popup__photo");
+        const placeholderEl = wrap.querySelector(".pub-map-popup__placeholder");
+        if (photoEl) {
+          photoEl.src = url;
+        } else if (placeholderEl) {
+          const img = document.createElement("img");
+          img.className = "pub-map-popup__photo";
+          img.alt = "";
+          img.src = url;
+          placeholderEl.replaceWith(img);
+        }
+        wrap.querySelectorAll(".pub-map-popup__thumb").forEach(function (b) {
+          b.classList.toggle("is-active", b === thumb);
+        });
+      });
+
+      const dc = places.length ? [places[0].lng, places[0].lat] : [-87.6298, 41.8781];
+
+      // Pick a globe zoom that keeps the whole sphere inside the
+      // container's height, same technique as the account map, instead of
+      // a fixed zoom that can crop the globe on short/wide cards.
+      const boxHeight = mapEl.clientHeight || 420;
+      const globeZoom = Math.max(0, Math.log2((boxHeight * 0.8 * Math.PI) / 512));
+
       const map = new mapboxgl.Map({
         container: "public-list-map",
         style: styleUrl,
-        center: defaultCenter,
-        zoom: places.length ? 1.4 : 0.6,
+        center: dc,
+        zoom: places.length ? globeZoom : 0.6,
         projection: "globe",
         pitch: 0,
         bearing: -8,
@@ -257,27 +239,17 @@
       });
 
       const markers = [];
-      const bounds = new mapboxgl.LngLatBounds();
 
-      places.forEach((place) => {
+      places.forEach(function (place) {
         if (place.lng == null || place.lat == null) return;
-
-        const popupHtml = `
-          <div style="max-width:220px;">
-            <strong>${place.name || ""}</strong>
-            ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
-            ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
-          </div>
-        `;
 
         const marker = new mapboxgl.Marker({ element: buildMarkerEl(categoryColor(place)) })
           .setLngLat([place.lng, place.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 24 }).setHTML(popupHtml))
+          .setPopup(new mapboxgl.Popup({ offset: 24, closeButton: true, className: "pub-map-popup", maxWidth: "300px" }).setHTML(popupHtml(place)))
           .addTo(map);
 
         marker._place = place;
         markers.push(marker);
-        bounds.extend([place.lng, place.lat]);
       });
 
       let zoomedIn = false;
@@ -306,6 +278,38 @@
         setZoomedIn(map.getZoom() > 5);
       });
 
+      // Auto-zoom to wherever the visitor already is -- same
+      // requestUserLocation/flyHome pattern as the account map -- instead
+      // of requiring anyone to zoom in by hand. Falls back to the globe
+      // overview of every pin if location access is denied/unavailable.
+      let userLoc = null;
+      let youMarker = null;
+
+      function flyHome() {
+        if (userLoc) {
+          map.flyTo({ center: userLoc, zoom: 12.5, pitch: 0, bearing: -8, duration: 1400, essential: true });
+        } else {
+          map.easeTo({ center: dc, zoom: places.length ? globeZoom : 0.6, pitch: 0, bearing: -8, duration: 1100, essential: true });
+        }
+      }
+
+      function requestUserLocation() {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          userLoc = [pos.coords.longitude, pos.coords.latitude];
+          if (youMarker) {
+            youMarker.setLngLat(userLoc);
+          } else {
+            const youEl = document.createElement("div");
+            youEl.className = "pub-map-you-marker";
+            youMarker = new mapboxgl.Marker({ element: youEl }).setLngLat(userLoc).addTo(map);
+          }
+          flyHome();
+        }, function () {
+          /* denied/unavailable -- keep the globe overview of every pin */
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 });
+      }
+
       map.on("load", function () {
         if (!map.getLayer("public-map-3d-buildings")) {
           try {
@@ -326,37 +330,7 @@
           } catch (e) { /* style has no composite building layer — skip */ }
         }
 
-        if (places.length > 1) {
-          map.fitBounds(bounds, { padding: 60, maxZoom: 4 });
-        } else if (places.length === 1) {
-          map.easeTo({ center: [places[0].lng, places[0].lat], zoom: 3 });
-        }
-      });
-
-      // Clicking a card below the map flies in on that place, tilted and
-      // zoomed in just like the account map does.
-      document.querySelectorAll(".public-place-slide").forEach(function (slide) {
-        slide.addEventListener("click", function (e) {
-          if (e.target.closest("a")) return;
-
-          const lat = parseFloat(slide.dataset.lat);
-          const lng = parseFloat(slide.dataset.lng);
-          if (isNaN(lat) || isNaN(lng)) return;
-
-          map.flyTo({
-            center: [lng, lat],
-            zoom: 15,
-            pitch: 55,
-            bearing: -17,
-            duration: 1400,
-            essential: true
-          });
-
-          const match = markers.find(function (m) {
-            return Math.abs(m._place.lat - lat) < 0.0001 && Math.abs(m._place.lng - lng) < 0.0001;
-          });
-          if (match) setTimeout(function () { match.togglePopup(); }, 900);
-        });
+        requestUserLocation();
       });
     });
   </script>
