@@ -1153,6 +1153,10 @@
         right: 0;
         bottom: 0;
         padding: 0 0 calc(var(--tabbar-h, 78px) + env(safe-area-inset-bottom) + 22px);
+        /* Above the map's own markers (.disc-pin.is-active is z-index: 5)
+           so a pulsing selected pin can never poke through the card/detail
+           panel sitting on top of it. */
+        z-index: 20;
       }
 
       .page-discover .disc-nearby-section__title {
