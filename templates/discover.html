@@ -1911,21 +1911,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /* ── Horizontal carousel dot indicators: syncs to scroll position ── */
   function setupCarouselDots(carouselEl, dotsEl, count) {
-    if (!carouselEl || !dotsEl) return;
+    if (!carouselEl) return;
 
-    dotsEl.innerHTML = "";
-
-    if (count <= 1 || count > 12) {
-      dotsEl.hidden = true;
-      return;
+    // Dots are a UI nicety, capped at 12 so the row doesn't fill up with
+    // tiny dots -- but that cap must NOT stop the scroll listener below
+    // from attaching, or the map/detail-panel never follow the carousel
+    // once there are more than 12 nearby places (which is most real
+    // searches).
+    const showDots = !!dotsEl && count > 1 && count <= 12;
+    if (dotsEl) {
+      dotsEl.innerHTML = "";
+      dotsEl.hidden = !showDots;
+      if (showDots) {
+        for (let i = 0; i < count; i++) {
+          const dot = document.createElement("span");
+          dot.className = "disc-hcarousel__dot" + (i === 0 ? " is-active" : "");
+          dotsEl.appendChild(dot);
+        }
+      }
     }
-    dotsEl.hidden = false;
 
-    for (let i = 0; i < count; i++) {
-      const dot = document.createElement("span");
-      dot.className = "disc-hcarousel__dot" + (i === 0 ? " is-active" : "");
-      dotsEl.appendChild(dot);
-    }
+    if (count <= 1) return;
 
     let ticking = false;
     let lastIndex = 0;
@@ -1936,9 +1942,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const firstCard = carouselEl.querySelector(".disc-hcard");
         const cardWidth = firstCard ? firstCard.getBoundingClientRect().width + 12 : carouselEl.clientWidth;
         const index = Math.max(0, Math.min(count - 1, Math.round(carouselEl.scrollLeft / cardWidth)));
-        dotsEl.querySelectorAll(".disc-hcarousel__dot").forEach((dot, i) => {
-          dot.classList.toggle("is-active", i === index);
-        });
+        if (showDots) {
+          dotsEl.querySelectorAll(".disc-hcarousel__dot").forEach((dot, i) => {
+            dot.classList.toggle("is-active", i === index);
+          });
+        }
         if (index !== lastIndex) {
           lastIndex = index;
           syncDetailPanelToCarouselIndex(index);
