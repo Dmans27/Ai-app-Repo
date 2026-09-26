@@ -1942,6 +1942,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (index !== lastIndex) {
           lastIndex = index;
           syncDetailPanelToCarouselIndex(index);
+          flyToMapForCarouselIndex(index);
         }
         ticking = false;
       });
@@ -1960,6 +1961,15 @@ document.addEventListener("DOMContentLoaded", function () {
     renderDetailPanelContent(place);
     state.detailPlaceId = place.id;
     setCardConnectedToPanel(place.id);
+  }
+
+  // Follows the map to whichever card the carousel has scrolled to -- the
+  // same highlight + flyTo a tap on the card triggers, so swiping the
+  // cards alone moves the map without needing to also tap one.
+  function flyToMapForCarouselIndex(index) {
+    const place = state.orderedPlaces && state.orderedPlaces[index];
+    if (!place) return;
+    highlightPlace(place.id, { flyTo: true });
   }
 
   // How far up (negative px) a map camera target needs to be nudged so it
