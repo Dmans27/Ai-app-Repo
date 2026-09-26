@@ -1557,6 +1557,11 @@ document.addEventListener("DOMContentLoaded", function () {
       isVerticalSwipe = null;
     }, { passive: true });
 
+    // Not passive: once a gesture is decided to be vertical, we need to
+    // preventDefault() so the browser stops also trying to hand it to the
+    // carousel's native horizontal scroll-snap mid-swipe -- otherwise a
+    // mostly-vertical swipe can still get grabbed sideways and flip to the
+    // next/previous card instead of opening the detail panel.
     card.addEventListener("touchmove", function (e) {
       if (!e.touches || !e.touches.length) return;
       const dx = e.touches[0].clientX - touchStartX;
@@ -1564,7 +1569,10 @@ document.addEventListener("DOMContentLoaded", function () {
       if (isVerticalSwipe === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
         isVerticalSwipe = Math.abs(dy) > Math.abs(dx);
       }
-    }, { passive: true });
+      if (isVerticalSwipe) {
+        e.preventDefault();
+      }
+    }, { passive: false });
 
     card.addEventListener("touchend", function (e) {
       if (!e.changedTouches || !e.changedTouches.length) return;
