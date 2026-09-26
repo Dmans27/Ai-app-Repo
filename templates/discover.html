@@ -1964,8 +1964,21 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!mapWrapEl || !cardOverlayEl) return 0;
     const mapRect = mapWrapEl.getBoundingClientRect();
     const cardRect = cardOverlayEl.getBoundingClientRect();
-    const coveredHeight = Math.max(0, mapRect.bottom - cardRect.top);
-    return -(coveredHeight / 2);
+    const bottomCovered = Math.max(0, mapRect.bottom - cardRect.top);
+
+    // The floating header (hamburger + account icon) sits on top of the
+    // map too -- without accounting for it, the pins get centered in the
+    // full map height minus just the card, which crowds them up against
+    // the header. Center in the actual visible band between the two
+    // overlays instead.
+    const headerEl = document.querySelector(".disc-header");
+    let topCovered = 0;
+    if (headerEl) {
+      const headerRect = headerEl.getBoundingClientRect();
+      topCovered = Math.max(0, headerRect.bottom - mapRect.top);
+    }
+
+    return (topCovered - bottomCovered) / 2;
   }
 
   function initMap(centerLat, centerLng) {
