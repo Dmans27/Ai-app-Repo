@@ -1641,7 +1641,7 @@ function wireFilterBar() {
           <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg></span>
           <span class="mobile-tabbar__label">Discover</span>
         </a>
-        <a href="{{ url_for('home') }}" class="mobile-tabbar__item" id="mobile-tabbar-search">
+        <a href="{{ url_for('home', chat=1) }}" class="mobile-tabbar__item" id="mobile-tabbar-search">
           <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
           <span class="mobile-tabbar__label">Search</span>
         </a>
@@ -3402,7 +3402,18 @@ function setChatUiState(isActive) {
       const mobileGreeting = document.getElementById("time-greeting-mobile");
 
 
-      setChatUiState(false);
+      // Arrived via a "Search" tab link (?chat=1, set on every page's
+      // bottom-nav Search item) -- skip the landing hero/feed and open
+      // straight into the empty chat canvas, same as tapping Search while
+      // already on this page does via #mobile-tabbar-search below.
+      const wantsChatOnLoad = new URLSearchParams(window.location.search).get("chat") === "1";
+      if (wantsChatOnLoad) {
+        setChatUiState(true);
+        bottomComposerEl?.classList.add("is-input-visible");
+        setComposerExpanded(true);
+      } else {
+        setChatUiState(false);
+      }
       initHomeNearbyFeed();
       initHomeNearbyInfiniteScroll();
       initHomeComposeSheet();
