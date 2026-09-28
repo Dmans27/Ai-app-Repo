@@ -1,6 +1,6 @@
 """
-Charity / Nonprofit Importer
------------------------------
+Charity / Nonprofit Importer -- Vienna, Austria ONLY
+------------------------------------------------------
 Same shape as bartlett_import_v3.py (Google Places Nearby Search + Place
 Details for up to 10 photos per listing), but seeds the `listings` table
 with charity/nonprofit organizations instead of general businesses, all
@@ -8,9 +8,11 @@ tagged category="charity" so the existing Discover map/listing UI picks
 them up automatically (no schema changes needed -- `listings` has no
 category whitelist).
 
-Change LAT/LNG/CITY/STATE below to point this at a different test area;
-currently set to Vienna, Austria to match vienna_import.py's coverage
-area (Danny's testing charities in Vienna for now).
+Scoped on purpose to Vienna, Austria only (same coverage area as
+vienna_import.py: a 3km radius Nearby Search around central Vienna, so
+results can't come back from anywhere else). Do not repoint this at
+another city -- if a different area is needed later, copy this file
+into a new script instead of changing LAT/LNG/CITY/STATE here.
 """
 
 import os, time, json, requests, psycopg2
