@@ -70,6 +70,24 @@
           >
         </label>
 
+        <div class="settings-causes-block">
+          <p class="settings-causes-label">Causes you support</p>
+
+          <div class="onboarding-chip-grid settings-chip-grid">
+            {% for item in ["Animal Welfare", "Education", "Environment & Conservation", "Health & Medical Research", "Hunger & Food Security", "Homelessness & Housing", "Human Rights & Social Justice", "Disaster Relief", "Children & Youth", "Mental Health"] %}
+              <label class="onboarding-chip">
+                <input
+                  type="checkbox"
+                  name="causes"
+                  value="{{ item }}"
+                  {% if item in user_causes %}checked{% endif %}
+                >
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
         <button type="submit">Save changes</button>
       </form>
     </section>

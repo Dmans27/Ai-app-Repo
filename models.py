@@ -15,10 +15,11 @@ class User(UserMixin, db.Model):
     username            = db.Column(db.String(30), unique=True, nullable=True)
     password_hash       = db.Column(db.String(255), nullable=False)
     role                = db.Column(db.String(50), default="user", nullable=False)
-    favorite_categories = db.Column(db.Text, nullable=True)
+    favorite_categories = db.Column(db.Text, nullable=True)  # legacy restaurant-discovery field, no longer collected
     home_city           = db.Column(db.String(120), nullable=True)
-    budget_style        = db.Column(db.String(50), nullable=True)
-    intent_type         = db.Column(db.String(120), nullable=True)
+    budget_style        = db.Column(db.String(50), nullable=True)  # legacy restaurant-discovery field, no longer collected
+    intent_type         = db.Column(db.String(120), nullable=True)  # legacy restaurant-discovery field, no longer collected
+    causes              = db.Column(db.Text, nullable=True)  # JSON array of charity cause categories the user supports
     profile_image_url   = db.Column(db.Text, nullable=True)
     onboarding_complete = db.Column(db.Boolean, default=False)
 

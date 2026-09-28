@@ -486,6 +486,11 @@ def ensure_user_profile_columns():
 
         conn.execute(sql_text("""
             ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS causes TEXT;
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
             ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE;
         """))
         
@@ -6325,6 +6330,7 @@ def settings():
  
         current_user.name      = request.form.get("name", "").strip()
         current_user.home_city = request.form.get("home_city", "").strip()
+        current_user.causes    = json.dumps(request.form.getlist("causes"))
         db.session.commit()
         flash("Settings updated.")
         return redirect(url_for("settings"))
@@ -6333,7 +6339,8 @@ def settings():
         user_id=current_user.id
     ).order_by(SavedList.created_at.desc()).all()
  
-    return render_template("settings.html", user=current_user, lists=lists)
+    user_causes = json.loads(current_user.causes) if current_user.causes else []
+    return render_template("settings.html", user=current_user, lists=lists, user_causes=user_causes)
 
 
 @app.post("/settings/lists/<int:list_id>/delete")
@@ -6838,10 +6845,8 @@ def signup():
 @login_required
 def onboarding():
     if request.method == "POST":
-        favorite_categories = request.form.getlist("favorite_categories")
+        causes = request.form.getlist("causes")
         home_city = request.form.get("home_city", "").strip()
-        budget_style = request.form.get("budget_style", "").strip()
-        intent_type = request.form.get("intent_type", "").strip()
         profile_photo = request.files.get("profile_photo")
 
         if profile_photo and profile_photo.filename:
@@ -6863,10 +6868,8 @@ def onboarding():
                 filename=f"uploads/profiles/{new_filename}"
             )
 
-        current_user.favorite_categories = json.dumps(favorite_categories)
+        current_user.causes = json.dumps(causes)
         current_user.home_city = home_city
-        current_user.budget_style = budget_style
-        current_user.intent_type = intent_type
         current_user.onboarding_complete = True
 
         db.session.commit()
