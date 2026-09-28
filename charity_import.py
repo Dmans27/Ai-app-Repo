@@ -9,8 +9,8 @@ them up automatically (no schema changes needed -- `listings` has no
 category whitelist).
 
 Change LAT/LNG/CITY/STATE below to point this at a different test area;
-left at the same Bartlett, IL coordinates as bartlett_import_v3.py by
-default so it lands in the same test dataset.
+currently set to Vienna, Austria to match vienna_import.py's coverage
+area (Danny's testing charities in Vienna for now).
 """
 
 import os, time, json, requests, psycopg2
@@ -19,9 +19,9 @@ from slugify import slugify
 DATABASE_URL = os.environ.get("DATABASE_URL")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
 
-LAT, LNG = 41.9775, -88.1859
-RADIUS = 8000
-CITY, STATE = "Bartlett", "IL"
+LAT, LNG = 48.2082, 16.3738  # same coverage area as vienna_import.py
+RADIUS = 3000
+CITY, STATE = "Vienna", "Wien"
 
 # Nearby Search keyword terms aimed at charities/nonprofits rather than
 # general businesses. Google Places doesn't have a dedicated "charity"
