@@ -729,7 +729,11 @@
             <a href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}" target="_blank" rel="noopener" class="listing-hero-card__btn" onclick="event.stopPropagation();">Directions</a>
           {% endif %}
           {% if listing.website %}
-            <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-hero-card__btn" onclick="event.stopPropagation();">Website</a>
+            {% if listing.category and 'charity' in listing.category.lower() %}
+              <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-hero-card__btn listing-hero-card__btn--primary listing-hero-card__donate" onclick="event.stopPropagation();">Donate</a>
+            {% else %}
+              <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-hero-card__btn" onclick="event.stopPropagation();">Website</a>
+            {% endif %}
           {% endif %}
           {% if listing.phone %}
             <a href="tel:{{ listing.phone }}" class="listing-hero-card__btn" onclick="event.stopPropagation();">Call</a>

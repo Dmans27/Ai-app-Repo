@@ -1440,6 +1440,8 @@ def category_icon(category: str) -> str:
         "real_estate_agency": "🏠",
         "car_repair": "🚗",
         "school": "🏫",
+        "charity": "❤️",
+        "nonprofit": "❤️",
     }
 
     return icons.get(category, "📍")
@@ -1462,6 +1464,8 @@ def categories_match(query: str, category: str) -> bool:
         "restaurant": ["restaurant", "restaurants", "pizza", "burger", "food"],
         "barber": ["barber", "barbershop", "hair salon"],
         "gym": ["gym", "fitness", "workout"],
+        "charity": ["charity", "charities", "nonprofit", "non-profit", "donate", "donation"],
+        "nonprofit": ["charity", "charities", "nonprofit", "non-profit", "donate", "donation"],
     }
 
     for canonical, keywords in category_map.items():
