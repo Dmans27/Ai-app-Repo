@@ -491,6 +491,16 @@ def ensure_user_profile_columns():
 
         conn.execute(sql_text("""
             ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS age_range VARCHAR(20);
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS sex VARCHAR(30);
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
             ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE;
         """))
         
@@ -6331,6 +6341,8 @@ def settings():
         current_user.name      = request.form.get("name", "").strip()
         current_user.home_city = request.form.get("home_city", "").strip()
         current_user.causes    = json.dumps(request.form.getlist("causes"))
+        current_user.age_range = request.form.get("age_range", "").strip()
+        current_user.sex       = request.form.get("sex", "").strip()
         db.session.commit()
         flash("Settings updated.")
         return redirect(url_for("settings"))
@@ -6844,9 +6856,8 @@ def signup():
 @app.route("/onboarding", methods=["GET", "POST"])
 @login_required
 def onboarding():
+    """Onboarding step 1 of 3: profile photo."""
     if request.method == "POST":
-        causes = request.form.getlist("causes")
-        home_city = request.form.get("home_city", "").strip()
         profile_photo = request.files.get("profile_photo")
 
         if profile_photo and profile_photo.filename:
@@ -6861,15 +6872,42 @@ def onboarding():
             os.makedirs(profile_upload_folder, exist_ok=True)
 
             save_path = os.path.join(profile_upload_folder, new_filename)
-            
+            profile_photo.save(save_path)
 
             current_user.profile_image_url = url_for(
                 "static",
                 filename=f"uploads/profiles/{new_filename}"
             )
+            db.session.commit()
 
+        return redirect(url_for("onboarding_causes"))
+
+    return render_template("onboarding.html")
+
+
+@app.route("/onboarding/causes", methods=["GET", "POST"])
+@login_required
+def onboarding_causes():
+    """Onboarding step 2 of 3: causes the user supports."""
+    if request.method == "POST":
+        causes = request.form.getlist("causes")
         current_user.causes = json.dumps(causes)
+        db.session.commit()
+
+        return redirect(url_for("onboarding_location"))
+
+    return render_template("onboarding_causes.html")
+
+
+@app.route("/onboarding/location", methods=["GET", "POST"])
+@login_required
+def onboarding_location():
+    """Onboarding step 3 of 3: home city + demographics, then onboarding is complete."""
+    if request.method == "POST":
+        home_city = request.form.get("home_city", "").strip()
         current_user.home_city = home_city
+        current_user.age_range = request.form.get("age_range", "").strip()
+        current_user.sex = request.form.get("sex", "").strip()
         current_user.onboarding_complete = True
 
         db.session.commit()
@@ -6877,7 +6915,7 @@ def onboarding():
         flash("Your profile is ready.")
         return redirect(url_for("account"))
 
-    return render_template("onboarding.html")
+    return render_template("onboarding_location.html")
 
 
 

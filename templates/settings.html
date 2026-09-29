@@ -73,15 +73,55 @@
         <div class="settings-causes-block">
           <p class="settings-causes-label">Causes you support</p>
 
-          <div class="onboarding-chip-grid settings-chip-grid">
-            {% for item in ["Animal Welfare", "Education", "Environment & Conservation", "Health & Medical Research", "Hunger & Food Security", "Homelessness & Housing", "Human Rights & Social Justice", "Disaster Relief", "Children & Youth", "Mental Health"] %}
-              <label class="onboarding-chip">
+          <div class="onboarding-chip-grid onboarding-chip-grid--icons settings-chip-grid">
+            {% for cause in [
+              {"label": "Animal Welfare", "icon": "🐾"},
+              {"label": "Education", "icon": "🎓"},
+              {"label": "Environment & Conservation", "icon": "🌍"},
+              {"label": "Health & Medical Research", "icon": "🏥"},
+              {"label": "Hunger & Food Security", "icon": "🥫"},
+              {"label": "Homelessness & Housing", "icon": "🏠"},
+              {"label": "Human Rights & Social Justice", "icon": "⚖️"},
+              {"label": "Disaster Relief", "icon": "🆘"},
+              {"label": "Children & Youth", "icon": "🧒"},
+              {"label": "Mental Health", "icon": "🧠"}
+            ] %}
+              <label class="onboarding-chip onboarding-chip--icon">
                 <input
                   type="checkbox"
                   name="causes"
-                  value="{{ item }}"
-                  {% if item in user_causes %}checked{% endif %}
+                  value="{{ cause.label }}"
+                  {% if cause.label in user_causes %}checked{% endif %}
                 >
+                <span class="onboarding-chip__body">
+                  <span class="onboarding-chip__icon">{{ cause.icon }}</span>
+                  <span class="onboarding-chip__label">{{ cause.label }}</span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="settings-field-block">
+          <p class="settings-causes-label">Age range</p>
+
+          <div class="onboarding-chip-grid">
+            {% for item in ["18–24", "25–34", "35–44", "45–54", "55–64", "65+"] %}
+              <label class="onboarding-chip">
+                <input type="radio" name="age_range" value="{{ item }}" {% if user.age_range == item %}checked{% endif %}>
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="settings-field-block">
+          <p class="settings-causes-label">Sex</p>
+
+          <div class="onboarding-chip-grid">
+            {% for item in ["Male", "Female", "Prefer not to say"] %}
+              <label class="onboarding-chip">
+                <input type="radio" name="sex" value="{{ item }}" {% if user.sex == item %}checked{% endif %}>
                 <span>{{ item }}</span>
               </label>
             {% endfor %}

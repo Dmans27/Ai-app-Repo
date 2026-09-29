@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personalize Local AI</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body class="app-body onboarding-page">
+  <main class="onboarding-shell">
+    <section class="onboarding-card">
+      <p class="onboarding-eyebrow">Welcome to Local AI</p>
+      <p class="onboarding-progress">Step 3 of 3</p>
+
+      <h1>Where are you located?</h1>
+
+      <p class="onboarding-subtitle">
+        We'll use this to find causes and organizations near you.
+      </p>
+
+      <form method="post" class="onboarding-form">
+
+        <div class="onboarding-section">
+          <input
+            type="text"
+            name="home_city"
+            class="onboarding-input"
+            placeholder="Chicago, Naperville, Miami..."
+            required
+          >
+        </div>
+
+        <div class="onboarding-section">
+          <h2>Age range</h2>
+
+          <div class="onboarding-chip-grid">
+            {% for item in ["18–24", "25–34", "35–44", "45–54", "55–64", "65+"] %}
+              <label class="onboarding-chip">
+                <input type="radio" name="age_range" value="{{ item }}">
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="onboarding-section">
+          <h2>Sex</h2>
+
+          <div class="onboarding-chip-grid">
+            {% for item in ["Male", "Female", "Prefer not to say"] %}
+              <label class="onboarding-chip">
+                <input type="radio" name="sex" value="{{ item }}">
+                <span>{{ item }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <button type="submit" class="onboarding-submit">
+          Finish setup
+        </button>
+
+        <a href="{{ url_for('onboarding_causes') }}" class="onboarding-back">Back</a>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
