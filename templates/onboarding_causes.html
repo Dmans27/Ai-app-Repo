@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personalize Local AI</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body class="app-body onboarding-page">
+  <main class="onboarding-shell">
+    <section class="onboarding-card">
+      <p class="onboarding-eyebrow">Welcome to Local AI</p>
+      <p class="onboarding-progress">Step 2 of 3</p>
+
+      <h1>What causes do you support?</h1>
+
+      <p class="onboarding-subtitle">
+        Pick the causes you care about so Local AI can help you find organizations to support.
+      </p>
+
+      <form method="post" class="onboarding-form">
+
+        <div class="onboarding-section">
+          <div class="onboarding-chip-grid onboarding-chip-grid--icons">
+            {% for cause in [
+              {"label": "Animal Welfare", "icon": "🐾"},
+              {"label": "Education", "icon": "🎓"},
+              {"label": "Environment & Conservation", "icon": "🌍"},
+              {"label": "Health & Medical Research", "icon": "🏥"},
+              {"label": "Hunger & Food Security", "icon": "🥫"},
+              {"label": "Homelessness & Housing", "icon": "🏠"},
+              {"label": "Human Rights & Social Justice", "icon": "⚖️"},
+              {"label": "Disaster Relief", "icon": "🆘"},
+              {"label": "Children & Youth", "icon": "🧒"},
+              {"label": "Mental Health", "icon": "🧠"}
+            ] %}
+              <label class="onboarding-chip onboarding-chip--icon">
+                <input
+                  type="checkbox"
+                  name="causes"
+                  value="{{ cause.label }}"
+                >
+                <span class="onboarding-chip__body">
+                  <span class="onboarding-chip__icon">{{ cause.icon }}</span>
+                  <span class="onboarding-chip__label">{{ cause.label }}</span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <button type="submit" class="onboarding-submit">
+          Continue
+        </button>
+
+        <a href="{{ url_for('onboarding') }}" class="onboarding-back">Back</a>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

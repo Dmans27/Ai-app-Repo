@@ -1616,6 +1616,37 @@ select {
   color: #111;
 }
 
+/* Icon-card variant used for the causes picker: an emoji icon above a
+   short title, instead of a plain pill of text. Reuses the same
+   input:checked + span highlight rule above -- only the inner layout
+   changes here. */
+.onboarding-chip-grid--icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 12px;
+}
+
+.onboarding-chip--icon .onboarding-chip__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 10px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.onboarding-chip--icon .onboarding-chip__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.onboarding-chip--icon .onboarding-chip__label {
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
 .onboarding-input {
   width: 100%;
   min-height: 52px;

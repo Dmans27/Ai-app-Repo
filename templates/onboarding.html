@@ -11,18 +11,17 @@
   <main class="onboarding-shell">
     <section class="onboarding-card">
       <p class="onboarding-eyebrow">Welcome to Local AI</p>
+      <p class="onboarding-progress">Step 1 of 3</p>
 
-      <h1>Personalize your recommendations</h1>
+      <h1>Add a profile photo</h1>
 
       <p class="onboarding-subtitle">
-        Pick the causes you care about so Local AI can help you find organizations to support.
+        Add a photo so people can recognize you around Local AI.
       </p>
 
       <form method="post" enctype="multipart/form-data" class="onboarding-form">
 
         <div class="onboarding-section">
-          <h2>Add a profile photo</h2>
-
           <label class="profile-photo-upload">
             <input
               type="file"
@@ -40,37 +39,8 @@
           </label>
         </div>
 
-        <div class="onboarding-section">
-          <h2>What causes do you support?</h2>
-
-          <div class="onboarding-chip-grid">
-            {% for item in ["Animal Welfare", "Education", "Environment & Conservation", "Health & Medical Research", "Hunger & Food Security", "Homelessness & Housing", "Human Rights & Social Justice", "Disaster Relief", "Children & Youth", "Mental Health"] %}
-              <label class="onboarding-chip">
-                <input
-                  type="checkbox"
-                  name="causes"
-                  value="{{ item }}"
-                >
-                <span>{{ item }}</span>
-              </label>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="onboarding-section">
-          <h2>Where are you located?</h2>
-
-          <input
-            type="text"
-            name="home_city"
-            class="onboarding-input"
-            placeholder="Chicago, Naperville, Miami..."
-            required
-          >
-        </div>
-
         <button type="submit" class="onboarding-submit">
-          Finish setup
+          Continue
         </button>
       </form>
     </section>
