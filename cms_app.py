@@ -462,31 +462,52 @@ def create_core_tables():
 
 
 def ensure_user_profile_columns():
-    # Each column is added in its own try/except so that one failing ALTER
-    # (e.g. a transient race between multiple gunicorn workers booting at
-    # once, or a permissions hiccup) can never crash app startup and take
-    # the whole site down. Before this, a single failure here raised out of
-    # bootstrap_app() at import time, which killed the worker process.
-    columns = [
-        ("favorite_categories", "TEXT"),
-        ("home_city", "VARCHAR(120)"),
-        ("budget_style", "VARCHAR(50)"),
-        ("intent_type", "VARCHAR(120)"),
-        ("causes", "TEXT"),
-        ("age_range", "VARCHAR(20)"),
-        ("sex", "VARCHAR(30)"),
-        ("onboarding_complete", "BOOLEAN DEFAULT FALSE"),
-        ("profile_image_url", "TEXT"),
-    ]
+    with engine.begin() as conn:
 
-    for column_name, column_type in columns:
-        try:
-            with engine.begin() as conn:
-                conn.execute(sql_text(
-                    f'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS {column_name} {column_type};'
-                ))
-        except Exception as e:
-            print(f"[user profile columns] failed to add '{column_name}': {e}", flush=True)
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS favorite_categories TEXT;
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS home_city VARCHAR(120);
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS budget_style VARCHAR(50);
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS intent_type VARCHAR(120);
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS causes TEXT;
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS age_range VARCHAR(20);
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS sex VARCHAR(30);
+        """))
+
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE;
+        """))
+        
+        conn.execute(sql_text("""
+            ALTER TABLE "user"
+            ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
+        """))
 
     print("user profile columns checked", flush=True)
     
@@ -4911,10 +4932,19 @@ def listing_page(slug):
             .first()
 
         if not default_list:
+            # slug is NOT NULL + unique on saved_list; the create_list() route
+            # below generates one the same way -- this default-list shortcut
+            # was missing it entirely, which crashed every first-time visit
+            # to / and /listing/<slug> with a NotNullViolation on commit.
+            default_slug = f"my-places-{current_user.id}"
+            if SavedList.query.filter_by(slug=default_slug).first():
+                default_slug = f"{default_slug}-{int(time.time())}"
+
             default_list = SavedList(
                 user_id=current_user.id,
                 title="My Places",
                 description="Places I saved from Local AI",
+                slug=default_slug,
                 is_public=False
             )
             db.session.add(default_list)
@@ -6267,10 +6297,19 @@ def discover_page():
             .first()
 
         if not default_list:
+            # slug is NOT NULL + unique on saved_list; the create_list() route
+            # below generates one the same way -- this default-list shortcut
+            # was missing it entirely, which crashed every first-time visit
+            # to / and /listing/<slug> with a NotNullViolation on commit.
+            default_slug = f"my-places-{current_user.id}"
+            if SavedList.query.filter_by(slug=default_slug).first():
+                default_slug = f"{default_slug}-{int(time.time())}"
+
             default_list = SavedList(
                 user_id=current_user.id,
                 title="My Places",
                 description="Places I saved from Local AI",
+                slug=default_slug,
                 is_public=False
             )
             db.session.add(default_list)
@@ -7245,6 +7284,8 @@ def _account_context():
     
     
 
+    user_causes = json.loads(current_user.causes) if current_user.causes else []
+
     return {
         "user": current_user,
         "lists": account_lists,
@@ -7254,6 +7295,7 @@ def _account_context():
         "users": users,
         "mapbox_token": os.getenv("MAPBOX_TOKEN", ""),
         "mapbox_style_url": os.getenv("MAPBOX_STYLE_URL", ""),
+        "user_causes": user_causes,
     }
 
 

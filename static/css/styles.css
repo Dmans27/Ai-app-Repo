@@ -1650,6 +1650,19 @@ select {
   line-height: 1.2;
 }
 
+/* Read-only version of the icon-card, used on the account page to show a
+   user's already-saved causes (no checkbox involved, so it can't rely on
+   the input:checked + span rule above -- this mirrors that same look). */
+.onboarding-chip--selected .onboarding-chip__body {
+  background: #eafaf3;
+  border: 2px solid #10a37f;
+  color: #0d8a6c;
+}
+
+.acct-causes-grid {
+  margin-top: 4px;
+}
+
 .onboarding-input {
   width: 100%;
   min-height: 52px;
