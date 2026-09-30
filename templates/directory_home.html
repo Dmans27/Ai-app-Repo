@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Local AI</title>
+  <title>Dony</title>
 
   <link rel="stylesheet" href="/static/css/styles.css">
   <link rel="manifest" href="/static/manifest.json">
@@ -86,7 +86,7 @@
   <meta name="theme-color" content="#111111">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Local AI">
+  <meta name="apple-mobile-web-app-title" content="Dony">
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 </head>
 
@@ -99,12 +99,47 @@
   data-list-count="{{ user_lists|length if user_lists is defined else 0 }}"
   hidden
 ></div>
+
+{% if show_welcome_modal %}
+<div id="welcome-modal" class="welcome-modal-overlay">
+  <div class="welcome-modal-card">
+    <button type="button" class="welcome-modal-close" id="welcome-modal-close" aria-label="Close">&times;</button>
+    <div class="welcome-modal-icon">🤝</div>
+    <h2 class="welcome-modal-title">Dony</h2>
+    <p class="welcome-modal-tagline">Where Donating is made easy</p>
+    <p class="welcome-modal-subtitle">Discover causes and organizations you actually care about, curated and shared by people like you. Find where to give, save the ones that matter, and support what moves you.</p>
+    <button type="button" class="welcome-modal-cta" id="welcome-modal-cta">Get started</button>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var modal = document.getElementById("welcome-modal");
+    if (!modal) return;
+
+    function dismissWelcome() {
+      modal.classList.add("is-hidden");
+      fetch("{{ url_for('dismiss_welcome') }}", {
+        method: "POST",
+        credentials: "same-origin"
+      }).catch(function () {});
+      setTimeout(function () { modal.remove(); }, 250);
+    }
+
+    document.getElementById("welcome-modal-close").addEventListener("click", dismissWelcome);
+    document.getElementById("welcome-modal-cta").addEventListener("click", dismissWelcome);
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) dismissWelcome();
+    });
+  });
+</script>
+{% endif %}
+
   <div class="app-shell">
     <!-- Desktop sidebar -->
     <aside class="app-sidebar desktop-sidebar">
       <div class="app-sidebar__top">
         <div class="app-brand">
-          <div class="app-brand__title">Local AI</div>
+          <div class="app-brand__title">Dony</div>
           <div class="app-brand__subtitle">Recommendations near you</div>
         </div>
 
@@ -133,15 +168,15 @@
       <button
         class="app-sidebar__new-search"
         type="button"
-        onclick="window.location.href='{{ url_for('home') }}'"
+        onclick="window.location.href='/'"
       >
         + New search
       </button>
 
 <nav class="app-sidebar__nav">
-  <a href="{{ url_for('home') }}" class="app-sidebar__link is-active">Home</a>
+  <a href="/" class="app-sidebar__link is-active">Home</a>
   <a href="/discover" class="app-sidebar__link">Discover</a>
-  <a href="{{ url_for('home') }}" class="app-sidebar__link">Search</a>
+  <a href="/" class="app-sidebar__link">Search</a>
   <a href="{{ url_for('feed') }}" class="app-sidebar__link">Feed</a>
   <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="app-sidebar__link">Account</a>
   <a href="/admin" class="app-sidebar__link">Admin</a>
@@ -150,7 +185,7 @@
       <div class="app-sidebar__section-label">Account</div>
 
       <div class="app-sidebar__footer">
-        <a href="{{ url_for('home') }}" class="app-sidebar__footer-link">Home</a>
+        <a href="/" class="app-sidebar__footer-link">Home</a>
         <a href="/p/contact" class="app-sidebar__footer-link">Contact</a>
 
         {% if current_user.is_authenticated %}
@@ -289,7 +324,7 @@
     <!-- Mobile drawer -->
     <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
       <div class="mobile-drawer__header">
-        <div class="mobile-drawer__title">Local AI</div>
+        <div class="mobile-drawer__title">Dony</div>
         <button
           class="mobile-drawer__close"
           id="app-sidebar-close"
@@ -301,15 +336,15 @@
       <button
         class="mobile-drawer__new-search"
         type="button"
-        onclick="window.location.href='{{ url_for('home') }}'"
+        onclick="window.location.href='/'"
       >
         + New search
       </button>
 
 <nav class="mobile-drawer__nav">
-  <a href="{{ url_for('home') }}" class="mobile-drawer__link is-active">Home</a>
+  <a href="/" class="mobile-drawer__link is-active">Home</a>
   <a href="/discover" class="mobile-drawer__link">Discover</a>
-  <a href="{{ url_for('home') }}" class="mobile-drawer__link">Search</a>
+  <a href="/" class="mobile-drawer__link">Search</a>
   <a href="{{ url_for('feed') }}" class="mobile-drawer__link">Feed</a>
   <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-drawer__link">Account</a>
   <a href="/admin" class="mobile-drawer__link">Admin</a>
@@ -318,7 +353,7 @@
       <div class="mobile-drawer__section-label">Account</div>
 
       <div class="mobile-drawer__footer">
-        <a href="{{ url_for('home') }}" class="mobile-drawer__footer-link">Home</a>
+        <a href="/" class="mobile-drawer__footer-link">Home</a>
         <a href="/p/contact" class="mobile-drawer__footer-link">Contact</a>
 
         {% if current_user.is_authenticated %}
@@ -347,7 +382,7 @@
         >☰</button>
 
         <div class="mobile-app-header__center">
-          <div class="mobile-app-header__title">Local AI</div>
+          <div class="mobile-app-header__title">Dony</div>
           <div class="mobile-app-header__subtitle">Recommendations near you</div>
         </div>
 
@@ -369,23 +404,14 @@
       <!-- Desktop page header -->
       <header class="desktop-page-header desktop-only" id="desktop-hero">
         <div class="hero-center">
-          {% if current_user.is_authenticated %}
-          <div class="home-nearby-add-row">
-            <button type="button" class="home-nearby-add-btn" id="home-compose-open-desktop" aria-label="Create a post">+</button>
-          </div>
-          {% endif %}
+          <p class="desktop-page-header__eyebrow" id="time-greeting">Good afternoon 👋</p>
+          <h1 class="desktop-page-header__title">Where in the world should we go today?</h1>
+          <p class="desktop-page-header__subtitle">
+            Find coffee, bars, dinner, shopping, and more.
+          </p>
 
-          <section class="home-nearby-feed" id="home-nearby-feed-desktop">
-            <div class="home-nearby-feed__head">
-              <div class="home-nearby-feed__title">Nearby right now</div>
-              <div class="home-nearby-feed__city" id="home-nearby-city-desktop">Finding you…</div>
-            </div>
-            <div class="home-nearby-feed__list" id="home-nearby-list-desktop">
-              <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
-            </div>
-            <div class="home-nearby-feed__sentinel" id="home-nearby-sentinel-desktop">
-              <div class="home-nearby-feed__loading" data-role="loading-indicator" hidden>Loading more…</div>
-            </div>
+          <section class="home-globe-card">
+            <div id="home-globe-desktop" class="home-globe-canvas"></div>
           </section>
 
           <!-- AI input bar lives HERE on desktop before first message -->
@@ -410,116 +436,13 @@
       </header>
 
       <style>
-        /* ── Centered hero layout (greeting/headline removed — the feed
-           starts right away to make better use of the space) ── */
+        /* ── Centered hero layout ── */
         .desktop-page-header.desktop-only {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: center;
           flex: 1;
           padding: 0 24px;
-        }
-
-        #desktop-hero {
-          padding-top: 20px !important;
-          padding-bottom: 8px !important;
-        }
-
-        @media (max-width: 1024px) {
-          /* Landing-page idle state: the AI search input used to always
-             sit at the bottom of the home page. Now it stays collapsed —
-             the bottom nav's Search tab is the only thing that opens it —
-             leaving the existing post-search collapse/expand behavior
-             (the body.ai-chat-active rules in styles.css) untouched. */
-          body:not(.ai-chat-active) #bottom-composer:not(.is-input-visible) .ai-input-bar {
-            display: none !important;
-          }
-          body:not(.ai-chat-active) #bottom-composer:not(.is-input-visible) .composer-search-trigger {
-            display: none !important;
-          }
-
-          /* Tapping the navbar's Search tab now opens the full chat page
-             (see setChatUiState(true) in the click handler below) while
-             the bottom tabbar stays on screen underneath it — so the
-             composer needs to clear the tabbar's ~76px height instead of
-             sitting at its usual 8px-from-bottom spot, or the two overlap. */
-          body.ai-chat-active #bottom-composer {
-            bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-          }
-
-          body.ai-chat-active .composer-search-trigger {
-            bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-          }
-        }
-
-        @media (max-width: 1024px) {
-          /* ── Full-page feed: no header bar — the hamburger and account
-             icon float transparently in their same corner positions
-             (same treatment as the Discover page), with the feed running
-             edge-to-edge underneath them instead of starting below a
-             website-style title bar. ── */
-          .mobile-app-header.mobile-only {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: transparent !important;
-            border-bottom: none !important;
-            box-shadow: none;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            z-index: 950;
-          }
-
-          .mobile-app-header__title,
-          .mobile-app-header__subtitle {
-            display: none;
-          }
-
-          .app-main__inner {
-            /* !important is required here: static/css/styles.css has an
-               unscoped, no-media-query `.app-main__inner { padding: 0 24px
-               !important; }` rule that otherwise silently wins over this
-               one regardless of specificity or source order, since
-               !important always beats a non-!important declaration. That
-               rule was why the landing/idle state never actually picked up
-               any of the earlier clearance fixes here — only the
-               ai-chat-active override below (which already had !important)
-               was taking effect. */
-            height: 100svh;
-            padding: calc(var(--header-h) + env(safe-area-inset-top) + 10px) 14px 0 !important;
-          }
-
-          /* .app-main is a flex item inside .app-shell (a row-direction
-             flex container). It never got its own flex-grow/width, so it
-             was shrink-wrapping to its content's width instead of filling
-             the row — the sidebar is position:fixed (out of flow) so
-             there's no real sibling competing for that space, it was just
-             sitting unused on the right. That's the actual cause of the
-             right-side gap on the feed (head row AND cards both, evenly —
-             not a per-card width problem, which is why forcing width on
-             .home-nearby-post alone didn't fix it). */
-          .app-main {
-            width: 100% !important;
-          }
-
-          .chat-page {
-            height: 100%;
-          }
-
-          /* The AI-chat-active state normally zeroes this padding out
-             (styles.css) since the header used to sit in normal flow —
-             now that the header floats over everything at all times, keep
-             the same top clearance in both states so nothing renders
-             underneath the floating icons. safe-area-inset-top matters
-             here: on a notched/Dynamic-Island phone the header actually
-             renders taller than --header-h alone accounts for, since the
-             header's own top padding grows with the notch. Bumped the
-             flat buffer up further (14px -> 40px) for extra breathing
-             room below the icons. */
-          body.ai-chat-active .app-main__inner {
-            padding-top: calc(var(--header-h) + env(safe-area-inset-top) + 10px) !important;
-          }
         }
 
         .hero-center {
@@ -527,7 +450,7 @@
           flex-direction: column;
           align-items: center;
           text-align: center;
-          gap: 14px;
+          gap: 20px;
           width: 100%;
           max-width: 680px;
         }
@@ -540,13 +463,10 @@
         @media (min-width: 1025px) {
           .hero-composer { display: none !important; }
         }
-      /* ── Hide mobile hero + chips + the "create a post" button when
-         chat is active — none of them are needed once the conversation
-         view is open. ── */
+      /* ── Hide mobile hero + chips when chat is active ── */
       body.ai-chat-active .mobile-home-hero,
       body.ai-chat-active .quick-scroll-wrap,
-      body.ai-chat-active .home-nearby-feed,
-      body.ai-chat-active .home-nearby-add-row {
+      body.ai-chat-active .home-globe-card {
         display: none !important;
         height: 0 !important;
         min-height: 0 !important;
@@ -560,607 +480,70 @@
         height: auto !important;
       }
 
-      /* ── Homepage nearby feed — a real feed (Facebook/Venmo style):
-         each post is its own card with a prominent photo, not a boxed
-         widget of compact rows. ── */
-      .home-nearby-feed {
+      /* ── Homepage globe card ── */
+      .home-globe-card {
         width: 100%;
-        max-width: 680px;
+        max-width: 760px;
         margin: 4px auto 0;
-      }
-      .home-nearby-feed__head {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        padding: 4px 4px 14px;
-      }
-      .home-nearby-feed__title {
-        font-size: 18px;
-        font-weight: 800;
-        color: #1d1d1f;
-        letter-spacing: -0.02em;
-      }
-      .home-nearby-feed__city {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--brand, #10a37f);
-      }
-      .home-nearby-add-row {
-        width: 100%;
-        max-width: 680px;
-        margin: 0 auto;
-        display: flex;
-        justify-content: center;
-        padding: 16px 2px -1px;
-      }
-      .home-nearby-add-btn {
-        flex-shrink: 0;
-        width: 46px;
-        height: 46px;
-        border-radius: 50%;
-        background: var(--brand, #10a37f);
-        color: #fff;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 26px;
-        font-weight: 800;
-        line-height: 1;
-        cursor: pointer;
-        box-shadow: 0 8px 20px rgba(16,163,127,0.35);
-        transition: background 0.15s, transform 0.1s;
-      }
-      .home-nearby-add-btn:hover { background: var(--brand-strong, #0d8a6c); }
-      .home-nearby-add-btn:active { transform: scale(0.92); }
-      .home-nearby-feed__list {
-        padding: 0 0 28px;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
-
-      /* The mobile page (#chat-page) is a fixed-height, clipped container
-         so the AI search thread can scroll internally without the whole
-         page bouncing — the nearby feed needs its OWN scroll region inside
-         that box, and the "+" button row must never be squeezed by it. */
-      .home-nearby-add-row--mobile { flex-shrink: 0; }
-      .home-nearby-feed--mobile {
-        display: flex;
-        flex-direction: column;
-        /* #chat-page also has an empty .chat-thread (flex: 1) sitting
-           alongside this while idle — out-grow it so the feed gets the
-           real estate instead of splitting the screen with blank space. */
-        flex: 20 1 0%;
-        min-height: 0;
-      }
-      .home-nearby-feed--mobile .home-nearby-feed__head { flex-shrink: 0; }
-      .home-nearby-feed--mobile .home-nearby-feed__list {
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-      }
-      .home-nearby-feed__empty {
-        padding: 40px 20px;
-        text-align: center;
-        color: rgba(0,0,0,0.4);
-        font-size: 14px;
+        border-radius: 26px;
+        overflow: hidden;
         background: #f5f5f7;
-        border-radius: 18px;
       }
-      .home-nearby-post {
-        display: flex;
-        flex-direction: column;
-        flex-shrink: 0;
-        /* Explicit full-width + border-box so the card always matches the
-           width of the "Nearby right now" head row above it, instead of
-           leaving a gap on one side. */
-        width: 100% !important;
-        box-sizing: border-box !important;
-        background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.08);
-        border-radius: 18px;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(20,20,25,0.06);
-        transition: border-color 0.18s, box-shadow 0.18s;
-      }
-      .home-nearby-post:hover {
-        border-color: rgba(16,163,127,0.4);
-        box-shadow: 0 6px 16px rgba(20,20,25,0.1);
-      }
-      .home-nearby-post__link {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-      }
-      .home-nearby-post__head {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 16px 18px 0;
-      }
-      .home-nearby-post__avatar {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: rgba(16,163,127,0.12);
-        color: var(--brand, #10a37f);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 16px;
-        flex-shrink: 0;
-        overflow: hidden;
-      }
-      .home-nearby-post__avatar-img {
+      .home-globe-canvas {
         width: 100%;
-        height: 100%;
-        object-fit: cover;
+        height: 460px;
       }
-      .home-nearby-post__headtext { min-width: 0; flex: 1; }
-      .home-nearby-post__headline {
-        font-size: 15px;
-        line-height: 1.35;
-        color: #1d1d1f;
-      }
-      .home-nearby-post__headline-name { font-weight: 800; }
-      .home-nearby-post__headline-verb {
-        font-weight: 500;
-        color: rgba(0,0,0,0.55);
-      }
-      .home-nearby-post__headline-target {
-        font-weight: 800;
-        color: inherit;
-      }
-      .home-nearby-post__friend-badge {
-        display: inline-block;
-        margin-left: 6px;
-        padding: 1px 7px;
-        border-radius: 999px;
-        background: rgba(16,163,127,0.18);
-        color: var(--brand, #10a37f);
-        font-size: 10px;
-        font-weight: 700;
-        vertical-align: middle;
-      }
-      .home-nearby-post__subline {
-        font-size: 12px;
-        color: rgba(0,0,0,0.45);
-        margin-top: 3px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .home-nearby-post__subline-dot { opacity: 0.6; }
-      .home-nearby-post__subline-category {
-        font-size: 11px;
-        font-weight: 700;
-        color: #10a37f;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-      }
-      .home-nearby-post__text {
-        padding: 10px 18px 12px;
-        font-size: 15px;
-        line-height: 1.55;
-        color: rgba(0,0,0,0.78);
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        line-clamp: 4;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-      .home-nearby-post__photo {
-        width: 100%;
-        max-height: 440px;
-        object-fit: cover;
-        display: block;
-        background: #f0f0f0;
-      }
-      .home-nearby-post__stats {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 10px 18px 0;
-        font-size: 12.5px;
-        font-weight: 600;
-        color: rgba(0,0,0,0.5);
-      }
-      .home-nearby-post__stats-item { display: flex; align-items: center; gap: 5px; }
-      .home-nearby-post__stats-item--likes { color: #e0294a; }
-      .home-nearby-post__stats[hidden],
-      .home-nearby-post__stats-item[hidden] { display: none !important; }
-      .home-nearby-post__actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 18px 16px;
-      }
-      .home-nearby-post__action-btn {
-        flex: 0 0 auto;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        height: 27px;
-        padding: 0 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(0,0,0,0.12);
-        background: #f5f5f7;
-        color: #3c3c43;
-        font-size: 10.5px;
-        font-weight: 700;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.15s;
-      }
-      .home-nearby-post__action-btn:hover { background: #ebebee; color: #14151a; }
-      .home-nearby-post__action-btn:active { transform: scale(0.95); }
-      .home-nearby-post__action-btn--liked {
-        background: #10a37f;
-        border-color: transparent;
-        color: #fff;
-      }
-      .home-nearby-post__action-btn--liked:hover { background: #0d8a6c; color: #fff; }
-      .home-nearby-post__action-btn--share { margin-left: auto; }
-      .home-nearby-post__action-icon { font-size: 13px; line-height: 1; }
-      .home-nearby-feed__sentinel {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 20px;
-        padding: 4px 0 24px;
-      }
-      .home-nearby-feed__loading {
-        font-size: 12.5px;
-        font-weight: 600;
-        color: rgba(0,0,0,0.4);
-      }
-      .home-nearby-feed__loading[hidden] { display: none; }
-      /* Only one nearby-feed instance should ever be visible at a time —
-         the mobile card lives outside .mobile-home-hero (so it survives the
-         ai-chat-active hide rule), so it needs its own explicit guard
-         against showing up alongside the desktop hero's feed. */
-      @media (min-width: 1025px) {
-        .home-nearby-feed--mobile { display: none !important; }
-        .home-nearby-add-row--mobile { display: none !important; }
+      .home-globe-canvas .mapboxgl-ctrl-logo,
+      .home-globe-canvas .mapboxgl-ctrl-attrib,
+      .home-globe-canvas .mapboxgl-ctrl-bottom-left,
+      .home-globe-canvas .mapboxgl-ctrl-top-right {
+        opacity: 0;
+        pointer-events: none;
       }
       @media (max-width: 1024px) {
-        .desktop-page-header .home-nearby-feed { display: none !important; }
-        .desktop-page-header .home-nearby-add-row { display: none !important; }
+        .home-globe-card {
+          max-width: calc(100% - 40px);
+        }
+        .home-globe-canvas {
+          height: 340px;
+        }
       }
-
-      /* ═══════════════════════════════════════
-         HOME COMPOSE SHEET
-      ═══════════════════════════════════════ */
-      .home-compose-sheet[hidden] { display: none !important; }
-
-      .home-compose-sheet {
-        position: fixed; inset: 0;
-        z-index: 11000;
+      /* Only one globe instance should ever be visible at a time — the
+         mobile card lives outside .mobile-home-hero (so it survives the
+         ai-chat-active hide rule), so it needs its own explicit guard
+         against showing up alongside the desktop hero's globe. */
+      @media (min-width: 1025px) {
+        .home-globe-card--mobile { display: none !important; }
       }
-
-      .home-compose-sheet__backdrop {
-        position: absolute; inset: 0;
-        background: rgba(0,0,0,0.58);
-        backdrop-filter: blur(5px);
-      }
-
-      .home-compose-sheet__panel {
-        position: absolute;
-        left: 50%;
-        bottom: 16px;
-        transform: translateX(-50%);
-        width: min(680px, calc(100vw - 24px));
-        background: #1a1c21;
-        border: 0.5px solid rgba(255,255,255,0.1);
-        border-radius: 26px;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-        padding: 18px;
-        animation: homeSheetUp 0.26s cubic-bezier(0.22,1,0.36,1) both;
-      }
-
-      @keyframes homeSheetUp {
-        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-      }
-
-      .home-compose-sheet__header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-      }
-
-      .home-compose-sheet__title {
-        font-size: 17px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        color: #f5f5f7;
-      }
-
-      .home-compose-sheet__close {
-        width: 36px; height: 36px;
-        border: none; border-radius: 10px;
-        background: rgba(255,255,255,0.08);
-        color: #fff; font-size: 18px;
-        cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        transition: background 0.15s;
-      }
-      .home-compose-sheet__close:hover { background: rgba(255,255,255,0.14); }
-
-      .home-compose-form { display: flex; flex-direction: column; gap: 12px; }
-
-      .home-compose-user-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-      }
-
-      .home-compose-avatar {
-        width: 38px; height: 38px;
-        border-radius: 50%;
-        background: rgba(25,195,138,0.15);
-        border: 1px solid rgba(25,195,138,0.28);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 14px; font-weight: 800; color: #7ee2bf;
-        flex-shrink: 0;
-      }
-
-      .home-compose-body-input {
-        flex: 1;
-        min-height: 72px;
-        padding: 12px 14px;
-        border: 0.5px solid rgba(255,255,255,0.09);
-        border-radius: 16px;
-        background: rgba(255,255,255,0.05);
-        color: #f5f5f7;
-        font-size: 15px;
-        line-height: 1.5;
-        outline: none;
-        resize: none;
-        font-family: inherit;
-        transition: border-color 0.18s;
-      }
-      .home-compose-body-input:focus { border-color: rgba(25,195,138,0.45); }
-      .home-compose-body-input::placeholder { color: rgba(255,255,255,0.25); }
-
-      .home-compose-extras { display: flex; flex-direction: column; gap: 10px; }
-
-      .home-compose-place-field { position: relative; }
-
-      .home-compose-city-row { display: flex; gap: 8px; }
-
-      .home-compose-city-input {
-        flex: 1;
-        width: 100%;
-        height: 44px;
-        padding: 0 14px;
-        border: 0.5px solid rgba(255,255,255,0.09);
-        border-radius: 12px;
-        background: rgba(255,255,255,0.05);
-        color: #f5f5f7;
-        font-size: 14px;
-        outline: none;
-        font-family: inherit;
-        transition: border-color 0.18s;
-      }
-      .home-compose-city-input:focus { border-color: rgba(25,195,138,0.45); }
-      .home-compose-city-input::placeholder { color: rgba(255,255,255,0.25); }
-
-      .home-compose-locate-btn {
-        flex-shrink: 0;
-        height: 44px;
-        padding: 0 14px;
-        border: 0.5px solid rgba(255,255,255,0.09);
-        border-radius: 12px;
-        background: rgba(255,255,255,0.05);
-        color: rgba(255,255,255,0.5);
-        font-size: 13px;
-        font-weight: 700;
-        white-space: nowrap;
-        cursor: pointer;
-        font-family: inherit;
-        transition: border-color 0.15s, color 0.15s;
-      }
-      .home-compose-locate-btn:hover { border-color: rgba(25,195,138,0.4); color: #7ee2bf; }
-      .home-compose-locate-btn.is-loading { opacity: 0.6; pointer-events: none; }
-
-      .home-compose-place-results {
-        position: absolute;
-        left: 0; right: 0; top: calc(100% + 4px);
-        background: #1f2127;
-        border: 0.5px solid rgba(255,255,255,0.12);
-        border-radius: 12px;
-        overflow-y: auto;
-        max-height: 220px;
-        z-index: 20;
-        box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-      }
-      .home-compose-place-results[hidden] { display: none; }
-
-      .home-compose-place-result {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        padding: 10px 14px;
-        cursor: pointer;
-        border-bottom: 0.5px solid rgba(255,255,255,0.06);
-      }
-      .home-compose-place-result:last-child { border-bottom: none; }
-      .home-compose-place-result:hover { background: rgba(255,255,255,0.06); }
-      .home-compose-place-result__name { font-size: 13px; font-weight: 700; color: #f5f5f7; }
-      .home-compose-place-result__meta { font-size: 11px; color: rgba(255,255,255,0.4); }
-
-      .home-compose-place-selected {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 14px;
-        border: 0.5px solid rgba(25,195,138,0.35);
-        background: rgba(25,195,138,0.08);
-        border-radius: 12px;
-        font-size: 13px;
-        font-weight: 700;
-        color: #7ee2bf;
-      }
-      .home-compose-place-selected[hidden] { display: none; }
-      .home-compose-place-selected button {
-        margin-left: auto;
-        background: none;
-        border: none;
-        color: rgba(255,255,255,0.5);
-        font-size: 13px;
-        cursor: pointer;
-        font-family: inherit;
-      }
-
-      .home-compose-file-label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 11px 14px;
-        border: 0.5px dashed rgba(255,255,255,0.14);
-        border-radius: 12px;
-        color: rgba(255,255,255,0.45);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: border-color 0.15s, color 0.15s;
-      }
-      .home-compose-file-label:hover { border-color: rgba(25,195,138,0.4); color: #7ee2bf; }
-      .home-compose-file-input { display: none; }
-
-      .home-compose-submit-btn {
-        width: 100%;
-        height: 48px;
-        border: none;
-        border-radius: 14px;
-        background: #19c38a;
-        color: #07110d;
-        font-size: 15px;
-        font-weight: 800;
-        cursor: pointer;
-        transition: background 0.15s, transform 0.1s;
-      }
-      .home-compose-submit-btn:hover { background: #16ad7b; }
-      .home-compose-submit-btn:active { transform: scale(0.97); }
-
-      /* ── AI-chat greeting bubble: the conversation-starter message that
-         opens the AI chat thread (the "search" view) — typed out via
-         typeText() the first time the chat becomes active. Hidden until
-         then so it never shows on the plain home/nearby-feed landing
-         view. ── */
-      #ai-chat-greeting-message {
-        display: none;
-      }
-
-      body.ai-chat-active #ai-chat-greeting-message {
-        display: flex;
+      @media (max-width: 1024px) {
+        .desktop-page-header .home-globe-card { display: none !important; }
       }
       </style>
 
       <div class="app-main__inner">
         <section class="chat-page is-empty" id="chat-page">
-<!-- (mobile-home-hero greeting removed to give the feed more room) -->
-{% if current_user.is_authenticated %}
-<div class="home-nearby-add-row home-nearby-add-row--mobile">
-  <button type="button" class="home-nearby-add-btn" id="home-compose-open-mobile" aria-label="Create a post">+</button>
-</div>
-{% endif %}
+    <section class="mobile-home-hero">
+  <div class="mobile-home-hero__content">
+    <p class="mobile-home-hero__eyebrow" id="time-greeting-mobile">
+      Good afternoon 👋
+    </p>
 
-<section class="home-nearby-feed home-nearby-feed--mobile" id="home-nearby-feed-mobile">
-  <div class="home-nearby-feed__head">
-    <div class="home-nearby-feed__title">Nearby right now</div>
-    <div class="home-nearby-feed__city" id="home-nearby-city-mobile">Finding you…</div>
-  </div>
-  <div class="home-nearby-feed__list" id="home-nearby-list-mobile">
-    <div class="home-nearby-feed__empty">Turn on location to see what people are eating nearby.</div>
-  </div>
-  <div class="home-nearby-feed__sentinel" id="home-nearby-sentinel-mobile">
-    <div class="home-nearby-feed__loading" data-role="loading-indicator" hidden>Loading more…</div>
+    <h1 class="mobile-home-hero__title">
+      Where in the world should we go today?
+    </h1>
+
+    <p class="mobile-home-hero__subtitle">
+      Find coffee, bars, dinner, shopping, and more.
+    </p>
   </div>
 </section>
 
-<!-- ════════════════════════════════
-     HOME COMPOSE SHEET — posting right from the home page, no trip to /feed
-════════════════════════════════ -->
-{% if current_user.is_authenticated %}
-<div class="home-compose-sheet" id="home-compose-sheet" hidden>
-  <div class="home-compose-sheet__backdrop" id="home-compose-close"></div>
-
-  <div class="home-compose-sheet__panel">
-    <div class="home-compose-sheet__header">
-      <span class="home-compose-sheet__title">Create post</span>
-      <button class="home-compose-sheet__close" id="home-compose-close-btn" type="button" aria-label="Close">✕</button>
-    </div>
-
-    <form
-      action="{{ url_for('create_feed_post') }}"
-      method="post"
-      enctype="multipart/form-data"
-      class="home-compose-form"
-    >
-      <input type="hidden" name="redirect_to" value="/">
-
-      <div class="home-compose-user-row">
-        <div class="home-compose-avatar">
-          {{ (current_user.name or current_user.email or "U")[0]|upper }}
-        </div>
-        <textarea
-          class="home-compose-body-input"
-          name="body"
-          placeholder="Share something with the community…"
-          rows="3"
-        ></textarea>
-      </div>
-
-      <div class="home-compose-extras">
-        <div class="home-compose-place-field">
-          <input
-            type="text"
-            id="home-compose-place-input"
-            placeholder="🍽️ Tag a place (optional)"
-            class="home-compose-city-input"
-            autocomplete="off"
-          >
-          <input type="hidden" name="listing_id" id="home-compose-listing-id">
-          <div class="home-compose-place-results" id="home-compose-place-results" hidden></div>
-          <div class="home-compose-place-selected" id="home-compose-place-selected" hidden>
-            <span id="home-compose-place-selected-name"></span>
-            <button type="button" id="home-compose-place-clear" aria-label="Remove tagged place">✕</button>
-          </div>
-        </div>
-
-        <div class="home-compose-city-row">
-          <input
-            type="text"
-            name="city"
-            id="home-compose-city-input"
-            placeholder="📍 City (optional)"
-            class="home-compose-city-input"
-          >
-          <button type="button" class="home-compose-locate-btn" id="home-compose-locate-btn">📍 Use my location</button>
-        </div>
-
-        <label class="home-compose-file-label" id="home-compose-file-label">
-          📷 Add photos
-          <input type="file" name="photos" accept="image/*" multiple class="home-compose-file-input">
-        </label>
-      </div>
-
-      <button class="home-compose-submit-btn" type="submit">Post</button>
-    </form>
-  </div>
-</div>
-{% endif %}
+<!-- Sibling of .mobile-home-hero (not nested inside it) so it stays visible
+     after a search runs, since .mobile-home-hero gets display:none when
+     body.ai-chat-active is set. -->
+<section class="home-globe-card home-globe-card--mobile">
+  <div id="home-globe-mobile" class="home-globe-canvas"></div>
+</section>
 
 <div class="quick-scroll-wrap" style="display: none;">
   <div class="quick-scroll">
@@ -1193,18 +576,7 @@
 
           <section class="chat-thread" id="chat-thread">
             <div class="chat-thread__inner" id="chat-thread-inner">
-              {% if current_user.is_authenticated %}
-                {% set _greet_src = (current_user.name or current_user.email or "") %}
-                {% set _greet_first = _greet_src.split(" ")[0] if _greet_src else "" %}
-                {% set _greet_text = ("Hello, " ~ _greet_first ~ "! Where do you want to go today?") if _greet_first else "Hello!" %}
-              {% else %}
-                {% set _greet_text = "Hello!" %}
-              {% endif %}
-              <div id="ai-chat-messages" class="ai-chat-messages">
-                <div class="ai-chat-message ai-chat-message--assistant" id="ai-chat-greeting-message">
-                  <div class="ai-chat-bubble" id="ai-chat-greeting-bubble" data-full-text="{{ _greet_text }}"></div>
-                </div>
-              </div>
+              <div id="ai-chat-messages" class="ai-chat-messages"></div>
 
 
 
@@ -1330,7 +702,7 @@ function buildResultRow(item, isInternal, index = 0) {
         </div>
 
         <p class="ai-rec-meta">
-          ${category}${isInternal ? " · Local AI" : ""}
+          ${category}${isInternal ? " · Dony" : ""}
         </p>
 
         ${address ? `<p class="ai-rec-address">${address}</p>` : ""}
@@ -1631,29 +1003,6 @@ function wireFilterBar() {
           </div>
         </div>
       </section>
-
-      <nav class="mobile-tabbar mobile-only">
-        <a href="{{ url_for('home') }}" class="mobile-tabbar__item is-active">
-          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg></span>
-          <span class="mobile-tabbar__label">Home</span>
-        </a>
-        <a href="/discover" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z"/></svg></span>
-          <span class="mobile-tabbar__label">Discover</span>
-        </a>
-        <a href="{{ url_for('home', chat=1) }}" class="mobile-tabbar__item" id="mobile-tabbar-search">
-          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-          <span class="mobile-tabbar__label">Search</span>
-        </a>
-        <a href="{{ url_for('feed') }}" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="15" rx="1.5"/><path d="M17 8h2.5A1.5 1.5 0 0 1 21 9.5V18a2 2 0 0 1-2 2H7"/><path d="M6.5 9h8M6.5 12.5h8M6.5 16h5"/></svg></span>
-          <span class="mobile-tabbar__label">Feed</span>
-        </a>
-        <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="mobile-tabbar__item">
-          <span class="mobile-tabbar__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20c1.3-3.8 4.4-6 7.5-6s6.2 2.2 7.5 6"/></svg></span>
-          <span class="mobile-tabbar__label">Account</span>
-        </a>
-      </nav>
     </main>
   </div>
 
@@ -2129,7 +1478,7 @@ function buildResultRow(item, isInternal, index = 0) {
           <h3>${name}</h3>
           ${rating ? stars(rating) : ""}
         </div>
-        <p class="ai-rec-meta">${category}${isInternal ? " · Local AI" : ""}</p>
+        <p class="ai-rec-meta">${category}${isInternal ? " · Dony" : ""}</p>
         ${address ? `<p class="ai-rec-address">${address}</p>` : ""}
         <p style="font-size:12px;color:rgba(157,232,200,0.6);margin-top:8px;font-weight:600;">
           Tap to view details & reviews →
@@ -2208,487 +1557,6 @@ function buildResultRow(item, isInternal, index = 0) {
     let _homeGlobeMap = null;
     let _homeGlobeMarkers = [];
     let _homeGlobeSpin = null;
-
-    /* ── Homepage "Nearby right now" feed (replaces the globe hero) ── */
-    function escapeHomeFeedHtml(s) {
-      const d = document.createElement("div");
-      d.textContent = s == null ? "" : String(s);
-      return d.innerHTML;
-    }
-
-    /* Pagination state for the "Nearby right now" feed. */
-    let _homeNearbyState = { city: null, beforeId: null, hasMore: false, loading: false };
-
-    function homeNearbyLists() {
-      return [
-        document.getElementById("home-nearby-list-desktop"),
-        document.getElementById("home-nearby-list-mobile")
-      ].filter(Boolean);
-    }
-
-    function setHomeNearbyLoading(isLoading) {
-      document.querySelectorAll('[data-role="loading-indicator"]').forEach(el => {
-        el.hidden = !isLoading;
-      });
-    }
-
-    function buildHomeNearbyPostHtml(p) {
-      const name     = (p.user_name || "User").split(" ")[0];
-      const initial  = (p.user_name || "U")[0].toUpperCase();
-      const place    = p.listing_name || p.title || "";
-      const slug     = p.listing_slug || "";
-      const category = p.listing_category || "";
-      const timeAgo  = p.time_ago || "";
-      const text     = p.body || "";
-      const photo    = p.user_photo || "";
-      const pic      = (p.images && p.images[0]) || p.image_url || "";
-      const likeCount    = Number(p.like_count || 0);
-      const commentCount = Number(p.comment_count || 0);
-      const likedByMe    = !!p.liked_by_me;
-      const deepLink = `/feed#post-${p.id}`;
-
-      const avatarHtml = photo
-        ? `<img src="${escapeHomeFeedHtml(photo)}" alt="" class="home-nearby-post__avatar-img" onerror="this.style.display='none';">`
-        : escapeHomeFeedHtml(initial);
-
-      const targetHtml = place
-        ? `<span class="home-nearby-post__headline-verb">shared</span> ${
-            slug
-              ? `<a class="home-nearby-post__headline-target" href="/listing/${escapeHomeFeedHtml(slug)}">${escapeHomeFeedHtml(place)}</a>`
-              : `<span class="home-nearby-post__headline-target">${escapeHomeFeedHtml(place)}</span>`
-          }`
-        : `<span class="home-nearby-post__headline-verb">shared an update</span>`;
-
-      const friendBadgeHtml = p.is_friend
-        ? `<span class="home-nearby-post__friend-badge">Friend</span>`
-        : "";
-
-      const sublineHtml = category
-        ? `<span class="home-nearby-post__subline-category">${escapeHomeFeedHtml(category)}</span><span class="home-nearby-post__subline-dot">·</span><span>${escapeHomeFeedHtml(timeAgo)}</span>`
-        : `<span>${escapeHomeFeedHtml(timeAgo)}</span>`;
-
-      const statsHidden = (!likeCount && !commentCount) ? "hidden" : "";
-
-      return `
-        <article class="home-nearby-post" id="home-nearby-post-${p.id}" data-post-id="${p.id}">
-          <a class="home-nearby-post__link" href="${deepLink}">
-            <div class="home-nearby-post__head">
-              <div class="home-nearby-post__avatar">${avatarHtml}</div>
-              <div class="home-nearby-post__headtext">
-                <div class="home-nearby-post__headline">
-                  <span class="home-nearby-post__headline-name">${escapeHomeFeedHtml(name)}</span>
-                  ${targetHtml}
-                  ${friendBadgeHtml}
-                </div>
-                <div class="home-nearby-post__subline">${sublineHtml}</div>
-              </div>
-            </div>
-            ${text ? `<div class="home-nearby-post__text">${escapeHomeFeedHtml(text)}</div>` : ""}
-            ${pic ? `<img src="${escapeHomeFeedHtml(pic)}" alt="" class="home-nearby-post__photo" loading="lazy" onerror="this.style.display='none';">` : ""}
-          </a>
-          <div class="home-nearby-post__stats" ${statsHidden}>
-            <span class="home-nearby-post__stats-item home-nearby-post__stats-item--likes" data-role="like-stat" ${likeCount ? "" : "hidden"}>
-              ❤ <span data-role="like-count">${likeCount}</span>
-            </span>
-            <span class="home-nearby-post__stats-item" data-role="comment-stat" ${commentCount ? "" : "hidden"}>
-              <span data-role="comment-count">${commentCount}</span> comment${commentCount !== 1 ? "s" : ""}
-            </span>
-          </div>
-          <div class="home-nearby-post__actions">
-            <button
-              class="home-nearby-post__action-btn home-nearby-post__action-btn--like ${likedByMe ? "home-nearby-post__action-btn--liked" : ""}"
-              type="button"
-              aria-label="Like"
-              data-liked="${likedByMe ? "1" : "0"}"
-            >
-              <span class="home-nearby-post__action-icon">${likedByMe ? "♥" : "♡"}</span>
-              <span class="home-nearby-post__action-label">${likedByMe ? "Liked" : "Like"}</span>
-            </button>
-            <a class="home-nearby-post__action-btn home-nearby-post__action-btn--comment" href="${deepLink}">
-              <span class="home-nearby-post__action-icon">💬</span>
-              <span class="home-nearby-post__action-label">Comment</span>
-            </a>
-            <button class="home-nearby-post__action-btn home-nearby-post__action-btn--share" type="button" aria-label="Share">
-              <span class="home-nearby-post__action-icon">↗</span>
-              <span class="home-nearby-post__action-label">Share</span>
-            </button>
-          </div>
-        </article>`;
-    }
-
-    function renderHomeNearbyFeed(posts, cityLabel) {
-      const lists = homeNearbyLists();
-
-      const cityEls = [
-        document.getElementById("home-nearby-city-desktop"),
-        document.getElementById("home-nearby-city-mobile")
-      ].filter(Boolean);
-
-      cityEls.forEach(el => { el.textContent = cityLabel || ""; });
-
-      if (!posts || !posts.length) {
-        const emptyHtml = `<div class="home-nearby-feed__empty">${
-          cityLabel
-            ? `No posts in ${escapeHomeFeedHtml(cityLabel)} yet — be the first to share a spot.`
-            : "Turn on location to see what people are eating nearby."
-        }</div>`;
-        lists.forEach(list => { list.innerHTML = emptyHtml; });
-        return;
-      }
-
-      const html = posts.map(buildHomeNearbyPostHtml).join("");
-
-      lists.forEach(list => {
-        list.innerHTML = html;
-        wireHomeNearbyFeedActions(list);
-      });
-    }
-
-    /* Appends the next page of posts to the end of each list — used by
-       infinite scroll, as opposed to renderHomeNearbyFeed's full replace. */
-    function appendHomeNearbyPosts(posts) {
-      if (!posts || !posts.length) return;
-      const html = posts.map(buildHomeNearbyPostHtml).join("");
-      homeNearbyLists().forEach(list => {
-        list.insertAdjacentHTML("beforeend", html);
-        wireHomeNearbyFeedActions(list);
-      });
-    }
-
-    /* ── Wire like/share on the (re-rendered) nearby-feed cards.
-       Event delegation on the list container so it keeps working across
-       innerHTML replacements from subsequent loadHomeNearbyFeed() calls. ── */
-    function wireHomeNearbyFeedActions(listEl) {
-      if (!listEl || listEl.dataset.wired === "1") return;
-      listEl.dataset.wired = "1";
-
-      listEl.addEventListener("click", async function (e) {
-        const likeBtn = e.target.closest(".home-nearby-post__action-btn--like");
-        const shareBtn = e.target.closest(".home-nearby-post__action-btn--share");
-        if (!likeBtn && !shareBtn) return;
-
-        const card = e.target.closest(".home-nearby-post");
-        const postId = card?.dataset.postId;
-        if (!postId) return;
-
-        const authEl = document.getElementById("page-auth-state");
-        const isAuthenticated = authEl?.dataset.authenticated === "true";
-        const loginUrl = authEl?.dataset.loginUrl || "/login";
-
-        if (likeBtn) {
-          if (!isAuthenticated) { window.location.href = loginUrl; return; }
-          likeBtn.disabled = true;
-
-          try {
-            const resp = await fetch(`/feed/${postId}/like`, {
-              method: "POST",
-              headers: { "X-Requested-With": "fetch" }
-            });
-            if (resp.ok) {
-              const data = await resp.json();
-              const icon = likeBtn.querySelector(".home-nearby-post__action-icon");
-              const label = likeBtn.querySelector(".home-nearby-post__action-label");
-              likeBtn.classList.toggle("home-nearby-post__action-btn--liked", data.liked);
-              likeBtn.dataset.liked = data.liked ? "1" : "0";
-              if (icon) icon.textContent = data.liked ? "♥" : "♡";
-              if (label) label.textContent = data.liked ? "Liked" : "Like";
-
-              const statsEl = card.querySelector(".home-nearby-post__stats");
-              const likeStatEl = card.querySelector('[data-role="like-stat"]');
-              const likeCountEl = card.querySelector('[data-role="like-count"]');
-              if (likeCountEl) likeCountEl.textContent = data.like_count;
-              if (likeStatEl) {
-                likeStatEl.hidden = data.like_count === 0;
-                if (statsEl && statsEl.hidden && !likeStatEl.hidden) statsEl.hidden = false;
-              }
-            }
-          } catch (err) {
-            /* ignore — button just stays in its previous state */
-          } finally {
-            likeBtn.disabled = false;
-          }
-          return;
-        }
-
-        if (shareBtn) {
-          const url = `${window.location.origin}/feed#post-${postId}`;
-          const icon = shareBtn.querySelector(".home-nearby-post__action-icon");
-
-          if (navigator.share) {
-            try { await navigator.share({ url, title: "Local AI" }); } catch (err) {}
-            return;
-          }
-          try {
-            await navigator.clipboard.writeText(url);
-            if (icon) {
-              const original = icon.textContent;
-              icon.textContent = "✓";
-              setTimeout(() => { icon.textContent = original; }, 1400);
-            }
-          } catch (err) {
-            window.prompt("Copy this link:", url);
-          }
-        }
-      });
-    }
-
-    async function loadHomeNearbyFeed(city) {
-      _homeNearbyState = { city, beforeId: null, hasMore: false, loading: true };
-      setHomeNearbyLoading(true);
-      try {
-        const resp = await fetch(`/api/feed/nearby?city=${encodeURIComponent(city)}`);
-        if (!resp.ok) { renderHomeNearbyFeed([], city); return; }
-        const data = await resp.json();
-        renderHomeNearbyFeed(data.posts || [], data.city || city);
-        _homeNearbyState.city = data.city || city;
-        _homeNearbyState.hasMore = !!data.has_more;
-        _homeNearbyState.beforeId = data.next_before_id || null;
-      } catch (e) {
-        console.error("[HOME_NEARBY_FEED_ERROR]", e);
-        renderHomeNearbyFeed([], city);
-      } finally {
-        _homeNearbyState.loading = false;
-        setHomeNearbyLoading(false);
-      }
-    }
-
-    /* Fetches the next page (older posts) and appends it — called when the
-       sentinel at the bottom of either list scrolls into view. */
-    async function loadMoreHomeNearbyPosts() {
-      if (_homeNearbyState.loading || !_homeNearbyState.hasMore || !_homeNearbyState.city) return;
-      _homeNearbyState.loading = true;
-      setHomeNearbyLoading(true);
-      try {
-        const params = new URLSearchParams({ city: _homeNearbyState.city });
-        if (_homeNearbyState.beforeId) params.set("before_id", _homeNearbyState.beforeId);
-        const resp = await fetch(`/api/feed/nearby?${params.toString()}`);
-        if (!resp.ok) return;
-        const data = await resp.json();
-        appendHomeNearbyPosts(data.posts || []);
-        _homeNearbyState.hasMore = !!data.has_more;
-        _homeNearbyState.beforeId = data.next_before_id || null;
-      } catch (e) {
-        console.error("[HOME_NEARBY_LOAD_MORE_ERROR]", e);
-      } finally {
-        _homeNearbyState.loading = false;
-        setHomeNearbyLoading(false);
-      }
-    }
-
-    /* Watches the sentinel element at the end of each list — when it
-       scrolls into view (near-viewport, via rootMargin), fetch the next
-       page. Works for the mobile list's own internal scroll container
-       and the normal page-scroll on desktop, since IntersectionObserver's
-       default (viewport) root already accounts for clipping ancestors. */
-    function initHomeNearbyInfiniteScroll() {
-      const sentinels = [
-        document.getElementById("home-nearby-sentinel-desktop"),
-        document.getElementById("home-nearby-sentinel-mobile")
-      ].filter(Boolean);
-      if (!sentinels.length || !("IntersectionObserver" in window)) return;
-
-      const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) loadMoreHomeNearbyPosts();
-        });
-      }, { rootMargin: "600px 0px" });
-
-      sentinels.forEach(el => observer.observe(el));
-    }
-
-    function initHomeNearbyFeed() {
-      const fallbackCity = "{{ (current_user.home_city if current_user.is_authenticated and current_user.home_city else '') | e }}";
-
-      if (!navigator.geolocation) {
-        if (fallbackCity) loadHomeNearbyFeed(fallbackCity);
-        else renderHomeNearbyFeed([], "");
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        async function (position) {
-          try {
-            const { latitude, longitude } = position.coords;
-            const resp = await fetch(`/api/reverse-geocode-city?lat=${latitude}&lng=${longitude}`);
-            const data = resp.ok ? await resp.json() : {};
-            const city = (data && data.city) || fallbackCity;
-            if (city) loadHomeNearbyFeed(city);
-            else renderHomeNearbyFeed([], "");
-          } catch (e) {
-            console.error("[HOME_NEARBY_LOCATION_ERROR]", e);
-            if (fallbackCity) loadHomeNearbyFeed(fallbackCity);
-            else renderHomeNearbyFeed([], "");
-          }
-        },
-        function () {
-          // Permission denied or unavailable — fall back to profile city.
-          if (fallbackCity) loadHomeNearbyFeed(fallbackCity);
-          else renderHomeNearbyFeed([], "");
-        },
-        { timeout: 8000, maximumAge: 10 * 60 * 1000 }
-      );
-    }
-
-    /* ── Home compose sheet: post right from the home page ── */
-    function escapeHomeComposeHtml(s) {
-      const d = document.createElement("div");
-      d.textContent = s == null ? "" : String(s);
-      return d.innerHTML;
-    }
-
-    function initHomeComposeSheet() {
-      const sheet         = document.getElementById("home-compose-sheet");
-      const openDesktop   = document.getElementById("home-compose-open-desktop");
-      const openMobile    = document.getElementById("home-compose-open-mobile");
-      const closeBackdrop = document.getElementById("home-compose-close");
-      const closeBtn      = document.getElementById("home-compose-close-btn");
-
-      if (!sheet) return;
-
-      function openSheet() {
-        sheet.hidden = false;
-        setTimeout(() => sheet.querySelector("textarea")?.focus(), 60);
-      }
-      function closeSheet() { sheet.hidden = true; }
-
-      openDesktop?.addEventListener("click", openSheet);
-      openMobile?.addEventListener("click", openSheet);
-      closeBackdrop?.addEventListener("click", closeSheet);
-      closeBtn?.addEventListener("click", closeSheet);
-      document.addEventListener("keydown", e => {
-        if (e.key === "Escape" && !sheet.hidden) closeSheet();
-      });
-
-      /* Use my location */
-      const locateBtn = document.getElementById("home-compose-locate-btn");
-      const cityInput = document.getElementById("home-compose-city-input");
-
-      locateBtn?.addEventListener("click", function () {
-        if (!navigator.geolocation) {
-          alert("Location isn't available in this browser.");
-          return;
-        }
-        locateBtn.textContent = "Locating…";
-        locateBtn.classList.add("is-loading");
-
-        navigator.geolocation.getCurrentPosition(
-          async function (pos) {
-            try {
-              const { latitude, longitude } = pos.coords;
-              const resp = await fetch(`/api/reverse-geocode-city?lat=${latitude}&lng=${longitude}`);
-              const data = await resp.json();
-              if (data.city && cityInput) {
-                cityInput.value = data.city;
-                locateBtn.textContent = "📍 " + data.city;
-              } else {
-                locateBtn.textContent = "📍 Use my location";
-              }
-            } catch (err) {
-              locateBtn.textContent = "📍 Use my location";
-            } finally {
-              locateBtn.classList.remove("is-loading");
-            }
-          },
-          function () {
-            locateBtn.textContent = "📍 Use my location";
-            locateBtn.classList.remove("is-loading");
-            alert("Couldn't get your location. You can still type a city in by hand.");
-          }
-        );
-      });
-
-      /* Tag a place */
-      const placeInput        = document.getElementById("home-compose-place-input");
-      const placeResults      = document.getElementById("home-compose-place-results");
-      const placeSelected     = document.getElementById("home-compose-place-selected");
-      const placeSelectedName = document.getElementById("home-compose-place-selected-name");
-      const placeClearBtn     = document.getElementById("home-compose-place-clear");
-      const listingIdInput    = document.getElementById("home-compose-listing-id");
-
-      let placeSearchTimer = null;
-
-      function clearPlaceResults() {
-        if (!placeResults) return;
-        placeResults.hidden = true;
-        placeResults.innerHTML = "";
-      }
-
-      function selectPlace(place) {
-        if (listingIdInput) listingIdInput.value = place.id;
-        if (placeSelectedName) {
-          placeSelectedName.textContent = place.name + (place.city ? ` · ${place.city}` : "");
-        }
-        if (placeSelected) placeSelected.hidden = false;
-        if (placeInput) { placeInput.value = ""; placeInput.hidden = true; }
-        clearPlaceResults();
-      }
-
-      placeInput?.addEventListener("input", function () {
-        const q = placeInput.value.trim();
-        clearTimeout(placeSearchTimer);
-        if (q.length < 2) { clearPlaceResults(); return; }
-
-        placeSearchTimer = setTimeout(async function () {
-          try {
-            const resp = await fetch(`/api/listings/search?q=${encodeURIComponent(q)}`);
-            const data = resp.ok ? await resp.json() : { results: [] };
-            const results = data.results || [];
-
-            if (!results.length) { clearPlaceResults(); return; }
-
-            placeResults.innerHTML = results.map(function (r) {
-              const name = escapeHomeComposeHtml(r.name || "");
-              const meta = escapeHomeComposeHtml([r.category, r.city].filter(Boolean).join(" · "));
-              return `
-                <div class="home-compose-place-result" data-id="${r.id}" data-name="${name}" data-city="${escapeHomeComposeHtml(r.city || "")}">
-                  <div class="home-compose-place-result__name">${name}</div>
-                  <div class="home-compose-place-result__meta">${meta}</div>
-                </div>`;
-            }).join("");
-            placeResults.hidden = false;
-
-            placeResults.querySelectorAll(".home-compose-place-result").forEach(function (el) {
-              el.addEventListener("click", function () {
-                selectPlace({ id: el.dataset.id, name: el.dataset.name, city: el.dataset.city });
-              });
-            });
-          } catch (e) {
-            clearPlaceResults();
-          }
-        }, 250);
-      });
-
-      placeClearBtn?.addEventListener("click", function () {
-        if (listingIdInput) listingIdInput.value = "";
-        if (placeSelected) placeSelected.hidden = true;
-        if (placeInput) placeInput.hidden = false;
-      });
-
-      document.addEventListener("click", function (e) {
-        if (
-          placeResults && !placeResults.hidden &&
-          placeInput && !placeInput.contains(e.target) &&
-          !placeResults.contains(e.target)
-        ) {
-          clearPlaceResults();
-        }
-      });
-
-      /* Photo count label */
-      document.querySelectorAll(".home-compose-file-input").forEach(input => {
-        const label = input.closest(".home-compose-file-label");
-        input.addEventListener("change", function () {
-          if (!label) return;
-          const count = input.files?.length || 0;
-          const textNode = label.childNodes[0];
-          if (!textNode || textNode.nodeType !== 3) return;
-
-          if (count === 0) textNode.textContent = "📷 Add photos";
-          else if (count === 1) textNode.textContent = "📷 " + input.files[0].name;
-          else textNode.textContent = `📷 ${count} photos selected`;
-        });
-      });
-    }
 
     function buildHomeGlobeMarkerEl(color) {
       const el = document.createElement("div");
@@ -3334,25 +2202,6 @@ function buildResultRow(item, isInternal, index = 0) {
 
 
 
-let greetingTyped = false;
-
-// Types out the "Hello, {name}!" conversation-starter bubble the first
-// time the AI chat view opens (i.e. the first time isActive is true) —
-// it stays fully typed after that, and real messages just append below it.
-function startGreetingTypewriter() {
-  if (greetingTyped) return;
-  const bubble = document.getElementById("ai-chat-greeting-bubble");
-  if (!bubble) return;
-  const full = bubble.getAttribute("data-full-text") || "";
-  if (!full) return;
-  greetingTyped = true;
-  if (typeof typeText === "function") {
-    typeText(bubble, full);
-  } else {
-    bubble.textContent = full;
-  }
-}
-
 function setChatUiState(isActive) {
   const page = document.getElementById("chat-page");
 
@@ -3363,8 +2212,6 @@ function setChatUiState(isActive) {
 
   document.body.classList.toggle("ai-chat-empty", !isActive);
   document.body.classList.toggle("ai-chat-active", isActive);
-
-  if (isActive) startGreetingTypewriter();
 }
 
 
@@ -3402,21 +2249,8 @@ function setChatUiState(isActive) {
       const mobileGreeting = document.getElementById("time-greeting-mobile");
 
 
-      // Arrived via a "Search" tab link (?chat=1, set on every page's
-      // bottom-nav Search item) -- skip the landing hero/feed and open
-      // straight into the empty chat canvas, same as tapping Search while
-      // already on this page does via #mobile-tabbar-search below.
-      const wantsChatOnLoad = new URLSearchParams(window.location.search).get("chat") === "1";
-      if (wantsChatOnLoad) {
-        setChatUiState(true);
-        bottomComposerEl?.classList.add("is-input-visible");
-        setComposerExpanded(true);
-      } else {
-        setChatUiState(false);
-      }
-      initHomeNearbyFeed();
-      initHomeNearbyInfiniteScroll();
-      initHomeComposeSheet();
+      setChatUiState(false);
+      initHomeGlobe();
 
       if (desktopGreeting) desktopGreeting.textContent = greeting;
       if (mobileGreeting) mobileGreeting.textContent = greeting;
@@ -3445,25 +2279,6 @@ function setChatUiState(isActive) {
 
       composerSearchTrigger?.addEventListener("click", function () {
         bottomComposerEl?.classList.add("is-input-visible");
-        setComposerExpanded(true);
-        composerMobileInput?.focus();
-      });
-
-      /* Bottom nav "Search" tab: on the home page this opens the AI
-         input in place instead of navigating (there's nowhere else to
-         go — it's already pointed at "/"). From any other page it just
-         follows its normal href to get here first. */
-      const mobileTabbarSearch = document.getElementById("mobile-tabbar-search");
-
-      mobileTabbarSearch?.addEventListener("click", function (event) {
-        if (!bottomComposerEl) return;
-        event.preventDefault();
-        // Full-page chat: same "hide the landing page, show the empty
-        // conversation canvas" transition runAiSearch() makes once a
-        // query is submitted, just triggered up front with no message
-        // yet — the thread starts blank and ready to type into.
-        if (typeof setChatUiState === "function") setChatUiState(true);
-        bottomComposerEl.classList.add("is-input-visible");
         setComposerExpanded(true);
         composerMobileInput?.focus();
       });
@@ -4082,7 +2897,7 @@ function buildResultRow(item, isInternal, index = 0) {
           <h3>${name}</h3>
           ${rating ? stars(rating) : ""}
         </div>
-        <p class="ai-rec-meta">${category}${isInternal ? " · Local AI" : ""}</p>
+        <p class="ai-rec-meta">${category}${isInternal ? " · Dony" : ""}</p>
         ${address ? `<p class="ai-rec-address">${address}</p>` : ""}
         <p style="font-size:12px;color:rgba(157,232,200,0.6);margin-top:8px;font-weight:600;">
           Tap to view details & reviews →

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Feed · Local AI</title>
+  <title>Feed · Dony</title>
 
   <link rel="stylesheet" href="/static/css/styles.css">
 
@@ -15,19 +15,19 @@
     ═══════════════════════════════════════ */
 
     :root {
-      --feed-bg:        #f5f5f7;
-      --feed-card:      #ffffff;
-      --feed-card-2:    #f7f7f8;
-      --feed-line:      rgba(0,0,0,0.08);
-      --feed-line-2:    rgba(0,0,0,0.06);
-      --feed-text:      #1d1d1f;
-      --feed-muted:     rgba(0,0,0,0.48);
-      --feed-pill:      rgba(0,0,0,0.045);
-      --feed-accent:    var(--brand, #10a37f);
-      --feed-accent-bg: rgba(16,163,127,0.10);
-      --feed-accent-bd: rgba(16,163,127,0.25);
-      --feed-avatar-bg: rgba(16,163,127,0.12);
-      --feed-avatar-c:  var(--brand-strong, #0d8a6c);
+      --feed-bg:        #0b0b0c;
+      --feed-card:      #111318;
+      --feed-card-2:    #13151b;
+      --feed-line:      rgba(255,255,255,0.07);
+      --feed-line-2:    rgba(255,255,255,0.05);
+      --feed-text:      #f5f5f7;
+      --feed-muted:     rgba(255,255,255,0.38);
+      --feed-pill:      rgba(255,255,255,0.06);
+      --feed-accent:    #19c38a;
+      --feed-accent-bg: rgba(25,195,138,0.12);
+      --feed-accent-bd: rgba(25,195,138,0.28);
+      --feed-avatar-bg: rgba(25,195,138,0.15);
+      --feed-avatar-c:  #7ee2bf;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -56,12 +56,12 @@
       position: fixed;
       top: 0; left: 0; bottom: 0;
       width: min(84vw, 300px);
-      background: #ffffff;
+      background: #17181a;
       z-index: 9999;
       padding: 22px 18px;
       transform: translateX(-100%);
       transition: transform 0.25s ease;
-      border-right: 0.5px solid rgba(0,0,0,0.08);
+      border-right: 0.5px solid rgba(255,255,255,0.08);
       overflow-y: auto;
     }
     .mobile-drawer.is-open { transform: translateX(0); }
@@ -81,15 +81,15 @@
       align-items: center;
       margin-bottom: 24px;
       padding-bottom: 18px;
-      border-bottom: 0.5px solid rgba(0,0,0,0.07);
+      border-bottom: 0.5px solid rgba(255,255,255,0.07);
     }
-    .mobile-drawer__title { color: #1d1d1f; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
-    .mobile-drawer__close { background: none; border: none; color: #1d1d1f; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 10px; background: rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: center; }
+    .mobile-drawer__title { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .mobile-drawer__close { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: center; }
 
     .mobile-drawer__nav { display: flex; flex-direction: column; gap: 4px; }
 
     .mobile-drawer__link {
-      color: rgba(0,0,0,0.7);
+      color: rgba(255,255,255,0.65);
       text-decoration: none;
       padding: 11px 14px;
       border-radius: 12px;
@@ -97,7 +97,7 @@
       font-weight: 600;
       transition: background 0.15s, color 0.15s;
     }
-    .mobile-drawer__link:hover { background: rgba(0,0,0,0.06); color: #1d1d1f; }
+    .mobile-drawer__link:hover { background: rgba(255,255,255,0.06); color: #fff; }
     .mobile-drawer__link.is-active { background: var(--feed-accent-bg); color: var(--feed-accent); border: 0.5px solid var(--feed-accent-bd); }
 
     /* ═══════════════════════════════════════
@@ -112,7 +112,7 @@
       align-items: center;
       gap: 12px;
       padding: max(12px, env(safe-area-inset-top)) 16px 12px;
-      background: rgba(245,245,247,0.85);
+      background: rgba(11,11,12,0.92);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 0.5px solid var(--feed-line);
@@ -127,8 +127,8 @@
     .feed-hdr-btn {
       width: 40px; height: 40px;
       border-radius: 12px;
-      border: 0.5px solid rgba(0,0,0,0.1);
-      background: rgba(0,0,0,0.06);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
       color: var(--feed-text);
       font-size: 17px;
       cursor: pointer;
@@ -137,7 +137,7 @@
       transition: background 0.15s;
       overflow: hidden;
     }
-    .feed-hdr-btn:hover { background: rgba(0,0,0,0.1); }
+    .feed-hdr-btn:hover { background: rgba(255,255,255,0.1); }
     .feed-hdr-btn:active { transform: scale(0.94); }
     .feed-hdr-btn--green {
       background: var(--feed-accent);
@@ -152,15 +152,15 @@
       width: 40px; height: 40px;
       border-radius: 12px;
       border: none;
-      background: rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.06);
       color: var(--feed-text);
       font-size: 20px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      border: 0.5px solid rgba(0,0,0,0.1);
+      border: 0.5px solid rgba(255,255,255,0.1);
       transition: background 0.15s;
     }
-    .feed-menu-btn:hover { background: rgba(0,0,0,0.1); }
+    .feed-menu-btn:hover { background: rgba(255,255,255,0.1); }
 
     /* ═══════════════════════════════════════
        INLINE COMPOSE TRIGGER BAR
@@ -171,14 +171,14 @@
       align-items: center;
       gap: 10px;
       background: var(--feed-card);
-      border: 0.5px solid rgba(0,0,0,0.09);
+      border: 0.5px solid rgba(255,255,255,0.09);
       border-radius: 18px;
       padding: 10px 12px;
       cursor: pointer;
       transition: border-color 0.18s, background 0.18s;
     }
     .feed-compose-trigger:hover {
-      border-color: rgba(0,0,0,0.16);
+      border-color: rgba(255,255,255,0.16);
       background: var(--feed-card-2);
     }
 
@@ -195,17 +195,17 @@
     .feed-compose-trigger__placeholder {
       flex: 1;
       font-size: 14px;
-      color: rgba(0,0,0,0.4);
+      color: rgba(255,255,255,0.28);
     }
 
     .feed-compose-trigger__photo {
       width: 32px; height: 32px;
       border-radius: 9px;
-      background: rgba(0,0,0,0.05);
-      border: 0.5px solid rgba(0,0,0,0.1);
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid rgba(255,255,255,0.1);
       display: flex; align-items: center; justify-content: center;
       font-size: 14px; flex-shrink: 0;
-      color: rgba(0,0,0,0.55);
+      color: rgba(255,255,255,0.45);
     }
 
     /* ═══════════════════════════════════════
@@ -230,8 +230,8 @@
       bottom: 16px;
       transform: translateX(-50%);
       width: min(680px, calc(100vw - 24px));
-      background: #ffffff;
-      border: 0.5px solid rgba(0,0,0,0.1);
+      background: #1a1c21;
+      border: 0.5px solid rgba(255,255,255,0.1);
       border-radius: 26px;
       box-shadow: 0 30px 80px rgba(0,0,0,0.5);
       padding: 18px;
@@ -259,13 +259,13 @@
     .feed-compose-sheet__close {
       width: 36px; height: 36px;
       border: none; border-radius: 10px;
-      background: rgba(0,0,0,0.08);
-      color: #1d1d1f; font-size: 18px;
+      background: rgba(255,255,255,0.08);
+      color: #fff; font-size: 18px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s;
     }
-    .feed-compose-sheet__close:hover { background: rgba(0,0,0,0.14); }
+    .feed-compose-sheet__close:hover { background: rgba(255,255,255,0.14); }
 
     /* Compose form */
     .feed-compose-form { display: flex; flex-direction: column; gap: 12px; }
@@ -290,9 +290,9 @@
       flex: 1;
       min-height: 72px;
       padding: 12px 14px;
-      border: 0.5px solid rgba(0,0,0,0.09);
+      border: 0.5px solid rgba(255,255,255,0.09);
       border-radius: 16px;
-      background: rgba(0,0,0,0.05);
+      background: rgba(255,255,255,0.05);
       color: var(--feed-text);
       font-size: 15px;
       line-height: 1.5;
@@ -301,113 +301,41 @@
       font-family: inherit;
       transition: border-color 0.18s;
     }
-    .compose-body-input:focus { border-color: rgba(16,163,127,0.45); }
-    .compose-body-input::placeholder { color: rgba(0,0,0,0.37); }
+    .compose-body-input:focus { border-color: rgba(25,195,138,0.45); }
+    .compose-body-input::placeholder { color: rgba(255,255,255,0.25); }
 
     .compose-extras { display: flex; flex-direction: column; gap: 10px; }
 
-    .compose-city-row { display: flex; gap: 8px; }
-
     .compose-city-input {
-      flex: 1;
       width: 100%;
       height: 44px;
       padding: 0 14px;
-      border: 0.5px solid rgba(0,0,0,0.09);
+      border: 0.5px solid rgba(255,255,255,0.09);
       border-radius: 12px;
-      background: rgba(0,0,0,0.05);
+      background: rgba(255,255,255,0.05);
       color: var(--feed-text);
       font-size: 14px;
       outline: none;
       font-family: inherit;
       transition: border-color 0.18s;
     }
-    .compose-city-input:focus { border-color: rgba(16,163,127,0.45); }
-    .compose-city-input::placeholder { color: rgba(0,0,0,0.37); }
-
-    .compose-locate-btn {
-      flex-shrink: 0;
-      height: 44px;
-      padding: 0 14px;
-      border: 0.5px solid rgba(0,0,0,0.09);
-      border-radius: 12px;
-      background: rgba(0,0,0,0.05);
-      color: rgba(0,0,0,0.6);
-      font-size: 13px;
-      font-weight: 700;
-      white-space: nowrap;
-      cursor: pointer;
-      font-family: inherit;
-      transition: border-color 0.15s, color 0.15s;
-    }
-    .compose-locate-btn:hover { border-color: rgba(16,163,127,0.4); color: var(--feed-avatar-c); }
-    .compose-locate-btn.is-loading { opacity: 0.6; pointer-events: none; }
-
-    .compose-place-field { position: relative; }
-
-    .compose-place-results {
-      position: absolute;
-      left: 0; right: 0; top: calc(100% + 4px);
-      background: #ffffff;
-      border: 0.5px solid rgba(0,0,0,0.12);
-      border-radius: 12px;
-      overflow-y: auto;
-      max-height: 220px;
-      z-index: 20;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-    }
-    .compose-place-results[hidden] { display: none; }
-
-    .compose-place-result {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding: 10px 14px;
-      cursor: pointer;
-      border-bottom: 0.5px solid rgba(0,0,0,0.06);
-    }
-    .compose-place-result:last-child { border-bottom: none; }
-    .compose-place-result:hover { background: rgba(0,0,0,0.06); }
-    .compose-place-result__name { font-size: 13px; font-weight: 700; color: var(--feed-text); }
-    .compose-place-result__meta { font-size: 11px; color: rgba(0,0,0,0.5); }
-
-    .compose-place-selected {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border: 0.5px solid rgba(16,163,127,0.35);
-      background: rgba(16,163,127,0.08);
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--feed-avatar-c);
-    }
-    .compose-place-selected[hidden] { display: none; }
-    .compose-place-selected button {
-      margin-left: auto;
-      background: none;
-      border: none;
-      color: rgba(0,0,0,0.6);
-      font-size: 13px;
-      cursor: pointer;
-      font-family: inherit;
-    }
+    .compose-city-input:focus { border-color: rgba(25,195,138,0.45); }
+    .compose-city-input::placeholder { color: rgba(255,255,255,0.25); }
 
     .compose-file-label {
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 11px 14px;
-      border: 0.5px dashed rgba(0,0,0,0.14);
+      border: 0.5px dashed rgba(255,255,255,0.14);
       border-radius: 12px;
-      color: rgba(0,0,0,0.55);
+      color: rgba(255,255,255,0.45);
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s;
     }
-    .compose-file-label:hover { border-color: rgba(16,163,127,0.4); color: var(--feed-avatar-c); }
+    .compose-file-label:hover { border-color: rgba(25,195,138,0.4); color: var(--feed-avatar-c); }
     .compose-file-input { display: none; }
 
     .compose-submit-btn {
@@ -433,7 +361,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.1px;
-      color: rgba(0,0,0,0.38);
+      color: rgba(255,255,255,0.26);
       padding: 16px 16px 8px;
     }
 
@@ -445,22 +373,13 @@
     .post {
       margin: 0 16px;
       background: var(--feed-card);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 18px;
+      border: 0.5px solid var(--feed-line);
+      border-radius: 22px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(20,20,25,0.06);
-      transition: border-color 0.18s, box-shadow 0.18s;
+      transition: border-color 0.18s;
       animation: postIn 0.22s ease both;
-      scroll-margin-top: 76px;
     }
-    .post:hover {
-      border-color: rgba(16,163,127,0.4);
-      box-shadow: 0 6px 16px rgba(20,20,25,0.1);
-    }
-    .post.is-highlighted {
-      border-color: #10a37f;
-      box-shadow: 0 0 0 2px rgba(16,163,127,0.18);
-    }
+    .post:hover { border-color: rgba(255,255,255,0.13); }
 
     @keyframes postIn {
       from { opacity: 0; transform: translateY(6px); }
@@ -485,11 +404,11 @@
     .post-avatar {
       width: 38px; height: 38px;
       border-radius: 50%;
-      background: rgba(0,0,0,0.07);
-      border: 0.5px solid rgba(0,0,0,0.1);
+      background: rgba(255,255,255,0.07);
+      border: 0.5px solid rgba(255,255,255,0.1);
       display: flex; align-items: center; justify-content: center;
       font-size: 14px; font-weight: 800;
-      color: rgba(0,0,0,0.75);
+      color: rgba(255,255,255,0.7);
       flex-shrink: 0;
     }
 
@@ -499,182 +418,106 @@
       color: var(--feed-avatar-c);
     }
 
-    .post-avatar__img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: inherit;
-    }
-
     .post-meta { flex: 1; min-width: 0; }
 
-    .post-headline {
-      font-size: 14.5px;
-      line-height: 1.35;
-      color: #1d1d1f;
-    }
-    .post-headline__name {
+    .post-name {
+      font-size: 14px;
       font-weight: 800;
-    }
-    .post-headline__verb {
-      font-weight: 500;
-      color: rgba(0,0,0,0.55);
-    }
-    .post-headline__target {
-      font-weight: 800;
-      color: inherit;
-      text-decoration: none;
-    }
-    a.post-headline__target:hover { text-decoration: underline; }
-
-    .post-subline {
-      font-size: 12px;
-      color: var(--feed-muted);
-      margin-top: 3px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      color: #fff;
+      line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .post-subline__dot { opacity: 0.6; }
-    .post-subline__category {
-      font-size: 11px;
-      font-weight: 700;
-      color: #10a37f;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
 
-    .post-friend-badge {
-      display: inline-block;
-      margin-left: 6px;
-      padding: 1px 7px;
-      border-radius: 999px;
-      background: rgba(16,163,127,0.18);
-      color: var(--brand, #10a37f);
-      font-size: 10px;
-      font-weight: 700;
-      vertical-align: middle;
+    .post-time {
+      font-size: 11px;
+      color: var(--feed-muted);
+      margin-top: 2px;
     }
 
     .post-overflow {
       border: none; background: none;
-      color: rgba(0,0,0,0.37);
+      color: rgba(255,255,255,0.25);
       font-size: 20px; cursor: pointer;
       padding: 4px 6px;
       border-radius: 8px;
       transition: color 0.15s, background 0.15s;
     }
-    .post-overflow:hover { color: rgba(0,0,0,0.7); background: rgba(0,0,0,0.06); }
+    .post-overflow:hover { color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.06); }
 
     /* ── Post body text ── */
     .post-body {
       padding: 10px 14px 12px;
       font-size: 16px;
       line-height: 1.55;
-      color: rgba(0,0,0,0.85);
+      color: rgba(255,255,255,0.9);
       word-break: break-word;
       overflow-wrap: anywhere;
     }
 
-    /* ── Post image(s) ── */
+    /* ── Post image ── */
     .post-image {
       width: 100%;
       display: block;
       max-height: 380px;
       object-fit: cover;
-      background: #eef0f0;
+      background: #0f1013;
     }
 
-    .post-image-grid {
-      display: grid;
-      gap: 2px;
-      background: #eef0f0;
-    }
-    .post-image-grid .post-image { max-height: none; height: 100%; aspect-ratio: 1 / 1; }
-
-    .post-image-grid--1 { grid-template-columns: 1fr; }
-    .post-image-grid--1 .post-image { aspect-ratio: 16 / 10; max-height: 380px; }
-
-    .post-image-grid--2 { grid-template-columns: 1fr 1fr; }
-
-    .post-image-grid--3 { grid-template-columns: 1fr 1fr; }
-    .post-image-grid--3 .post-image:first-child { grid-row: span 2; }
-
-    .post-image-grid--4 { grid-template-columns: 1fr 1fr; }
-
-    .post-image-more {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.06);
-      color: rgba(0,0,0,0.7);
-      font-size: 18px;
-      font-weight: 800;
-      aspect-ratio: 1 / 1;
-    }
-
-    /* ── Stats line (Beli-style: like/comment counts as plain text,
-       separate from the icon row below) ── */
-    .post-stats {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 10px 14px 0;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: rgba(0,0,0,0.5);
-    }
-    .post-stats__item { display: flex; align-items: center; gap: 5px; }
-    .post-stats__item--likes { color: #e0294a; }
-    .post-stats[hidden],
-    .post-stats__item[hidden] { display: none !important; }
-
-    /* ── Action bar: pill buttons matching Discover's disc-card__btn ── */
-    .post-actions {
-      display: flex;
-      flex-wrap: wrap;
+    /* ── Place pill ── */
+    .post-place-pill {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 10px 14px;
+      margin: 0 14px 12px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--feed-accent-bg);
+      border: 0.5px solid var(--feed-accent-bd);
+      color: var(--feed-avatar-c);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ── Action bar ── */
+    .post-actions {
+      display: flex;
+      border-top: 0.5px solid var(--feed-line-2);
     }
 
     .post-action-btn {
-      flex: 0 0 auto;
-      display: inline-flex;
+      flex: 1;
+      display: flex;
       align-items: center;
-      gap: 5px;
-      height: 27px;
-      padding: 0 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.12);
-      background: #f5f5f7;
-      color: #3c3c43;
-      font-size: 10.5px;
-      font-weight: 700;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 0;
+      border: none;
+      background: none;
       cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.38);
+      transition: color 0.15s, background 0.15s;
     }
-    .post-action-btn:hover { background: #ebebee; color: #14151a; }
-    .post-action-btn:active { transform: scale(0.95); }
-
-    .post-action-btn--liked {
-      background: #10a37f;
-      border-color: transparent;
-      color: #fff;
+    .post-action-btn + .post-action-btn {
+      border-left: 0.5px solid var(--feed-line-2);
     }
-    .post-action-btn--liked:hover { background: #0d8a6c; color: #fff; }
+    .post-action-btn:hover {
+      color: rgba(255,255,255,0.78);
+      background: rgba(255,255,255,0.03);
+    }
+    .post-action-btn:active { transform: scale(0.96); }
 
-    .post-action-btn--share { margin-left: auto; }
+    .post-action-btn--liked { color: #e84040; }
+    .post-action-btn--liked:hover { color: #f05252; }
 
-    .post-action-icon { font-size: 13px; line-height: 1; }
+    .post-action-icon { font-size: 15px; line-height: 1; }
 
     /* ── Comments section ── */
     .post-comments {
-      background: rgba(0,0,0,0.025);
+      background: rgba(0,0,0,0.18);
       border-top: 0.5px solid var(--feed-line-2);
       padding: 12px 14px;
       display: flex;
@@ -695,25 +538,17 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.9px;
-      color: rgba(0,0,0,0.4);
+      color: rgba(255,255,255,0.28);
     }
 
     .post-comments__count {
       font-size: 11px;
       font-weight: 700;
-      color: rgba(0,0,0,0.45);
-      background: rgba(0,0,0,0.06);
+      color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.06);
       border-radius: 999px;
       padding: 2px 8px;
     }
-    .post-comments__header[hidden] { display: none !important; }
-
-    .post-comments__list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .post-comments__list:empty { display: none; }
 
     /* Individual comment row */
     .post-comment {
@@ -725,18 +560,18 @@
     .post-comment__avatar {
       width: 28px; height: 28px;
       border-radius: 50%;
-      background: rgba(0,0,0,0.07);
-      border: 0.5px solid rgba(0,0,0,0.09);
+      background: rgba(255,255,255,0.07);
+      border: 0.5px solid rgba(255,255,255,0.09);
       display: flex; align-items: center; justify-content: center;
       font-size: 11px; font-weight: 800;
-      color: rgba(0,0,0,0.7);
+      color: rgba(255,255,255,0.65);
       flex-shrink: 0;
     }
 
     .post-comment__bubble {
       flex: 1;
       min-width: 0;
-      background: rgba(0,0,0,0.05);
+      background: rgba(255,255,255,0.05);
       border-radius: 4px 14px 14px 14px;
       padding: 8px 11px;
     }
@@ -744,14 +579,14 @@
     .post-comment__name {
       font-size: 12px;
       font-weight: 800;
-      color: #1d1d1f;
+      color: #fff;
       margin-bottom: 3px;
       line-height: 1.2;
     }
 
     .post-comment__text {
       font-size: 13px;
-      color: rgba(0,0,0,0.73);
+      color: rgba(255,255,255,0.68);
       line-height: 1.45;
       word-break: break-word;
       overflow-wrap: anywhere;
@@ -774,17 +609,17 @@
       flex: 1;
       height: 36px;
       padding: 0 14px;
-      border: 0.5px solid rgba(0,0,0,0.09);
+      border: 0.5px solid rgba(255,255,255,0.09);
       border-radius: 999px;
-      background: rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.06);
       color: var(--feed-text);
       font-size: 13px;
       font-family: inherit;
       outline: none;
       transition: border-color 0.18s;
     }
-    .comment-text-input:focus { border-color: rgba(16,163,127,0.45); }
-    .comment-text-input::placeholder { color: rgba(0,0,0,0.36); }
+    .comment-text-input:focus { border-color: rgba(25,195,138,0.45); }
+    .comment-text-input::placeholder { color: rgba(255,255,255,0.24); }
 
     .comment-send-btn {
       width: 36px; height: 36px;
@@ -821,14 +656,14 @@
     .feed-empty h2 {
       font-size: 20px;
       font-weight: 900;
-      color: #1d1d1f;
+      color: #fff;
       letter-spacing: -0.025em;
       margin: 0 0 8px;
     }
 
     .feed-empty p {
       font-size: 14px;
-      color: rgba(0,0,0,0.5);
+      color: rgba(255,255,255,0.4);
       line-height: 1.5;
       margin: 0;
     }
@@ -841,7 +676,7 @@
       grid-template-columns: repeat(5, 1fr);
       align-items: center;
       padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-      background: rgba(250,250,251,0.92);
+      background: rgba(11,11,12,0.96);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 0.5px solid var(--feed-line);
@@ -855,12 +690,12 @@
       justify-content: center;
       gap: 3px;
       text-decoration: none;
-      color: rgba(0,0,0,0.45);
+      color: rgba(255,255,255,0.35);
       font-size: 10px;
       min-height: 52px;
       transition: color 0.15s;
     }
-    .feed-tabbar__item.is-active { color: #1d1d1f; font-weight: 700; }
+    .feed-tabbar__item.is-active { color: #fff; font-weight: 700; }
     .feed-tabbar__icon { font-size: 20px; line-height: 1; }
 
     /* ── Responsive ── */
@@ -885,11 +720,11 @@
   ════════════════════════════════ -->
   <aside class="mobile-drawer" id="app-sidebar" aria-hidden="true">
     <div class="mobile-drawer__header">
-      <div class="mobile-drawer__title">Local AI</div>
+      <div class="mobile-drawer__title">Dony</div>
       <button class="mobile-drawer__close" id="app-sidebar-close" type="button" aria-label="Close menu">✕</button>
     </div>
     <nav class="mobile-drawer__nav">
-      <a href="{{ url_for('home') }}"                                      class="mobile-drawer__link">🏠 Home</a>
+      <a href="/"                                      class="mobile-drawer__link">🏠 Home</a>
       <a href="{{ url_for('feed') }}"                  class="mobile-drawer__link is-active">📰 Feed</a>
       <a href="/discover"                              class="mobile-drawer__link">🗺️ Discover</a>
       <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
@@ -907,7 +742,7 @@
 
     <div class="feed-header__brand">
       <div class="feed-header__title">Feed</div>
-      <div class="feed-header__sub">Local AI community</div>
+      <div class="feed-header__sub">Dony community</div>
     </div>
 
     <div class="feed-header__actions">
@@ -966,36 +801,16 @@
         </div>
 
         <div class="compose-extras">
-          <div class="compose-place-field">
-            <input
-              type="text"
-              id="compose-place-input"
-              placeholder="🍽️ Tag a place (optional)"
-              class="compose-city-input"
-              autocomplete="off"
-            >
-            <input type="hidden" name="listing_id" id="compose-listing-id">
-            <div class="compose-place-results" id="compose-place-results" hidden></div>
-            <div class="compose-place-selected" id="compose-place-selected" hidden>
-              <span id="compose-place-selected-name"></span>
-              <button type="button" id="compose-place-clear" aria-label="Remove tagged place">✕</button>
-            </div>
-          </div>
+          <input
+            type="text"
+            name="city"
+            placeholder="📍 City (optional)"
+            class="compose-city-input"
+          >
 
-          <div class="compose-city-row">
-            <input
-              type="text"
-              name="city"
-              id="compose-city-input"
-              placeholder="📍 City (optional)"
-              class="compose-city-input"
-            >
-            <button type="button" class="compose-locate-btn" id="compose-locate-btn">📍 Use my location</button>
-          </div>
-
-          <label class="compose-file-label" id="compose-file-label">
-            📷 Add photos
-            <input type="file" name="photos" accept="image/*" multiple class="compose-file-input">
+          <label class="compose-file-label">
+            📷 Add a photo
+            <input type="file" name="photo" accept="image/*" class="compose-file-input">
           </label>
         </div>
 
@@ -1014,39 +829,18 @@
 
       <section class="feed-list">
         {% for post in posts %}
-        <article class="post" id="post-{{ post.id }}" data-post-id="{{ post.id }}">
+        <article class="post">
 
-          <!-- Post header: Beli-style "Name shared Place" headline -->
+          <!-- Post header -->
           <div class="post-head">
             <div class="post-avatar {% if post.user_id == current_user.id %}post-avatar--accent{% endif %}">
-              {% if post.user_photo %}
-              <img class="post-avatar__img" src="{{ post.user_photo }}" alt="">
-              {% else %}
               {{ post.user_name[0]|upper if post.user_name else "U" }}
-              {% endif %}
             </div>
 
             <div class="post-meta">
-              <div class="post-headline">
-                <span class="post-headline__name">{{ post.user_name.split(' ')[0] if post.user_name else "User" }}</span>
-                {% if post.listing_name %}
-                  <span class="post-headline__verb">shared</span>
-                  {% if post.listing_slug %}
-                  <a class="post-headline__target" href="/listing/{{ post.listing_slug }}">{{ post.listing_name }}</a>
-                  {% else %}
-                  <span class="post-headline__target">{{ post.listing_name }}</span>
-                  {% endif %}
-                {% else %}
-                  <span class="post-headline__verb">shared an update</span>
-                {% endif %}
-                {% if post.is_friend %}<span class="post-friend-badge">Friend</span>{% endif %}
-              </div>
-              <div class="post-subline">
-                {% if post.listing_category or post.city %}
-                <span class="post-subline__category">{{ post.listing_category or post.city }}</span>
-                <span class="post-subline__dot">·</span>
-                {% endif %}
-                <span>{{ post.time_ago }}</span>
+              <div class="post-name">{{ post.user_name.split(' ')[0] if post.user_name else "User" }}</div>
+              <div class="post-time">
+                {{ post.created_at }}{% if post.city %} · {{ post.city }}{% endif %}
               </div>
             </div>
 
@@ -1058,88 +852,68 @@
           <div class="post-body">{{ post.body }}</div>
           {% endif %}
 
-          <!-- Image(s) -->
-          {% if post.images %}
-            {% set total = post.images|length %}
-            <div class="post-image-grid post-image-grid--{{ 4 if total >= 4 else total }}">
-              {% for img in post.images[:(3 if total >= 4 else total)] %}
-              <img
-                class="post-image"
-                src="{{ img }}"
-                alt="Post image"
-                loading="lazy"
-                onerror="this.style.display='none';"
-              >
-              {% endfor %}
-              {% if total >= 4 %}
-              <div class="post-image-more">+{{ total - 3 }}</div>
-              {% endif %}
-            </div>
+          <!-- Image -->
+          {% if post.image_url %}
+          <img
+            class="post-image"
+            src="{{ post.image_url }}"
+            alt="Post image"
+            loading="lazy"
+            onerror="this.style.display='none';"
+          >
           {% endif %}
 
-          <!-- Stats line: like / comment counts as plain text -->
-          <div class="post-stats" {% if not post.like_count and not post.comment_count %}hidden{% endif %}>
-            <span class="post-stats__item post-stats__item--likes" data-role="like-stat" {% if not post.like_count %}hidden{% endif %}>
-              ❤ <span data-role="like-count">{{ post.like_count }}</span>
-            </span>
-            <span class="post-stats__item" data-role="comment-stat" {% if not post.comment_count %}hidden{% endif %}>
-              <span data-role="comment-count">{{ post.comment_count }}</span> comment{{ "s" if post.comment_count != 1 else "" }}
-            </span>
-          </div>
+          <!-- Place pill -->
+          {% if post.listing_name %}
+          <div class="post-place-pill">📍 {{ post.listing_name }}</div>
+          {% endif %}
 
-          <!-- Action bar: like / comment / share (icon-only) -->
-          <div class="post-actions" data-authenticated="{{ '1' if current_user.is_authenticated else '0' }}">
-            <button
-              class="post-action-btn post-action-btn--like {% if post.liked_by_me %}post-action-btn--liked{% endif %}"
-              type="button"
-              aria-label="Like"
-              data-liked="{{ '1' if post.liked_by_me else '0' }}"
-            >
-              <span class="post-action-icon">{{ "♥" if post.liked_by_me else "♡" }}</span>
-              <span class="post-action-label">{{ "Liked" if post.liked_by_me else "Like" }}</span>
+          <!-- Action bar: like / comment / share -->
+          <div class="post-actions">
+            <button class="post-action-btn" type="button" aria-label="Like">
+              <span class="post-action-icon">♡</span>
+              {{ post.like_count }}
             </button>
-            <button class="post-action-btn post-action-btn--comment" type="button" aria-label="Comment">
+            <button class="post-action-btn" type="button" aria-label="Comment">
               <span class="post-action-icon">💬</span>
-              <span class="post-action-label">Comment</span>
+              {{ post.comment_count }}
             </button>
-            <button class="post-action-btn post-action-btn--share" type="button" aria-label="Share">
+            <button class="post-action-btn" type="button" aria-label="Share">
               <span class="post-action-icon">↗</span>
-              <span class="post-action-label">Share</span>
+              Share
             </button>
           </div>
 
           <!-- Comments section -->
           <div class="post-comments">
 
-            <div class="post-comments__header" {% if not post.comments %}hidden{% endif %}>
+            {% if post.comments %}
+            <div class="post-comments__header">
               <span class="post-comments__label">Comments</span>
-              <span class="post-comments__count" data-role="comments-header-count">{{ post.comment_count }}</span>
+              <span class="post-comments__count">{{ post.comment_count }}</span>
             </div>
 
-            <div class="post-comments__list" data-role="comments-list">
-              {% for comment in post.comments %}
-              <div class="post-comment">
-                <div class="post-comment__avatar">
-                  {{ comment.user_name[0]|upper if comment.user_name else "U" }}
-                </div>
-                <div class="post-comment__bubble">
-                  <div class="post-comment__name">
-                    {{ comment.user_name.split(' ')[0] if comment.user_name else "User" }}
-                  </div>
-                  <span class="post-comment__text">{{ comment.body }}</span>
-                </div>
+            {% for comment in post.comments %}
+            <div class="post-comment">
+              <div class="post-comment__avatar">
+                {{ comment.user_name[0]|upper if comment.user_name else "U" }}
               </div>
-              {% endfor %}
+              <div class="post-comment__bubble">
+                <div class="post-comment__name">
+                  {{ comment.user_name.split(' ')[0] if comment.user_name else "User" }}
+                </div>
+                <span class="post-comment__text">{{ comment.body }}</span>
+              </div>
             </div>
+            {% endfor %}
+            {% endif %}
 
             <!-- Comment input (auth only) -->
             {% if current_user.is_authenticated %}
             <div class="comment-input-row">
               <form
-                class="comment-form"
                 action="{{ url_for('comment_feed_post', post_id=post.id) }}"
                 method="post"
-                data-post-id="{{ post.id }}"
                 style="display:contents;"
               >
                 <input
@@ -1174,7 +948,7 @@
        MOBILE TAB BAR
   ════════════════════════════════ -->
   <nav class="feed-tabbar">
-    <a href="{{ url_for('home') }}" class="feed-tabbar__item">
+    <a href="/" class="feed-tabbar__item">
       <span class="feed-tabbar__icon">🏠</span>
       <span>Home</span>
     </a>
@@ -1182,7 +956,7 @@
       <span class="feed-tabbar__icon">🗺️</span>
       <span>Discover</span>
     </a>
-    <a href="{{ url_for('home', chat=1) }}" class="feed-tabbar__item">
+    <a href="/" class="feed-tabbar__item">
       <span class="feed-tabbar__icon">🔎</span>
       <span>Search</span>
     </a>
@@ -1243,312 +1017,40 @@ document.addEventListener("DOMContentLoaded", function () {
   closeBackdrop?.addEventListener("click", closeSheet);
   closeBtn?.addEventListener("click", closeSheet);
 
-  /* Auto-open the compose sheet when arriving via a "+" link (e.g. from the home page) */
-  if (new URLSearchParams(window.location.search).get("compose") === "1") {
-    openSheet();
-  }
-
-  /* ── Compose: use my location (matches the same reverse-geocode the home
-     page's "Nearby right now" feed uses, so the city string lines up) ── */
-  const locateBtn = document.getElementById("compose-locate-btn");
-  const composeCityInput = document.getElementById("compose-city-input");
-
-  locateBtn?.addEventListener("click", function () {
-    if (!navigator.geolocation) {
-      alert("Location isn't available in this browser.");
-      return;
-    }
-    locateBtn.textContent = "Locating…";
-    locateBtn.classList.add("is-loading");
-
-    navigator.geolocation.getCurrentPosition(
-      async function (pos) {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const resp = await fetch(`/api/reverse-geocode-city?lat=${latitude}&lng=${longitude}`);
-          const data = await resp.json();
-          if (data.city && composeCityInput) {
-            composeCityInput.value = data.city;
-            locateBtn.textContent = "📍 " + data.city;
-          } else {
-            locateBtn.textContent = "📍 Use my location";
-          }
-        } catch (err) {
-          locateBtn.textContent = "📍 Use my location";
-        } finally {
-          locateBtn.classList.remove("is-loading");
-        }
-      },
-      function () {
-        locateBtn.textContent = "📍 Use my location";
-        locateBtn.classList.remove("is-loading");
-        alert("Couldn't get your location. You can still type a city in by hand.");
-      }
-    );
-  });
-
-  /* ── Compose: tag an establishment ── */
-  const placeInput        = document.getElementById("compose-place-input");
-  const placeResults      = document.getElementById("compose-place-results");
-  const placeSelected     = document.getElementById("compose-place-selected");
-  const placeSelectedName = document.getElementById("compose-place-selected-name");
-  const placeClearBtn     = document.getElementById("compose-place-clear");
-  const listingIdInput    = document.getElementById("compose-listing-id");
-
-  let placeSearchTimer = null;
-
-  function clearPlaceResults() {
-    if (!placeResults) return;
-    placeResults.hidden = true;
-    placeResults.innerHTML = "";
-  }
-
-  function selectPlace(place) {
-    if (listingIdInput) listingIdInput.value = place.id;
-    if (placeSelectedName) {
-      placeSelectedName.textContent = place.name + (place.city ? ` · ${place.city}` : "");
-    }
-    if (placeSelected) placeSelected.hidden = false;
-    if (placeInput) { placeInput.value = ""; placeInput.hidden = true; }
-    clearPlaceResults();
-  }
-
-  placeInput?.addEventListener("input", function () {
-    const q = placeInput.value.trim();
-    clearTimeout(placeSearchTimer);
-
-    if (q.length < 2) { clearPlaceResults(); return; }
-
-    placeSearchTimer = setTimeout(async function () {
-      try {
-        const resp = await fetch(`/api/listings/search?q=${encodeURIComponent(q)}`);
-        const data = resp.ok ? await resp.json() : { results: [] };
-        const results = data.results || [];
-
-        if (!results.length) { clearPlaceResults(); return; }
-
-        placeResults.innerHTML = results.map(function (r) {
-          const name = escapeHomeFeedHtmlLocal(r.name || "");
-          const meta = escapeHomeFeedHtmlLocal([r.category, r.city].filter(Boolean).join(" · "));
-          return `
-            <div class="compose-place-result" data-id="${r.id}" data-name="${name}" data-city="${escapeHomeFeedHtmlLocal(r.city || "")}">
-              <div class="compose-place-result__name">${name}</div>
-              <div class="compose-place-result__meta">${meta}</div>
-            </div>`;
-        }).join("");
-        placeResults.hidden = false;
-
-        placeResults.querySelectorAll(".compose-place-result").forEach(function (el) {
-          el.addEventListener("click", function () {
-            selectPlace({ id: el.dataset.id, name: el.dataset.name, city: el.dataset.city });
-          });
-        });
-      } catch (e) {
-        clearPlaceResults();
-      }
-    }, 250);
-  });
-
-  placeClearBtn?.addEventListener("click", function () {
-    if (listingIdInput) listingIdInput.value = "";
-    if (placeSelected) placeSelected.hidden = true;
-    if (placeInput) placeInput.hidden = false;
-  });
-
-  document.addEventListener("click", function (e) {
-    if (
-      placeResults && !placeResults.hidden &&
-      placeInput && !placeInput.contains(e.target) &&
-      !placeResults.contains(e.target)
-    ) {
-      clearPlaceResults();
-    }
-  });
-
-  function escapeHomeFeedHtmlLocal(s) {
-    const d = document.createElement("div");
-    d.textContent = s == null ? "" : String(s);
-    return d.innerHTML;
-  }
-
   /* close sheet on Escape */
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && sheet && !sheet.hidden) closeSheet();
   });
 
-  /* ── Post cards: like / comment / share, wired to the real backend ── */
-  function escapeFeedHtml(s) {
-    const d = document.createElement("div");
-    d.textContent = s == null ? "" : String(s);
-    return d.innerHTML;
-  }
+  /* ── Like button: optimistic toggle ── */
+  document.querySelectorAll(".post-action-btn").forEach(btn => {
+    if (btn.getAttribute("aria-label") !== "Like") return;
 
-  document.querySelectorAll(".post").forEach(function (postEl) {
-    const postId = postEl.dataset.postId;
-    const actionsEl = postEl.querySelector(".post-actions");
-    const isAuthenticated = actionsEl?.dataset.authenticated === "1";
-
-    const statsEl        = postEl.querySelector(".post-stats");
-    const likeStatEl      = postEl.querySelector('[data-role="like-stat"]');
-    const likeCountEls    = postEl.querySelectorAll('[data-role="like-count"]');
-    const commentStatEl   = postEl.querySelector('[data-role="comment-stat"]');
-    const commentCountEls = postEl.querySelectorAll('[data-role="comment-count"]');
-    const commentsHeader  = postEl.querySelector(".post-comments__header");
-    const commentsHeaderCountEl = postEl.querySelector('[data-role="comments-header-count"]');
-    const commentsListEl  = postEl.querySelector('[data-role="comments-list"]');
-
-    function showStatsRowIfNeeded() {
-      if (statsEl && statsEl.hidden && (likeStatEl && !likeStatEl.hidden || commentStatEl && !commentStatEl.hidden)) {
-        statsEl.hidden = false;
-      }
-    }
-
-    /* ── Like ── */
-    const likeBtn = postEl.querySelector(".post-action-btn--like");
-    likeBtn?.addEventListener("click", function () {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-        return;
-      }
-      likeBtn.disabled = true;
-
-      fetch(`/feed/${postId}/like`, {
-        method: "POST",
-        headers: { "X-Requested-With": "fetch" }
-      })
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(data => {
-          const icon = likeBtn.querySelector(".post-action-icon");
-          const label = likeBtn.querySelector(".post-action-label");
-          likeBtn.classList.toggle("post-action-btn--liked", data.liked);
-          likeBtn.dataset.liked = data.liked ? "1" : "0";
-          if (icon) icon.textContent = data.liked ? "♥" : "♡";
-          if (label) label.textContent = data.liked ? "Liked" : "Like";
-
-          likeCountEls.forEach(el => { el.textContent = data.like_count; });
-          if (likeStatEl) {
-            likeStatEl.hidden = data.like_count === 0;
-            showStatsRowIfNeeded();
-          }
-        })
-        .catch(() => {})
-        .finally(() => { likeBtn.disabled = false; });
-    });
-
-    /* ── Comment: reveal + focus the input (or send signed-out users to
-       log in, since the input only renders for authenticated users) ── */
-    const commentBtn = postEl.querySelector(".post-action-btn--comment");
-    commentBtn?.addEventListener("click", function () {
-      const textInput = postEl.querySelector(".comment-text-input");
-      if (!isAuthenticated || !textInput) {
-        window.location.href = "/login";
-        return;
-      }
-      textInput.scrollIntoView({ behavior: "smooth", block: "center" });
-      textInput.focus();
-    });
-
-    /* ── Comment form: submit via fetch so the page doesn't reload ── */
-    const commentForm = postEl.querySelector(".comment-form");
-    commentForm?.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const input = commentForm.querySelector(".comment-text-input");
-      const sendBtn = commentForm.querySelector(".comment-send-btn");
-      const body = (input?.value || "").trim();
-      if (!body) return;
-
-      if (sendBtn) sendBtn.disabled = true;
-
-      fetch(commentForm.action, {
-        method: "POST",
-        headers: { "X-Requested-With": "fetch" },
-        body: new URLSearchParams({ body })
-      })
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(data => {
-          if (input) input.value = "";
-
-          if (commentsListEl) {
-            commentsListEl.insertAdjacentHTML("beforeend", `
-              <div class="post-comment">
-                <div class="post-comment__avatar">${escapeFeedHtml((data.comment.user_name || "U")[0].toUpperCase())}</div>
-                <div class="post-comment__bubble">
-                  <div class="post-comment__name">${escapeFeedHtml(data.comment.user_name || "User")}</div>
-                  <span class="post-comment__text">${escapeFeedHtml(data.comment.body)}</span>
-                </div>
-              </div>
-            `);
-          }
-
-          if (commentsHeader) commentsHeader.hidden = false;
-          if (commentsHeaderCountEl) commentsHeaderCountEl.textContent = data.comment_count;
-          commentCountEls.forEach(el => { el.textContent = data.comment_count; });
-          if (commentStatEl) {
-            commentStatEl.hidden = false;
-            showStatsRowIfNeeded();
-            const label = commentStatEl.querySelector('[data-role="comment-count"]')?.nextSibling;
-            if (label && label.nodeType === 3) {
-              label.textContent = data.comment_count === 1 ? " comment" : " comments";
-            }
-          }
-        })
-        .catch(() => {})
-        .finally(() => { if (sendBtn) sendBtn.disabled = false; });
-    });
-
-    /* ── Share: native share sheet, falling back to copying the link ── */
-    const shareBtn = postEl.querySelector(".post-action-btn--share");
-    shareBtn?.addEventListener("click", async function () {
-      const url = `${window.location.origin}/feed#post-${postId}`;
-      const icon = shareBtn.querySelector(".post-action-icon");
-
-      if (navigator.share) {
-        try {
-          await navigator.share({ url, title: "Local AI" });
-        } catch (err) {
-          /* user cancelled the native share sheet — nothing to do */
-        }
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(url);
-        if (icon) {
-          const original = icon.textContent;
-          icon.textContent = "✓";
-          setTimeout(() => { icon.textContent = original; }, 1400);
-        }
-      } catch (err) {
-        window.prompt("Copy this link:", url);
+    btn.addEventListener("click", function () {
+      const icon  = btn.querySelector(".post-action-icon");
+      const liked = btn.classList.toggle("post-action-btn--liked");
+      const countEl = btn.childNodes[btn.childNodes.length - 1];
+      if (icon) icon.textContent = liked ? "♥" : "♡";
+      /* optimistic count bump */
+      const current = parseInt(countEl?.textContent?.trim() || "0", 10);
+      if (countEl && countEl.nodeType === 3) {
+        countEl.textContent = " " + (liked ? current + 1 : Math.max(0, current - 1));
       }
     });
   });
-
-  /* ── Deep link: #post-<id> from a shared link scrolls to and
-     briefly highlights that post ── */
-  if (window.location.hash.startsWith("#post-")) {
-    const target = document.querySelector(window.location.hash);
-    if (target) {
-      setTimeout(() => {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        target.classList.add("is-highlighted");
-        setTimeout(() => target.classList.remove("is-highlighted"), 2200);
-      }, 80);
-    }
-  }
 
   /* ── File input label update ── */
   document.querySelectorAll(".compose-file-input").forEach(input => {
     const label = input.closest(".compose-file-label");
     input.addEventListener("change", function () {
       if (!label) return;
-      const count = input.files?.length || 0;
-      const textNode = label.childNodes[0];
-      if (!textNode || textNode.nodeType !== 3) return;
-
-      if (count === 0) textNode.textContent = "📷 Add photos";
-      else if (count === 1) textNode.textContent = "📷 " + input.files[0].name;
-      else textNode.textContent = `📷 ${count} photos selected`;
+      const filename = input.files?.[0]?.name;
+      if (filename) {
+        const textNode = label.childNodes[0];
+        if (textNode && textNode.nodeType === 3) {
+          textNode.textContent = "📷 " + filename;
+        }
+      }
     });
   });
 

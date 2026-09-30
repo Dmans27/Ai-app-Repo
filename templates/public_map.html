@@ -3,114 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{{ owner.name or "Local AI User" }}'s saved places · Local AI</title>
+  <title>{{ owner.name or "Dony User" }}'s saved places · Dony</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
   <style>
-    .pub-map-pin{cursor:pointer;transform-origin:bottom center;transition:transform 0.15s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45))}
-    .pub-map-pin:hover{transform:scale(1.15)}
-    .pub-map-you-marker{width:16px;height:16px;border-radius:50%;background:#2f7dff;border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,125,255,0.35),0 1px 4px rgba(0,0,0,0.3);}
-
-    /* Photo-hero popup: the selected photo fills the card as a full-bleed
-       background, with the info overlaid on top via a dark gradient scrim
-       -- same treatment as the account map / listing page hero cards. */
-    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-content{background:transparent;box-shadow:none;padding:0;color:#f2f2f2;border-radius:0;}
-    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-tip{border-top-color:#16181b;border-bottom-color:#16181b}
-    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-close-button{color:rgba(255,255,255,0.8);font-size:16px;padding:2px 6px;z-index:3}
-    .mapboxgl-popup.pub-map-popup .mapboxgl-popup-close-button:hover{color:#fff;background:none}
-    .pub-map-popup__wrap{width:230px;}
-    .pub-map-popup__card{position:relative;width:230px;height:170px;border-radius:14px;overflow:hidden;background:#16181b;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
-    .pub-map-popup__photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-    .pub-map-popup__placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;background:#20232a;}
-    .pub-map-popup__scrim{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0) 32%, rgba(0,0,0,0.88) 100%);pointer-events:none;}
-    .pub-map-popup__overlay{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;}
-    .pub-map-popup__head{display:flex;align-items:center;gap:8px;margin-bottom:2px}
-    .pub-map-popup__dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-    .pub-map-popup__name{font-size:14px;font-weight:800;color:#ffffff;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
-    .pub-map-popup__cat{font-size:11px;color:#8ff2ce;text-transform:capitalize;margin:0 0 2px}
-    .pub-map-popup__addr{font-size:11.5px;color:rgba(255,255,255,0.75);margin:0 0 8px;max-width:206px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .pub-map-popup__actions{display:flex;gap:6px}
-    .pub-map-popup__btn{display:inline-flex;align-items:center;justify-content:center;height:26px;padding:0 12px;border-radius:999px;background:rgba(16,163,127,0.24);border:0.5px solid rgba(16,163,127,0.55);color:#8ff2ce;font-size:11.5px;font-weight:700;text-decoration:none;transition:background 0.15s}
-    .pub-map-popup__btn:hover{background:rgba(16,163,127,0.4)}
-    .pub-map-popup__gallery{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:8px 0 0;padding:2px;max-width:230px}
-    .pub-map-popup__gallery::-webkit-scrollbar{display:none}
-    .pub-map-popup__thumb{scroll-snap-align:start;flex-shrink:0;width:50px;height:50px;padding:0;border:1.5px solid transparent;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.08);cursor:pointer;}
-    .pub-map-popup__thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-    .pub-map-popup__thumb.is-active{border-color:#7ee2bf;}
-
-    /* Full-page map: the map IS the page, with a transparent floating
-       header/owner-badge/CTA row hovering on top instead of the old
-       scrolling stack of a huge title + a separate map card. */
-    html, body.public-list-body{height:100%;}
-    body.public-list-body{margin:0;overflow:hidden;}
-    .public-list-shell{max-width:none;margin:0;padding-bottom:0;height:100vh;height:100dvh;position:relative;overflow:hidden;}
-
-    .public-list-header{
-      position:absolute;top:0;left:0;right:0;z-index:30;
-      padding:14px 16px;border-bottom:none;
-      background:linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
-    }
-    .public-list-header .public-list-menu-btn,
-    .public-list-header .public-list-header-avatar{
-      width:42px;height:42px;border-radius:14px;
-      background:rgba(28,28,30,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-    }
-    .pub-header-spacer{flex:1;}
-    .pub-share-btn{
-      width:42px;height:42px;border-radius:14px;border:none;flex-shrink:0;margin-right:10px;
-      background:rgba(28,28,30,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-      color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;
-      transition:background 0.15s;
-    }
-    .pub-share-btn:hover{background:rgba(28,28,30,0.92);}
-
-    .pub-share-panel{
-      position:absolute;top:64px;right:16px;z-index:40;width:240px;
-      background:#1c1c1e;border-radius:18px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.5);
-      padding:16px;display:none;flex-direction:column;gap:10px;text-align:center;
-    }
-    .pub-share-panel.is-open{display:flex;}
-    .pub-share-panel__title{font-size:13px;font-weight:800;color:#fff;margin:0;}
-    .pub-share-panel__desc{font-size:11.5px;color:rgba(255,255,255,0.55);margin:-4px 0 2px;line-height:1.4;}
-    .pub-share-panel__qr{width:150px;height:150px;margin:0 auto;border-radius:12px;border:0.5px solid rgba(255,255,255,0.12);}
-    .pub-share-panel__link-row{display:flex;gap:6px;align-items:center;}
-    .pub-share-panel__link{flex:1;min-width:0;height:30px;padding:0 8px;border-radius:8px;border:0.5px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .pub-share-panel__copy{flex-shrink:0;height:30px;padding:0 10px;border-radius:8px;border:none;background:#10a37f;color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
-    .pub-share-panel__copy.is-copied{background:#0d8a6c;}
-
-    .pub-owner-badge{
-      position:absolute;top:64px;left:16px;z-index:20;
-      display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;
-      background:rgba(28,28,30,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-      color:#fff;max-width:calc(100vw - 32px);
-    }
-    .pub-owner-badge__avatar{
-      width:26px;height:26px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#2c2c2e;
-      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
-    }
-    .pub-owner-badge__avatar img{width:100%;height:100%;object-fit:cover;}
-    .pub-owner-badge__name{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-    .public-list-main{position:relative;height:100%;}
-    .public-list-map{
-      position:absolute;inset:0;width:100%;height:100%;border-radius:0;
-    }
-
-    .pub-cta-row{
-      position:absolute;left:0;right:0;bottom:0;z-index:20;
-      display:flex;justify-content:center;gap:8px;
-      padding:14px 16px calc(14px + env(safe-area-inset-bottom));
-      background:linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
-    }
-    .pub-cta{
-      padding:9px 16px;border-radius:999px;background:rgba(28,28,30,0.82);
-      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-      color:#fff;text-decoration:none;font-size:12.5px;font-weight:700;
-      border:0.5px solid rgba(255,255,255,0.14);
-    }
-    .pub-cta.is-primary{background:#34c759;color:#000;border-color:transparent;}
+    /* Cards are clickable here (fly the map to that pin), unlike the
+       plain per-list share page, so make that obvious. */
+    .public-place-slide{cursor:pointer;transition:transform 0.15s ease}
+    .public-place-slide:hover{transform:translateY(-2px)}
   </style>
 </head>
 
@@ -121,9 +23,10 @@
         ☰
       </button>
 
-      <div class="pub-header-spacer"></div>
-
-      <button type="button" class="pub-share-btn" id="pub-share-toggle" aria-label="Share this map">🔗</button>
+      <a href="/" class="public-list-brand">
+        <strong>Dony</strong>
+        <span>Shared map</span>
+      </a>
 
       <a
         href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}"
@@ -140,41 +43,152 @@
       </a>
     </header>
 
-    <div class="pub-share-panel" id="pub-share-panel">
-      <p class="pub-share-panel__title">Share this map</p>
-      <p class="pub-share-panel__desc">Anyone with this link can view {{ (owner.name or "this user") if owner else "this user" }}'s saved places.</p>
-      {% if owner %}
-        <img class="pub-share-panel__qr" src="{{ url_for('user_public_map_qr_png', user_id=owner.id) }}" alt="QR code linking to this map" loading="lazy">
-      {% endif %}
-      <div class="pub-share-panel__link-row">
-        <input class="pub-share-panel__link" id="pub-share-link" type="text" readonly value="{{ url_for('user_public_map', user_id=owner.id, _external=True) if owner else request.url }}">
-        <button type="button" class="pub-share-panel__copy" id="pub-share-copy">Copy</button>
-      </div>
-    </div>
-
-    <div class="pub-owner-badge">
-      <span class="pub-owner-badge__avatar">
-        {% if owner and owner.profile_image_url %}
-          <img src="{{ owner.profile_image_url }}" alt="{{ owner.name or owner.email }}">
-        {% else %}
-          {{ (owner.name or owner.email or "U")[0]|upper if owner else "U" }}
-        {% endif %}
-      </span>
-      <span class="pub-owner-badge__name">Shared by {{ owner.name or "a Local AI user" if owner else "a Local AI user" }}</span>
-    </div>
-
     <main class="public-list-main">
-      <div id="public-list-map" class="public-list-map"></div>
+      <section class="public-list-owner-card">
+        <div class="public-list-owner-avatar">
+          {% if owner and owner.profile_image_url %}
+            <img src="{{ owner.profile_image_url }}" alt="{{ owner.name or owner.email }}">
+          {% else %}
+            <span>{{ (owner.name or owner.email or "U")[0]|upper if owner else "U" }}</span>
+          {% endif %}
+        </div>
 
-      <div class="pub-cta-row">
-        <a href="/" class="pub-cta">Find places</a>
+        <div class="public-list-owner-copy">
+          <p>Shared by</p>
+          <h2>{{ owner.name or "Dony User" if owner else "Dony User" }}</h2>
+        </div>
+      </section>
 
-        {% if current_user.is_authenticated %}
-          <a href="{{ url_for('account') }}" class="pub-cta is-primary">Save your own</a>
+      <section class="public-list-hero">
+        <p class="public-list-eyebrow">Public map</p>
+
+        <h1>{{ owner.name or "Dony User" }}'s saved places</h1>
+
+        <p class="public-list-meta">
+          {{ places|length }} place{% if places|length != 1 %}s{% endif %} saved · Dony
+        </p>
+
+        <div class="public-list-cta-row">
+          <a href="/" class="public-list-cta is-primary">
+            Find places
+          </a>
+
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('account') }}" class="public-list-cta">
+              Save your own
+            </a>
+          {% else %}
+            <a href="{{ url_for('signup') }}" class="public-list-cta">
+              Join Dony
+            </a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="public-list-map-card">
+        <div id="public-list-map" class="public-list-map"></div>
+      </section>
+
+      <section class="public-list-carousel-section">
+        <div class="public-list-section-heading">
+          <h2>Pinned locations</h2>
+          <span>{{ places|length }} spots</span>
+        </div>
+
+        {% if places %}
+          <div class="public-list-carousel">
+            {% for place in places %}
+              <article
+                class="public-place-slide"
+                data-lat="{{ place.latitude or '' }}"
+                data-lng="{{ place.longitude or '' }}"
+              >
+                {% if place.photo_url %}
+                  <img
+                    src="{{ place.photo_url }}"
+                    alt="{{ place.name }}"
+                    class="public-place-slide__image"
+                  >
+                {% else %}
+                  <img
+                    src="/static/img/default-business.jpg"
+                    alt="{{ place.name }}"
+                    class="public-place-slide__image"
+                  >
+                {% endif %}
+
+                <div class="public-place-slide__body">
+                  <h3>{{ place.name }}</h3>
+
+                  {% if place.category %}
+                    <p class="public-place-slide__category">
+                      {{ category_icon(place.category) }}
+                      {{ (place.category or "Local business")|replace('_', ' ')|title }}
+                    </p>
+                  {% endif %}
+
+                  {% if place.address %}
+                    <p class="public-place-slide__address">
+                      {{ place.address }}
+                    </p>
+                  {% endif %}
+
+                  {% if place.notes %}
+                    <p class="public-place-slide__notes">
+                      {{ place.notes }}
+                    </p>
+                  {% endif %}
+
+                  <div class="public-place-slide__actions">
+                    {% if place.slug %}
+                      <a
+                        href="/listing/{{ place.slug }}"
+                        onclick="event.stopPropagation();"
+                      >
+                        Show listing
+                      </a>
+                    {% endif %}
+
+                    {% if place.website %}
+                      <a
+                        href="{{ place.website }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Website
+                      </a>
+                    {% endif %}
+
+                    {% if place.latitude and place.longitude %}
+                      <a
+                        href="https://www.google.com/maps/dir/?api=1&destination={{ place.latitude }},{{ place.longitude }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="is-primary"
+                      >
+                        Directions
+                      </a>
+                    {% elif place.address %}
+                      <a
+                        href="https://www.google.com/maps/search/?api=1&query={{ place.address|urlencode }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="is-primary"
+                      >
+                        Directions
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
         {% else %}
-          <a href="{{ url_for('signup') }}" class="pub-cta is-primary">Join Local AI</a>
+          <p class="public-list-empty">
+            This user hasn't saved any places yet.
+          </p>
         {% endif %}
-      </div>
+      </section>
     </main>
   </div>
 
@@ -184,46 +198,6 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      const shareToggle = document.getElementById("pub-share-toggle");
-      const sharePanel = document.getElementById("pub-share-panel");
-      const shareCopyBtn = document.getElementById("pub-share-copy");
-      const shareLinkInput = document.getElementById("pub-share-link");
-
-      if (shareToggle && sharePanel) {
-        shareToggle.addEventListener("click", function (e) {
-          e.stopPropagation();
-          sharePanel.classList.toggle("is-open");
-        });
-        document.addEventListener("click", function (e) {
-          if (!e.target.closest("#pub-share-panel") && !e.target.closest("#pub-share-toggle")) {
-            sharePanel.classList.remove("is-open");
-          }
-        });
-      }
-      if (shareCopyBtn && shareLinkInput) {
-        shareCopyBtn.addEventListener("click", function () {
-          shareLinkInput.select();
-          shareLinkInput.setSelectionRange(0, 99999);
-          const done = function () {
-            shareCopyBtn.textContent = "Copied!";
-            shareCopyBtn.classList.add("is-copied");
-            setTimeout(function () {
-              shareCopyBtn.textContent = "Copy";
-              shareCopyBtn.classList.remove("is-copied");
-            }, 1600);
-          };
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(shareLinkInput.value).then(done).catch(function () {
-              document.execCommand("copy");
-              done();
-            });
-          } else {
-            document.execCommand("copy");
-            done();
-          }
-        });
-      }
-
       const mapEl = document.getElementById("public-list-map");
 
       if (!mapEl || typeof mapboxgl === "undefined") return;
@@ -238,12 +212,12 @@
 
       mapboxgl.accessToken = token;
 
-      function escapeHtml(v) {
-        return String(v || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-      }
+      const defaultCenter = places.length
+        ? [places[0].lng, places[0].lat]
+        : [-87.6298, 41.8781];
 
       function categoryColor(p) {
-        const c = [p.category, p.cuisine].join(" ").toLowerCase();
+        const c = (p.category || "").toLowerCase();
         if (c.includes("coffee")) return "#C6935A";
         if (c.includes("bar") || c.includes("cocktail")) return "#B368F7";
         if (c.includes("wine")) return "#B4436C";
@@ -255,74 +229,17 @@
 
       function buildMarkerEl(color) {
         const el = document.createElement("div");
-        el.className = "pub-map-pin";
+        el.style.cursor = "pointer";
+        el.style.filter = "drop-shadow(0 2px 4px rgba(0,0,0,0.45))";
         el.innerHTML = `<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 1C6.8 1 1 6.7 1 13.7c0 9.6 13 21.3 13 21.3s13-11.7 13-21.3C27 6.7 21.2 1 14 1z" fill="${color}" stroke="#0b0c0d" stroke-width="1.5"/><circle cx="14" cy="13.5" r="5" fill="#0b0c0d" fill-opacity="0.85"/></svg>`;
         return el;
       }
 
-      function pr(p) {
-        return p.rating != null && p.rating !== "" ? Number(p.rating) : null;
-      }
-
-      // Photo-hero popup: the first saved photo fills the card as a
-      // full-bleed background, name/category/rating/address/Directions
-      // overlaid on top via a dark gradient scrim, and a thumbnail row
-      // underneath lets you click through the rest -- same pattern as the
-      // account map and the listing page hero card.
-      function popupHtml(p) {
-        const dot = categoryColor(p);
-        const rt = pr(p);
-        const dirUrl = p.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}` : "";
-        const photos = (Array.isArray(p.photo_urls) && p.photo_urls.length ? p.photo_urls : (p.photo_url ? [p.photo_url] : [])).slice(0, 10);
-        const heroPhoto = photos[0] || "";
-        const photoBlock = heroPhoto
-          ? `<img class="pub-map-popup__photo" src="${escapeHtml(heroPhoto)}" alt="" onerror="this.remove()">`
-          : `<div class="pub-map-popup__placeholder">📍</div>`;
-        const gallery = photos.length > 1
-          ? `<div class="pub-map-popup__gallery">${photos.map((u, i) => `<button type="button" class="pub-map-popup__thumb${i === 0 ? " is-active" : ""}" data-photo-url="${escapeHtml(u)}" aria-label="Show photo ${i + 1}"><img src="${escapeHtml(u)}" alt="" loading="lazy"></button>`).join("")}</div>`
-          : "";
-        return `<div class="pub-map-popup__wrap"><div class="pub-map-popup__card">${photoBlock}<div class="pub-map-popup__scrim"></div><div class="pub-map-popup__overlay"><div class="pub-map-popup__head"><span class="pub-map-popup__dot" style="background:${dot}"></span><strong class="pub-map-popup__name">${escapeHtml(p.name || "")}</strong></div>${p.category || rt != null ? `<p class="pub-map-popup__cat">${escapeHtml(p.category || "")}${p.category && rt != null ? " · " : ""}${rt != null ? "★ " + rt.toFixed(1) : ""}</p>` : ""}${p.address ? `<p class="pub-map-popup__addr">${escapeHtml(p.address)}</p>` : ""}<div class="pub-map-popup__actions">${dirUrl ? `<a href="${dirUrl}" target="_blank" rel="noopener" class="pub-map-popup__btn">Directions</a>` : ""}</div></div></div>${gallery}</div>`;
-      }
-
-      // Popups are recreated per marker click, so wire the
-      // thumbnail-click -> swap-the-background-photo behavior once, via
-      // delegation, instead of per-popup listeners.
-      document.addEventListener("click", function (e) {
-        const thumb = e.target.closest(".pub-map-popup__thumb");
-        if (!thumb) return;
-        const wrap = thumb.closest(".pub-map-popup__wrap");
-        if (!wrap) return;
-        const url = thumb.getAttribute("data-photo-url");
-        if (!url) return;
-        const photoEl = wrap.querySelector(".pub-map-popup__photo");
-        const placeholderEl = wrap.querySelector(".pub-map-popup__placeholder");
-        if (photoEl) {
-          photoEl.src = url;
-        } else if (placeholderEl) {
-          const img = document.createElement("img");
-          img.className = "pub-map-popup__photo";
-          img.alt = "";
-          img.src = url;
-          placeholderEl.replaceWith(img);
-        }
-        wrap.querySelectorAll(".pub-map-popup__thumb").forEach(function (b) {
-          b.classList.toggle("is-active", b === thumb);
-        });
-      });
-
-      const dc = places.length ? [places[0].lng, places[0].lat] : [-87.6298, 41.8781];
-
-      // Pick a globe zoom that keeps the whole sphere inside the
-      // container's height, same technique as the account map, instead of
-      // a fixed zoom that can crop the globe on short/wide cards.
-      const boxHeight = mapEl.clientHeight || 420;
-      const globeZoom = Math.max(0, Math.log2((boxHeight * 0.8 * Math.PI) / 512));
-
       const map = new mapboxgl.Map({
         container: "public-list-map",
         style: styleUrl,
-        center: dc,
-        zoom: places.length ? globeZoom : 0.6,
+        center: defaultCenter,
+        zoom: places.length ? 1.4 : 0.6,
         projection: "globe",
         pitch: 0,
         bearing: -8,
@@ -340,17 +257,27 @@
       });
 
       const markers = [];
+      const bounds = new mapboxgl.LngLatBounds();
 
-      places.forEach(function (place) {
+      places.forEach((place) => {
         if (place.lng == null || place.lat == null) return;
+
+        const popupHtml = `
+          <div style="max-width:220px;">
+            <strong>${place.name || ""}</strong>
+            ${place.category ? `<div style="margin-top:4px;">${place.category}</div>` : ""}
+            ${place.address ? `<div style="margin-top:6px;">${place.address}</div>` : ""}
+          </div>
+        `;
 
         const marker = new mapboxgl.Marker({ element: buildMarkerEl(categoryColor(place)) })
           .setLngLat([place.lng, place.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 24, closeButton: true, className: "pub-map-popup", maxWidth: "300px" }).setHTML(popupHtml(place)))
+          .setPopup(new mapboxgl.Popup({ offset: 24 }).setHTML(popupHtml))
           .addTo(map);
 
         marker._place = place;
         markers.push(marker);
+        bounds.extend([place.lng, place.lat]);
       });
 
       let zoomedIn = false;
@@ -379,38 +306,6 @@
         setZoomedIn(map.getZoom() > 5);
       });
 
-      // Auto-zoom to wherever the visitor already is -- same
-      // requestUserLocation/flyHome pattern as the account map -- instead
-      // of requiring anyone to zoom in by hand. Falls back to the globe
-      // overview of every pin if location access is denied/unavailable.
-      let userLoc = null;
-      let youMarker = null;
-
-      function flyHome() {
-        if (userLoc) {
-          map.flyTo({ center: userLoc, zoom: 12.5, pitch: 0, bearing: -8, duration: 1400, essential: true });
-        } else {
-          map.easeTo({ center: dc, zoom: places.length ? globeZoom : 0.6, pitch: 0, bearing: -8, duration: 1100, essential: true });
-        }
-      }
-
-      function requestUserLocation() {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition(function (pos) {
-          userLoc = [pos.coords.longitude, pos.coords.latitude];
-          if (youMarker) {
-            youMarker.setLngLat(userLoc);
-          } else {
-            const youEl = document.createElement("div");
-            youEl.className = "pub-map-you-marker";
-            youMarker = new mapboxgl.Marker({ element: youEl }).setLngLat(userLoc).addTo(map);
-          }
-          flyHome();
-        }, function () {
-          /* denied/unavailable -- keep the globe overview of every pin */
-        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 });
-      }
-
       map.on("load", function () {
         if (!map.getLayer("public-map-3d-buildings")) {
           try {
@@ -431,7 +326,37 @@
           } catch (e) { /* style has no composite building layer — skip */ }
         }
 
-        requestUserLocation();
+        if (places.length > 1) {
+          map.fitBounds(bounds, { padding: 60, maxZoom: 4 });
+        } else if (places.length === 1) {
+          map.easeTo({ center: [places[0].lng, places[0].lat], zoom: 3 });
+        }
+      });
+
+      // Clicking a card below the map flies in on that place, tilted and
+      // zoomed in just like the account map does.
+      document.querySelectorAll(".public-place-slide").forEach(function (slide) {
+        slide.addEventListener("click", function (e) {
+          if (e.target.closest("a")) return;
+
+          const lat = parseFloat(slide.dataset.lat);
+          const lng = parseFloat(slide.dataset.lng);
+          if (isNaN(lat) || isNaN(lng)) return;
+
+          map.flyTo({
+            center: [lng, lat],
+            zoom: 15,
+            pitch: 55,
+            bearing: -17,
+            duration: 1400,
+            essential: true
+          });
+
+          const match = markers.find(function (m) {
+            return Math.abs(m._place.lat - lat) < 0.0001 && Math.abs(m._place.lng - lng) < 0.0001;
+          });
+          if (match) setTimeout(function () { match.togglePopup(); }, 900);
+        });
       });
     });
   </script>

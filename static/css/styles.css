@@ -7135,3 +7135,94 @@ body.ai-chat-active .chat-page {
     max-width: min(72%, 600px);
   }
 }
+
+/* =========================
+   FIRST-OPEN WELCOME MODAL
+   ========================= */
+.welcome-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,0.45);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.welcome-modal-overlay.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.welcome-modal-card {
+  position: relative;
+  width: min(400px, 100%);
+  background: #ffffff;
+  border: 2px solid #10a37f;
+  border-radius: 28px;
+  padding: 32px 26px 26px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.welcome-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: none;
+  background: #f5f5f7;
+  color: rgba(0,0,0,0.5);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.welcome-modal-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.welcome-modal-title {
+  margin: 0 0 6px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #10a37f;
+  letter-spacing: -0.02em;
+}
+
+.welcome-modal-tagline {
+  margin: 0 0 18px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.welcome-modal-subtitle {
+  margin: 0 0 22px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(0,0,0,0.6);
+}
+
+.welcome-modal-cta {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  background: #10a37f;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 14px 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.welcome-modal-cta:hover {
+  background: #0d8a6c;
+}

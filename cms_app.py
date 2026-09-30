@@ -509,6 +509,20 @@ def ensure_user_profile_columns():
             ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
         """))
 
+    # Added separately in its own try/except: the block above runs every
+    # statement under one transaction with no error handling, so a single
+    # failing ALTER there crashes app startup entirely (this has bitten us
+    # before). Keeping this new column isolated means it can never take the
+    # rest of boot down with it.
+    try:
+        with engine.begin() as conn:
+            conn.execute(sql_text("""
+                ALTER TABLE "user"
+                ADD COLUMN IF NOT EXISTS has_seen_welcome BOOLEAN DEFAULT FALSE;
+            """))
+    except Exception as e:
+        print(f"[user profile columns] failed to add 'has_seen_welcome': {e}", flush=True)
+
     print("user profile columns checked", flush=True)
     
     
@@ -2716,7 +2730,7 @@ def plan_ai_chat_turn(user_message: str, history: list, has_location: bool, know
         location_note = "We do NOT have any location for the user yet."
 
     prompt = f"""
-You are the query-understanding step for Mutual Eats, a food & drink discovery app.
+You are the query-understanding step for Dony, a food & drink discovery app.
 Only food, drinks, cafes, bars, and related local spots are in scope — nothing else.
 
 Conversation so far:
@@ -2807,7 +2821,7 @@ def compose_ai_chat_reply(user_message: str, results: list, searched_city: str =
     )
 
     prompt = f"""
-You are a warm, knowledgeable local food & drink concierge for Mutual Eats.
+You are a warm, knowledgeable local food & drink concierge for Dony.
 
 The user asked: "{user_message}"
 {profile_block}
@@ -4279,6 +4293,7 @@ def home():
 
     user_lists = []
     default_saved_list_id = None
+    show_welcome_modal = False
 
     if current_user.is_authenticated:
         user_lists = SavedList.query.filter_by(
@@ -4287,6 +4302,8 @@ def home():
 
         first_list = user_lists[0] if user_lists else None
         default_saved_list_id = first_list.id if first_list else None
+
+        show_welcome_modal = not current_user.has_seen_welcome
 
     return render_template(
     "directory_home.html",
@@ -4297,6 +4314,7 @@ def home():
     default_saved_list_id=default_saved_list_id,
     user_lists=user_lists,
     mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
+    show_welcome_modal=show_welcome_modal,
 )
 
 
@@ -4943,7 +4961,7 @@ def listing_page(slug):
             default_list = SavedList(
                 user_id=current_user.id,
                 title="My Places",
-                description="Places I saved from Local AI",
+                description="Places I saved from Dony",
                 slug=default_slug,
                 is_public=False
             )
@@ -6153,7 +6171,7 @@ def personalize_nearby_places(history_text: str, candidates: list, profile_text:
     signal_block = "\n\n".join(signal_sections)
 
     prompt = f"""
-You are the personalization step for Mutual Eats' Discover page. Here is
+You are the personalization step for Dony' Discover page. Here is
 what we actually know about this user — never guess beyond it:
 
 {signal_block}
@@ -6308,7 +6326,7 @@ def discover_page():
             default_list = SavedList(
                 user_id=current_user.id,
                 title="My Places",
-                description="Places I saved from Local AI",
+                description="Places I saved from Dony",
                 slug=default_slug,
                 is_public=False
             )
@@ -6935,6 +6953,14 @@ def onboarding_location():
 
     return render_template("onboarding_location.html")
 
+
+@app.route("/welcome/seen", methods=["POST"])
+@login_required
+def dismiss_welcome():
+    """Marks the first-open welcome popup as seen so it never shows again for this user."""
+    current_user.has_seen_welcome = True
+    db.session.commit()
+    return jsonify({"ok": True})
 
 
 @app.route("/debug-users")
