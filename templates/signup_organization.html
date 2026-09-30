@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Create account · Dony</title>
+  <title>Create organization account · Dony</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -110,9 +110,9 @@
   <main class="auth-shell">
     <section class="auth-card">
       <div class="auth-wordmark">Dony</div>
-      <div class="auth-eyebrow">Join now</div>
-      <h1 class="auth-title">Create account</h1>
-      <p class="auth-subtitle">Discover causes, save the ones you support, and keep track of where you give.</p>
+      <div class="auth-eyebrow">For organizations</div>
+      <h1 class="auth-title">Set up your organization</h1>
+      <p class="auth-subtitle">Create an account so individuals can discover your organization and the causes you support.</p>
 
       {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -124,12 +124,12 @@
         {% endif %}
       {% endwith %}
 
-      <form method="post" action="{{ url_for('signup') }}" class="auth-form" id="signup-form">
+      <form method="post" action="{{ url_for('signup_organization') }}" class="auth-form" id="signup-form">
 
-        <!-- Name -->
+        <!-- Organization name -->
         <div class="auth-field">
-          <label for="name" class="auth-label">Name</label>
-          <input id="name" type="text" name="name" class="auth-input" placeholder="Your full name">
+          <label for="name" class="auth-label">Organization name</label>
+          <input id="name" type="text" name="name" class="auth-input" placeholder="Your organization's name" required>
         </div>
 
         <!-- Username -->
@@ -157,7 +157,7 @@
         <!-- Email -->
         <div class="auth-field">
           <label for="email" class="auth-label">Email</label>
-          <input id="email" type="email" name="email" class="auth-input" placeholder="your@email.com" required>
+          <input id="email" type="email" name="email" class="auth-input" placeholder="org@email.com" required>
         </div>
 
         <!-- Password -->
@@ -175,14 +175,14 @@
           </span>
         </label>
 
-        <button type="submit" class="auth-submit" id="signup-submit">Create account</button>
+        <button type="submit" class="auth-submit" id="signup-submit">Create organization account</button>
       </form>
 
       <p class="auth-footer">
-        Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+        Signing up as an individual instead? <a href="{{ url_for('signup') }}">Create a personal account</a>
       </p>
       <p class="auth-footer">
-        Signing up on behalf of an organization? <a href="{{ url_for('signup_organization') }}">Set up an organization account</a>
+        Already have an account? <a href="{{ url_for('login') }}">Log in</a>
       </p>
     </section>
   </main>
@@ -195,9 +195,9 @@
       <h2>Privacy Policy</h2>
       <p class="privacy-updated">Effective Date: April 2026</p>
       <div class="privacy-popup__content">
-        <p>Dony collects account details, profile preferences, the causes you support, and saved organizations to personalize your experience.</p>
-        <p>Your public lists may be visible to others through shared links or QR codes.</p>
-        <p>You can update your profile, remove lists, or delete your account in Settings.</p>
+        <p>Dony collects account details, profile information, and the causes or projects your organization shares to help individuals discover you.</p>
+        <p>Your public organization profile may be visible to others through search, browsing, or shared links.</p>
+        <p>You can update your profile or delete your account in Settings.</p>
         <p>Full policy: <a href="{{ url_for('privacy_policy') }}" target="_blank">View Privacy Policy</a></p>
       </div>
       <div class="privacy-popup__actions">

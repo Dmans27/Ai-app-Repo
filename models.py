@@ -25,6 +25,8 @@ class User(UserMixin, db.Model):
     profile_image_url   = db.Column(db.Text, nullable=True)
     onboarding_complete = db.Column(db.Boolean, default=False)
     has_seen_welcome    = db.Column(db.Boolean, default=False)  # first-open welcome popup, dismissed once and never shown again
+    is_organization     = db.Column(db.Boolean, default=False)  # organization account vs. individual donor account
+    org_mission         = db.Column(db.Text, nullable=True)  # organization's mission/description, mirrored onto their public listing
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

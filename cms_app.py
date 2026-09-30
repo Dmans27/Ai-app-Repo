@@ -455,9 +455,22 @@ def create_core_tables():
             CONSTRAINT uq_user_saved_list UNIQUE (user_id, saved_list_id)
         );
     """))
-            
-            
-            
+
+    # Added separately in its own try/except (same reasoning as the
+    # has_seen_welcome column below): the big block above runs every
+    # statement in one unguarded transaction, so isolating new columns here
+    # means a failure adding this one can never crash the rest of boot.
+    # Links a listing to the organization account that owns/manages it, so
+    # an org's self-serve profile can be found in the same Discover feed as
+    # every other listing.
+    try:
+        with engine.begin() as conn:
+            conn.execute(sql_text("""
+                ALTER TABLE listings
+                ADD COLUMN IF NOT EXISTS owner_user_id INTEGER;
+            """))
+    except Exception as e:
+        print(f"[core tables] failed to add 'listings.owner_user_id': {e}", flush=True)
 
 
 
@@ -522,6 +535,24 @@ def ensure_user_profile_columns():
             """))
     except Exception as e:
         print(f"[user profile columns] failed to add 'has_seen_welcome': {e}", flush=True)
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(sql_text("""
+                ALTER TABLE "user"
+                ADD COLUMN IF NOT EXISTS is_organization BOOLEAN DEFAULT FALSE;
+            """))
+    except Exception as e:
+        print(f"[user profile columns] failed to add 'is_organization': {e}", flush=True)
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(sql_text("""
+                ALTER TABLE "user"
+                ADD COLUMN IF NOT EXISTS org_mission TEXT;
+            """))
+    except Exception as e:
+        print(f"[user profile columns] failed to add 'org_mission': {e}", flush=True)
 
     print("user profile columns checked", flush=True)
     
@@ -6891,6 +6922,177 @@ def signup():
     return render_template("signup.html")
 
 
+@app.route("/signup/organization", methods=["GET", "POST"])
+def signup_organization():
+    """Account signup for organizations -- same shape as individual signup,
+    but flagged is_organization so login/onboarding branch differently and
+    the org ends up with a self-serve listing instead of a personal profile."""
+    if request.method == "POST":
+        name     = request.form.get("name", "").strip()
+        username = request.form.get("username", "").strip().lower()
+        email    = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        if not email or not password:
+            flash("Email and password are required.")
+            return redirect(url_for("signup_organization"))
+
+        if not name:
+            flash("Organization name is required.")
+            return redirect(url_for("signup_organization"))
+
+        if not username:
+            flash("Username is required.")
+            return redirect(url_for("signup_organization"))
+
+        if len(username) < 3 or len(username) > 30:
+            flash("Username must be 3–30 characters.")
+            return redirect(url_for("signup_organization"))
+
+        if not re.match(r'^[a-z0-9_]+$', username):
+            flash("Username can only contain letters, numbers, and underscores.")
+            return redirect(url_for("signup_organization"))
+
+        if User.query.filter(db.func.lower(User.username) == username).first():
+            flash("That username is already taken. Please choose another.")
+            return redirect(url_for("signup_organization"))
+
+        if User.query.filter_by(email=email).first():
+            flash("That email is already registered.")
+            return redirect(url_for("signup_organization"))
+
+        if request.form.get("privacy_agree") != "on":
+            flash("You must agree to the Privacy Policy to create an account.")
+            return redirect(url_for("signup_organization"))
+
+        user = User(name=name, email=email, username=username, is_organization=True)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+
+        session.permanent = True
+        login_user(user, remember=True)
+        flash("Organization account created.")
+        return redirect(url_for("onboarding_organization"))
+
+    return render_template("signup_organization.html")
+
+
+@app.route("/onboarding/organization", methods=["GET", "POST"])
+@login_required
+def onboarding_organization():
+    """Single-page profile builder for organization accounts. Creates or
+    updates a row in `listings` owned by this account, so the org shows up
+    in the same Discover feed and search individuals already browse."""
+    if not current_user.is_organization:
+        return redirect(url_for("account"))
+
+    existing_listing = query_one(
+        "SELECT * FROM listings WHERE owner_user_id = :uid",
+        {"uid": current_user.id}
+    )
+
+    if request.method == "POST":
+        category = request.form.get("category", "").strip()
+        city_input = request.form.get("city", "").strip()
+        website = request.form.get("website", "").strip()
+        mission = request.form.get("mission", "").strip()
+
+        if not category:
+            flash("Please choose a category.")
+            return redirect(url_for("onboarding_organization"))
+
+        if not city_input:
+            flash("Please enter your location.")
+            return redirect(url_for("onboarding_organization"))
+
+        photo_url = existing_listing["photo_url"] if existing_listing else None
+        logo = request.files.get("logo")
+        if logo and logo.filename:
+            filename = secure_filename(logo.filename)
+            ext = os.path.splitext(filename)[1].lower() or ".jpg"
+            new_filename = f"org_{current_user.id}_{uuid.uuid4().hex}{ext}"
+
+            logo_upload_folder = os.path.join(
+                app.config["UPLOAD_FOLDER"],
+                "org_logos"
+            )
+            os.makedirs(logo_upload_folder, exist_ok=True)
+            logo.save(os.path.join(logo_upload_folder, new_filename))
+
+            photo_url = url_for(
+                "static",
+                filename=f"uploads/org_logos/{new_filename}"
+            )
+
+        # Best-effort geocode so the listing sorts correctly in Discover's
+        # distance-based results; falls back to the typed city text (with
+        # no coordinates) if geocoding is unavailable or fails.
+        geo = geocode_location_name(city_input)
+        city_clean = geo["city"] if geo else city_input
+        lat = geo["lat"] if geo else None
+        lng = geo["lng"] if geo else None
+
+        current_user.org_mission = mission
+        current_user.onboarding_complete = True
+        db.session.commit()
+
+        if existing_listing:
+            execute("""
+                UPDATE listings
+                SET name = :name, category = :category, city = :city,
+                    website = :website, description = :description,
+                    photo_url = :photo_url, latitude = :lat, longitude = :lng,
+                    status = 'published', updated_at = CURRENT_TIMESTAMP
+                WHERE owner_user_id = :uid
+            """, {
+                "name": current_user.name, "category": category, "city": city_clean,
+                "website": website, "description": mission, "photo_url": photo_url,
+                "lat": lat, "lng": lng, "uid": current_user.id,
+            })
+        else:
+            base_slug = slugify(current_user.name) or f"org-{current_user.id}"
+            slug = base_slug
+            if query_one("SELECT id FROM listings WHERE slug = :slug", {"slug": slug}):
+                slug = f"{base_slug}-{current_user.id}"
+
+            execute("""
+                INSERT INTO listings (
+                    name, slug, category, city, website, description,
+                    photo_url, latitude, longitude, featured, status,
+                    owner_user_id, created_at, updated_at
+                ) VALUES (
+                    :name, :slug, :category, :city, :website, :description,
+                    :photo_url, :lat, :lng, 0, 'published',
+                    :uid, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
+            """, {
+                "name": current_user.name, "slug": slug, "category": category,
+                "city": city_clean, "website": website, "description": mission,
+                "photo_url": photo_url, "lat": lat, "lng": lng, "uid": current_user.id,
+            })
+
+        flash("Your organization profile is live.")
+        return redirect(url_for("org_dashboard"))
+
+    return render_template("onboarding_organization.html", listing=existing_listing)
+
+
+@app.route("/org/dashboard")
+@login_required
+def org_dashboard():
+    if not current_user.is_organization:
+        return redirect(url_for("account"))
+
+    listing = query_one(
+        "SELECT * FROM listings WHERE owner_user_id = :uid",
+        {"uid": current_user.id}
+    )
+
+    if not listing:
+        return redirect(url_for("onboarding_organization"))
+
+    return render_template("org_dashboard.html", listing=listing)
 
 
 @app.route("/onboarding", methods=["GET", "POST"])
@@ -6985,6 +7187,8 @@ def login():
         session.permanent = True
         login_user(user, remember=True)
         flash("Welcome back.")
+        if user.is_organization:
+            return redirect(url_for("org_dashboard"))
         return redirect(url_for("account"))
 
     return render_template("login.html")

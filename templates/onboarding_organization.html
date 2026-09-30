@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Set up your organization · Dony</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    .onboarding-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 120px;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 18px;
+      background: #f5f5f7;
+      color: #1a1a1a;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+    .onboarding-textarea:focus {
+      outline: none;
+      border-color: #10a37f;
+    }
+    .onboarding-label {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: rgba(0,0,0,0.75);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body class="app-body onboarding-page">
+  <main class="onboarding-shell">
+    <section class="onboarding-card">
+      <p class="onboarding-eyebrow">Dony for organizations</p>
+
+      <h1>Set up your organization profile</h1>
+
+      <p class="onboarding-subtitle">
+        This is what individuals will see when they find your organization on Dony.
+      </p>
+
+      <form method="post" enctype="multipart/form-data" class="onboarding-form">
+
+        <div class="onboarding-section">
+          <label class="profile-photo-upload">
+            <input
+              type="file"
+              name="logo"
+              accept="image/*"
+            >
+
+            <span class="profile-photo-upload__circle">
+              {% if listing and listing.photo_url %}
+                <img src="{{ listing.photo_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:999px;">
+              {% else %}
+                🏢
+              {% endif %}
+            </span>
+
+            <span class="profile-photo-upload__text">
+              {% if listing and listing.photo_url %}Change logo{% else %}Upload logo{% endif %}
+            </span>
+          </label>
+        </div>
+
+        <div class="onboarding-section">
+          <h2>Category</h2>
+
+          <div class="onboarding-chip-grid onboarding-chip-grid--icons">
+            {% for cause in [
+              {"label": "Animal Welfare", "icon": "🐾"},
+              {"label": "Education", "icon": "🎓"},
+              {"label": "Environment & Conservation", "icon": "🌍"},
+              {"label": "Health & Medical Research", "icon": "🏥"},
+              {"label": "Hunger & Food Security", "icon": "🥫"},
+              {"label": "Homelessness & Housing", "icon": "🏠"},
+              {"label": "Human Rights & Social Justice", "icon": "⚖️"},
+              {"label": "Disaster Relief", "icon": "🆘"},
+              {"label": "Children & Youth", "icon": "🧒"},
+              {"label": "Mental Health", "icon": "🧠"}
+            ] %}
+              <label class="onboarding-chip onboarding-chip--icon">
+                <input
+                  type="radio"
+                  name="category"
+                  value="{{ cause.label }}"
+                  {% if listing and listing.category == cause.label %}checked{% endif %}
+                  required
+                >
+                <span class="onboarding-chip__body">
+                  <span class="onboarding-chip__icon">{{ cause.icon }}</span>
+                  <span class="onboarding-chip__label">{{ cause.label }}</span>
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="onboarding-section">
+          <label for="city" class="onboarding-label">Location</label>
+          <input
+            id="city"
+            type="text"
+            name="city"
+            class="onboarding-input"
+            placeholder="Chicago, Naperville, Miami..."
+            value="{{ listing.city if listing else '' }}"
+            required
+          >
+        </div>
+
+        <div class="onboarding-section">
+          <label for="website" class="onboarding-label">Website (optional)</label>
+          <input
+            id="website"
+            type="text"
+            name="website"
+            class="onboarding-input"
+            placeholder="https://yourorganization.org"
+            value="{{ listing.website if listing else '' }}"
+          >
+        </div>
+
+        <div class="onboarding-section">
+          <label for="mission" class="onboarding-label">Mission</label>
+          <textarea
+            id="mission"
+            name="mission"
+            class="onboarding-textarea"
+            placeholder="Tell people what your organization does and who it helps."
+          >{{ listing.description if listing else '' }}</textarea>
+        </div>
+
+        <button type="submit" class="onboarding-submit">
+          {% if listing %}Save changes{% else %}Publish profile{% endif %}
+        </button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
