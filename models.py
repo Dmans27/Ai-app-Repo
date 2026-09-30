@@ -20,8 +20,11 @@ class User(UserMixin, db.Model):
     budget_style        = db.Column(db.String(50), nullable=True)  # legacy restaurant-discovery field, no longer collected
     intent_type         = db.Column(db.String(120), nullable=True)  # legacy restaurant-discovery field, no longer collected
     causes              = db.Column(db.Text, nullable=True)  # JSON array of charity cause categories the user supports
+    age_range           = db.Column(db.String(20), nullable=True)
+    sex                 = db.Column(db.String(30), nullable=True)
     profile_image_url   = db.Column(db.Text, nullable=True)
     onboarding_complete = db.Column(db.Boolean, default=False)
+    has_seen_welcome    = db.Column(db.Boolean, default=False)  # first-open welcome popup, dismissed once and never shown again
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
