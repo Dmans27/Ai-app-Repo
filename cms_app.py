@@ -6308,6 +6308,7 @@ def api_discover_nearby():
 @app.route("/discover")
 def discover_page():
     default_list_id = None
+    show_welcome_modal = False
 
     if current_user.is_authenticated:
         default_list = SavedList.query.filter_by(user_id=current_user.id) \
@@ -6335,6 +6336,8 @@ def discover_page():
 
         default_list_id = default_list.id
 
+        show_welcome_modal = not current_user.has_seen_welcome
+
     return render_template(
         "discover.html",
         page_title="Discover",
@@ -6344,6 +6347,7 @@ def discover_page():
             "MAPBOX_STYLE_URL",
             "mapbox://styles/mapbox/light-v11"
         ),
+        show_welcome_modal=show_welcome_modal,
     )
 
 
