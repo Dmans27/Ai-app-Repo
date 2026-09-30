@@ -1212,9 +1212,13 @@
     if (!splash) return;
 
     setTimeout(function () {
+      {% if current_user.is_authenticated %}
       splash.classList.add("is-hidden");
       setTimeout(function () { splash.remove(); }, 500);
-    }, 6000);
+      {% else %}
+      window.location.href = "{{ url_for('login') }}";
+      {% endif %}
+    }, 3000);
   });
 </script>
 {% endif %}

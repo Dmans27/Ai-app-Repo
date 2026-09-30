@@ -3,20 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Create account · Local AI</title>
+  <title>Create account · Dony</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
     body.signup-page-body {
       margin: 0;
       min-height: 100vh;
       font-family: "Inter", sans-serif;
-      background:
-        radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 30%),
-        linear-gradient(180deg, #161616 0%, #0f0f10 100%);
-      color: #ffffff;
+      background: #f5f5f7;
+      color: #1a1a1a;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -26,48 +24,47 @@
       height: auto !important;
     }
 
-    .auth-shell { width: 100%; max-width: 560px; }
+    .auth-shell { width: 100%; max-width: 520px; }
 
     .auth-card {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.08);
       border-radius: 32px;
       padding: 40px 32px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
     }
 
-    .auth-eyebrow { font-size:0.92rem; font-weight:600; color:rgba(255,255,255,0.72); margin-bottom:10px; letter-spacing:0.02em; }
-    .auth-title { margin:0 0 10px; font-size:clamp(2rem,5vw,3rem); line-height:1.02; font-weight:800; letter-spacing:-0.03em; }
-    .auth-subtitle { margin:0 0 28px; color:rgba(255,255,255,0.72); font-size:1rem; line-height:1.6; }
+    .auth-wordmark { font-size: 1.3rem; font-weight: 900; color: #10a37f; letter-spacing: -0.02em; margin-bottom: 18px; }
+    .auth-eyebrow { font-size:0.92rem; font-weight:700; color:#0d8a6c; margin-bottom:10px; letter-spacing:0.02em; }
+    .auth-title { margin:0 0 10px; font-size:clamp(2rem,5vw,2.6rem); line-height:1.02; font-weight:800; letter-spacing:-0.03em; color:#1a1a1a; }
+    .auth-subtitle { margin:0 0 28px; color:rgba(0,0,0,0.6); font-size:1rem; line-height:1.6; }
 
     .flash-messages { display:grid; gap:10px; margin-bottom:20px; }
-    .flash-message { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08); color:#fff; border-radius:18px; padding:14px 16px; font-size:0.96rem; line-height:1.5; }
+    .flash-message { background:#eafaf3; border:1px solid rgba(16,163,127,0.25); color:#0d8a6c; border-radius:18px; padding:14px 16px; font-size:0.96rem; line-height:1.5; }
 
     .auth-form { display:grid; gap:16px; }
     .auth-field { display:grid; gap:8px; }
-    .auth-label { font-size:0.95rem; font-weight:600; color:rgba(255,255,255,0.86); }
+    .auth-label { font-size:0.95rem; font-weight:600; color:rgba(0,0,0,0.75); }
 
     .auth-input {
       width:100%; box-sizing:border-box;
-      border:1px solid rgba(255,255,255,0.10);
-      background:rgba(255,255,255,0.08);
-      color:#ffffff; border-radius:999px;
-      min-height:58px; padding:0 20px;
+      border:1px solid rgba(0,0,0,0.12);
+      background:#f5f5f7;
+      color:#1a1a1a; border-radius:999px;
+      min-height:56px; padding:0 20px;
       font-size:1rem; outline:none;
-      transition:border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+      transition:border-color 0.2s ease, background 0.2s ease;
     }
-    .auth-input::placeholder { color:rgba(255,255,255,0.48); }
-    .auth-input:focus { border-color:rgba(255,255,255,0.24); background:rgba(255,255,255,0.12); transform:translateY(-1px); }
-    .auth-input--valid   { border-color:rgba(16,163,127,0.7) !important; }
+    .auth-input::placeholder { color:rgba(0,0,0,0.35); }
+    .auth-input:focus { border-color:#10a37f; background:#ffffff; }
+    .auth-input--valid   { border-color:rgba(16,163,127,0.8) !important; }
     .auth-input--invalid { border-color:rgba(239,68,68,0.7) !important; }
 
     /* Username field wrapper */
     .username-wrap { position:relative; }
     .username-prefix {
       position:absolute; left:20px; top:50%; transform:translateY(-50%);
-      color:rgba(255,255,255,0.38); font-size:1rem; font-weight:600;
+      color:rgba(0,0,0,0.35); font-size:1rem; font-weight:600;
       pointer-events:none; user-select:none;
     }
     .auth-input--username { padding-left:32px; }
@@ -78,43 +75,44 @@
       margin-top:4px; padding:0 8px;
     }
     .username-feedback.show { display:block; }
-    .username-feedback--ok  { color:#7ee2bf; }
-    .username-feedback--err { color:#f87171; }
+    .username-feedback--ok  { color:#0d8a6c; }
+    .username-feedback--err { color:#dc2626; }
     .username-feedback__spinner {
       display:inline-block; width:10px; height:10px;
-      border:2px solid rgba(255,255,255,0.2);
-      border-top-color:rgba(255,255,255,0.7);
+      border:2px solid rgba(0,0,0,0.15);
+      border-top-color:#10a37f;
       border-radius:50%; animation:spin 0.7s linear infinite;
       vertical-align:middle; margin-right:4px;
     }
     @keyframes spin { to { transform:rotate(360deg); } }
 
     .auth-submit {
-      width:100%; min-height:58px; border:0; border-radius:999px;
-      background:#ffffff; color:#111111;
+      width:100%; min-height:56px; border:0; border-radius:999px;
+      background:#10a37f; color:#ffffff;
       font-size:1rem; font-weight:700; cursor:pointer;
-      transition:transform 0.2s ease, opacity 0.2s ease;
+      transition:background-color 0.15s ease, transform 0.15s ease;
       margin-top:6px;
     }
-    .auth-submit:hover { transform:translateY(-1px); opacity:0.96; }
+    .auth-submit:hover { background:#0d8a6c; transform:translateY(-1px); }
     .auth-submit:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
 
-    .auth-footer { margin-top:22px; text-align:center; color:rgba(255,255,255,0.72); font-size:0.98rem; }
-    .auth-footer a { color:#ffffff; font-weight:700; text-decoration:none; }
+    .auth-footer { margin-top:22px; text-align:center; color:rgba(0,0,0,0.6); font-size:0.98rem; }
+    .auth-footer a { color:#10a37f; font-weight:700; text-decoration:none; }
     .auth-footer a:hover { text-decoration:underline; }
 
     @media (max-width:640px) {
       .auth-card { padding:28px 20px; border-radius:24px; }
-      .auth-input, .auth-submit { min-height:54px; }
+      .auth-input, .auth-submit { min-height:52px; }
     }
   </style>
 </head>
 <body class="signup-page-body">
   <main class="auth-shell">
     <section class="auth-card">
+      <div class="auth-wordmark">Dony</div>
       <div class="auth-eyebrow">Join now</div>
       <h1 class="auth-title">Create account</h1>
-      <p class="auth-subtitle">Save favorite places, build local lists, and share them with friends.</p>
+      <p class="auth-subtitle">Discover causes, save the ones you support, and keep track of where you give.</p>
 
       {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -194,7 +192,7 @@
       <h2>Privacy Policy</h2>
       <p class="privacy-updated">Effective Date: April 2026</p>
       <div class="privacy-popup__content">
-        <p>Local AI collects account details, profile preferences, saved places, lists, and optional location data to personalize your experience.</p>
+        <p>Dony collects account details, profile preferences, the causes you support, and saved organizations to personalize your experience.</p>
         <p>Your public lists may be visible to others through shared links or QR codes.</p>
         <p>You can update your profile, remove lists, or delete your account in Settings.</p>
         <p>Full policy: <a href="{{ url_for('privacy_policy') }}" target="_blank">View Privacy Policy</a></p>
