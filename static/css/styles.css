@@ -7226,3 +7226,32 @@ body.ai-chat-active .chat-page {
 .welcome-modal-cta:hover {
   background: #0d8a6c;
 }
+
+/* =========================
+   APP LAUNCH SPLASH
+   Full-screen brand splash shown on cold app launch (root "/" only),
+   auto-dismisses after ~3s. Mirrors the native Venmo-style launch screen.
+   ========================= */
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #10a37f;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.app-splash.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-splash__logo {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+}

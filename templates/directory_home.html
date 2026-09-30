@@ -100,39 +100,6 @@
   hidden
 ></div>
 
-{% if show_welcome_modal %}
-<div id="welcome-modal" class="welcome-modal-overlay">
-  <div class="welcome-modal-card">
-    <button type="button" class="welcome-modal-close" id="welcome-modal-close" aria-label="Close">&times;</button>
-    <div class="welcome-modal-icon">🤝</div>
-    <h2 class="welcome-modal-title">Dony</h2>
-    <p class="welcome-modal-tagline">Where Donating is made easy</p>
-    <p class="welcome-modal-subtitle">Discover causes and organizations you actually care about, curated and shared by people like you. Find where to give, save the ones that matter, and support what moves you.</p>
-    <button type="button" class="welcome-modal-cta" id="welcome-modal-cta">Get started</button>
-  </div>
-</div>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    var modal = document.getElementById("welcome-modal");
-    if (!modal) return;
-
-    function dismissWelcome() {
-      modal.classList.add("is-hidden");
-      fetch("{{ url_for('dismiss_welcome') }}", {
-        method: "POST",
-        credentials: "same-origin"
-      }).catch(function () {});
-      setTimeout(function () { modal.remove(); }, 250);
-    }
-
-    document.getElementById("welcome-modal-close").addEventListener("click", dismissWelcome);
-    document.getElementById("welcome-modal-cta").addEventListener("click", dismissWelcome);
-    modal.addEventListener("click", function (e) {
-      if (e.target === modal) dismissWelcome();
-    });
-  });
-</script>
-{% endif %}
 
   <div class="app-shell">
     <!-- Desktop sidebar -->

@@ -4293,7 +4293,6 @@ def home():
 
     user_lists = []
     default_saved_list_id = None
-    show_welcome_modal = False
 
     if current_user.is_authenticated:
         user_lists = SavedList.query.filter_by(
@@ -4302,8 +4301,6 @@ def home():
 
         first_list = user_lists[0] if user_lists else None
         default_saved_list_id = first_list.id if first_list else None
-
-        show_welcome_modal = not current_user.has_seen_welcome
 
     return render_template(
     "directory_home.html",
@@ -4314,7 +4311,6 @@ def home():
     default_saved_list_id=default_saved_list_id,
     user_lists=user_lists,
     mapbox_token=os.getenv("MAPBOX_TOKEN", ""),
-    show_welcome_modal=show_welcome_modal,
 )
 
 
@@ -6308,7 +6304,13 @@ def api_discover_nearby():
 @app.route("/discover")
 def discover_page():
     default_list_id = None
-    show_welcome_modal = False
+
+    # Splash only belongs to the actual app launch (the bare "/" the
+    # Capacitor shell opens to), never to in-app navigation -- the bottom
+    # tab bar's Discover link always points at the explicit "/discover"
+    # path, so this stays False whenever someone taps into this page
+    # instead of cold-launching the app.
+    show_splash = (request.path == "/")
 
     if current_user.is_authenticated:
         default_list = SavedList.query.filter_by(user_id=current_user.id) \
@@ -6336,8 +6338,6 @@ def discover_page():
 
         default_list_id = default_list.id
 
-        show_welcome_modal = not current_user.has_seen_welcome
-
     return render_template(
         "discover.html",
         page_title="Discover",
@@ -6347,7 +6347,7 @@ def discover_page():
             "MAPBOX_STYLE_URL",
             "mapbox://styles/mapbox/light-v11"
         ),
-        show_welcome_modal=show_welcome_modal,
+        show_splash=show_splash,
     )
 
 
@@ -6956,15 +6956,6 @@ def onboarding_location():
         return redirect(url_for("account"))
 
     return render_template("onboarding_location.html")
-
-
-@app.route("/welcome/seen", methods=["POST"])
-@login_required
-def dismiss_welcome():
-    """Marks the first-open welcome popup as seen so it never shows again for this user."""
-    current_user.has_seen_welcome = True
-    db.session.commit()
-    return jsonify({"ok": True})
 
 
 @app.route("/debug-users")
