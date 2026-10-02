@@ -6281,6 +6281,19 @@ def api_discover_nearby():
                 print("[DISCOVER_NEARBY_PERSONALIZATION_ERROR]", str(e), flush=True)
                 reason_map = {}
 
+        # Cause-matching: an organization's listing.category is one of the
+        # same cause labels individuals pick during onboarding, so a direct
+        # membership check is enough to flag "this org supports a cause you
+        # care about" -- no fuzzy matching needed. Only signed-in users with
+        # causes saved get any matches; everyone else just sees distance-sorted
+        # results like before.
+        user_causes = set()
+        if current_user.is_authenticated and current_user.causes:
+            try:
+                user_causes = set(json.loads(current_user.causes))
+            except (TypeError, ValueError):
+                user_causes = set()
+
         places = []
         for r in results:
             # The detail panel on the Discover card ("View" button) needs a
@@ -6314,7 +6327,8 @@ def api_discover_nearby():
                 "distance_miles": r.get("distance_miles"),
                 "rating": r.get("rating"),
                 "review_count": r.get("review_count"),
-                "reason": reason_map.get(r.get("id"), "")
+                "reason": reason_map.get(r.get("id"), ""),
+                "is_match": bool(user_causes) and (r.get("category") in user_causes)
             })
 
         print("[DISCOVER_NEARBY_COUNT]", len(places), flush=True)
@@ -7181,7 +7195,7 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if not user or not user.check_password(password):
-            flash("Invalid email or password.")
+            flash("Invalid email or password.", "login_error")
             return redirect(url_for("login"))
 
         session.permanent = True

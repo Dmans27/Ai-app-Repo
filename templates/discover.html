@@ -567,13 +567,14 @@
       box-shadow: 0 0 0 2px rgba(47,125,255,0.35), 0 1px 4px rgba(0,0,0,0.3);
     }
     .disc-pin {
+      position: relative;
       width: 24px; height: 24px;
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
       border: 2px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.3);
       cursor: pointer;
-      transition: transform 0.15s;
+      transition: transform 0.15s, opacity 0.15s;
     }
     /* Pulsing ring on the selected pin — the expanding, fading box-shadow
        makes it stand out from the crowd when a lot of pins are clustered
@@ -597,6 +598,38 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .disc-pin.is-active { animation: none; }
+    }
+
+    /* Cause matches: an organization whose category is one of the signed-in
+       user's selected causes gets a bright ring + badge so it stands out;
+       everything else fades back when at least one match is on screen, so
+       the matches are the thing your eye lands on first. */
+    .disc-pin--match {
+      border-color: #10a37f;
+      box-shadow: 0 0 0 3px rgba(16,163,127,0.35), 0 1px 4px rgba(0,0,0,0.3);
+      z-index: 4;
+    }
+    .disc-pin--match::after {
+      content: "♥";
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #10a37f;
+      color: #fff;
+      font-size: 9px;
+      line-height: 14px;
+      text-align: center;
+      transform: rotate(45deg);
+      box-shadow: 0 0 0 2px #fff;
+    }
+    .disc-pin--dim {
+      opacity: 0.38;
+    }
+    .disc-pin--dim.is-active {
+      opacity: 1;
     }
 
     .disc-nearby-section {
@@ -2074,6 +2107,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const bounds = new mapboxgl.LngLatBounds();
     bounds.extend(state.map.getCenter());
 
+    // When any organization on screen matches a cause the signed-in user
+    // selected, that pin gets highlighted and everything else fades back a
+    // little so the matches are what stands out. With no matches (logged
+    // out, or no causes saved yet) every pin looks exactly as it did before.
+    const anyMatch = places.some((p) => p.is_match);
+
     places.forEach((place) => {
       if (place.latitude == null || place.longitude == null) return;
 
@@ -2081,10 +2120,21 @@ document.addEventListener("DOMContentLoaded", function () {
       el.className = "disc-pin";
       el.style.background = categoryColor(place.category);
 
+      if (place.is_match) {
+        el.classList.add("disc-pin--match");
+      } else if (anyMatch) {
+        el.classList.add("disc-pin--dim");
+      }
+
+      const matchBadgeHtml = place.is_match
+        ? `<div style="font-size:11px;font-weight:700;color:#0d8a6c;margin-top:4px;">♥ Matches a cause you support</div>`
+        : "";
+
       const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
         <div style="max-width:200px;">
           <div style="font-size:14px;font-weight:700;margin-bottom:2px;">${escapeHtml(place.name)}</div>
           <div style="font-size:12px;color:#666;">${escapeHtml((place.category || "").replace(/_/g, " "))}${place.distance_miles != null ? ` · ${place.distance_miles} mi` : ""}</div>
+          ${matchBadgeHtml}
         </div>
       `);
 

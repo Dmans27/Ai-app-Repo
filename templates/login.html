@@ -85,6 +85,12 @@
       line-height: 1.5;
     }
 
+    .flash-message--error {
+      background: #fdecec;
+      border: 1px solid rgba(220,38,38,0.25);
+      color: #b91c1c;
+    }
+
     .auth-form {
       display: grid;
       gap: 16px;
@@ -183,11 +189,11 @@
         Sign in to discover causes, save the ones you support, and keep track of where you give.
       </p>
 
-      {% with messages = get_flashed_messages() %}
+      {% with messages = get_flashed_messages(category_filter=["login_error"]) %}
         {% if messages %}
           <div class="flash-messages">
             {% for message in messages %}
-              <div class="flash-message">{{ message }}</div>
+              <div class="flash-message flash-message--error">{{ message }}</div>
             {% endfor %}
           </div>
         {% endif %}
