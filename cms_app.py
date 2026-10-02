@@ -2390,7 +2390,8 @@ def search_internal_listings(
     lat: float = None,
     lng: float = None,
     limit: int = 20,
-    max_distance_miles: float = 50
+    max_distance_miles: float = 50,
+    owner_only: bool = False
 ):
     sql = """
         SELECT
@@ -2411,10 +2412,18 @@ def search_internal_listings(
             photo_urls_json,
             card_image_url,
             google_rating,
-            google_rating_count
+            google_rating_count,
+            owner_user_id
         FROM listings
         WHERE status = 'published'
     """
+
+    # Restrict to listings created through organization signup/onboarding
+    # (owner_user_id set) rather than every published listing, including the
+    # older Google-Places-sourced business data from before Dony became a
+    # donation-discovery app. Only the Discover map asks for this right now.
+    if owner_only:
+        sql += " AND owner_user_id IS NOT NULL "
 
     params = {}
 
@@ -6267,7 +6276,8 @@ def api_discover_nearby():
             lat=lat,
             lng=lng,
             limit=30,
-            max_distance_miles=50
+            max_distance_miles=50,
+            owner_only=True
         )
         results = enrich_internal_results_with_ratings(results)
 
