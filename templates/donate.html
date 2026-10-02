@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Donate to {{ org.name }} · Dony</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    body.donate-page-body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", sans-serif;
+      background: #f5f5f7;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-y: auto !important;
+      height: auto !important;
+    }
+
+    .donate-shell { width: 100%; max-width: 480px; }
+
+    .donate-card {
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 32px;
+      padding: 36px 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    .donate-back {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: rgba(0,0,0,0.5);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+    .donate-back:hover { color: rgba(0,0,0,0.75); }
+
+    .donate-header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+    .donate-logo {
+      width: 56px; height: 56px; border-radius: 999px;
+      background: #f5f5f7; border: 1px solid rgba(0,0,0,0.1);
+      display: grid; place-items: center; font-size: 1.3rem;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .donate-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .donate-eyebrow { font-size: 0.85rem; font-weight: 700; color: #0d8a6c; margin: 0 0 2px; }
+    .donate-org-name { margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em; }
+
+    .flash-messages { display:grid; gap:10px; margin-bottom:20px; }
+    .flash-message { background:#eafaf3; border:1px solid rgba(16,163,127,0.25); color:#0d8a6c; border-radius:18px; padding:14px 16px; font-size:0.94rem; line-height:1.5; }
+
+    .donate-section-label {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: rgba(0,0,0,0.75);
+      margin: 0 0 10px;
+    }
+
+    .donate-frequency {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 22px;
+      background: #f5f5f7;
+      border-radius: 999px;
+      padding: 4px;
+    }
+    .donate-frequency input { display: none; }
+    .donate-frequency label {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: rgba(0,0,0,0.55);
+      cursor: pointer;
+      transition: background-color .15s ease, color .15s ease;
+    }
+    .donate-frequency input:checked + label {
+      background: #10a37f;
+      color: #fff;
+    }
+
+    .donate-amount-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .donate-amount-grid input { display: none; }
+    .donate-amount-grid label {
+      display: block;
+      text-align: center;
+      padding: 12px 0;
+      border-radius: 14px;
+      background: #f5f5f7;
+      border: 2px solid transparent;
+      font-weight: 700;
+      font-size: 0.96rem;
+      cursor: pointer;
+      transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+    }
+    .donate-amount-grid input:checked + label {
+      background: #eafaf3;
+      border-color: #10a37f;
+      color: #0d8a6c;
+    }
+
+    .donate-custom-wrap { position: relative; margin-bottom: 26px; }
+    .donate-custom-prefix {
+      position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+      color: rgba(0,0,0,0.4); font-weight: 700; font-size: 1.05rem;
+      pointer-events: none;
+    }
+    .donate-custom-input {
+      width: 100%; box-sizing: border-box;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #f5f5f7;
+      color: #1a1a1a; border-radius: 999px;
+      min-height: 56px; padding: 0 20px 0 34px;
+      font-size: 1.05rem; font-weight: 700; outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .donate-custom-input:focus { border-color: #10a37f; background: #ffffff; }
+
+    .donate-fee-note {
+      font-size: 0.82rem;
+      color: rgba(0,0,0,0.45);
+      text-align: center;
+      margin: -14px 0 20px;
+      line-height: 1.5;
+    }
+
+    .donate-submit {
+      width: 100%; min-height: 56px; border: 0; border-radius: 999px;
+      background: #10a37f; color: #ffffff;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+    .donate-submit:hover { background: #0d8a6c; transform: translateY(-1px); }
+
+    .donate-unavailable {
+      text-align: center;
+      padding: 20px 10px;
+      color: rgba(0,0,0,0.6);
+      font-size: 0.96rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 480px) {
+      .donate-card { padding: 28px 22px; border-radius: 24px; }
+      .donate-amount-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body class="donate-page-body">
+  <main class="donate-shell">
+    <section class="donate-card">
+      <a href="{{ url_for('listing_page', slug=listing.slug) }}" class="donate-back">← Back to {{ org.name }}</a>
+
+      <div class="donate-header">
+        <div class="donate-logo">
+          {% if listing.photo_url %}
+            <img src="{{ listing.photo_url }}" alt="">
+          {% else %}
+            🏢
+          {% endif %}
+        </div>
+        <div>
+          <p class="donate-eyebrow">Donate to</p>
+          <h1 class="donate-org-name">{{ org.name }}</h1>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for message in messages %}
+              <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% if stripe_ready %}
+        <form method="post" action="{{ url_for('donate_checkout', slug=listing.slug) }}" id="donate-form">
+
+          <p class="donate-section-label">Frequency</p>
+          <div class="donate-frequency">
+            <input type="radio" name="frequency" id="freq-once" value="once" checked>
+            <label for="freq-once">One-time</label>
+            <input type="radio" name="frequency" id="freq-monthly" value="monthly">
+            <label for="freq-monthly">Monthly</label>
+          </div>
+
+          <p class="donate-section-label">Amount</p>
+          <div class="donate-amount-grid" id="amount-presets">
+            <input type="radio" name="amount_preset" id="amt-10" value="10">
+            <label for="amt-10">$10</label>
+            <input type="radio" name="amount_preset" id="amt-25" value="25" checked>
+            <label for="amt-25">$25</label>
+            <input type="radio" name="amount_preset" id="amt-50" value="50">
+            <label for="amt-50">$50</label>
+            <input type="radio" name="amount_preset" id="amt-100" value="100">
+            <label for="amt-100">$100</label>
+          </div>
+
+          <div class="donate-custom-wrap">
+            <span class="donate-custom-prefix">$</span>
+            <input
+              type="number"
+              name="amount"
+              id="amount-input"
+              class="donate-custom-input"
+              value="25"
+              min="1"
+              step="1"
+              inputmode="decimal"
+              required
+            >
+          </div>
+
+          <p class="donate-fee-note">
+            Dony keeps {{ "%g"|format(platform_fee_percent) }}% to help run the platform — the rest goes straight to {{ org.name }}.
+          </p>
+
+          <button type="submit" class="donate-submit" id="donate-submit">Continue to payment</button>
+        </form>
+      {% else %}
+        <div class="donate-unavailable">
+          {{ org.name }} hasn't connected a way to receive donations on Dony yet.
+          <br><br>
+          Check back soon, or reach out to them directly.
+        </div>
+      {% endif %}
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const presets = document.querySelectorAll('input[name="amount_preset"]');
+      const amountInput = document.getElementById("amount-input");
+
+      presets.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          if (this.checked) amountInput.value = this.value;
+        });
+      });
+
+      amountInput?.addEventListener("input", function () {
+        presets.forEach(function (radio) { radio.checked = false; });
+      });
+    });
+  </script>
+</body>
+</html>

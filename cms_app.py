@@ -46,7 +46,7 @@ from flask_login import LoginManager
 from flask import request, render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, SavedList, SavedPlace, BusinessClaim, UserSavedList
+from models import db, User, SavedList, SavedPlace, BusinessClaim, UserSavedList, Donation
 
 
 
@@ -553,6 +553,24 @@ def ensure_user_profile_columns():
             """))
     except Exception as e:
         print(f"[user profile columns] failed to add 'org_mission': {e}", flush=True)
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(sql_text("""
+                ALTER TABLE "user"
+                ADD COLUMN IF NOT EXISTS stripe_account_id VARCHAR(255);
+            """))
+    except Exception as e:
+        print(f"[user profile columns] failed to add 'stripe_account_id': {e}", flush=True)
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(sql_text("""
+                ALTER TABLE "user"
+                ADD COLUMN IF NOT EXISTS stripe_connected_at TIMESTAMP;
+            """))
+    except Exception as e:
+        print(f"[user profile columns] failed to add 'stripe_connected_at': {e}", flush=True)
 
     print("user profile columns checked", flush=True)
     
@@ -2351,6 +2369,29 @@ GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
 
 print("GOOGLE_MAPS_API_KEY loaded:", bool(GOOGLE_MAPS_API_KEY), flush=True)
 print("GOOGLE_MAPS_API_KEY first 8:", (GOOGLE_MAPS_API_KEY or "")[:8], flush=True)
+
+
+# -----------------------
+# Stripe Connect (donations)
+# -----------------------
+# Every piece here is None/blank until these env vars are set on the server --
+# that's expected until there's a real Stripe account with Connect turned on.
+# Routes that need Stripe check for that and fail gracefully (flash a message,
+# redirect) rather than crashing, the same way MAPBOX_TOKEN being unset just
+# means the map doesn't render instead of a 500.
+import stripe
+
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY")
+STRIPE_CONNECT_CLIENT_ID = os.environ.get("STRIPE_CONNECT_CLIENT_ID")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+PLATFORM_FEE_PERCENT = 5.0  # Dony's cut of every donation; the organization gets the rest
+
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
+
+print("STRIPE_SECRET_KEY loaded:", bool(STRIPE_SECRET_KEY), flush=True)
+print("STRIPE_CONNECT_CLIENT_ID loaded:", bool(STRIPE_CONNECT_CLIENT_ID), flush=True)
 
 
 from math import radians, sin, cos, sqrt, atan2
@@ -6338,7 +6379,8 @@ def api_discover_nearby():
                 "rating": r.get("rating"),
                 "review_count": r.get("review_count"),
                 "reason": reason_map.get(r.get("id"), ""),
-                "is_match": bool(user_causes) and (r.get("category") in user_causes)
+                "is_match": bool(user_causes) and (r.get("category") in user_causes),
+                "is_org": bool(r.get("owner_user_id"))
             })
 
         print("[DISCOVER_NEARBY_COUNT]", len(places), flush=True)
@@ -7117,6 +7159,316 @@ def org_dashboard():
         return redirect(url_for("onboarding_organization"))
 
     return render_template("org_dashboard.html", listing=listing)
+
+
+# -----------------------
+# Stripe Connect: organizations link their own Stripe account so donations
+# can be paid out to them directly, with Dony taking PLATFORM_FEE_PERCENT off
+# the top of each payment via Stripe's application_fee mechanism. This is the
+# classic "Connect with Stripe" OAuth flow for Standard accounts -- the org
+# brings or creates their own full Stripe account, and Stripe (not Dony)
+# handles identity verification and payout compliance directly with them.
+# -----------------------
+@app.route("/org/stripe/connect")
+@login_required
+def org_stripe_connect():
+    if not current_user.is_organization:
+        return redirect(url_for("account"))
+
+    if not STRIPE_CONNECT_CLIENT_ID:
+        flash("Stripe isn't configured on Dony yet -- check back soon.")
+        return redirect(url_for("org_dashboard"))
+
+    state = uuid.uuid4().hex
+    session["stripe_oauth_state"] = state
+
+    params = {
+        "response_type": "code",
+        "client_id": STRIPE_CONNECT_CLIENT_ID,
+        "scope": "read_write",
+        "redirect_uri": url_for("org_stripe_callback", _external=True),
+        "state": state,
+    }
+    authorize_url = "https://connect.stripe.com/oauth/authorize?" + "&".join(
+        f"{k}={requests.utils.quote(str(v))}" for k, v in params.items()
+    )
+    return redirect(authorize_url)
+
+
+@app.route("/org/stripe/callback")
+@login_required
+def org_stripe_callback():
+    if not current_user.is_organization:
+        return redirect(url_for("account"))
+
+    error = request.args.get("error_description") or request.args.get("error")
+    if error:
+        flash(f"Stripe connection failed: {error}")
+        return redirect(url_for("org_dashboard"))
+
+    state = request.args.get("state")
+    expected_state = session.pop("stripe_oauth_state", None)
+    if not state or not expected_state or state != expected_state:
+        flash("That Stripe connection link had expired or was invalid. Please try again.")
+        return redirect(url_for("org_dashboard"))
+
+    code = request.args.get("code")
+    if not code:
+        flash("Stripe didn't return a connection code. Please try again.")
+        return redirect(url_for("org_dashboard"))
+
+    try:
+        token_response = stripe.OAuth.token(grant_type="authorization_code", code=code)
+    except Exception as e:
+        print("[STRIPE_OAUTH_ERROR]", str(e), flush=True)
+        flash("Couldn't finish connecting Stripe. Please try again.")
+        return redirect(url_for("org_dashboard"))
+
+    connected_account_id = token_response.get("stripe_user_id")
+    if not connected_account_id:
+        flash("Couldn't finish connecting Stripe. Please try again.")
+        return redirect(url_for("org_dashboard"))
+
+    current_user.stripe_account_id = connected_account_id
+    current_user.stripe_connected_at = datetime.utcnow()
+    db.session.commit()
+
+    flash("Stripe connected -- you're ready to receive donations.")
+    return redirect(url_for("org_dashboard"))
+
+
+# -----------------------
+# Donations: a donor picks an organization (from its listing page or a
+# matched map card), chooses an amount and one-time/monthly, and is sent to
+# Stripe Checkout. The Donation row is created as "pending" right away so we
+# have something to match the webhook event back to, then the webhook flips
+# it to "succeeded" once Stripe actually confirms the payment -- the
+# redirect back to success_url is a UX nicety, never proof a charge cleared.
+# -----------------------
+@app.route("/donate/<slug>")
+@login_required
+def donate_page(slug):
+    listing = query_one(
+        "SELECT * FROM listings WHERE slug = :slug AND status = 'published'",
+        {"slug": slug}
+    )
+    if not listing or not listing.get("owner_user_id"):
+        abort(404)
+
+    org = User.query.get(listing["owner_user_id"])
+    if not org:
+        abort(404)
+
+    return render_template(
+        "donate.html",
+        listing=listing,
+        org=org,
+        stripe_ready=bool(org.stripe_account_id),
+        platform_fee_percent=PLATFORM_FEE_PERCENT,
+    )
+
+
+@app.route("/donate/<slug>/checkout", methods=["POST"])
+@login_required
+def donate_checkout(slug):
+    listing = query_one(
+        "SELECT * FROM listings WHERE slug = :slug AND status = 'published'",
+        {"slug": slug}
+    )
+    if not listing or not listing.get("owner_user_id"):
+        abort(404)
+
+    org = User.query.get(listing["owner_user_id"])
+    if not org or not org.stripe_account_id:
+        flash("This organization hasn't connected Stripe yet, so donations aren't available.")
+        return redirect(url_for("listing_page", slug=slug))
+
+    try:
+        amount_dollars = float(request.form.get("amount", "0"))
+    except (TypeError, ValueError):
+        amount_dollars = 0
+
+    if amount_dollars < 1:
+        flash("Please enter a donation amount of at least $1.")
+        return redirect(url_for("donate_page", slug=slug))
+
+    amount_cents = int(round(amount_dollars * 100))
+    is_recurring = request.form.get("frequency") == "monthly"
+    fee_cents = int(round(amount_cents * (PLATFORM_FEE_PERCENT / 100)))
+
+    success_url = url_for("donate_success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}"
+    cancel_url = url_for("donate_page", slug=slug, _external=True)
+
+    try:
+        if is_recurring:
+            checkout_session = stripe.checkout.Session.create(
+                mode="subscription",
+                payment_method_types=["card"],
+                line_items=[{
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": {"name": f"Monthly donation to {org.name}"},
+                        "unit_amount": amount_cents,
+                        "recurring": {"interval": "month"},
+                    },
+                    "quantity": 1,
+                }],
+                subscription_data={
+                    "application_fee_percent": PLATFORM_FEE_PERCENT,
+                },
+                success_url=success_url,
+                cancel_url=cancel_url,
+                customer_email=current_user.email,
+                client_reference_id=str(current_user.id),
+                stripe_account=org.stripe_account_id,
+            )
+        else:
+            checkout_session = stripe.checkout.Session.create(
+                mode="payment",
+                payment_method_types=["card"],
+                line_items=[{
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": {"name": f"Donation to {org.name}"},
+                        "unit_amount": amount_cents,
+                    },
+                    "quantity": 1,
+                }],
+                payment_intent_data={
+                    "application_fee_amount": fee_cents,
+                },
+                success_url=success_url,
+                cancel_url=cancel_url,
+                customer_email=current_user.email,
+                client_reference_id=str(current_user.id),
+                stripe_account=org.stripe_account_id,
+            )
+    except Exception as e:
+        print("[DONATE_CHECKOUT_ERROR]", str(e), flush=True)
+        flash("Something went wrong starting your donation. Please try again.")
+        return redirect(url_for("donate_page", slug=slug))
+
+    donation = Donation(
+        donor_user_id=current_user.id,
+        org_user_id=org.id,
+        listing_id=listing["id"],
+        amount_cents=amount_cents,
+        platform_fee_cents=fee_cents,
+        currency="usd",
+        is_recurring=is_recurring,
+        status="pending",
+        stripe_checkout_session_id=checkout_session.id,
+    )
+    db.session.add(donation)
+    db.session.commit()
+
+    return redirect(checkout_session.url, code=303)
+
+
+@app.get("/donate/success")
+@login_required
+def donate_success():
+    session_id = request.args.get("session_id")
+    donation = None
+    if session_id:
+        donation = Donation.query.filter_by(stripe_checkout_session_id=session_id).first()
+    return render_template("donate_success.html", donation=donation)
+
+
+@app.route("/webhooks/stripe", methods=["POST"])
+def stripe_webhook():
+    """Stripe's source of truth for whether a donation actually went through.
+    For direct charges on connected accounts, this endpoint only receives
+    events once a webhook destination is added under Connect > Webhooks in
+    the Stripe Dashboard (listening to events on connected accounts) --
+    that's a one-time setup step in Stripe itself, not something this code
+    can turn on."""
+    payload = request.get_data()
+    sig_header = request.headers.get("Stripe-Signature")
+
+    if not STRIPE_WEBHOOK_SECRET:
+        print("[STRIPE_WEBHOOK] received event but STRIPE_WEBHOOK_SECRET is not set -- ignoring", flush=True)
+        return jsonify({"error": "webhook not configured"}), 503
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except Exception as e:
+        print("[STRIPE_WEBHOOK_SIGNATURE_ERROR]", str(e), flush=True)
+        return jsonify({"error": "invalid signature"}), 400
+
+    event_type = event.get("type")
+    data_object = event.get("data", {}).get("object", {})
+
+    try:
+        if event_type == "checkout.session.completed":
+            donation = Donation.query.filter_by(
+                stripe_checkout_session_id=data_object.get("id")
+            ).first()
+            if donation:
+                donation.status = "succeeded"
+                donation.stripe_payment_intent_id = data_object.get("payment_intent")
+                donation.stripe_subscription_id = data_object.get("subscription")
+                db.session.commit()
+
+        elif event_type == "invoice.payment_succeeded":
+            # A renewal of an existing monthly donation -- the first invoice
+            # on a brand new subscription is already covered by
+            # checkout.session.completed above, so only record a NEW row
+            # here when this invoice is for a subscription we already know
+            # about (i.e. this is at least the second payment).
+            subscription_id = data_object.get("subscription")
+            if subscription_id:
+                existing = Donation.query.filter_by(
+                    stripe_subscription_id=subscription_id
+                ).order_by(Donation.created_at.desc()).first()
+
+                if existing and data_object.get("billing_reason") == "subscription_cycle":
+                    amount_cents = data_object.get("amount_paid") or existing.amount_cents
+                    fee_cents = int(round(amount_cents * (PLATFORM_FEE_PERCENT / 100)))
+                    renewal = Donation(
+                        donor_user_id=existing.donor_user_id,
+                        org_user_id=existing.org_user_id,
+                        listing_id=existing.listing_id,
+                        amount_cents=amount_cents,
+                        platform_fee_cents=fee_cents,
+                        currency=existing.currency,
+                        is_recurring=True,
+                        status="succeeded",
+                        stripe_subscription_id=subscription_id,
+                        stripe_payment_intent_id=data_object.get("payment_intent"),
+                    )
+                    db.session.add(renewal)
+                    db.session.commit()
+
+        elif event_type in ("payment_intent.payment_failed", "invoice.payment_failed"):
+            subscription_id = data_object.get("subscription")
+            session_id = None
+            if event_type == "payment_intent.payment_failed":
+                donation = Donation.query.filter_by(
+                    stripe_payment_intent_id=data_object.get("id")
+                ).first()
+            else:
+                donation = Donation.query.filter_by(
+                    stripe_subscription_id=subscription_id
+                ).order_by(Donation.created_at.desc()).first() if subscription_id else None
+
+            if donation:
+                donation.status = "failed"
+                db.session.commit()
+
+        elif event_type == "customer.subscription.deleted":
+            subscription_id = data_object.get("id")
+            Donation.query.filter_by(stripe_subscription_id=subscription_id).update(
+                {"status": "canceled"}, synchronize_session=False
+            )
+            db.session.commit()
+
+    except Exception as e:
+        print("[STRIPE_WEBHOOK_HANDLER_ERROR]", event_type, str(e), flush=True)
+        # Still 200 -- Stripe retries on non-2xx, and a bug in our handling
+        # shouldn't cause Stripe to hammer this endpoint indefinitely.
+
+    return jsonify({"received": True})
 
 
 @app.route("/onboarding", methods=["GET", "POST"])

@@ -21,3 +21,4 @@ json-repair==0.39.1
 psycopg2-binary
 qrcode[pil]
 cloudinary
+stripe

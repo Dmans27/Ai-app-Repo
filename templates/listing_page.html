@@ -946,8 +946,14 @@
           </p>
 
           <div class="listing-actions">
+            {% if listing.owner_user_id %}
+              <a href="{{ url_for('donate_page', slug=listing.slug) }}" class="listing-btn listing-btn--primary">
+                ♥ Donate
+              </a>
+            {% endif %}
+
             {% if listing.website %}
-              <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn listing-btn--primary">
+              <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn {{ 'listing-btn--secondary' if listing.owner_user_id else 'listing-btn--primary' }}">
                 Visit website
               </a>
             {% endif %}

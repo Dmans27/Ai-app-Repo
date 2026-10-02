@@ -1569,6 +1569,10 @@ document.addEventListener("DOMContentLoaded", function () {
       ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" class="disc-hcard__btn" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="Directions to ${escapeHtml(place.name)}">Directions</a>`
       : "";
 
+    const donateHtml = place.is_org
+      ? `<a href="/donate/${encodeURIComponent(place.slug || "")}" class="disc-hcard__btn disc-hcard__btn--primary" onclick="event.stopPropagation();" aria-label="Donate to ${escapeHtml(place.name)}">♥ Donate</a>`
+      : "";
+
     // Big photo, opacity overlay pinned to the bottom holding the info (TripAdvisor-style pin card)
     card.innerHTML = `
       ${photoHtml}
@@ -1577,6 +1581,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="disc-hcard__name">${escapeHtml(place.name)}</div>
         <div class="disc-hcard__meta">${metaBits.join(" · ")}</div>
         <div class="disc-hcard__actions">
+          ${donateHtml}
           ${saveActionHtml}
           ${directionsHtml}
         </div>
@@ -2130,11 +2135,16 @@ document.addEventListener("DOMContentLoaded", function () {
         ? `<div style="font-size:11px;font-weight:700;color:#0d8a6c;margin-top:4px;">♥ Matches a cause you support</div>`
         : "";
 
+      const donateLinkHtml = place.is_org
+        ? `<a href="/donate/${encodeURIComponent(place.slug || "")}" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:#fff;background:#10a37f;border-radius:999px;padding:6px 14px;text-decoration:none;">♥ Donate</a>`
+        : "";
+
       const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
         <div style="max-width:200px;">
           <div style="font-size:14px;font-weight:700;margin-bottom:2px;">${escapeHtml(place.name)}</div>
           <div style="font-size:12px;color:#666;">${escapeHtml((place.category || "").replace(/_/g, " "))}${place.distance_miles != null ? ` · ${place.distance_miles} mi` : ""}</div>
           ${matchBadgeHtml}
+          ${donateLinkHtml}
         </div>
       `);
 

@@ -27,6 +27,8 @@ class User(UserMixin, db.Model):
     has_seen_welcome    = db.Column(db.Boolean, default=False)  # first-open welcome popup, dismissed once and never shown again
     is_organization     = db.Column(db.Boolean, default=False)  # organization account vs. individual donor account
     org_mission         = db.Column(db.Text, nullable=True)  # organization's mission/description, mirrored onto their public listing
+    stripe_account_id   = db.Column(db.String(255), nullable=True)  # Stripe Connect (Standard) account id, set once an organization completes "Connect with Stripe"
+    stripe_connected_at = db.Column(db.DateTime, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -91,3 +93,29 @@ class UserSavedList(db.Model):
     __table_args__ = (
         db.UniqueConstraint("user_id", "saved_list_id", name="uq_user_saved_list"),
     )
+
+
+class Donation(db.Model):
+    """One donation payment -- either a one-time gift or a single billing
+    cycle of a recurring monthly donation. Created as 'pending' the moment a
+    Stripe Checkout Session is started, then flipped to 'succeeded'/'failed'
+    by the Stripe webhook once the payment actually clears. A monthly
+    subscription gets a fresh row here for every successful renewal, so this
+    table doubles as the donation history/ledger, not just a one-row-per-
+    subscription pointer."""
+    id                           = db.Column(db.Integer, primary_key=True)
+    donor_user_id                = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    org_user_id                  = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    listing_id                   = db.Column(db.Integer, nullable=True)  # the listings row this donation was made from, for display
+    amount_cents                 = db.Column(db.Integer, nullable=False)  # total charged to the donor, in cents
+    platform_fee_cents           = db.Column(db.Integer, nullable=False)  # Dony's 5% cut of amount_cents, in cents
+    currency                     = db.Column(db.String(10), default="usd", nullable=False)
+    is_recurring                 = db.Column(db.Boolean, default=False)
+    status                       = db.Column(db.String(30), default="pending")  # pending, succeeded, failed, refunded, canceled
+    stripe_checkout_session_id   = db.Column(db.String(255), nullable=True)
+    stripe_payment_intent_id     = db.Column(db.String(255), nullable=True)
+    stripe_subscription_id       = db.Column(db.String(255), nullable=True)  # set on every row belonging to a recurring subscription
+    created_at                   = db.Column(db.DateTime, default=db.func.now())
+
+    donor        = db.relationship("User", foreign_keys=[donor_user_id])
+    organization = db.relationship("User", foreign_keys=[org_user_id])

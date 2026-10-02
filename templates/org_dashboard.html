@@ -70,6 +70,41 @@
     .org-dash-btn--secondary:hover { background: #eee; }
     .org-dash-btn--text { background: none; color: rgba(0,0,0,0.5); font-weight: 600; }
     .org-dash-btn--text:hover { color: rgba(0,0,0,0.75); }
+
+    .org-dash-stripe-card {
+      border-radius: 20px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .org-dash-stripe-card--pending {
+      background: #fff7ed;
+      border: 1px solid rgba(217,119,6,0.25);
+    }
+    .org-dash-stripe-card--connected {
+      background: #eafaf3;
+      border: 1px solid rgba(16,163,127,0.25);
+    }
+    .org-dash-stripe-title {
+      font-weight: 800;
+      font-size: 0.98rem;
+      margin: 0 0 4px;
+    }
+    .org-dash-stripe-card--pending .org-dash-stripe-title { color: #92400e; }
+    .org-dash-stripe-card--connected .org-dash-stripe-title { color: #0d8a6c; }
+    .org-dash-stripe-subtext {
+      font-size: 0.88rem;
+      color: rgba(0,0,0,0.6);
+      margin: 0 0 12px;
+      line-height: 1.5;
+    }
+    .org-dash-stripe-link {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #10a37f;
+      text-decoration: none;
+    }
+    .org-dash-stripe-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body class="org-dashboard-body">
@@ -104,6 +139,20 @@
 
       {% if listing.description %}
         <p class="org-dash-mission">{{ listing.description }}</p>
+      {% endif %}
+
+      {% if current_user.stripe_account_id %}
+        <div class="org-dash-stripe-card org-dash-stripe-card--connected">
+          <p class="org-dash-stripe-title">✓ Stripe connected</p>
+          <p class="org-dash-stripe-subtext">You're set up to receive donations. Dony takes a {{ "%g"|format(5) }}% platform fee on each one — the rest comes straight to your account.</p>
+          <a href="https://dashboard.stripe.com/" target="_blank" rel="noopener" class="org-dash-stripe-link">Open your Stripe dashboard →</a>
+        </div>
+      {% else %}
+        <div class="org-dash-stripe-card org-dash-stripe-card--pending">
+          <p class="org-dash-stripe-title">Payments not set up yet</p>
+          <p class="org-dash-stripe-subtext">Connect a Stripe account so people can donate directly to you from Dony. Takes a couple minutes.</p>
+          <a href="{{ url_for('org_stripe_connect') }}" class="org-dash-stripe-link">Connect with Stripe →</a>
+        </div>
       {% endif %}
 
       <div class="org-dash-actions">
