@@ -725,7 +725,7 @@
 
     .listing-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -1739,40 +1739,6 @@
         </section>
       {% endif %}
     </div>
-
-    <aside class="listing-right-rail">
-      {% if listing.latitude and listing.longitude %}
-        <section class="listing-card listing-map-card">
-          <h2 class="listing-section-title">Location</h2>
-
-          <div class="listing-map-frame">
-            <iframe
-              src="https://www.google.com/maps?q={{ listing.latitude }},{{ listing.longitude }}&z=15&output=embed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade">
-            </iframe>
-          </div>
-
-          {% if listing.address %}
-            <p class="listing-map-address">{{ listing.address }}</p>
-          {% endif %}
-        </section>
-      {% elif listing.address %}
-        <section class="listing-card listing-map-card">
-          <h2 class="listing-section-title">Location</h2>
-
-          <div class="listing-map-frame">
-            <iframe
-              src="https://www.google.com/maps?q={{ listing.address|urlencode }}&z=15&output=embed"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade">
-            </iframe>
-          </div>
-
-          <p class="listing-map-address">{{ listing.address }}</p>
-        </section>
-      {% endif %}
-    </aside>
   </div>
 </section>
 
