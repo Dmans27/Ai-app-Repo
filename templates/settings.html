@@ -46,6 +46,42 @@
       </form>
     </section>
 
+    {% if user.is_organization %}
+      <section class="settings-card">
+        <h2>Organization photo</h2>
+        <p>This is the main photo shown at the top of your organization's listing page.</p>
+
+        <form
+          method="post"
+          action="{{ url_for('update_org_cover_photo') }}"
+          enctype="multipart/form-data"
+        >
+          <label class="org-cover-upload">
+            <span class="org-cover-upload__preview">
+              {% if org_listing and org_listing.photo_url %}
+                <img src="{{ org_listing.photo_url }}" alt="">
+              {% else %}
+                🤝
+              {% endif %}
+            </span>
+
+            <input
+              type="file"
+              name="cover_photo"
+              accept="image/*"
+              onchange="this.form.submit()"
+            >
+
+            <span class="org-cover-upload__text">
+              {% if org_listing and org_listing.photo_url %}Tap to change photo{% else %}Tap to add a photo{% endif %}
+            </span>
+          </label>
+        </form>
+
+        <a href="{{ url_for('onboarding_organization') }}" class="settings-org-link">Edit organization details →</a>
+      </section>
+    {% endif %}
+
     <section class="settings-card">
       <h2>Profile details</h2>
 

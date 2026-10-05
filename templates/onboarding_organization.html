@@ -30,6 +30,11 @@
       color: rgba(0,0,0,0.75);
       margin-bottom: 8px;
     }
+    .onboarding-cover-hint {
+      margin: 8px 0 0;
+      font-size: 0.85rem;
+      color: rgba(0,0,0,0.5);
+    }
   </style>
 </head>
 
@@ -47,25 +52,27 @@
       <form method="post" enctype="multipart/form-data" class="onboarding-form">
 
         <div class="onboarding-section">
-          <label class="profile-photo-upload">
+          <label class="onboarding-label">Cover photo</label>
+          <label class="org-cover-upload">
+            <span class="org-cover-upload__preview">
+              {% if listing and listing.photo_url %}
+                <img src="{{ listing.photo_url }}" alt="">
+              {% else %}
+                🤝
+              {% endif %}
+            </span>
+
             <input
               type="file"
               name="logo"
               accept="image/*"
             >
 
-            <span class="profile-photo-upload__circle">
-              {% if listing and listing.photo_url %}
-                <img src="{{ listing.photo_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:999px;">
-              {% else %}
-                🏢
-              {% endif %}
-            </span>
-
-            <span class="profile-photo-upload__text">
-              {% if listing and listing.photo_url %}Change logo{% else %}Upload logo{% endif %}
+            <span class="org-cover-upload__text">
+              {% if listing and listing.photo_url %}Tap to change photo{% else %}Tap to add a photo{% endif %}
             </span>
           </label>
+          <p class="onboarding-cover-hint">Shown at the top of your organization's listing page -- a wide photo works best.</p>
         </div>
 
         <div class="onboarding-section">

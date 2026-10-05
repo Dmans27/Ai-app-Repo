@@ -6487,9 +6487,23 @@ def settings():
     lists = SavedList.query.filter_by(
         user_id=current_user.id
     ).order_by(SavedList.created_at.desc()).all()
- 
+
     user_causes = json.loads(current_user.causes) if current_user.causes else []
-    return render_template("settings.html", user=current_user, lists=lists, user_causes=user_causes)
+
+    org_listing = None
+    if current_user.is_organization:
+        org_listing = query_one(
+            "SELECT * FROM listings WHERE owner_user_id = :uid",
+            {"uid": current_user.id}
+        )
+
+    return render_template(
+        "settings.html",
+        user=current_user,
+        lists=lists,
+        user_causes=user_causes,
+        org_listing=org_listing
+    )
 
 
 @app.post("/settings/lists/<int:list_id>/delete")
@@ -7159,6 +7173,49 @@ def org_dashboard():
         return redirect(url_for("onboarding_organization"))
 
     return render_template("org_dashboard.html", listing=listing)
+
+
+@app.post("/org/cover-photo")
+@login_required
+def update_org_cover_photo():
+    """Lets an organization update just the hero/cover photo shown at the
+    top of their public listing page, without going through the full
+    onboarding_organization form. Saves the same way onboarding's logo
+    upload does, to the same listings.photo_url field."""
+    if not current_user.is_organization:
+        return redirect(url_for("account"))
+
+    listing = query_one(
+        "SELECT * FROM listings WHERE owner_user_id = :uid",
+        {"uid": current_user.id}
+    )
+    if not listing:
+        flash("Set up your organization profile first.")
+        return redirect(url_for("onboarding_organization"))
+
+    cover_photo = request.files.get("cover_photo")
+    if not cover_photo or not cover_photo.filename:
+        flash("Please choose a photo.")
+        return redirect(url_for("settings"))
+
+    filename = secure_filename(cover_photo.filename)
+    ext = os.path.splitext(filename)[1].lower() or ".jpg"
+    new_filename = f"org_{current_user.id}_{uuid.uuid4().hex}{ext}"
+
+    logo_upload_folder = os.path.join(app.config["UPLOAD_FOLDER"], "org_logos")
+    os.makedirs(logo_upload_folder, exist_ok=True)
+    cover_photo.save(os.path.join(logo_upload_folder, new_filename))
+
+    photo_url = url_for("static", filename=f"uploads/org_logos/{new_filename}")
+
+    execute("""
+        UPDATE listings
+        SET photo_url = :photo_url, updated_at = CURRENT_TIMESTAMP
+        WHERE owner_user_id = :uid
+    """, {"photo_url": photo_url, "uid": current_user.id})
+
+    flash("Organization photo updated.")
+    return redirect(url_for("settings"))
 
 
 # -----------------------
