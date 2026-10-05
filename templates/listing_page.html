@@ -204,6 +204,59 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
+/* Full-bleed hero photo for org listings: breaks out of .listing-page's own
+   gutter so the image hugs the top and side edges of the screen instead of
+   sitting in a padded, boxed card. The negative margins below are matched
+   to .listing-page's own padding at each breakpoint -- keep them in sync if
+   that padding ever changes (base: padding:65px 20px 56px; mobile
+   @media max-width:980px: padding:18px 16px 120px;). */
+.listing-hero.listing-hero--bleed {
+  margin: -65px -20px 0;
+  width: calc(100% + 40px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  overflow: hidden;
+  display: block;
+}
+
+.listing-hero--bleed .listing-hero__media {
+  width: 100%;
+}
+
+.listing-hero--bleed .listing-hero__image {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  max-height: 480px;
+  border-radius: 0;
+}
+
+.listing-hero--bleed .listing-hero__fallback {
+  border-radius: 0;
+  min-height: 360px;
+  max-height: 480px;
+}
+
+.listing-hero__content--floating {
+  padding: 18px 16px 0;
+}
+
+@media (max-width: 980px) {
+  .listing-hero.listing-hero--bleed {
+    margin: -18px -16px 0;
+    width: calc(100% + 32px);
+  }
+
+  .listing-hero--bleed .listing-hero__image,
+  .listing-hero--bleed .listing-hero__fallback {
+    min-height: 300px;
+    max-height: 380px;
+  }
+}
+
 .mobile-app-header__avatar-img {
   width: 100%;
   height: 100%;
@@ -263,7 +316,7 @@
 
 
 .listing-tabs-card {
-  padding: 18px 18px 22px;
+  padding: 8px 2px 22px;
 }
 
 .listing-tabs {
@@ -1195,131 +1248,159 @@
     </div>
   {% endif %}
 
-  <div class="listing-grid">
-    <div class="listing-left-column">
-      {% set hero_photo = listing.photo_url or (listing_photos[0] if listing_photos else None) %}
-      <section class="listing-card listing-hero">
-        <div class="listing-hero__media{% if not hero_photo %} listing-hero__media--empty{% endif %}">
-          {% if listing.owner_user_id %}
-            <div class="listing-hero__float-actions">
-              <button
-                type="button"
-                class="listing-hero__float-btn"
-                data-float-back
-                data-fallback-href="/search?q={{ ((listing.category or 'business') ~ ' in ' ~ (listing.city or ''))|urlencode }}"
-                aria-label="Back to results"
-              >←</button>
-              <button
-                type="button"
-                class="listing-hero__float-btn"
-                data-share-btn
-                aria-label="Share this organization"
-              >⤴</button>
-            </div>
-          {% endif %}
-          {% if hero_photo %}
-            <img
-              src="{{ hero_photo }}"
-              alt="{{ listing.name }}"
-              class="listing-hero__image"
-              loading="lazy"
-              onerror="this.parentElement.classList.add('listing-hero__media--broken')"
-            >
-          {% endif %}
-          <div class="listing-hero__fallback{% if listing.owner_user_id %} listing-hero__fallback--icon-only{% endif %}" aria-hidden="true">
-            <span class="listing-hero__fallback-icon">{{ "🤝" if listing.owner_user_id else "🏬" }}</span>
-            {% if not listing.owner_user_id %}
-              <span class="listing-hero__fallback-text">No photo yet</span>
-            {% endif %}
-          </div>
+  {% set hero_photo = listing.photo_url or (listing_photos[0] if listing_photos else None) %}
 
-          {% if listing.owner_user_id %}
-            <div class="listing-hero__overlay">
-              <h1 class="listing-hero__overlay-title">{{ listing.name }}</h1>
-              <div class="listing-hero__overlay-meta">
-                <span>{{ listing.city or "Local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}</span>
-                <span>•</span>
-                <span>{{ category_icon(listing.category) }} {{ (listing.category or "Local business")|replace('_', ' ')|title }}</span>
-              </div>
-            </div>
-          {% endif %}
+  {% if listing.owner_user_id %}
+    <section class="listing-hero listing-hero--bleed">
+      <div class="listing-hero__media{% if not hero_photo %} listing-hero__media--empty{% endif %}">
+        <div class="listing-hero__float-actions">
+          <button
+            type="button"
+            class="listing-hero__float-btn"
+            data-float-back
+            data-fallback-href="/search?q={{ ((listing.category or 'business') ~ ' in ' ~ (listing.city or ''))|urlencode }}"
+            aria-label="Back to results"
+          >←</button>
+          <button
+            type="button"
+            class="listing-hero__float-btn"
+            data-share-btn
+            aria-label="Share this organization"
+          >⤴</button>
+        </div>
+        {% if hero_photo %}
+          <img
+            src="{{ hero_photo }}"
+            alt="{{ listing.name }}"
+            class="listing-hero__image"
+            loading="lazy"
+            onerror="this.parentElement.classList.add('listing-hero__media--broken')"
+          >
+        {% endif %}
+        <div class="listing-hero__fallback listing-hero__fallback--icon-only" aria-hidden="true">
+          <span class="listing-hero__fallback-icon">🤝</span>
         </div>
 
-        <div class="listing-hero__content">
-          {% if not listing.owner_user_id %}
-          <div class="listing-hero__badges">
-            <span class="listing-badge listing-badge--category">
-              {{ category_icon(listing.category) }}
-              {{ (listing.category or "Local business")|replace('_', ' ')|title }}
-            </span>
-
-            {% if listing.featured %}
-              <span class="listing-badge listing-badge--featured">Featured listing</span>
-            {% endif %}
-
-            <span class="listing-badge">
-              {{ listing.city or "Local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}
-            </span>
-          </div>
-
-          <h1 class="listing-title">{{ listing.name }}</h1>
-
-          <div class="listing-subtitle">
-            <span>{{ (listing.category or "Local business")|replace('_', ' ')|title }}</span>
-            <span>•</span>
+        <div class="listing-hero__overlay">
+          <h1 class="listing-hero__overlay-title">{{ listing.name }}</h1>
+          <div class="listing-hero__overlay-meta">
             <span>{{ listing.city or "Local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}</span>
+            <span>•</span>
+            <span>{{ category_icon(listing.category) }} {{ (listing.category or "Local business")|replace('_', ' ')|title }}</span>
           </div>
-          {% endif %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
 
+  <div class="listing-grid">
+    <div class="listing-left-column">
+      {% if listing.owner_user_id %}
+        <div class="listing-hero__content listing-hero__content--floating">
           <p class="listing-summary">
             {% if listing.description %}
               {{ listing.description }}
-            {% elif listing.owner_user_id %}
+            {% else %}
               {{ listing.name }} supports {{ (listing.category or "local causes")|replace('_', ' ')|lower }}
               in {{ listing.city or "the area" }}{% if listing.state %}, {{ listing.state }}{% endif %}.
               Donate directly to help support their work.
-            {% else %}
-              Explore this {{ (listing.category or "local business")|replace('_', ' ')|lower }}
-              in {{ listing.city or "the area" }}{% if listing.state %}, {{ listing.state }}{% endif %}.
-              View contact details, location information, and similar nearby businesses.
             {% endif %}
           </p>
 
           <div class="listing-actions">
-            {% if listing.owner_user_id %}
-              <a href="{{ url_for('donate_page', slug=listing.slug) }}" class="listing-btn listing-btn--primary">
-                ♥ Donate
-              </a>
-            {% endif %}
+            <a href="{{ url_for('donate_page', slug=listing.slug) }}" class="listing-btn listing-btn--primary">
+              ♥ Donate
+            </a>
 
             {% if listing.website %}
-              <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn {{ 'listing-btn--secondary' if listing.owner_user_id else 'listing-btn--primary' }}">
+              <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn listing-btn--secondary">
                 Visit website
-              </a>
-            {% endif %}
-
-            {% if listing.phone and not listing.owner_user_id %}
-              <a href="tel:{{ listing.phone }}" class="listing-btn listing-btn--secondary">
-                Call now
-              </a>
-            {% endif %}
-
-            {% if listing.address and not listing.owner_user_id %}
-              <a
-                href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}"
-                target="_blank"
-                rel="noopener"
-                class="listing-btn listing-btn--ghost"
-              >
-                Get directions
               </a>
             {% endif %}
           </div>
         </div>
-      </section>
+      {% else %}
+        <section class="listing-card listing-hero">
+          <div class="listing-hero__media{% if not hero_photo %} listing-hero__media--empty{% endif %}">
+            {% if hero_photo %}
+              <img
+                src="{{ hero_photo }}"
+                alt="{{ listing.name }}"
+                class="listing-hero__image"
+                loading="lazy"
+                onerror="this.parentElement.classList.add('listing-hero__media--broken')"
+              >
+            {% endif %}
+            <div class="listing-hero__fallback" aria-hidden="true">
+              <span class="listing-hero__fallback-icon">🏬</span>
+              <span class="listing-hero__fallback-text">No photo yet</span>
+            </div>
+          </div>
+
+          <div class="listing-hero__content">
+            <div class="listing-hero__badges">
+              <span class="listing-badge listing-badge--category">
+                {{ category_icon(listing.category) }}
+                {{ (listing.category or "Local business")|replace('_', ' ')|title }}
+              </span>
+
+              {% if listing.featured %}
+                <span class="listing-badge listing-badge--featured">Featured listing</span>
+              {% endif %}
+
+              <span class="listing-badge">
+                {{ listing.city or "Local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}
+              </span>
+            </div>
+
+            <h1 class="listing-title">{{ listing.name }}</h1>
+
+            <div class="listing-subtitle">
+              <span>{{ (listing.category or "Local business")|replace('_', ' ')|title }}</span>
+              <span>•</span>
+              <span>{{ listing.city or "Local area" }}{% if listing.state %}, {{ listing.state }}{% endif %}</span>
+            </div>
+
+            <p class="listing-summary">
+              {% if listing.description %}
+                {{ listing.description }}
+              {% else %}
+                Explore this {{ (listing.category or "local business")|replace('_', ' ')|lower }}
+                in {{ listing.city or "the area" }}{% if listing.state %}, {{ listing.state }}{% endif %}.
+                View contact details, location information, and similar nearby businesses.
+              {% endif %}
+            </p>
+
+            <div class="listing-actions">
+              {% if listing.website %}
+                <a href="{{ listing.website }}" target="_blank" rel="noopener" class="listing-btn listing-btn--primary">
+                  Visit website
+                </a>
+              {% endif %}
+
+              {% if listing.phone %}
+                <a href="tel:{{ listing.phone }}" class="listing-btn listing-btn--secondary">
+                  Call now
+                </a>
+              {% endif %}
+
+              {% if listing.address %}
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query={{ listing.address|urlencode }}"
+                  target="_blank"
+                  rel="noopener"
+                  class="listing-btn listing-btn--ghost"
+                >
+                  Get directions
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+      {% endif %}
 
       {% if listing.owner_user_id %}
-        <section class="listing-card listing-tabs-card">
+        <section class="listing-tabs-card">
           <div class="listing-tabs" data-tabs role="tablist">
             <button type="button" class="listing-tab is-active" data-tab="about" role="tab">About</button>
             {% if listing_photos %}
