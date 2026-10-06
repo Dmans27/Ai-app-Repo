@@ -605,9 +605,13 @@
     }
     .disc-pin {
       position: relative;
-      width: 24px; height: 24px;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      line-height: 1;
       border: 2px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.3);
       cursor: pointer;
@@ -618,7 +622,7 @@
        together, on top of the existing scale bump. z-index lifts it above
        neighboring pins so the ring isn't clipped by them. */
     .disc-pin.is-active {
-      transform: rotate(-45deg) scale(1.3);
+      transform: scale(1.25);
       z-index: 5;
       animation: discPinPulse 1.6s ease-out infinite;
     }
@@ -659,7 +663,6 @@
       font-size: 9px;
       line-height: 14px;
       text-align: center;
-      transform: rotate(45deg);
       box-shadow: 0 0 0 2px #fff;
     }
     .disc-pin--dim {
@@ -670,9 +673,35 @@
     }
 
     .disc-nearby-section {
+      position: relative;
       padding: 22px 14px 4px;
     }
     .disc-nearby-section[hidden] { display: none; }
+    /* Exits the on-demand card back to the full map (see openNearbyCard()/
+       closeNearbyCard() in the script below). Positioned here, not just in
+       the mobile block, so it still works if this page is ever viewed at a
+       desktop width. */
+    .disc-nearby-section__close {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      z-index: 25;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 15px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    .disc-nearby-section__close:active { background: rgba(0,0,0,0.75); }
     .disc-nearby-section__title {
       font-size: 13px;
       font-weight: 800;
@@ -1227,6 +1256,19 @@
            so a pulsing selected pin can never poke through the card/detail
            panel sitting on top of it. */
         z-index: 20;
+        /* Closed by default so the map gets the full screen -- a card only
+           slides up once a map dot is tapped. Translating (not display:none
+           or [hidden]) keeps this element's layout rect valid once it IS
+           open, which cardOverlayOffsetY() depends on to frame the map
+           around it. See openNearbyCard()/closeNearbyCard() below. */
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        pointer-events: none;
+      }
+
+      .page-discover .disc-nearby-section.is-open {
+        transform: translateY(0);
+        pointer-events: auto;
       }
 
       .page-discover .disc-nearby-section__title {
@@ -1424,9 +1466,11 @@
 
           <!-- ── Closest to you: nearby places, with any personalized picks (a short
                reason grounded in the user's AI chat history) surfaced first.
-               Overlays the bottom of the map on mobile so the whole page fits
-               without scrolling. ── -->
+               Hidden by default on mobile so the map fills the screen -- this
+               slides up only once a map dot is tapped (openNearbyCard()),
+               and the ✕ below sends it back down (closeNearbyCard()). ── -->
           <section class="disc-nearby-section">
+            <button type="button" class="disc-nearby-section__close" id="disc-nearby-close" aria-label="Close">✕</button>
             <p class="disc-nearby-section__title">Closest to you</p>
             <div class="disc-hcarousel" id="disc-nearby-grid">
               <p class="disc-nearby-loading" id="disc-nearby-loading">Finding places near you…</p>
@@ -1512,8 +1556,29 @@ document.addEventListener("DOMContentLoaded", function () {
     return d.innerHTML;
   }
 
+  // Organization cause categories (picked during org onboarding, e.g.
+  // "Health & Medical Research") are checked first in both functions below
+  // -- a couple of them contain words ("Food" in "Hunger & Food Security",
+  // "Housing") that would otherwise match the business-category keywords
+  // further down and mislabel an org's dot.
+  function orgCauseColor(c) {
+    if (c.includes("animal")) return "#C9184A";
+    if (c.includes("education")) return "#0074D9";
+    if (c.includes("environment") || c.includes("conservation")) return "#2A9D8F";
+    if (c.includes("mental health")) return "#7B2CBF";
+    if (c.includes("health") || c.includes("medical")) return "#E2574C";
+    if (c.includes("hunger") || c.includes("food security")) return "#F4A300";
+    if (c.includes("homeless") || c.includes("housing")) return "#8B5E3C";
+    if (c.includes("human rights") || c.includes("justice")) return "#3D9970";
+    if (c.includes("disaster")) return "#D62828";
+    if (c.includes("children") || c.includes("youth")) return "#F77F00";
+    return null;
+  }
+
   function categoryColor(category) {
     const c = (category || "").toLowerCase();
+    const causeColor = orgCauseColor(c);
+    if (causeColor) return causeColor;
     if (c.includes("coffee") || c.includes("cafe")) return "#8B5E3C";
     if (c.includes("bar") || c.includes("cocktail")) return "#7B2CBF";
     if (c.includes("restaurant") || c.includes("food")) return "#E2574C";
@@ -1527,8 +1592,24 @@ document.addEventListener("DOMContentLoaded", function () {
     return "#111111";
   }
 
+  function orgCauseEmoji(c) {
+    if (c.includes("animal")) return "🐾";
+    if (c.includes("education")) return "🎓";
+    if (c.includes("environment") || c.includes("conservation")) return "🌍";
+    if (c.includes("mental health")) return "🧠";
+    if (c.includes("health") || c.includes("medical")) return "🏥";
+    if (c.includes("hunger") || c.includes("food security")) return "🥫";
+    if (c.includes("homeless") || c.includes("housing")) return "🏠";
+    if (c.includes("human rights") || c.includes("justice")) return "⚖️";
+    if (c.includes("disaster")) return "🆘";
+    if (c.includes("children") || c.includes("youth")) return "🧒";
+    return null;
+  }
+
   function categoryEmoji(category) {
     const c = (category || "").toLowerCase();
+    const causeEmoji = orgCauseEmoji(c);
+    if (causeEmoji) return causeEmoji;
     if (c.includes("coffee") || c.includes("cafe")) return "☕";
     if (c.includes("bar") || c.includes("cocktail") || c.includes("pub")) return "🍸";
     if (c.includes("restaurant") || c.includes("food") || c.includes("pizza") || c.includes("burger")) return "🍽️";
@@ -2024,6 +2105,45 @@ document.addEventListener("DOMContentLoaded", function () {
     state.activeId = placeId;
   }
 
+  // Slides the "Closest to you" section up from the bottom with the tapped
+  // place's card in view -- the map stays full-screen (no permanent card
+  // strip) until a dot is actually tapped. See closeNearbyCard() for the
+  // reverse, wired to the ✕ button in the markup above.
+  function openNearbyCard(placeId) {
+    const sectionEl = document.querySelector(".disc-nearby-section");
+    if (sectionEl) sectionEl.classList.add("is-open");
+
+    highlightPlace(placeId, { scrollIntoView: true, flyTo: true });
+
+    // The section can still be mid slide-up right when the flyTo above
+    // runs, so it may frame around the wrong (not-yet-open) height --
+    // correct it once the open animation has actually finished, the same
+    // "frame now, correct once the real size is known" approach initMap()
+    // already uses for the overlay's height on first load.
+    window.setTimeout(() => {
+      const marker = state.markers[placeId];
+      if (marker && state.map) {
+        state.map.easeTo({
+          center: marker.getLngLat(),
+          offset: [0, cardOverlayOffsetY()],
+          duration: 250
+        });
+      }
+    }, 320);
+  }
+
+  function closeNearbyCard() {
+    const sectionEl = document.querySelector(".disc-nearby-section");
+    if (sectionEl) sectionEl.classList.remove("is-open");
+    closeDetailPanel();
+    document.querySelectorAll(".disc-pin.is-active").forEach((el) => el.classList.remove("is-active"));
+    document.querySelectorAll(".disc-hcard.is-selected").forEach((el) => el.classList.remove("is-selected"));
+    state.activeId = null;
+    if (state.map) {
+      state.map.easeTo({ offset: [0, 0], duration: 300 });
+    }
+  }
+
   /* ── Horizontal carousel dot indicators: syncs to scroll position ── */
   function setupCarouselDots(carouselEl, dotsEl, count) {
     if (!carouselEl) return;
@@ -2103,6 +2223,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const mapWrapEl = document.querySelector(".disc-map-wrap");
     const cardOverlayEl = document.querySelector(".disc-nearby-section");
     if (!mapWrapEl || !cardOverlayEl) return 0;
+
+    // On mobile the card is hidden (translated off-screen) until a map pin
+    // is tapped open -- when it's closed there's nothing to dodge, so skip
+    // the geometry math and let the map use the full screen. Desktop never
+    // hides the section this way, so this only short-circuits on mobile.
+    const isMobileOverlay = window.matchMedia("(max-width: 1024px)").matches;
+    if (isMobileOverlay && !cardOverlayEl.classList.contains("is-open")) return 0;
+
     const mapRect = mapWrapEl.getBoundingClientRect();
     const cardRect = cardOverlayEl.getBoundingClientRect();
     const bottomCovered = Math.max(0, mapRect.bottom - cardRect.top);
@@ -2173,6 +2301,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const el = document.createElement("div");
       el.className = "disc-pin";
       el.style.background = categoryColor(place.category);
+      el.textContent = categoryEmoji(place.category);
+      el.setAttribute("aria-label", place.name || "Place");
 
       if (place.is_match) {
         el.classList.add("disc-pin--match");
@@ -2180,30 +2310,16 @@ document.addEventListener("DOMContentLoaded", function () {
         el.classList.add("disc-pin--dim");
       }
 
-      const matchBadgeHtml = place.is_match
-        ? `<div style="font-size:11px;font-weight:700;color:#0d8a6c;margin-top:4px;">♥ Matches a cause you support</div>`
-        : "";
-
-      const donateLinkHtml = place.is_org
-        ? `<a href="/donate/${encodeURIComponent(place.slug || "")}" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:#fff;background:#10a37f;border-radius:999px;padding:6px 14px;text-decoration:none;">♥ Donate</a>`
-        : "";
-
-      const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(`
-        <div style="max-width:200px;">
-          <div style="font-size:14px;font-weight:700;margin-bottom:2px;">${escapeHtml(place.name)}</div>
-          <div style="font-size:12px;color:#666;">${escapeHtml((place.category || "").replace(/_/g, " "))}${place.distance_miles != null ? ` · ${place.distance_miles} mi` : ""}</div>
-          ${matchBadgeHtml}
-          ${donateLinkHtml}
-        </div>
-      `);
-
+      // No popup bubble anymore -- tapping the dot opens the full card
+      // below instead (see openNearbyCard()), which already shows the
+      // name, category, distance and Donate link, so a separate popup
+      // would just be the same information twice.
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([Number(place.longitude), Number(place.latitude)])
-        .setPopup(popup)
         .addTo(state.map);
 
       el.addEventListener("click", () => {
-        highlightPlace(place.id, { scrollIntoView: true, flyTo: true });
+        openNearbyCard(place.id);
       });
 
       state.markers[place.id] = marker;
@@ -2258,7 +2374,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((res) => res.json())
       .then((data) => {
         const places = data.places || [];
-        setStatus(null);
+        setStatus(places.length ? null : "No published places near you yet — check back soon.");
         plotPlaces(places);
         renderFeeds(places);
 
@@ -2358,6 +2474,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const searchForm = document.getElementById("disc-search-form");
   if (searchForm) searchForm.addEventListener("submit", handleSearchSubmit);
+
+  const nearbyCloseBtn = document.getElementById("disc-nearby-close");
+  if (nearbyCloseBtn) nearbyCloseBtn.addEventListener("click", closeNearbyCard);
 
   document.addEventListener("DOMContentLoaded", requestLocation);
 })();

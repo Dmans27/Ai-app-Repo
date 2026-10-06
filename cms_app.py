@@ -1497,6 +1497,33 @@ def category_icon(category: str) -> str:
 
     category = category.lower().strip()
 
+    # Organization "cause" categories (set during org onboarding, e.g.
+    # "Environment & Conservation") don't match the Google-Places-style
+    # snake_case keys below -- check these substrings first so every org
+    # listing gets a real icon instead of falling through to the default
+    # pin. Mirrors orgCauseEmoji() in discover.html's client-side JS.
+    cause_icons = (
+        ("animal", "🐾"),
+        ("education", "🎓"),
+        ("environment", "🌍"),
+        ("conservation", "🌍"),
+        ("mental health", "🧠"),
+        ("health", "🏥"),
+        ("medical", "🏥"),
+        ("hunger", "🥫"),
+        ("food security", "🥫"),
+        ("homeless", "🏠"),
+        ("housing", "🏠"),
+        ("human rights", "⚖️"),
+        ("justice", "⚖️"),
+        ("disaster", "🆘"),
+        ("children", "🧒"),
+        ("youth", "🧒"),
+    )
+    for needle, icon in cause_icons:
+        if needle in category:
+            return icon
+
     icons = {
         "coffee_shop": "☕",
         "coffee": "☕",
@@ -6461,7 +6488,7 @@ def discover_page():
         mapbox_token=os.environ.get("MAPBOX_TOKEN"),
         mapbox_style_url=os.environ.get(
             "MAPBOX_STYLE_URL",
-            "mapbox://styles/dmans27/cmk8opaya000g01s05w2006oc"
+            "mapbox://styles/mapbox/light-v11"
         ),
         show_splash=show_splash,
     )
