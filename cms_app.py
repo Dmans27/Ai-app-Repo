@@ -6461,7 +6461,7 @@ def discover_page():
         mapbox_token=os.environ.get("MAPBOX_TOKEN"),
         mapbox_style_url=os.environ.get(
             "MAPBOX_STYLE_URL",
-            "mapbox://styles/mapbox/light-v11"
+            "mapbox://styles/dmans27/cmk8opaya000g01s05w2006oc"
         ),
         show_splash=show_splash,
     )
