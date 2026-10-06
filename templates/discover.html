@@ -2302,6 +2302,18 @@ document.addEventListener("DOMContentLoaded", function () {
   function plotPlaces(places) {
     if (!state.map) return;
 
+    // Every search (new city, re-search, "Try again") calls this again with
+    // a fresh places list -- without removing the previous batch's markers
+    // from the map first, each search just piled more dots on top of the
+    // last one instead of replacing them. mapboxgl.Marker.remove() takes
+    // the actual DOM element off the map; clearing state.markers/state.places
+    // alongside it keeps the lookup tables (used by highlightPlace(),
+    // openNearbyCard(), the detail panel, etc.) from holding onto places
+    // that no longer have a marker or card on screen.
+    Object.values(state.markers).forEach((m) => m.remove());
+    state.markers = {};
+    state.places = {};
+
     const bounds = new mapboxgl.LngLatBounds();
     bounds.extend(state.map.getCenter());
 
@@ -2453,6 +2465,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // and only call initMap() as a fallback for the rare case where it was
   // never created yet (e.g. the user denied location access first).
   function goToLocation(lat, lng) {
+    // A card left open from the previous search would otherwise keep
+    // showing a place that's about to lose its marker in plotPlaces()
+    // below -- close it before the new batch of places loads in.
+    closeNearbyCard();
+
     if (state.map) {
       state.map.easeTo({ center: [lng, lat], zoom: 13, duration: 450 });
     } else {
