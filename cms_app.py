@@ -6397,6 +6397,25 @@ def api_discover_nearby():
         return jsonify({"error": str(e)}), 500
 
 
+@app.get("/api/discover/geocode")
+def api_discover_geocode():
+    """Powers the Discover page's search bar: turns free text the user
+    types (a city, a zip code, a neighborhood) into coordinates, so the
+    client can re-center the map and reload nearby places there instead of
+    only ever showing the user's own detected location."""
+    query = (request.args.get("q") or "").strip()
+
+    if not query:
+        return jsonify({"error": "Type a city or zip code to search."}), 400
+
+    lat, lng = geocode_city(query)
+
+    if lat is None or lng is None:
+        return jsonify({"error": f"Couldn't find \"{query}\". Try a city or zip code."}), 404
+
+    return jsonify({"lat": lat, "lng": lng, "query": query})
+
+
 @app.route("/")
 @app.route("/discover")
 def discover_page():

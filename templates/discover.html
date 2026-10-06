@@ -14,10 +14,44 @@
 
     /* Native-feeling header: blend into the white page instead of reading as a web toolbar */
     .disc-header{background:#ffffff !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;border-bottom:none !important;box-shadow:none !important}
+    /* The shared .mobile-app-header rule leaves a 95px gap between its grid
+       columns, meant for pages where the center slot is just a short title.
+       That eats almost all the center column's width here now that it holds
+       a search input -- narrow it down to something a text field can
+       actually use. */
+    .mobile-app-header.disc-header{gap:10px}
     .disc-header .mobile-app-header__icon,.disc-header .mobile-app-header__icon--link{width:38px;height:38px;border-radius:12px;background:#f5f5f7;border:0.5px solid rgba(0,0,0,0.08);box-shadow:none;display:flex;align-items:center;justify-content:center;font-size:17px;transition:background 0.15s}
     .disc-header .mobile-app-header__icon:active,.disc-header .mobile-app-header__icon--link:active{background:rgba(0,0,0,0.06)}
     .disc-hamburger{flex-direction:column;gap:4px}
     .disc-hamburger span{display:block;width:16px;height:2px;border-radius:2px;background:rgba(0,0,0,0.78)}
+
+    /* ── Header search pill (search other locations, not just the user's
+       detected one) -- matches the hamburger/account icon pills so it reads
+       as one floating header, whether that header sits on the plain white
+       page background or (on mobile) floats transparent over the map. ── */
+    .disc-search-pill{
+      height:38px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      padding:0 12px;
+      border-radius:12px;
+      background:#f5f5f7;
+      border:0.5px solid rgba(0,0,0,0.08);
+      box-sizing:border-box;
+    }
+    .disc-search-pill__icon{font-size:13px;opacity:0.55;flex-shrink:0}
+    .disc-search-pill__input{
+      flex:1;
+      min-width:0;
+      border:none;
+      outline:none;
+      background:none;
+      font-size:14px;
+      color:#1a1a1a;
+      padding:0;
+    }
+    .disc-search-pill__input::placeholder{color:rgba(0,0,0,0.38)}
 
     /* ── Hero ── */
     .disc-hero {
@@ -1352,7 +1386,19 @@
         <button class="mobile-app-header__icon disc-hamburger" id="app-sidebar-toggle" type="button" aria-label="Open menu"><span></span><span></span><span></span></button>
 
         <div class="mobile-app-header__center">
-          
+          <form class="disc-search-pill" id="disc-search-form" role="search">
+            <span class="disc-search-pill__icon" aria-hidden="true">🔍</span>
+            <input
+              type="text"
+              id="disc-search-input"
+              class="disc-search-pill__input"
+              placeholder="Search a city or zip..."
+              autocomplete="off"
+              autocapitalize="off"
+              enterkeyhint="search"
+              aria-label="Search a location"
+            >
+          </form>
         </div>
 
         {% if current_user.is_authenticated %}
@@ -2263,6 +2309,52 @@ document.addEventListener("DOMContentLoaded", function () {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 }
     );
   }
+
+  // Jumping to a searched location is NOT the same as startWithLocation():
+  // that one assumes the coords are the user's real position and drops a
+  // "you are here" marker there. A search result isn't the user's real
+  // position, so if the map already exists we just re-center the existing
+  // map (no second mapboxgl.Map instance, no bogus "you are here" pin) --
+  // and only call initMap() as a fallback for the rare case where it was
+  // never created yet (e.g. the user denied location access first).
+  function goToLocation(lat, lng) {
+    if (state.map) {
+      state.map.easeTo({ center: [lng, lat], zoom: 13, duration: 450 });
+    } else {
+      state.map = initMap(lat, lng);
+    }
+    loadNearby(lat, lng);
+  }
+
+  function handleSearchSubmit(e) {
+    e.preventDefault();
+
+    const input = document.getElementById("disc-search-input");
+    const query = (input && input.value || "").trim();
+    if (!query) return;
+
+    input.blur();
+    setStatus(`Searching for "${query}"…`);
+
+    fetch(`/api/discover/geocode?q=${encodeURIComponent(query)}`, {
+      headers: { "Accept": "application/json" }
+    })
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok || data.error || data.lat == null || data.lng == null) {
+          setStatus(data && data.error ? data.error : "Couldn't find that location.", { error: true });
+          return;
+        }
+        goToLocation(data.lat, data.lng);
+      })
+      .catch((err) => {
+        console.error("[DISCOVER_GEOCODE_FETCH_ERROR]", err);
+        setStatus("Couldn't search right now. Try again.", { error: true });
+      });
+  }
+
+  const searchForm = document.getElementById("disc-search-form");
+  if (searchForm) searchForm.addEventListener("submit", handleSearchSubmit);
 
   document.addEventListener("DOMContentLoaded", requestLocation);
 })();
