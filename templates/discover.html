@@ -578,14 +578,14 @@
     .disc-map { position: absolute; inset: 0; }
     .disc-map__status {
       position: absolute;
-      left: 30px;
-      bottom: 30px;
+      left: 12px;
+      bottom: 12px;
       max-width: calc(100% - 24px);
       background: rgba(20,20,25,0.85);
       color: #fff;
       font-size: 12px;
       font-weight: 600;
-      padding: 7px 30px;
+      padding: 7px 12px;
       border-radius: 999px;
       z-index: 2;
     }
@@ -1219,7 +1219,17 @@
       }
 
       .page-discover .disc-map__status {
-        top: calc(var(--header-h) + 8px);
+        /* --header-h (76px) is only the no-notch fallback -- the header
+           actually grows taller on notched/Dynamic-Island phones because
+           its top padding is max(10px, env(safe-area-inset-top)) (see
+           .mobile-app-header in styles.css: 10px bottom padding + the
+           38px icon height = 48px, plus whichever is bigger of that
+           padding or safe-area-inset-top). Using --header-h alone put this
+           pill's top edge above the header's *real* bottom edge on those
+           phones, so it sat underneath/behind the header instead of below
+           it. max() here mirrors the header's own height calc so this
+           always clears it, notch or no notch. */
+        top: calc(max(var(--header-h), env(safe-area-inset-top) + 48px) + 8px);
         bottom: auto;
       }
 
@@ -1234,9 +1244,10 @@
         z-index: 950;
       }
 
-      /* Keep Mapbox's own zoom control clear of the floating account icon */
+      /* Keep Mapbox's own zoom control clear of the floating account icon --
+         same notch/Dynamic-Island correction as .disc-map__status above. */
       .page-discover .mapboxgl-ctrl-top-right {
-        top: calc(var(--header-h) + 8px) !important;
+        top: calc(max(var(--header-h), env(safe-area-inset-top) + 48px) + 8px) !important;
       }
 
       /* This page's tab bar only has 4 items (no separate Home tab) --
