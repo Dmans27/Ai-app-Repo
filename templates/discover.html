@@ -47,7 +47,10 @@
       border:none;
       outline:none;
       background:none;
-      font-size:14px;
+      /* iOS Safari/WKWebView auto-zooms the whole page when a focused input's
+         font-size is under 16px -- that zoom is what was pushing the fixed
+         header off-screen and causing the horizontal scroll while searching. */
+      font-size:16px;
       color:#1a1a1a;
       padding:0;
     }
@@ -2125,7 +2128,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const map = new mapboxgl.Map({
       container,
-      style: CONFIG.mapboxStyleUrl || "mapbox://styles/dmans27/cmk8opaya000g01s05w2006oc",
+      style: CONFIG.mapboxStyleUrl || "mapbox://styles/mapbox/light-v11",
       center: [centerLng, centerLat],
       zoom: 13
     });
