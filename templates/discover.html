@@ -1300,12 +1300,6 @@
         z-index: 950;
       }
 
-      /* Keep Mapbox's own zoom control clear of the floating account icon --
-         same notch/Dynamic-Island correction as .disc-map__status above. */
-      .page-discover .mapboxgl-ctrl-top-right {
-        top: calc(max(var(--header-h), env(safe-area-inset-top) + 48px) + 8px) !important;
-      }
-
       /* This page's tab bar only has 4 items (no separate Home tab) --
          the shared bar's grid assumes 5, which left a dead column on the
          right instead of centering these 4. */
@@ -2339,7 +2333,8 @@ document.addEventListener("DOMContentLoaded", function () {
       map.jumpTo({ center: [centerLng, centerLat], zoom: 13, offset: [0, initialOffsetY] });
     }
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    // No zoom (+/-) control -- pinch-to-zoom still works, this just removes
+    // the on-screen button pair that sat in the top-right corner of the map.
 
     map.on("load", () => {
       const youEl = document.createElement("div");
