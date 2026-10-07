@@ -30,6 +30,7 @@
        as one floating header, whether that header sits on the plain white
        page background or (on mobile) floats transparent over the map. ── */
     .disc-search-pill{
+      position:relative;
       height:38px;
       display:flex;
       align-items:center;
@@ -39,6 +40,56 @@
       background:#f5f5f7;
       border:0.5px solid rgba(0,0,0,0.08);
       box-sizing:border-box;
+      /* Establishes a stacking context so the glow ring below (z-index:-1)
+         sits behind this pill's own background/content instead of behind
+         unrelated page elements. */
+      z-index:0;
+    }
+    /* Animated "AI-ready" shimmer border: a bright comet-like arc that
+       continuously travels around the pill's edge, instead of a plain
+       static border -- the usual visual cue for "this input is AI-smart."
+       Two rotating, masked conic-gradient rings (::before/::after), offset
+       half a lap apart via a negative animation-delay, so a bright segment
+       is always visible on both sides of the pill at once rather than one
+       arc sweeping by once per lap. Only the ring's rotation angle repaints
+       each frame -- the pill's own background/content never do. */
+    @property --disc-search-angle {
+      syntax: '<angle>';
+      inherits: false;
+      initial-value: 0deg;
+    }
+    .disc-search-pill::before,
+    .disc-search-pill::after{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius:inherit;
+      padding:2px;
+      pointer-events:none;
+      z-index:-1;
+      background:conic-gradient(
+        from var(--disc-search-angle),
+        transparent 0deg,
+        transparent 265deg,
+        #bdf0e0 300deg,
+        #10a37f 325deg,
+        #7ee2bf 345deg,
+        transparent 360deg
+      );
+      -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor;
+      mask-composite:exclude;
+      animation: disc-search-shimmer 3.2s linear infinite;
+    }
+    .disc-search-pill::after{
+      animation-delay:-1.6s; /* half the 3.2s cycle = 180deg opposite the ::before beam */
+    }
+    @keyframes disc-search-shimmer {
+      to { --disc-search-angle: 360deg; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .disc-search-pill::before,
+      .disc-search-pill::after{ animation:none; }
     }
     .disc-search-pill__icon{font-size:13px;opacity:0.55;flex-shrink:0}
     .disc-search-pill__input{
