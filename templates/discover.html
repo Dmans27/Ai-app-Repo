@@ -728,69 +728,155 @@
       opacity: 1;
     }
 
-    .disc-nearby-section {
-      position: relative;
-      padding: 22px 14px 4px;
+    /* ── Listings drawer: slides in from the right edge over the map.
+       Closed by default (translateX(100%), fully off-screen) -- the handle
+       tab is a separate fixed element so it stays visible and tappable/
+       draggable even while the drawer itself is off-screen. See
+       initListingsDrawerDrag()/openListingsDrawer()/closeListingsDrawer()
+       in the script below for the open/close + drag-gesture logic. ── */
+    .disc-listings-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(380px, 86vw);
+      /* Above the floating mobile header (.disc-header is z-index: 950,
+         fixed, full-width) -- the drawer spans the full viewport height
+         (padded in from the header/tab bar via its own padding, not by
+         stopping short of them), so without this the header -- transparent
+         background or not -- would still sit on top in z-order and
+         swallow clicks on anything near the drawer's top edge. */
+      z-index: 955;
+      background: #fff;
+      box-shadow: -8px 0 24px rgba(20,20,25,0.18);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      padding-top: 20px;
+      padding-bottom: 20px;
     }
-    .disc-nearby-section[hidden] { display: none; }
-    /* Exits the on-demand card back to the full map (see openNearbyCard()/
-       closeNearbyCard() in the script below). Positioned here, not just in
-       the mobile block, so it still works if this page is ever viewed at a
-       desktop width. */
-    .disc-nearby-section__close {
-      position: absolute;
-      top: 10px;
-      right: 14px;
-      z-index: 25;
-      width: 34px;
-      height: 34px;
+    .disc-listings-drawer.is-dragging {
+      transition: none;
+    }
+    .disc-listings-drawer.is-open {
+      transform: translateX(0);
+    }
+    /* Always-visible tab stuck to the right edge, vertically centered --
+       the one thing that stays on screen while the drawer itself is
+       translated fully out of view, so there's always something to tap
+       or drag open. */
+    .disc-listings-drawer__handle {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      z-index: 956;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 30px;
+      padding: 10px 0;
+      border: none;
+      border-radius: 14px 0 0 14px;
+      background: #10a37f;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: -4px 0 12px rgba(20,20,25,0.2);
+      touch-action: none;
+    }
+    /* Toggled in JS (setListingsDrawerOpen()) since the handle is a sibling
+       that comes BEFORE the drawer in the markup -- a sibling selector
+       can't reach backwards to it from .is-open. */
+    .disc-listings-drawer__handle.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .disc-listings-drawer__handle-count {
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .disc-listings-drawer__handle-arrow {
+      font-size: 13px;
+      line-height: 1;
+    }
+    .disc-listings-drawer__header {
+      position: relative;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      touch-action: none;
+    }
+    .disc-listings-drawer__title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: #14151a;
+      margin: 0;
+    }
+    .disc-listings-drawer__title span {
+      font-weight: 600;
+      color: rgba(20,21,26,0.5);
+    }
+    .disc-listings-drawer__close {
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: 0;
-      background: rgba(0,0,0,0.55);
-      color: #fff;
-      font-size: 15px;
+      background: rgba(0,0,0,0.06);
+      color: #14151a;
+      font-size: 13px;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
     }
-    .disc-nearby-section__close:active { background: rgba(0,0,0,0.75); }
-    .disc-nearby-section__title {
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: -0.01em;
-      color: #14151a;
-      margin: 0 4px 12px;
+    .disc-listings-drawer__close:active { background: rgba(0,0,0,0.12); }
+    .disc-listings-drawer__list {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 6px 10px;
     }
 
     /* -- "View" detail panel: reuses the app's existing dark "place detail
        sheet" look (see .pds-* in static/css/styles.css, used on the
        AI-search home page) so a place looks the same everywhere in the
-       app -- inline here instead of a full-screen sheet. Sits flush under
-       the hero card (no gap, square top corners) so the two read as one
-       card popping open, not two separate cards. Height-animated via
-       max-height so it visibly "pushes up" the carousel above it, since
-       .disc-nearby-section is bottom-anchored on mobile. -- */
+       app. Now a standalone bottom sheet (a sibling of the listings
+       drawer, not nested in it) so it can span the full map width
+       regardless of the drawer's own narrower width, and so it still
+       works when opened directly from a row inside the drawer. Height-
+       animated via max-height so it visibly slides up from the bottom. -- */
     .disc-detail-panel {
-      margin: 0 16px;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: 0;
       background: #13151a;
       border: 1px solid rgba(255,255,255,0.09);
-      border-top: none;
-      border-radius: 0 0 22px 22px;
-      box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+      border-bottom: none;
+      border-radius: 22px 22px 0 0;
+      box-shadow: 0 -12px 28px rgba(0,0,0,0.35);
       max-height: 0;
       opacity: 0;
       overflow: hidden;
       transition: max-height 0.35s ease, opacity 0.25s ease;
+      z-index: 960;
     }
     .disc-detail-panel[hidden] { display: none; }
     .disc-detail-panel.is-open {
-      max-height: 70vh;
+      max-height: 80vh;
       opacity: 1;
       overflow-y: auto;
+      padding-bottom: env(safe-area-inset-bottom);
     }
     .disc-detail-panel__inner {
       position: relative;
@@ -812,6 +898,41 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    /* Name + category/distance header -- the panel is now a standalone
+       sheet with no hero card above it to carry this, so it needs its own. */
+    .disc-detail-panel__header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 14px;
+    }
+    .disc-detail-panel__header-emoji {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .disc-detail-panel__header-text { flex: 1; min-width: 0; }
+    .disc-detail-panel__name {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: #fff;
+      line-height: 1.2;
+      margin: 0 0 2px;
+    }
+    .disc-detail-panel__meta {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
     .disc-detail-panel__photos {
       display: flex;
@@ -1025,26 +1146,6 @@
       margin: 8px 0 0;
     }
 
-    /* The card the open panel belongs to loses its rounded bottom corners
-       so it flows directly into the panel's square top -- one continuous
-       shape instead of two stacked rounded rectangles with a visible step
-       between them. */
-    .disc-hcard.has-panel-open {
-      border-radius: 22px 22px 0 0;
-    }
-    /* The dot indicators sat in that same gap; hide them while the panel
-       is open since the panel itself now makes clear which card is active. */
-    .disc-hcarousel__dots.is-panel-open {
-      display: none;
-    }
-    /* Removes the carousel's bottom breathing-room padding while a panel's
-       open, so there's no empty strip left between the card's (now square)
-       bottom edge and the panel's (zero-margin) top edge for the map to
-       show through. */
-    .disc-hcarousel.is-panel-open {
-      padding-bottom: 0;
-    }
-
     .disc-card__reason {
       font-size: 11px;
       font-weight: 600;
@@ -1065,69 +1166,33 @@
       text-align: center;
     }
 
-
-    /* ── Hero cards: horizontal, one-at-a-time, big photo with bottom info overlay ── */
-    .disc-hcarousel {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      padding: 0 16px 4px;
-    }
-    .disc-hcarousel::-webkit-scrollbar { display: none; }
-
-    .disc-hcard {
-      flex: 0 0 100%;
-      scroll-snap-align: center;
-      scroll-snap-stop: always;
-      position: relative;
-      border-radius: 22px;
-      overflow: hidden;
-      aspect-ratio: 4 / 5;
-      background: #eef1ef;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(20,20,25,0.14);
-    }
-    .disc-hcard.is-selected {
-      box-shadow: 0 0 0 3px rgba(16,163,127,0.55), 0 4px 16px rgba(20,20,25,0.14);
-    }
-    /* Swipe-up hint: replaces the old "View" button. Swiping up (or down to
-       close) anywhere on the card opens/closes the detail panel below it;
-       this chevron is just a visible cue plus a small tappable fallback for
-       anyone who doesn't try swiping. Its direction flips to hint "swipe
-       down" once the panel's open, via the same has-panel-open class the
-       card/panel connection already uses. */
-    .disc-hcard__swipe-hint {
-      position: absolute;
-      left: 50%;
-      top: 8px;
-      transform: translateX(-50%);
-      width: 40px;
-      height: 22px;
-      border-radius: 999px;
-      border: none;
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+    /* ── Listing rows: one per place in the drawer, photo + name/location/
+       category laid out horizontally per row (not a horizontally-scrolling
+       list -- each individual row reads left-to-right). ── */
+    .disc-listing-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 13px;
-      line-height: 1;
+      gap: 12px;
+      padding: 10px 6px;
+      border-radius: 14px;
       cursor: pointer;
-      z-index: 2;
-      transition: transform 0.25s ease, background 0.15s;
+      transition: background 0.15s;
     }
-    .disc-hcard__swipe-hint:hover { background: rgba(255,255,255,0.32); }
-    .disc-hcard.has-panel-open .disc-hcard__swipe-hint {
-      transform: translateX(-50%) rotate(180deg);
-      background: rgba(16,163,127,0.85);
+    .disc-listing-row:hover,
+    .disc-listing-row:active { background: rgba(16,163,127,0.06); }
+    .disc-listing-row.is-selected {
+      background: rgba(16,163,127,0.12);
     }
-
-    .disc-hcard__img {
+    .disc-listing-row__photo {
+      position: relative;
+      flex: 0 0 auto;
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #eafaf3 0%, #dcf3e8 100%);
+    }
+    .disc-listing-row__img {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -1135,117 +1200,54 @@
       object-fit: cover;
       display: block;
     }
-    .disc-hcard__img-placeholder {
+    .disc-listing-row__img-placeholder {
       position: absolute;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 64px;
-      background: linear-gradient(135deg, #eafaf3 0%, #dcf3e8 100%);
+      font-size: 24px;
     }
-
-    /* Opacity overlay: gradient scrim at the bottom of the photo, info sits on top */
-    .disc-hcard__overlay {
-      position: absolute;
-      left: 0; right: 0; bottom: 0;
-      padding: 48px 16px 16px;
-      background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 35%, rgba(0,0,0,0.8) 100%);
-      color: #fff;
-    }
-    .disc-hcard__reason {
+    .disc-listing-row__info { flex: 1; min-width: 0; }
+    .disc-listing-row__reason {
       display: inline-block;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      color: #fff;
-      background: rgba(123,63,228,0.55);
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-      border-radius: 8px;
-      padding: 4px 9px;
-      margin-bottom: 8px;
+      color: #7b3fe4;
+      background: rgba(123,63,228,0.1);
+      border-radius: 7px;
+      padding: 2px 7px;
+      margin-bottom: 3px;
     }
-    .disc-hcard__name {
-      font-size: 20px;
+    .disc-listing-row__name {
+      font-size: 14px;
       font-weight: 800;
       letter-spacing: -0.01em;
-      line-height: 1.15;
-      margin: 0 0 4px;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.35);
+      color: #14151a;
+      line-height: 1.2;
+      margin: 0 0 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .disc-hcard__meta {
-      font-size: 12.5px;
+    .disc-listing-row__meta {
+      font-size: 11.5px;
       font-weight: 600;
-      color: rgba(255,255,255,0.85);
+      color: rgba(20,21,26,0.5);
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      margin: 0 0 12px;
-    }
-    .disc-hcard__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .disc-hcard__btn {
-      height: 32px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.4);
-      background: rgba(255,255,255,0.18);
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
-      color: #fff;
-      font-size: 12px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      cursor: pointer;
-      transition: background 0.15s;
       white-space: nowrap;
-    }
-    .disc-hcard__btn:hover { background: rgba(255,255,255,0.3); }
-    .disc-hcard__btn--primary {
-      background: #10a37f;
-      border-color: transparent;
-    }
-    .disc-hcard__btn--primary:hover { background: #0d8a6c; }
-
-    .disc-hcarousel__dots {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 0 2px;
-    }
-    .disc-hcarousel__dots[hidden] { display: none; }
-    .disc-hcarousel__dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.15);
-      transition: background 0.2s, transform 0.2s;
-    }
-    .disc-hcarousel__dot.is-active {
-      background: #10a37f;
-      transform: scale(1.35);
-    }
-
-    @media (min-width: 700px) {
-      .disc-hcard { aspect-ratio: 16 / 10; }
-    }
-    @media (min-width: 1025px) {
-      .disc-hcarousel { padding: 0 24px 4px; }
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     @media (min-width: 1025px) {
       .disc-map-section { padding: 20px 24px 0; }
       .disc-map-wrap { height: 420px; }
-      .disc-nearby-section { padding: 26px 24px 4px; }
     }
 
-    /* ── Mobile: full-page map, single "Closest to you" carousel overlaid on
-       its bottom edge, whole page fits in one viewport (no scrolling) ── */
+    /* ── Mobile: full-page map, listings drawer slides in over it from the
+       right edge, whole page fits in one viewport (no scrolling) ── */
     @media (max-width: 1024px) {
       .page-discover .mobile-screen {
         height: 100dvh;
@@ -1307,67 +1309,24 @@
         grid-template-columns: repeat(4, 1fr);
       }
 
-      .page-discover .disc-nearby-section {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        padding: 0 0 calc(var(--tabbar-h, 78px) + env(safe-area-inset-bottom) + 22px);
-        /* Above the map's own markers (.disc-pin.is-active is z-index: 5)
-           so a pulsing selected pin can never poke through the card/detail
-           panel sitting on top of it. */
-        z-index: 20;
-        /* Closed by default so the map gets the full screen -- a card only
-           slides up once a map dot is tapped. Translating (not display:none
-           or [hidden]) keeps this element's layout rect valid once it IS
-           open, which cardOverlayOffsetY() depends on to frame the map
-           around it. See openNearbyCard()/closeNearbyCard() below. */
-        transform: translateY(100%);
-        transition: transform 0.3s ease;
-        pointer-events: none;
-      }
-
-      .page-discover .disc-nearby-section.is-open {
-        transform: translateY(0);
-        pointer-events: auto;
-      }
-
-      .page-discover .disc-nearby-section__title {
-        display: none;
-      }
-
-      .page-discover .disc-hcard {
-        aspect-ratio: auto;
-        height: 42vh;
-        min-height: 190px;
-        max-height: 300px;
-      }
-
-      .page-discover .disc-hcarousel__dots {
-        background: rgba(0,0,0,0.4);
-        -webkit-backdrop-filter: blur(6px);
-        backdrop-filter: blur(6px);
-        border-radius: 999px;
-        padding: 6px 10px;
-        width: fit-content;
-        margin: 8px auto 0;
-      }
-
-      .page-discover .disc-hcarousel__dot {
-        background: rgba(255,255,255,0.45);
-      }
-
-      .page-discover .disc-hcarousel__dot.is-active {
-        background: #ffffff;
+      /* Above the map's own markers (.disc-pin.is-active is z-index: 5)
+         so a pulsing selected pin can never poke through the drawer/
+         detail panel sitting on top of it, and clears the floating header/
+         tab bar the same way the status pill above does. Stays a fixed,
+         valid layout rect at all times (only ever translated, never
+         display:none/[hidden]) since mapOverlayOffset() below depends on
+         its real on-screen rect to frame the map around it while open. */
+      .page-discover .disc-listings-drawer {
+        padding-top: calc(max(var(--header-h), env(safe-area-inset-top) + 48px) + 8px);
+        padding-bottom: calc(var(--tabbar-h, 78px) + env(safe-area-inset-bottom) + 10px);
       }
 
       .page-discover .disc-nearby-loading,
       .page-discover .disc-nearby-empty {
-        color: #fff;
-        background: rgba(0,0,0,0.55);
-        border-radius: 14px;
-        margin: 0 16px;
-        padding: 14px;
+        color: rgba(0,0,0,0.4);
+        background: transparent;
+        margin: 0;
+        padding: 20px 4px;
       }
     }
   </style>
@@ -1525,20 +1484,39 @@
             </div>
           </section>
 
-          <!-- ── Closest to you: nearby places, with any personalized picks (a short
-               reason grounded in the user's AI chat history) surfaced first.
-               Hidden by default on mobile so the map fills the screen -- this
-               slides up only once a map dot is tapped (openNearbyCard()),
-               and the ✕ below sends it back down (closeNearbyCard()). ── -->
-          <section class="disc-nearby-section">
-            <button type="button" class="disc-nearby-section__close" id="disc-nearby-close" aria-label="Close">✕</button>
-            <p class="disc-nearby-section__title">Closest to you</p>
-            <div class="disc-hcarousel" id="disc-nearby-grid">
+          <!-- ── Listings drawer: every place currently on the map, as a
+               vertical list of rows (photo + name + location + category per
+               row). Closed by default, off-screen past the right edge --
+               the handle tab stays visible there to slide it open
+               (left-to-right drag/tap), and the header is the drag-to-close
+               region (see initListingsDrawerDrag()/openListingsDrawer()/
+               closeListingsDrawer() below). Tapping a row opens the full
+               detail sheet -- #disc-detail-panel, a standalone bottom sheet,
+               not nested in here. ── -->
+          <!-- Sibling of the drawer, NOT nested inside it: the drawer's own
+               `transform` (for its slide animation) would otherwise create
+               a containing block for this fixed-position handle and drag
+               it off-screen right along with the drawer, defeating the
+               point of a handle that stays put while closed. -->
+          <button type="button" class="disc-listings-drawer__handle" id="disc-listings-handle" aria-label="Open listings">
+            <span class="disc-listings-drawer__handle-count" id="disc-listings-handle-count">0</span>
+            <span class="disc-listings-drawer__handle-arrow">‹</span>
+          </button>
+
+          <aside class="disc-listings-drawer" id="disc-listings-drawer">
+            <div class="disc-listings-drawer__header" id="disc-listings-drawer-header">
+              <p class="disc-listings-drawer__title">Closest to you <span id="disc-listings-count"></span></p>
+              <button type="button" class="disc-listings-drawer__close" id="disc-listings-close" aria-label="Close">✕</button>
+            </div>
+            <div class="disc-listings-drawer__list" id="disc-listings-list">
               <p class="disc-nearby-loading" id="disc-nearby-loading">Finding places near you…</p>
             </div>
-            <div class="disc-hcarousel__dots" id="disc-nearby-dots" hidden></div>
-            <div class="disc-detail-panel" id="disc-detail-panel" hidden></div>
-          </section>
+          </aside>
+
+          <!-- Standalone bottom sheet -- a sibling, not nested in the drawer,
+               so it can cover the full screen width regardless of the
+               drawer's own (narrower) width. -->
+          <div class="disc-detail-panel" id="disc-detail-panel" hidden></div>
 
 
         </div><!-- /.discover-shell -->
@@ -1690,7 +1668,8 @@ document.addEventListener("DOMContentLoaded", function () {
     markers: {}, // placeId -> mapboxgl.Marker
     places: {}, // placeId -> full place object, for the "View" detail panel
     activeId: null,
-    detailPlaceId: null // which place's detail panel is open right now, if any
+    detailPlaceId: null, // which place's detail panel is open right now, if any
+    listingsDrawerOpen: false
   };
 
   function submitSavePlace(place) {
@@ -1724,19 +1703,26 @@ document.addEventListener("DOMContentLoaded", function () {
     form.submit();
   }
 
-  function buildHeroCardEl(place) {
-    const card = document.createElement("div");
-    card.className = "disc-hcard";
-    card.dataset.placeId = place.id;
+  // One row per place in the listings drawer -- photo, name, location and
+  // category laid out horizontally. Tapping a row opens the full detail
+  // sheet directly (no intermediate "View" step); the detail sheet's own
+  // ✕ closes it.
+  function buildListingRowEl(place) {
+    const row = document.createElement("div");
+    row.className = "disc-listing-row";
+    row.dataset.placeId = place.id;
+    row.setAttribute("role", "button");
+    row.setAttribute("tabindex", "0");
+    row.setAttribute("aria-label", `View details for ${place.name || "this place"}`);
     // Keep the full place object around (phone, photos, rating...) so the
-    // "View" detail panel can look it up by id when its button is clicked.
+    // detail panel can look it up by id when the row is tapped.
     state.places[place.id] = place;
 
     const emoji = categoryEmoji(place.category);
     const photoHtml = place.photo_url
-      ? `<img class="disc-hcard__img" src="${escapeHtml(place.photo_url)}" alt="${escapeHtml(place.name)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-         <div class="disc-hcard__img-placeholder" style="display:none;">${emoji}</div>`
-      : `<div class="disc-hcard__img-placeholder">${emoji}</div>`;
+      ? `<img class="disc-listing-row__img" src="${escapeHtml(place.photo_url)}" alt="" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <div class="disc-listing-row__img-placeholder" style="display:none;">${emoji}</div>`
+      : `<div class="disc-listing-row__img-placeholder">${emoji}</div>`;
 
     const metaBits = [];
     if (place.category) metaBits.push(escapeHtml(place.category.replace(/_/g, " ")));
@@ -1744,111 +1730,31 @@ document.addEventListener("DOMContentLoaded", function () {
     if (place.rating) metaBits.push(`★ ${place.rating}`);
 
     const reasonHtml = place.reason
-      ? `<div class="disc-hcard__reason">✨ ${escapeHtml(place.reason)}</div>`
+      ? `<div class="disc-listing-row__reason">✨ ${escapeHtml(place.reason)}</div>`
       : "";
 
-    const listingUrl = `/listing/${encodeURIComponent(place.slug || "")}`;
-
-    let saveActionHtml = "";
-    if (CONFIG.isAuthenticated && CONFIG.defaultListId) {
-      saveActionHtml = `<button type="button" class="disc-hcard__btn disc-hcard__btn--save" aria-label="Save ${escapeHtml(place.name)}">+ Save</button>`;
-    } else if (!CONFIG.isAuthenticated) {
-      saveActionHtml = `<a href="${CONFIG.loginUrl}" class="disc-hcard__btn" onclick="event.stopPropagation();" aria-label="Log in to save ${escapeHtml(place.name)}">+ Save</a>`;
-    }
-
-    const directionsHtml = place.address
-      ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" class="disc-hcard__btn" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="Directions to ${escapeHtml(place.name)}">Directions</a>`
-      : "";
-
-    const donateHtml = place.is_org
-      ? `<a href="/donate/${encodeURIComponent(place.slug || "")}" class="disc-hcard__btn disc-hcard__btn--primary" onclick="event.stopPropagation();" aria-label="Donate to ${escapeHtml(place.name)}">♥ Donate</a>`
-      : "";
-
-    // Big photo, opacity overlay pinned to the bottom holding the info (TripAdvisor-style pin card)
-    card.innerHTML = `
-      ${photoHtml}
-      <div class="disc-hcard__overlay">
+    row.innerHTML = `
+      <div class="disc-listing-row__photo">${photoHtml}</div>
+      <div class="disc-listing-row__info">
         ${reasonHtml}
-        <div class="disc-hcard__name">${escapeHtml(place.name)}</div>
-        <div class="disc-hcard__meta">${metaBits.join(" · ")}</div>
-        <div class="disc-hcard__actions">
-          ${donateHtml}
-          ${saveActionHtml}
-          ${directionsHtml}
-        </div>
+        <div class="disc-listing-row__name">${escapeHtml(place.name)}</div>
+        <div class="disc-listing-row__meta">${metaBits.join(" · ")}</div>
       </div>
-      <button type="button" class="disc-hcard__swipe-hint" aria-label="Swipe up for details">⌃</button>
     `;
 
-    if (CONFIG.isAuthenticated && CONFIG.defaultListId) {
-      const saveBtn = card.querySelector(".disc-hcard__btn--save");
-      if (saveBtn) {
-        saveBtn.addEventListener("click", function (e) {
-          e.stopPropagation();
-          submitSavePlace(place);
-        });
-      }
-    }
-
-    // Small tappable fallback for anyone who doesn't try swiping.
-    const swipeHint = card.querySelector(".disc-hcard__swipe-hint");
-    if (swipeHint) {
-      swipeHint.addEventListener("click", function (e) {
-        e.stopPropagation();
-        toggleDetailPanel(place);
-      });
-    }
-
-    // Swipe up anywhere on the card to open its details, swipe down to
-    // close them. Only acts once a gesture is clearly more vertical than
-    // horizontal, and never calls preventDefault, so swiping between cards
-    // (native horizontal scroll-snap on the carousel) is untouched.
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let isVerticalSwipe = null;
-
-    card.addEventListener("touchstart", function (e) {
-      if (!e.touches || !e.touches.length) return;
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      isVerticalSwipe = null;
-    }, { passive: true });
-
-    // Not passive: once a gesture is decided to be vertical, we need to
-    // preventDefault() so the browser stops also trying to hand it to the
-    // carousel's native horizontal scroll-snap mid-swipe -- otherwise a
-    // mostly-vertical swipe can still get grabbed sideways and flip to the
-    // next/previous card instead of opening the detail panel.
-    card.addEventListener("touchmove", function (e) {
-      if (!e.touches || !e.touches.length) return;
-      const dx = e.touches[0].clientX - touchStartX;
-      const dy = e.touches[0].clientY - touchStartY;
-      if (isVerticalSwipe === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-        isVerticalSwipe = Math.abs(dy) > Math.abs(dx);
-      }
-      if (isVerticalSwipe) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-
-    card.addEventListener("touchend", function (e) {
-      if (!e.changedTouches || !e.changedTouches.length) return;
-      const dy = e.changedTouches[0].clientY - touchStartY;
-
-      if (isVerticalSwipe && dy <= -40 && state.detailPlaceId !== place.id) {
-        openDetailPanel(place);
-      } else if (isVerticalSwipe && dy >= 40 && state.detailPlaceId === place.id) {
-        closeDetailPanel();
-      }
-
-      isVerticalSwipe = null;
-    }, { passive: true });
-
-    card.addEventListener("click", function () {
+    row.addEventListener("click", function () {
       highlightPlace(place.id, { flyTo: true });
+      openDetailPanel(place);
+    });
+    row.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        highlightPlace(place.id, { flyTo: true });
+        openDetailPanel(place);
+      }
     });
 
-    return card;
+    return row;
   }
 
   /* -- "View" detail panel: brief description card that expands below the
@@ -1863,19 +1769,26 @@ document.addEventListener("DOMContentLoaded", function () {
     const panelEl = getDetailPanelEl();
     if (!panelEl) return;
 
-    // Build the gallery from the extra photos, making sure the photo
-    // currently shown on the big card (place.photo_url) is in the list too
-    // so it can be highlighted/reselected, without duplicating it.
+    // Build the gallery from the extra photos, making sure the main
+    // photo_url is in the list too so it can be highlighted, without
+    // duplicating it. There's no hero card anymore to carry a "currently
+    // shown" photo, so the gallery's own selection is purely local to the
+    // panel (see the thumbnail click handler below).
     const photos = (place.photos && place.photos.length) ? place.photos.slice() : [];
     if (place.photo_url && photos.indexOf(place.photo_url) === -1) {
       photos.unshift(place.photo_url);
     }
 
-    const currentCardUrl = getCardPhotoUrl(place.id) || place.photo_url;
+    const currentUrl = place.photo_url || photos[0] || null;
 
     const photosHtml = photos.length
-      ? `<div class="disc-detail-panel__photos">${photos.map((url) => `<img class="${url === currentCardUrl ? "is-selected" : ""}" src="${escapeHtml(url)}" data-url="${escapeHtml(url)}" alt="${escapeHtml(place.name)}" loading="lazy">`).join("")}</div>`
+      ? `<div class="disc-detail-panel__photos">${photos.map((url) => `<img class="${url === currentUrl ? "is-selected" : ""}" src="${escapeHtml(url)}" data-url="${escapeHtml(url)}" alt="${escapeHtml(place.name)}" loading="lazy">`).join("")}</div>`
       : "";
+
+    const emoji = categoryEmoji(place.category);
+    const headerMetaBits = [];
+    if (place.category) headerMetaBits.push(escapeHtml(place.category.replace(/_/g, " ")));
+    if (place.distance_miles != null) headerMetaBits.push(`${place.distance_miles} mi`);
 
     const roundedRating = Math.max(0, Math.min(5, Math.round(place.rating || 0)));
     const ratingCardHtml = place.rating
@@ -1888,8 +1801,15 @@ document.addEventListener("DOMContentLoaded", function () {
          </div>`
       : "";
 
+    // Donate is now the lead action (this is primarily a fundraising/
+    // discovery surface) -- promoted to --primary, with Directions
+    // demoted to --ghost alongside Website/Call.
+    const donateHtml = place.is_org
+      ? `<a href="/donate/${encodeURIComponent(place.slug || "")}" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--primary" onclick="event.stopPropagation();" aria-label="Donate to ${escapeHtml(place.name)}">♥ Donate</a>`
+      : "";
+
     const directionsBtnHtml = place.address
-      ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--primary" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="Directions to ${escapeHtml(place.name)}">📍 Directions</a>`
+      ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" class="disc-detail-panel__action-btn disc-detail-panel__action-btn--ghost" target="_blank" rel="noopener" onclick="event.stopPropagation();" aria-label="Directions to ${escapeHtml(place.name)}">📍 Directions</a>`
       : "";
 
     const websiteBtnHtml = place.website
@@ -1912,9 +1832,17 @@ document.addEventListener("DOMContentLoaded", function () {
     panelEl.innerHTML = `
       <div class="disc-detail-panel__inner">
         <button type="button" class="disc-detail-panel__close" aria-label="Close details">✕</button>
+        <div class="disc-detail-panel__header">
+          <div class="disc-detail-panel__header-emoji">${emoji}</div>
+          <div class="disc-detail-panel__header-text">
+            <div class="disc-detail-panel__name">${escapeHtml(place.name)}</div>
+            <div class="disc-detail-panel__meta">${headerMetaBits.join(" · ")}</div>
+          </div>
+        </div>
         ${photosHtml}
         ${ratingCardHtml}
         <div class="disc-detail-panel__actions">
+          ${donateHtml}
           ${directionsBtnHtml}
           ${websiteBtnHtml}
           ${callBtnHtml}
@@ -1942,7 +1870,6 @@ document.addEventListener("DOMContentLoaded", function () {
     panelEl.querySelectorAll(".disc-detail-panel__photos img").forEach((thumb) => {
       thumb.addEventListener("click", function (e) {
         e.stopPropagation();
-        setCardPhoto(place.id, thumb.dataset.url);
         panelEl.querySelectorAll(".disc-detail-panel__photos img").forEach((t) => t.classList.remove("is-selected"));
         thumb.classList.add("is-selected");
       });
@@ -2048,62 +1975,6 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
   }
 
-  // Returns the URL currently shown on a card's big hero photo, if any.
-  function getCardPhotoUrl(placeId) {
-    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
-    if (!card) return null;
-    const img = card.querySelector(".disc-hcard__img");
-    return img ? img.getAttribute("src") : null;
-  }
-
-  // Swaps the big photo on a hero card to the given URL. Cards built from a
-  // place with no photo_url only have the emoji placeholder (no <img> yet),
-  // so this creates the <img> on demand the first time a gallery photo is
-  // picked.
-  function setCardPhoto(placeId, url) {
-    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
-    if (!card || !url) return;
-
-    let img = card.querySelector(".disc-hcard__img");
-    const placeholder = card.querySelector(".disc-hcard__img-placeholder");
-
-    if (!img) {
-      img = document.createElement("img");
-      img.className = "disc-hcard__img";
-      img.alt = "";
-      img.loading = "lazy";
-      img.onerror = function () {
-        this.style.display = "none";
-        if (placeholder) placeholder.style.display = "flex";
-      };
-      card.insertBefore(img, card.firstChild);
-    }
-
-    img.src = url;
-    img.style.display = "";
-    if (placeholder) placeholder.style.display = "none";
-  }
-
-  // Marks whichever hero card the panel currently belongs to so its bottom
-  // corners can square off to meet the panel with no visible step, and
-  // hides/shows the dot indicators (which sat in that same gap) to match.
-  function setCardConnectedToPanel(placeId) {
-    document.querySelectorAll(".disc-hcard.has-panel-open").forEach((el) => el.classList.remove("has-panel-open"));
-    const dotsEl = document.getElementById("disc-nearby-dots");
-    const carouselEl = document.getElementById("disc-nearby-grid");
-
-    if (placeId == null) {
-      if (dotsEl) dotsEl.classList.remove("is-panel-open");
-      if (carouselEl) carouselEl.classList.remove("is-panel-open");
-      return;
-    }
-
-    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
-    if (card) card.classList.add("has-panel-open");
-    if (dotsEl) dotsEl.classList.add("is-panel-open");
-    if (carouselEl) carouselEl.classList.add("is-panel-open");
-  }
-
   function openDetailPanel(place) {
     const panelEl = getDetailPanelEl();
     if (!panelEl) return;
@@ -2114,7 +1985,13 @@ document.addEventListener("DOMContentLoaded", function () {
     void panelEl.offsetHeight;
     panelEl.classList.add("is-open");
     state.detailPlaceId = place.id;
-    setCardConnectedToPanel(place.id);
+    // Give the slide-up animation a moment, then nudge the map's camera
+    // out from behind the now-open sheet.
+    if (state.map) {
+      window.setTimeout(() => {
+        state.map.easeTo({ offset: mapOverlayOffset(), duration: 250 });
+      }, 50);
+    }
   }
 
   function closeDetailPanel() {
@@ -2122,31 +1999,27 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!panelEl) return;
     panelEl.classList.remove("is-open");
     state.detailPlaceId = null;
-    setCardConnectedToPanel(null);
     window.setTimeout(() => {
       if (!panelEl.classList.contains("is-open")) panelEl.hidden = true;
     }, 360);
-  }
-
-  function toggleDetailPanel(place) {
-    if (state.detailPlaceId === place.id) {
-      closeDetailPanel();
-    } else {
-      openDetailPanel(place);
+    if (state.map) {
+      window.setTimeout(() => {
+        state.map.easeTo({ offset: mapOverlayOffset(), duration: 250 });
+      }, 50);
     }
   }
 
   function highlightPlace(placeId, opts) {
     opts = opts || {};
 
-    document.querySelectorAll(".disc-hcard.is-selected").forEach((el) => el.classList.remove("is-selected"));
+    document.querySelectorAll(".disc-listing-row.is-selected").forEach((el) => el.classList.remove("is-selected"));
     Object.values(state.markers).forEach((m) => m.getElement().classList.remove("is-active"));
 
-    const card = document.querySelector(`.disc-hcard[data-place-id="${placeId}"]`);
-    if (card) {
-      card.classList.add("is-selected");
+    const row = document.querySelector(`.disc-listing-row[data-place-id="${placeId}"]`);
+    if (row) {
+      row.classList.add("is-selected");
       if (opts.scrollIntoView) {
-        card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        row.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
     }
 
@@ -2158,7 +2031,7 @@ document.addEventListener("DOMContentLoaded", function () {
           center: marker.getLngLat(),
           zoom: Math.max(state.map.getZoom(), 14),
           duration: 500,
-          offset: [0, cardOverlayOffsetY()]
+          offset: mapOverlayOffset()
         });
       }
     }
@@ -2166,149 +2039,200 @@ document.addEventListener("DOMContentLoaded", function () {
     state.activeId = placeId;
   }
 
-  // Slides the "Closest to you" section up from the bottom with the tapped
-  // place's card in view -- the map stays full-screen (no permanent card
-  // strip) until a dot is actually tapped. See closeNearbyCard() for the
-  // reverse, wired to the ✕ button in the markup above.
-  function openNearbyCard(placeId) {
-    const sectionEl = document.querySelector(".disc-nearby-section");
-    if (sectionEl) sectionEl.classList.add("is-open");
+  function getListingsDrawerEl() {
+    return document.getElementById("disc-listings-drawer");
+  }
 
-    highlightPlace(placeId, { scrollIntoView: true, flyTo: true });
+  // Applies (or clears) the drawer's open state -- the one place that
+  // touches .is-open, so drag-release and the handle/close-button taps
+  // all end up in the same spot. Clears any inline transform left over
+  // from a live drag so the CSS transition (suppressed via .is-dragging
+  // while dragging) takes back over.
+  function setListingsDrawerOpen(isOpen) {
+    const drawerEl = getListingsDrawerEl();
+    if (!drawerEl) return;
+    drawerEl.classList.remove("is-dragging");
+    drawerEl.style.transform = "";
+    drawerEl.classList.toggle("is-open", isOpen);
+    const handleEl = document.getElementById("disc-listings-handle");
+    if (handleEl) handleEl.classList.toggle("is-hidden", isOpen);
+    state.listingsDrawerOpen = isOpen;
+  }
 
-    // The section can still be mid slide-up right when the flyTo above
-    // runs, so it may frame around the wrong (not-yet-open) height --
+  // Opens the listings drawer -- either from a tap on the edge handle
+  // (placeId omitted) or from tapping a map dot (placeId given, which also
+  // highlights + scrolls to that place's row). See closeListingsDrawer()
+  // for the reverse, wired to the ✕ button and the drag-to-close gesture.
+  function openListingsDrawer(placeId) {
+    setListingsDrawerOpen(true);
+
+    if (placeId != null) {
+      highlightPlace(placeId, { scrollIntoView: true, flyTo: true });
+    }
+
+    // The drawer can still be mid slide-in right when the flyTo above
+    // runs, so it may frame around the wrong (not-yet-open) width --
     // correct it once the open animation has actually finished, the same
     // "frame now, correct once the real size is known" approach initMap()
-    // already uses for the overlay's height on first load.
+    // already uses for the overlay's size on first load.
     window.setTimeout(() => {
-      const marker = state.markers[placeId];
-      if (marker && state.map) {
-        state.map.easeTo({
-          center: marker.getLngLat(),
-          offset: [0, cardOverlayOffsetY()],
-          duration: 250
-        });
-      }
+      if (!state.map) return;
+      const marker = placeId != null ? state.markers[placeId] : null;
+      state.map.easeTo({
+        center: marker ? marker.getLngLat() : state.map.getCenter(),
+        offset: mapOverlayOffset(),
+        duration: 250
+      });
     }, 320);
   }
 
-  function closeNearbyCard() {
-    const sectionEl = document.querySelector(".disc-nearby-section");
-    if (sectionEl) sectionEl.classList.remove("is-open");
+  function closeListingsDrawer() {
+    setListingsDrawerOpen(false);
     closeDetailPanel();
     document.querySelectorAll(".disc-pin.is-active").forEach((el) => el.classList.remove("is-active"));
-    document.querySelectorAll(".disc-hcard.is-selected").forEach((el) => el.classList.remove("is-selected"));
+    document.querySelectorAll(".disc-listing-row.is-selected").forEach((el) => el.classList.remove("is-selected"));
     state.activeId = null;
-    if (state.map) {
-      state.map.easeTo({ offset: [0, 0], duration: 300 });
-    }
   }
 
-  /* ── Horizontal carousel dot indicators: syncs to scroll position ── */
-  function setupCarouselDots(carouselEl, dotsEl, count) {
-    if (!carouselEl) return;
+  // Pointer-Events-based drag gestures for the drawer: dragging the edge
+  // handle leftward opens it, dragging the drawer's header rightward
+  // closes it. A short tap on either (near-zero movement) just toggles
+  // open/closed instead of requiring a full drag. Pointer Events (rather
+  // than touch-only events) so this works with mouse drags too.
+  function initListingsDrawerDrag() {
+    const drawerEl = getListingsDrawerEl();
+    const handleEl = document.getElementById("disc-listings-handle");
+    const headerEl = document.getElementById("disc-listings-drawer-header");
+    if (!drawerEl || !handleEl || !headerEl) return;
 
-    // Dots are a UI nicety, capped at 12 so the row doesn't fill up with
-    // tiny dots -- but that cap must NOT stop the scroll listener below
-    // from attaching, or the map/detail-panel never follow the carousel
-    // once there are more than 12 nearby places (which is most real
-    // searches).
-    const showDots = !!dotsEl && count > 1 && count <= 12;
-    if (dotsEl) {
-      dotsEl.innerHTML = "";
-      dotsEl.hidden = !showDots;
-      if (showDots) {
-        for (let i = 0; i < count; i++) {
-          const dot = document.createElement("span");
-          dot.className = "disc-hcarousel__dot" + (i === 0 ? " is-active" : "");
-          dotsEl.appendChild(dot);
-        }
+    let dragStartX = null;
+    let dragPointerId = null;
+    let dragMaxMove = 0;
+    let startedOpen = false;
+
+    function drawerWidth() {
+      return drawerEl.getBoundingClientRect().width || 1;
+    }
+
+    function onPointerDown(e) {
+      // Let the ✕ button's own click handler run untouched -- setting
+      // pointer capture on the header would otherwise retarget the
+      // subsequent click event to the header itself (a well-known
+      // Pointer Events quirk), silently swallowing taps on the button.
+      if (e.target.closest(".disc-listings-drawer__close")) return;
+
+      dragStartX = e.clientX;
+      dragMaxMove = 0;
+      dragPointerId = e.pointerId;
+      startedOpen = drawerEl.classList.contains("is-open");
+      drawerEl.classList.add("is-dragging");
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    }
+
+    function openAmountForDx(dx, width) {
+      // Progress toward fully OPEN (0 = closed/off-screen right, 1 = open).
+      // From closed (openAmount starts at 0): dragging left (negative dx)
+      // increases it toward 1.
+      // From open (openAmount starts at 1): dragging right (positive dx)
+      // decreases it toward 0.
+      const raw = startedOpen ? 1 - dx / width : -dx / width;
+      return Math.max(0, Math.min(1, raw));
+    }
+
+    function onPointerMove(e) {
+      if (dragStartX == null || e.pointerId !== dragPointerId) return;
+      const dx = e.clientX - dragStartX;
+      dragMaxMove = Math.max(dragMaxMove, Math.abs(dx));
+      const openAmount = openAmountForDx(dx, drawerWidth());
+      drawerEl.style.transform = `translateX(${(1 - openAmount) * 100}%)`;
+    }
+
+    function endDrag(e) {
+      if (dragStartX == null || e.pointerId !== dragPointerId) return false;
+      const dx = e.clientX - dragStartX;
+      const width = drawerWidth();
+      dragStartX = null;
+      dragPointerId = null;
+
+      if (dragMaxMove < 6) {
+        // A simple tap, not a drag -- the handle opens; a tap on the
+        // header (outside the ✕ button, which has its own listener) does
+        // nothing extra.
+        drawerEl.classList.remove("is-dragging");
+        drawerEl.style.transform = "";
+        if (!startedOpen) openListingsDrawer();
+        return true;
       }
+
+      const openAmount = openAmountForDx(dx, width);
+      if (openAmount > 0.35) {
+        openListingsDrawer();
+      } else {
+        closeListingsDrawer();
+      }
+      return true;
     }
 
-    if (count <= 1) return;
+    function onPointerUp(e) {
+      endDrag(e);
+    }
 
-    let ticking = false;
-    let lastIndex = 0;
-    carouselEl.addEventListener("scroll", () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const firstCard = carouselEl.querySelector(".disc-hcard");
-        const cardWidth = firstCard ? firstCard.getBoundingClientRect().width + 12 : carouselEl.clientWidth;
-        const index = Math.max(0, Math.min(count - 1, Math.round(carouselEl.scrollLeft / cardWidth)));
-        if (showDots) {
-          dotsEl.querySelectorAll(".disc-hcarousel__dot").forEach((dot, i) => {
-            dot.classList.toggle("is-active", i === index);
-          });
-        }
-        if (index !== lastIndex) {
-          lastIndex = index;
-          syncDetailPanelToCarouselIndex(index);
-          flyToMapForCarouselIndex(index);
-        }
-        ticking = false;
-      });
-    }, { passive: true });
+    function onPointerCancel(e) {
+      if (e.pointerId !== dragPointerId) return;
+      dragStartX = null;
+      dragPointerId = null;
+      drawerEl.classList.remove("is-dragging");
+      drawerEl.style.transform = "";
+    }
+
+    [handleEl, headerEl].forEach((el) => {
+      el.addEventListener("pointerdown", onPointerDown);
+      el.addEventListener("pointermove", onPointerMove);
+      el.addEventListener("pointerup", onPointerUp);
+      el.addEventListener("pointercancel", onPointerCancel);
+    });
   }
 
-  // Keeps the detail panel following the carousel as it's swiped. Does
-  // nothing unless the panel is already open -- swiping when it's closed
-  // behaves exactly as before.
-  function syncDetailPanelToCarouselIndex(index) {
-    if (state.detailPlaceId == null) return;
-
-    const place = state.orderedPlaces && state.orderedPlaces[index];
-    if (!place || place.id === state.detailPlaceId) return;
-
-    renderDetailPanelContent(place);
-    state.detailPlaceId = place.id;
-    setCardConnectedToPanel(place.id);
-  }
-
-  // Follows the map to whichever card the carousel has scrolled to -- the
-  // same highlight + flyTo a tap on the card triggers, so swiping the
-  // cards alone moves the map without needing to also tap one.
-  function flyToMapForCarouselIndex(index) {
-    const place = state.orderedPlaces && state.orderedPlaces[index];
-    if (!place) return;
-    highlightPlace(place.id, { flyTo: true });
-  }
-
-  // How far up (negative px) a map camera target needs to be nudged so it
-  // isn't hidden behind the "Closest to you" card overlay that sits over
-  // the bottom of the map on mobile. 0 if the overlay is hidden/empty, or
-  // on desktop layouts where it isn't a bottom overlay at all.
-  function cardOverlayOffsetY() {
+  // How far [x, y] (in px) a map camera target needs to be nudged so it
+  // isn't hidden behind whichever overlays are currently open: the
+  // listings drawer on the right (x), and/or the detail sheet at the
+  // bottom (y, same centering math the old card carousel used). Either or
+  // both can be zero if that overlay is closed.
+  function mapOverlayOffset() {
     const mapWrapEl = document.querySelector(".disc-map-wrap");
-    const cardOverlayEl = document.querySelector(".disc-nearby-section");
-    if (!mapWrapEl || !cardOverlayEl) return 0;
-
-    // On mobile the card is hidden (translated off-screen) until a map pin
-    // is tapped open -- when it's closed there's nothing to dodge, so skip
-    // the geometry math and let the map use the full screen. Desktop never
-    // hides the section this way, so this only short-circuits on mobile.
-    const isMobileOverlay = window.matchMedia("(max-width: 1024px)").matches;
-    if (isMobileOverlay && !cardOverlayEl.classList.contains("is-open")) return 0;
-
+    if (!mapWrapEl) return [0, 0];
     const mapRect = mapWrapEl.getBoundingClientRect();
-    const cardRect = cardOverlayEl.getBoundingClientRect();
-    const bottomCovered = Math.max(0, mapRect.bottom - cardRect.top);
 
-    // The floating header (hamburger + account icon) sits on top of the
-    // map too -- without accounting for it, the pins get centered in the
-    // full map height minus just the card, which crowds them up against
-    // the header. Center in the actual visible band between the two
-    // overlays instead.
-    const headerEl = document.querySelector(".disc-header");
-    let topCovered = 0;
-    if (headerEl) {
-      const headerRect = headerEl.getBoundingClientRect();
-      topCovered = Math.max(0, headerRect.bottom - mapRect.top);
+    let offsetX = 0;
+    const drawerEl = document.querySelector(".disc-listings-drawer");
+    if (drawerEl && drawerEl.classList.contains("is-open")) {
+      const drawerRect = drawerEl.getBoundingClientRect();
+      const rightCovered = Math.max(0, mapRect.right - drawerRect.left);
+      offsetX = -(rightCovered / 2);
     }
 
-    return (topCovered - bottomCovered) / 2;
+    let offsetY = 0;
+    const panelEl = document.querySelector(".disc-detail-panel");
+    if (panelEl && panelEl.classList.contains("is-open")) {
+      const panelRect = panelEl.getBoundingClientRect();
+      const bottomCovered = Math.max(0, mapRect.bottom - panelRect.top);
+
+      // The floating header (hamburger + account icon) sits on top of the
+      // map too -- without accounting for it, the pins get centered in
+      // the full map height minus just the sheet, which crowds them up
+      // against the header. Center in the actual visible band between
+      // the two overlays instead.
+      const headerEl = document.querySelector(".disc-header");
+      let topCovered = 0;
+      if (headerEl) {
+        const headerRect = headerEl.getBoundingClientRect();
+        topCovered = Math.max(0, headerRect.bottom - mapRect.top);
+      }
+
+      offsetY = (topCovered - bottomCovered) / 2;
+    }
+
+    return [offsetX, offsetY];
   }
 
   function initMap(centerLat, centerLng) {
@@ -2323,14 +2247,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Frame the view right away so the user's own location doesn't start
-    // out underneath the card overlay -- this uses whatever the overlay's
-    // height is at this instant (usually just the "Finding places near
-    // you..." loading line), and gets corrected again in loadNearby()
-    // once the real nearby-places cards have rendered and the overlay's
-    // true height is known.
-    const initialOffsetY = cardOverlayOffsetY();
-    if (initialOffsetY) {
-      map.jumpTo({ center: [centerLng, centerLat], zoom: 13, offset: [0, initialOffsetY] });
+    // out underneath an open overlay -- in practice both the drawer and
+    // detail sheet are closed at this point, so this is usually a no-op,
+    // but it's cheap and keeps the logic in one place.
+    const initialOffset = mapOverlayOffset();
+    if (initialOffset[0] || initialOffset[1]) {
+      map.jumpTo({ center: [centerLng, centerLat], zoom: 13, offset: initialOffset });
     }
 
     // No zoom (+/-) control -- pinch-to-zoom still works, this just removes
@@ -2354,8 +2276,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // last one instead of replacing them. mapboxgl.Marker.remove() takes
     // the actual DOM element off the map; clearing state.markers/state.places
     // alongside it keeps the lookup tables (used by highlightPlace(),
-    // openNearbyCard(), the detail panel, etc.) from holding onto places
-    // that no longer have a marker or card on screen.
+    // openListingsDrawer(), the detail panel, etc.) from holding onto places
+    // that no longer have a marker or row on screen.
     Object.values(state.markers).forEach((m) => m.remove());
     state.markers = {};
     state.places = {};
@@ -2384,16 +2306,15 @@ document.addEventListener("DOMContentLoaded", function () {
         el.classList.add("disc-pin--dim");
       }
 
-      // No popup bubble anymore -- tapping the dot opens the full card
-      // below instead (see openNearbyCard()), which already shows the
-      // name, category, distance and Donate link, so a separate popup
-      // would just be the same information twice.
+      // No popup bubble anymore -- tapping the dot opens the listings
+      // drawer instead (see openListingsDrawer()), scrolled to this
+      // place's row, which already shows the name, category and distance.
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([Number(place.longitude), Number(place.latitude)])
         .addTo(state.map);
 
       el.addEventListener("click", () => {
-        openNearbyCard(place.id);
+        openListingsDrawer(place.id);
       });
 
       state.markers[place.id] = marker;
@@ -2405,25 +2326,25 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function renderFeeds(places) {
-    const nearbyGrid = document.getElementById("disc-nearby-grid");
-    const nearbyDots = document.getElementById("disc-nearby-dots");
+  function renderListingsDrawer(places) {
+    const listEl = document.getElementById("disc-listings-list");
+    const countEl = document.getElementById("disc-listings-count");
+    const handleCountEl = document.getElementById("disc-listings-handle-count");
+    if (!listEl) return;
 
-    // One combined, single-row carousel (so it fits at the bottom of the map
-    // without scrolling): personalized picks first — each still shows its
-    // reason badge — then everything else in the distance order the API
-    // already gave us.
-    const ordered = places.filter((p) => p.reason).concat(places.filter((p) => !p.reason));
-    state.orderedPlaces = ordered;
+    // Mirrors the map pins 1:1, in the exact order the API gave them --
+    // no personalized-picks reordering (a personalized pick still stands
+    // out via its own ✨ reason badge on the row).
+    listEl.innerHTML = "";
 
-    nearbyGrid.innerHTML = "";
-
-    if (ordered.length) {
-      ordered.forEach((place) => nearbyGrid.appendChild(buildHeroCardEl(place)));
-      setupCarouselDots(nearbyGrid, nearbyDots, ordered.length);
+    if (places.length) {
+      places.forEach((place) => listEl.appendChild(buildListingRowEl(place)));
     } else {
-      nearbyGrid.innerHTML = `<p class="disc-nearby-empty">No published places near you yet — check back soon.</p>`;
+      listEl.innerHTML = `<p class="disc-nearby-empty">No published places near you yet — check back soon.</p>`;
     }
+
+    if (countEl) countEl.textContent = places.length ? `(${places.length})` : "";
+    if (handleCountEl) handleCountEl.textContent = String(places.length);
   }
 
   function setStatus(text, opts) {
@@ -2450,15 +2371,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const places = data.places || [];
         setStatus(places.length ? null : "No published places near you yet — check back soon.");
         plotPlaces(places);
-        renderFeeds(places);
+        renderListingsDrawer(places);
 
-        // Now that the real cards are in the DOM, the overlay has its
-        // true final height -- re-frame the view above it if needed.
+        // Now that the real rows are in the DOM, re-frame the view above
+        // any currently-open overlay if needed (usually a no-op here,
+        // same as the initMap() case above).
         if (state.map) {
           requestAnimationFrame(() => {
-            const offsetY = cardOverlayOffsetY();
-            if (offsetY) {
-              state.map.easeTo({ center: [lng, lat], offset: [0, offsetY], duration: 300 });
+            const offset = mapOverlayOffset();
+            if (offset[0] || offset[1]) {
+              state.map.easeTo({ center: [lng, lat], offset: offset, duration: 300 });
             }
           });
         }
@@ -2466,7 +2388,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch((err) => {
         console.error("[DISCOVER_NEARBY_FETCH_ERROR]", err);
         setStatus("Couldn't load nearby places. Try refreshing.", { error: true });
-        document.getElementById("disc-nearby-grid").innerHTML =
+        document.getElementById("disc-listings-list").innerHTML =
           `<p class="disc-nearby-empty">Couldn't load nearby places. Try refreshing.</p>`;
       });
   }
@@ -2481,7 +2403,7 @@ document.addEventListener("DOMContentLoaded", function () {
       `Enable location access to see the map. <span class="disc-map__retry" id="disc-map-retry">Try again</span>`,
       { error: true }
     );
-    document.getElementById("disc-nearby-grid").innerHTML =
+    document.getElementById("disc-listings-list").innerHTML =
       `<p class="disc-nearby-empty">Turn on location access to see places near you.</p>`;
 
     const retryBtn = document.getElementById("disc-map-retry");
@@ -2511,10 +2433,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // and only call initMap() as a fallback for the rare case where it was
   // never created yet (e.g. the user denied location access first).
   function goToLocation(lat, lng) {
-    // A card left open from the previous search would otherwise keep
-    // showing a place that's about to lose its marker in plotPlaces()
-    // below -- close it before the new batch of places loads in.
-    closeNearbyCard();
+    // A drawer/detail sheet left open from the previous search would
+    // otherwise keep showing a place that's about to lose its marker in
+    // plotPlaces() below -- close it before the new batch of places loads in.
+    closeListingsDrawer();
 
     if (state.map) {
       state.map.easeTo({ center: [lng, lat], zoom: 13, duration: 450 });
@@ -2554,8 +2476,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const searchForm = document.getElementById("disc-search-form");
   if (searchForm) searchForm.addEventListener("submit", handleSearchSubmit);
 
-  const nearbyCloseBtn = document.getElementById("disc-nearby-close");
-  if (nearbyCloseBtn) nearbyCloseBtn.addEventListener("click", closeNearbyCard);
+  const listingsCloseBtn = document.getElementById("disc-listings-close");
+  if (listingsCloseBtn) listingsCloseBtn.addEventListener("click", closeListingsDrawer);
+
+  initListingsDrawerDrag();
 
   document.addEventListener("DOMContentLoaded", requestLocation);
 })();
