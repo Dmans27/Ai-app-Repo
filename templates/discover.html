@@ -2063,27 +2063,16 @@ document.addEventListener("DOMContentLoaded", function () {
   // (placeId omitted) or from tapping a map dot (placeId given, which also
   // highlights + scrolls to that place's row). See closeListingsDrawer()
   // for the reverse, wired to the ✕ button and the drag-to-close gesture.
+  // Opening the drawer never moves the map on its own -- the only thing
+  // that re-centers/pans it is tapping a specific pin or row (an explicit
+  // "go here" action, via highlightPlace's flyTo below). Just sliding the
+  // drawer open/closed by itself leaves the map exactly where it was.
   function openListingsDrawer(placeId) {
     setListingsDrawerOpen(true);
 
     if (placeId != null) {
       highlightPlace(placeId, { scrollIntoView: true, flyTo: true });
     }
-
-    // The drawer can still be mid slide-in right when the flyTo above
-    // runs, so it may frame around the wrong (not-yet-open) width --
-    // correct it once the open animation has actually finished, the same
-    // "frame now, correct once the real size is known" approach initMap()
-    // already uses for the overlay's size on first load.
-    window.setTimeout(() => {
-      if (!state.map) return;
-      const marker = placeId != null ? state.markers[placeId] : null;
-      state.map.easeTo({
-        center: marker ? marker.getLngLat() : state.map.getCenter(),
-        offset: mapOverlayOffset(),
-        duration: 250
-      });
-    }, 320);
   }
 
   function closeListingsDrawer() {
@@ -2198,19 +2187,17 @@ document.addEventListener("DOMContentLoaded", function () {
   // listings drawer on the right (x), and/or the detail sheet at the
   // bottom (y, same centering math the old card carousel used). Either or
   // both can be zero if that overlay is closed.
+  // Only ever nudges the map vertically, to dodge the detail sheet when
+  // it's open at the bottom -- deliberately does NOT account for the
+  // listings drawer's width. Opening/closing that drawer must never pan
+  // or re-center the map on its own; only an explicit tap on a specific
+  // pin or row does that (see highlightPlace()'s flyTo).
   function mapOverlayOffset() {
     const mapWrapEl = document.querySelector(".disc-map-wrap");
     if (!mapWrapEl) return [0, 0];
     const mapRect = mapWrapEl.getBoundingClientRect();
 
-    let offsetX = 0;
-    const drawerEl = document.querySelector(".disc-listings-drawer");
-    if (drawerEl && drawerEl.classList.contains("is-open")) {
-      const drawerRect = drawerEl.getBoundingClientRect();
-      const rightCovered = Math.max(0, mapRect.right - drawerRect.left);
-      offsetX = -(rightCovered / 2);
-    }
-
+    const offsetX = 0;
     let offsetY = 0;
     const panelEl = document.querySelector(".disc-detail-panel");
     if (panelEl && panelEl.classList.contains("is-open")) {
