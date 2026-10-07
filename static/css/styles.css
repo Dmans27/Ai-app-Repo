@@ -4358,7 +4358,7 @@ body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
   justify-content: center;
   gap: 3px;
   text-decoration: none;
-  color: rgba(255,255,255,0.5);
+  color: rgba(6, 0, 0, 0.5);
   font-size: 0.7rem;
   min-height: 56px;
   transition: color 0.15s ease;
