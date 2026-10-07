@@ -4345,10 +4345,10 @@ body.ai-chat-active #bottom-composer.is-input-visible .composer-search-trigger {
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-  background: rgba(18,18,18,0.96);
+  background: #F4F5F7;                        /* was rgba(18,18,18,0.96) */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--line-subtle);    /* was rgba(255,255,255,0.08) */
 }
 
 .mobile-tabbar__item {
