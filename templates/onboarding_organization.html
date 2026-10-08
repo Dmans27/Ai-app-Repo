@@ -122,6 +122,19 @@
         </div>
 
         <div class="onboarding-section">
+          <label for="address" class="onboarding-label">Street address (optional)</label>
+          <input
+            id="address"
+            type="text"
+            name="address"
+            class="onboarding-input"
+            placeholder="123 Main St, Chicago, IL 60601"
+            value="{{ listing.address if listing else '' }}"
+          >
+          <p class="onboarding-cover-hint">Shown on your listing and used for the "Directions" link people see in Discover.</p>
+        </div>
+
+        <div class="onboarding-section">
           <label for="website" class="onboarding-label">Website (optional)</label>
           <input
             id="website"
@@ -141,6 +154,22 @@
             class="onboarding-textarea"
             placeholder="Tell people what your organization does and who it helps."
           >{{ listing.description if listing else '' }}</textarea>
+        </div>
+
+        <div class="onboarding-section">
+          <label for="fundraising_goal" class="onboarding-label">Fundraising goal (optional)</label>
+          <input
+            id="fundraising_goal"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="1"
+            name="fundraising_goal"
+            class="onboarding-input"
+            placeholder="10000"
+            value="{{ (listing.fundraising_goal_cents / 100) | round(0, 'floor') | int if listing and listing.fundraising_goal_cents else '' }}"
+          >
+          <p class="onboarding-cover-hint">The total amount (in dollars) you're trying to raise. Shown as a progress bar on your Discover listing -- leave blank to hide it.</p>
         </div>
 
         <button type="submit" class="onboarding-submit">

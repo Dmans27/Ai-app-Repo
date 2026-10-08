@@ -472,6 +472,19 @@ def create_core_tables():
     except Exception as e:
         print(f"[core tables] failed to add 'listings.owner_user_id': {e}", flush=True)
 
+    # Optional fundraising goal an organization sets for itself (onboarding
+    # form), in cents like Donation.amount_cents so the two are directly
+    # comparable without a conversion step. NULL means no goal was set --
+    # the Discover detail sheet just skips the progress bar in that case.
+    try:
+        with engine.begin() as conn:
+            conn.execute(sql_text("""
+                ALTER TABLE listings
+                ADD COLUMN IF NOT EXISTS fundraising_goal_cents INTEGER;
+            """))
+    except Exception as e:
+        print(f"[core tables] failed to add 'listings.fundraising_goal_cents': {e}", flush=True)
+
 
 
 def ensure_user_profile_columns():
@@ -2481,7 +2494,8 @@ def search_internal_listings(
             card_image_url,
             google_rating,
             google_rating_count,
-            owner_user_id
+            owner_user_id,
+            fundraising_goal_cents
         FROM listings
         WHERE status = 'published'
     """
@@ -5670,8 +5684,53 @@ def enrich_internal_results_with_ratings(results: list) -> list:
             result.setdefault("rating", None)
             result.setdefault("review_count", 0)
 
-    return results  
+    return results
 
+
+def enrich_internal_results_with_donations(results: list) -> list:
+    """
+    For each internal listing result, attach how much it has raised so far
+    ("raised_cents"), summed from succeeded Donation rows for that listing.
+    Pairs with each listing's own fundraising_goal_cents (already in the
+    SELECT from search_internal_listings) so the Discover detail panel can
+    render a progress bar without a second round trip.
+
+    Usage in api_discover_nearby():
+        results = enrich_internal_results_with_donations(results)
+    """
+    if not results:
+        return results
+
+    ids = [r["id"] for r in results if r.get("id")]
+    if not ids:
+        return results
+
+    placeholders = ", ".join(f":id_{i}" for i in range(len(ids)))
+    params = {f"id_{i}": id_val for i, id_val in enumerate(ids)}
+
+    totals = query_all(
+        f"""
+        SELECT
+            listing_id,
+            COALESCE(SUM(amount_cents), 0) AS raised_cents
+        FROM donation
+        WHERE listing_id IN ({placeholders})
+          AND status = 'succeeded'
+        GROUP BY listing_id
+        """,
+        params
+    )
+
+    raised_map = {
+        row["listing_id"]: int(row["raised_cents"] or 0)
+        for row in totals
+    }
+
+    for result in results:
+        lid = result.get("id")
+        result["raised_cents"] = raised_map.get(lid, 0)
+
+    return results
 
 
 # ─────────────────────────────────────────────
@@ -6348,6 +6407,7 @@ def api_discover_nearby():
             owner_only=True
         )
         results = enrich_internal_results_with_ratings(results)
+        results = enrich_internal_results_with_donations(results)
 
         reason_map = {}
         if current_user.is_authenticated:
@@ -6407,7 +6467,13 @@ def api_discover_nearby():
                 "review_count": r.get("review_count"),
                 "reason": reason_map.get(r.get("id"), ""),
                 "is_match": bool(user_causes) and (r.get("category") in user_causes),
-                "is_org": bool(r.get("owner_user_id"))
+                "is_org": bool(r.get("owner_user_id")),
+                "description": r.get("description"),
+                # Both None when the org never set a goal -- the frontend
+                # skips the progress bar entirely in that case rather than
+                # showing a bar that's "complete" against a goal of $0.
+                "goal_cents": r.get("fundraising_goal_cents"),
+                "raised_cents": r.get("raised_cents", 0)
             })
 
         print("[DISCOVER_NEARBY_COUNT]", len(places), flush=True)
@@ -7121,8 +7187,21 @@ def onboarding_organization():
     if request.method == "POST":
         category = request.form.get("category", "").strip()
         city_input = request.form.get("city", "").strip()
+        address = request.form.get("address", "").strip()
         website = request.form.get("website", "").strip()
         mission = request.form.get("mission", "").strip()
+        goal_input = request.form.get("fundraising_goal", "").strip()
+
+        # Optional -- a blank field means "no goal set" (NULL), not $0, so
+        # the Discover detail panel knows to skip the progress bar entirely
+        # rather than show one that's permanently "complete" against $0.
+        fundraising_goal_cents = None
+        if goal_input:
+            try:
+                fundraising_goal_cents = max(0, round(float(goal_input.replace(",", "")) * 100))
+            except ValueError:
+                flash("Please enter a valid fundraising goal amount.")
+                return redirect(url_for("onboarding_organization"))
 
         if not category:
             flash("Please choose a category.")
@@ -7159,6 +7238,17 @@ def onboarding_organization():
         lat = geo["lat"] if geo else None
         lng = geo["lng"] if geo else None
 
+        # A street address geocodes to a more precise point than the city
+        # alone -- when one was given, prefer its coordinates for where the
+        # pin actually drops on the map. (Its "formatted address" result is
+        # a full street address, not a city name, so it's only used for
+        # lat/lng here -- city_clean above still carries the city label.)
+        if address:
+            geo_address = geocode_location_name(address)
+            if geo_address:
+                lat = geo_address["lat"]
+                lng = geo_address["lng"]
+
         current_user.org_mission = mission
         current_user.onboarding_complete = True
         db.session.commit()
@@ -7167,14 +7257,15 @@ def onboarding_organization():
             execute("""
                 UPDATE listings
                 SET name = :name, category = :category, city = :city,
-                    website = :website, description = :description,
+                    address = :address, website = :website, description = :description,
                     photo_url = :photo_url, latitude = :lat, longitude = :lng,
+                    fundraising_goal_cents = :fundraising_goal_cents,
                     status = 'published', updated_at = CURRENT_TIMESTAMP
                 WHERE owner_user_id = :uid
             """, {
                 "name": current_user.name, "category": category, "city": city_clean,
-                "website": website, "description": mission, "photo_url": photo_url,
-                "lat": lat, "lng": lng, "uid": current_user.id,
+                "address": address, "website": website, "description": mission, "photo_url": photo_url,
+                "lat": lat, "lng": lng, "fundraising_goal_cents": fundraising_goal_cents, "uid": current_user.id,
             })
         else:
             base_slug = slugify(current_user.name) or f"org-{current_user.id}"
@@ -7184,18 +7275,19 @@ def onboarding_organization():
 
             execute("""
                 INSERT INTO listings (
-                    name, slug, category, city, website, description,
-                    photo_url, latitude, longitude, featured, status,
+                    name, slug, category, city, address, website, description,
+                    photo_url, latitude, longitude, fundraising_goal_cents, featured, status,
                     owner_user_id, created_at, updated_at
                 ) VALUES (
-                    :name, :slug, :category, :city, :website, :description,
-                    :photo_url, :lat, :lng, 0, 'published',
+                    :name, :slug, :category, :city, :address, :website, :description,
+                    :photo_url, :lat, :lng, :fundraising_goal_cents, 0, 'published',
                     :uid, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
             """, {
-                "name": current_user.name, "slug": slug, "category": category,
+                "name": current_user.name, "slug": slug, "category": category, "address": address,
                 "city": city_clean, "website": website, "description": mission,
-                "photo_url": photo_url, "lat": lat, "lng": lng, "uid": current_user.id,
+                "photo_url": photo_url, "lat": lat, "lng": lng,
+                "fundraising_goal_cents": fundraising_goal_cents, "uid": current_user.id,
             })
 
         flash("Your organization profile is live.")
