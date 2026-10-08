@@ -834,7 +834,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 14px 14px 12px;
+      padding: 8px 14px 6px;
       border-bottom: 1px solid rgba(0,0,0,0.08);
       touch-action: none;
     }
@@ -1201,14 +1201,20 @@
 
       /* Above the map's own markers (.disc-pin.is-active is z-index: 5)
          so a pulsing selected pin can never poke through the drawer/
-         detail panel sitting on top of it, and clears the floating header/
-         tab bar the same way the status pill above does. Stays a fixed,
-         valid layout rect at all times (only ever translated, never
-         display:none/[hidden]) since mapOverlayOffset() below depends on
-         its real on-screen rect to frame the map around it while open. */
+         detail panel sitting on top of it. The drawer's own z-index (955)
+         already beats both the floating header (950) and the tab bar
+         (940), so it paints over them rather than needing to stop short --
+         this padding only needs to clear the actual unsafe areas (the
+         notch/Dynamic Island up top, the home-indicator strip down below),
+         not the header/tab bar's full height, which just left a lot of
+         empty space above "Closest to you" and below the last card for no
+         functional reason. Stays a fixed, valid layout rect at all times
+         (only ever translated, never display:none/[hidden]) since
+         mapOverlayOffset() below depends on its real on-screen rect to
+         frame the map around it while open. */
       .page-discover .disc-listings-drawer {
-        padding-top: calc(max(var(--header-h), env(safe-area-inset-top) + 48px) + 8px);
-        padding-bottom: calc(var(--tabbar-h, 78px) + env(safe-area-inset-bottom) + 10px);
+        padding-top: calc(env(safe-area-inset-top) + 12px);
+        padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
       }
 
       .page-discover .disc-nearby-loading,
