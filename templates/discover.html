@@ -728,6 +728,32 @@
       opacity: 1;
     }
 
+    /* Zoomed-out grouping: pins near each other collapse into one bubble
+       showing a count (see renderClusteredMarkers()). Tapping it zooms the
+       map in until the bubble splits back into its individual pins. Darker
+       + slightly bigger per tier so a denser group reads as denser at a
+       glance, without needing to read the number. */
+    .disc-cluster {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #10a37f;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+      border: 3px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .disc-cluster:active { transform: scale(0.94); }
+    .disc-cluster--md { width: 48px; height: 48px; font-size: 14px; background: #0d8a6c; }
+    .disc-cluster--lg { width: 56px; height: 56px; font-size: 15px; background: #0a6e56; }
+
     /* ── Listings drawer: slides in from the right edge over the map.
        Closed by default (translateX(100%), fully off-screen) -- the handle
        tab is a separate fixed element so it stays visible and tappable/
@@ -1434,6 +1460,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+<!-- Groups nearby map pins into a single "N places" bubble when zoomed out,
+     splitting back into individual pins as the user zooms in -- see
+     plotPlaces()/renderClusteredMarkers() in the script below. -->
+<script src="https://cdn.jsdelivr.net/npm/supercluster@8.0.1/dist/supercluster.min.js"></script>
 
 <script>
 /* ══════════════════════════════════════════════════════════
@@ -1529,8 +1559,9 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ── State ── */
   const state = {
     map: null,
-    markers: {}, // placeId -> mapboxgl.Marker
+    markers: {}, // placeId (or "cluster:<id>") -> mapboxgl.Marker currently on the map
     places: {}, // placeId -> full place object, for the "View" detail panel
+    clusterIndex: null, // Supercluster index built from the current places list
     activeId: null,
     detailPlaceId: null, // which place's detail panel is open right now, if any
     listingsDrawerOpen: false
@@ -1755,6 +1786,22 @@ document.addEventListener("DOMContentLoaded", function () {
           offset: mapOverlayOffset()
         });
       }
+    } else if (opts.flyTo && state.map) {
+      // This place is currently folded into a cluster bubble rather than
+      // shown as its own pin -- fly to its real coordinates (not a
+      // cluster's, which could be some other point nearby) and zoom in
+      // past clusterMaxZoom so it's guaranteed to land as an individual
+      // pin. renderClusteredMarkers() re-runs on the flyTo's "moveend" and
+      // picks up state.activeId below to mark it active once it's drawn.
+      const place = state.places[placeId];
+      if (place && place.latitude != null && place.longitude != null) {
+        state.map.flyTo({
+          center: [Number(place.longitude), Number(place.latitude)],
+          zoom: 17,
+          duration: 500,
+          offset: mapOverlayOffset()
+        });
+      }
     }
 
     state.activeId = placeId;
@@ -1972,6 +2019,16 @@ document.addEventListener("DOMContentLoaded", function () {
       new mapboxgl.Marker({ element: youEl }).setLngLat([centerLng, centerLat]).addTo(map);
     });
 
+    // Re-group pins into cluster bubbles (or split them back apart) every
+    // time the viewport settles after a pan or a pinch/scroll zoom --
+    // that's the only thing that changes which clusters cover the visible
+    // area at the current zoom level. plotPlaces() does the same render
+    // once up front after a fresh places list comes in, so this covers
+    // every move after that.
+    map.on("moveend", () => {
+      renderClusteredMarkers();
+    });
+
     return map;
   }
 
@@ -1993,14 +2050,109 @@ document.addEventListener("DOMContentLoaded", function () {
     const bounds = new mapboxgl.LngLatBounds();
     bounds.extend(state.map.getCenter());
 
+    const features = [];
+
+    places.forEach((place) => {
+      if (place.latitude == null || place.longitude == null) return;
+
+      state.places[place.id] = place;
+
+      const lngLat = [Number(place.longitude), Number(place.latitude)];
+      features.push({
+        type: "Feature",
+        properties: { placeId: place.id },
+        geometry: { type: "Point", coordinates: lngLat }
+      });
+
+      bounds.extend(lngLat);
+    });
+
+    // Supercluster groups pins that are close together (at the current
+    // zoom) into a single numbered bubble, so a zoomed-out view reads as
+    // "12 places over here" instead of a solid mat of overlapping dots --
+    // it splits them back into individual pins automatically once the user
+    // zooms in past clusterMaxZoom. Rebuilt fresh whenever the place list
+    // itself changes; the actual drawing happens in renderClusteredMarkers(),
+    // which re-runs against this same index on every pan/zoom too.
+    state.clusterIndex = (typeof Supercluster !== "undefined")
+      ? new Supercluster({ radius: 50, maxZoom: 16 }).load(features)
+      : null;
+
+    renderClusteredMarkers();
+
+    if (places.length) {
+      state.map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 0 });
+    }
+  }
+
+  // Draws whatever Supercluster says belongs in the current viewport at the
+  // current zoom: a mix of individual place pins (same as before) and
+  // cluster bubbles standing in for a group of pins too close together to
+  // show separately yet. Called once right after plotPlaces() builds a
+  // fresh index, and again on every map "moveend" (pan or zoom) after that.
+  function renderClusteredMarkers() {
+    if (!state.map || !state.clusterIndex) return;
+
+    Object.values(state.markers).forEach((m) => m.remove());
+    state.markers = {};
+
+    const viewBounds = state.map.getBounds();
+    if (!viewBounds) return;
+
+    const bbox = [
+      viewBounds.getWest(),
+      viewBounds.getSouth(),
+      viewBounds.getEast(),
+      viewBounds.getNorth()
+    ];
+    const zoom = Math.round(state.map.getZoom());
+
     // When any organization on screen matches a cause the signed-in user
     // selected, that pin gets highlighted and everything else fades back a
     // little so the matches are what stands out. With no matches (logged
     // out, or no causes saved yet) every pin looks exactly as it did before.
-    const anyMatch = places.some((p) => p.is_match);
+    const anyMatch = Object.values(state.places).some((p) => p.is_match);
 
-    places.forEach((place) => {
-      if (place.latitude == null || place.longitude == null) return;
+    const clusters = state.clusterIndex.getClusters(bbox, zoom);
+
+    clusters.forEach((feature) => {
+      const [lng, lat] = feature.geometry.coordinates;
+
+      if (feature.properties.cluster) {
+        const count = feature.properties.point_count;
+        const clusterId = feature.properties.cluster_id;
+
+        const el = document.createElement("div");
+        el.className = "disc-cluster";
+        if (count >= 50) el.classList.add("disc-cluster--lg");
+        else if (count >= 10) el.classList.add("disc-cluster--md");
+        el.textContent = String(feature.properties.point_count_abbreviated);
+        el.setAttribute("aria-label", `${count} places in this area`);
+
+        // Tapping a cluster zooms in just far enough for it to split into
+        // its next-level children (or individual pins) rather than jumping
+        // straight to full zoom -- same "drill in" feel as Google/Apple Maps.
+        el.addEventListener("click", () => {
+          const expansionZoom = Math.min(
+            state.clusterIndex.getClusterExpansionZoom(clusterId),
+            20
+          );
+          state.map.easeTo({
+            center: [lng, lat],
+            zoom: Math.max(expansionZoom, state.map.getZoom() + 1),
+            duration: 400,
+            offset: mapOverlayOffset()
+          });
+        });
+
+        const marker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(state.map);
+        state.markers[`cluster:${clusterId}`] = marker;
+        return;
+      }
+
+      const placeId = feature.properties.placeId;
+      const place = state.places[placeId];
+      if (!place) return;
 
       const el = document.createElement("div");
       el.className = "disc-pin";
@@ -2014,24 +2166,23 @@ document.addEventListener("DOMContentLoaded", function () {
         el.classList.add("disc-pin--dim");
       }
 
+      if (state.activeId === placeId) {
+        el.classList.add("is-active");
+      }
+
       // No popup bubble anymore -- tapping the dot opens the listings
       // drawer instead (see openListingsDrawer()), scrolled to this
       // place's row, which already shows the name, category and distance.
       const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat([Number(place.longitude), Number(place.latitude)])
+        .setLngLat([lng, lat])
         .addTo(state.map);
 
       el.addEventListener("click", () => {
-        openListingsDrawer(place.id);
+        openListingsDrawer(placeId);
       });
 
-      state.markers[place.id] = marker;
-      bounds.extend([Number(place.longitude), Number(place.latitude)]);
+      state.markers[placeId] = marker;
     });
-
-    if (places.length) {
-      state.map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 0 });
-    }
   }
 
   function renderListingsDrawer(places) {
