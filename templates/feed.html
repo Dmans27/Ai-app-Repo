@@ -456,6 +456,24 @@
       overflow-wrap: anywhere;
     }
 
+    /* ── Donation banner ── */
+    .post-donation {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 2px 14px 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(16,163,127,0.12);
+      border: 0.5px solid rgba(16,163,127,0.35);
+      color: rgba(255,255,255,0.92);
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .post-donation__icon { font-size: 16px; line-height: 1; }
+    .post-donation strong { color: #10a37f; }
+
     /* ── Post image ── */
     .post-image {
       width: 100%;
@@ -847,8 +865,13 @@
             <button class="post-overflow" type="button" aria-label="More options">···</button>
           </div>
 
-          <!-- Body text -->
-          {% if post.body %}
+          <!-- Donation banner -->
+          {% if post.post_type == 'donation' %}
+          <div class="post-donation">
+            <span class="post-donation__icon">💚</span>
+            <span>Donated to <strong>{{ post.listing_name or "a local organization" }}</strong></span>
+          </div>
+          {% elif post.body %}
           <div class="post-body">{{ post.body }}</div>
           {% endif %}
 
@@ -863,8 +886,8 @@
           >
           {% endif %}
 
-          <!-- Place pill -->
-          {% if post.listing_name %}
+          <!-- Place pill (donation posts already name the org above) -->
+          {% if post.listing_name and post.post_type != 'donation' %}
           <div class="post-place-pill">📍 {{ post.listing_name }}</div>
           {% endif %}
 

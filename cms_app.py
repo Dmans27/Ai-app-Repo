@@ -7581,6 +7581,33 @@ def donate_success():
     return render_template("donate_success.html", donation=donation)
 
 
+def create_donation_feed_post(donation):
+    """Drop a "<donor> donated to <org>" card into the community feed the
+    moment Stripe confirms a donation actually cleared. No dollar amount is
+    posted -- just the fact that it happened -- and it reuses the normal
+    feed_posts table/post_type so it gets like + comment for free from the
+    existing feed template. Called from the webhook only, since that's the
+    one place we actually know the charge succeeded (never from the
+    checkout-creation step, which is still just "pending")."""
+    try:
+        execute(
+            """
+            INSERT INTO feed_posts (
+                user_id, post_type, listing_id, is_public
+            )
+            VALUES (
+                :user_id, 'donation', :listing_id, 1
+            )
+            """,
+            {
+                "user_id": donation.donor_user_id,
+                "listing_id": donation.listing_id,
+            }
+        )
+    except Exception as e:
+        print("[DONATION_FEED_POST_ERROR]", str(e), flush=True)
+
+
 @app.route("/webhooks/stripe", methods=["POST"])
 def stripe_webhook():
     """Stripe's source of truth for whether a donation actually went through.
@@ -7615,6 +7642,7 @@ def stripe_webhook():
                 donation.stripe_payment_intent_id = data_object.get("payment_intent")
                 donation.stripe_subscription_id = data_object.get("subscription")
                 db.session.commit()
+                create_donation_feed_post(donation)
 
         elif event_type == "invoice.payment_succeeded":
             # A renewal of an existing monthly donation -- the first invoice
@@ -7645,6 +7673,7 @@ def stripe_webhook():
                     )
                     db.session.add(renewal)
                     db.session.commit()
+                    create_donation_feed_post(renewal)
 
         elif event_type in ("payment_intent.payment_failed", "invoice.payment_failed"):
             subscription_id = data_object.get("subscription")
