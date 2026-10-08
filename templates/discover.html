@@ -967,6 +967,16 @@
       margin: 0 0 16px;
       white-space: pre-line;
     }
+    .disc-detail-panel__see-more {
+      display: inline;
+      color: #10a37f;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .disc-detail-panel__see-more:hover {
+      text-decoration: underline;
+    }
     .disc-detail-panel__progress {
       margin: 0 0 18px;
     }
@@ -1684,9 +1694,20 @@ document.addEventListener("DOMContentLoaded", function () {
     if (place.category) headerMetaBits.push(escapeHtml(place.category.replace(/_/g, " ")));
     if (place.distance_miles != null) headerMetaBits.push(`${place.distance_miles} mi`);
 
-    const descriptionHtml = place.description
-      ? `<p class="disc-detail-panel__description">${escapeHtml(place.description)}</p>`
-      : "";
+    // Long mission statements get cut to ~140 words with a "See more" link
+    // out to the full charity page, rather than pushing the Donate button
+    // further down the sheet.
+    const DESCRIPTION_WORD_LIMIT = 140;
+    let descriptionHtml = "";
+    if (place.description) {
+      const words = place.description.trim().split(/\s+/);
+      const isLong = words.length > DESCRIPTION_WORD_LIMIT;
+      const shownText = isLong ? words.slice(0, DESCRIPTION_WORD_LIMIT).join(" ") : place.description;
+      const seeMoreHtml = (isLong && place.slug)
+        ? ` <a href="/listing/${encodeURIComponent(place.slug)}" class="disc-detail-panel__see-more" onclick="event.stopPropagation();">See more</a>`
+        : "";
+      descriptionHtml = `<p class="disc-detail-panel__description">${escapeHtml(shownText)}${isLong ? "…" : ""}${seeMoreHtml}</p>`;
+    }
 
     // A goal of null/0 means the org never set one -- skip the progress
     // bar entirely rather than show one that reads as permanently "full".
