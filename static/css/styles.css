@@ -3285,7 +3285,7 @@ select {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 1px;
 }
 
 .app-brand__title {
@@ -3328,7 +3328,7 @@ select {
 .app-sidebar__nav,
 .app-sidebar__footer {
   display: grid;
-  gap: 10px;
+  gap: 1px;
 }
 
 .app-sidebar__link,
