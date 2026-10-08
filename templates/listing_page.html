@@ -260,6 +260,42 @@
   padding: 18px 16px 0;
 }
 
+.listing-progress {
+  margin: 0 0 20px;
+  max-width: 420px;
+}
+
+.listing-progress__stats {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.listing-progress__raised {
+  font-weight: 700;
+  color: #111827;
+}
+
+.listing-progress__goal {
+  color: #6b7280;
+}
+
+.listing-progress__track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.listing-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #10a37f;
+  transition: width 0.3s ease;
+}
+
 @media (max-width: 980px) {
   .listing-hero.listing-hero--bleed {
     margin: -18px -16px 0;
@@ -1328,6 +1364,18 @@
               Donate directly to help support their work.
             {% endif %}
           </p>
+
+          {% if listing.fundraising_goal_cents %}
+            <div class="listing-progress">
+              <div class="listing-progress__stats">
+                <span class="listing-progress__raised">${{ "{:,.0f}".format((listing.raised_cents or 0) / 100) }} raised</span>
+                <span class="listing-progress__goal">of ${{ "{:,.0f}".format(listing.fundraising_goal_cents / 100) }} goal</span>
+              </div>
+              <div class="listing-progress__track">
+                <div class="listing-progress__fill" style="width: {{ donation_progress_percent }}%;"></div>
+              </div>
+            </div>
+          {% endif %}
 
           {% if listing.website %}
             <div class="listing-actions">
