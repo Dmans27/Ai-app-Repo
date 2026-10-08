@@ -7214,21 +7214,26 @@ def onboarding_organization():
         photo_url = existing_listing["photo_url"] if existing_listing else None
         logo = request.files.get("logo")
         if logo and logo.filename:
-            filename = secure_filename(logo.filename)
-            ext = os.path.splitext(filename)[1].lower() or ".jpg"
-            new_filename = f"org_{current_user.id}_{uuid.uuid4().hex}{ext}"
-
-            logo_upload_folder = os.path.join(
-                app.config["UPLOAD_FOLDER"],
-                "org_logos"
-            )
-            os.makedirs(logo_upload_folder, exist_ok=True)
-            logo.save(os.path.join(logo_upload_folder, new_filename))
-
-            photo_url = url_for(
-                "static",
-                filename=f"uploads/org_logos/{new_filename}"
-            )
+            # Cloudinary, not local disk -- Render wipes the app's local
+            # filesystem on every deploy, which was silently deleting every
+            # org's uploaded logo the next time the app redeployed (the
+            # `listings` row still pointed at the old /static/uploads/...
+            # path, but the file itself was gone, so the card fell back to
+            # its emoji placeholder). update_profile_photo() and the feed's
+            # photo upload already use this same Cloudinary pattern for the
+            # same reason -- see update_org_cover_photo() just below too.
+            logo.stream.seek(0)
+            try:
+                upload_result = cloudinary.uploader.upload(
+                    logo.stream,
+                    folder="localai/org_logos",
+                    resource_type="image"
+                )
+                photo_url = upload_result["secure_url"]
+            except Exception as e:
+                print("[ORG_LOGO_UPLOAD_ERROR]", str(e), flush=True)
+                flash("Couldn't upload that photo -- please try again.")
+                return redirect(url_for("onboarding_organization"))
 
         # Best-effort geocode so the listing sorts correctly in Discover's
         # distance-based results; falls back to the typed city text (with
@@ -7336,15 +7341,21 @@ def update_org_cover_photo():
         flash("Please choose a photo.")
         return redirect(url_for("settings"))
 
-    filename = secure_filename(cover_photo.filename)
-    ext = os.path.splitext(filename)[1].lower() or ".jpg"
-    new_filename = f"org_{current_user.id}_{uuid.uuid4().hex}{ext}"
-
-    logo_upload_folder = os.path.join(app.config["UPLOAD_FOLDER"], "org_logos")
-    os.makedirs(logo_upload_folder, exist_ok=True)
-    cover_photo.save(os.path.join(logo_upload_folder, new_filename))
-
-    photo_url = url_for("static", filename=f"uploads/org_logos/{new_filename}")
+    # Cloudinary, not local disk -- see the matching comment in
+    # onboarding_organization() for why (Render wipes local files on every
+    # deploy, which was quietly deleting every org's photo on the next push).
+    cover_photo.stream.seek(0)
+    try:
+        upload_result = cloudinary.uploader.upload(
+            cover_photo.stream,
+            folder="localai/org_logos",
+            resource_type="image"
+        )
+        photo_url = upload_result["secure_url"]
+    except Exception as e:
+        print("[ORG_COVER_PHOTO_UPLOAD_ERROR]", str(e), flush=True)
+        flash("Couldn't upload that photo -- please try again.")
+        return redirect(url_for("settings"))
 
     execute("""
         UPDATE listings
