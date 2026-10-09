@@ -896,12 +896,35 @@
       overflow: hidden;
       transition: max-height 0.35s ease, opacity 0.25s ease;
       z-index: 960;
+      display: flex;
+      flex-direction: column;
     }
     .disc-detail-panel[hidden] { display: none; }
     .disc-detail-panel.is-open {
       max-height: 80vh;
       opacity: 1;
+    }
+    /* "See more" expands the sheet in place (up near the header) instead
+       of navigating to the full listing page -- same idea as the mobile
+       header clearance calc used elsewhere on this page, so the sheet
+       never climbs up under the floating header. */
+    .disc-detail-panel.is-expanded {
+      /* var() gets an explicit fallback (unlike the --header-h reads
+         elsewhere on this page, which can rely on styles.css always being
+         loaded first) because an unbound max-height here -- if the custom
+         property were ever missing -- would let the sheet grow past the
+         top of the screen instead of just not expanding as far. */
+      max-height: calc(100dvh - max(var(--header-h, 76px), env(safe-area-inset-top) + 48px) - 8px);
+    }
+    /* The ✕ sits outside this scroll area (a sibling, see the JS render)
+       so it stays pinned top-right while the expanded content -- now tall
+       enough to need scrolling -- moves underneath it, instead of
+       scrolling away with everything else. */
+    .disc-detail-panel__scroll {
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       padding-bottom: env(safe-area-inset-bottom);
     }
     .disc-detail-panel__inner {
@@ -912,6 +935,7 @@
       position: absolute;
       top: 10px;
       right: 12px;
+      z-index: 2;
       width: 28px;
       height: 28px;
       border-radius: 50%;
@@ -973,9 +997,128 @@
       font-weight: 700;
       text-decoration: none;
       white-space: nowrap;
+      background: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      font-size: inherit;
+      font-family: inherit;
+      cursor: pointer;
     }
     .disc-detail-panel__see-more:hover {
       text-decoration: underline;
+    }
+    /* ── Expanded-only sections: location + messages of support ── */
+    .disc-detail-panel__section {
+      margin: 0 0 18px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .disc-detail-panel__section-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: rgba(0,0,0,0.4);
+      margin: 0 0 10px;
+    }
+    .disc-detail-panel__location-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+    }
+    .disc-detail-panel__location-icon { font-size: 16px; flex: 0 0 auto; }
+    .disc-detail-panel__location-text {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      color: rgba(0,0,0,0.72);
+      word-break: break-word;
+    }
+    .disc-detail-panel__location-action {
+      flex: 0 0 auto;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #10a37f;
+      text-decoration: none;
+    }
+    .disc-detail-panel__location-action:hover { text-decoration: underline; }
+
+    .disc-detail-panel__messages {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .disc-detail-panel__message {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+    }
+    .disc-detail-panel__message-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .disc-detail-panel__message-meta strong { color: #111; }
+    .disc-detail-panel__message-meta span { color: rgba(0,0,0,0.4); }
+    .disc-detail-panel__message-body {
+      font-size: 13px;
+      line-height: 1.5;
+      color: rgba(0,0,0,0.72);
+      margin: 0;
+      word-break: break-word;
+    }
+    .disc-detail-panel__messages-loading,
+    .disc-detail-panel__messages-empty {
+      font-size: 13px;
+      color: rgba(0,0,0,0.4);
+      padding: 8px 2px;
+    }
+    .disc-detail-panel__message-form {
+      display: grid;
+      gap: 8px;
+    }
+    .disc-detail-panel__message-form input,
+    .disc-detail-panel__message-form textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #111;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .disc-detail-panel__message-form input:focus,
+    .disc-detail-panel__message-form textarea:focus {
+      outline: none;
+      border-color: #10a37f;
+    }
+    .disc-detail-panel__message-submit {
+      justify-self: start;
+      border: 0;
+      border-radius: 999px;
+      background: #10a37f;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 18px;
+      cursor: pointer;
+    }
+    .disc-detail-panel__message-submit:disabled { opacity: 0.6; cursor: default; }
+    .disc-detail-panel__message-error {
+      font-size: 12px;
+      color: #d62828;
+      margin: 6px 0 0;
     }
     .disc-detail-panel__progress {
       margin: 0 0 18px;
@@ -1685,7 +1828,117 @@ document.addEventListener("DOMContentLoaded", function () {
     return `$${dollars.toLocaleString("en-US")}`;
   }
 
-  function renderDetailPanelContent(place) {
+  // Renders the list of "Messages of support" into an already-present
+  // container (either the initial load or a refresh after posting a new
+  // one). Pulled out of loadDetailMessages()/wireMessageForm() so both can
+  // share it without re-fetching.
+  function renderMessagesInto(container, messages) {
+    if (!container) return;
+    if (!messages || !messages.length) {
+      container.innerHTML = `<p class="disc-detail-panel__messages-empty">No messages yet. Be the first to leave one.</p>`;
+      return;
+    }
+    container.innerHTML = messages.map((m) => `
+      <div class="disc-detail-panel__message">
+        <div class="disc-detail-panel__message-meta">
+          <strong>${escapeHtml(m.author_name || "Anonymous")}</strong>
+          <span>${escapeHtml(String(m.created_at || "").slice(0, 10))}</span>
+        </div>
+        <p class="disc-detail-panel__message-body">${escapeHtml(m.body || "")}</p>
+      </div>
+    `).join("");
+  }
+
+  // Lazy-loads messages of support only once the panel is actually
+  // expanded (not up front for every nearby place) and caches them on the
+  // place object so re-expanding the same place doesn't refetch.
+  function loadDetailMessages(place) {
+    const container = document.getElementById("disc-detail-messages");
+    if (!container) return;
+
+    if (place._messages) {
+      renderMessagesInto(container, place._messages);
+      return;
+    }
+    if (!place.slug) {
+      renderMessagesInto(container, []);
+      return;
+    }
+
+    fetch(`/listing-data/${encodeURIComponent(place.slug)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("request failed"))))
+      .then((data) => {
+        place._messages = Array.isArray(data.messages) ? data.messages : [];
+        // The panel may have been closed/re-rendered while this was in
+        // flight -- only patch the DOM if its messages container is still
+        // the one currently on screen.
+        const liveContainer = document.getElementById("disc-detail-messages");
+        if (liveContainer) renderMessagesInto(liveContainer, place._messages);
+      })
+      .catch(() => {
+        const liveContainer = document.getElementById("disc-detail-messages");
+        if (liveContainer) {
+          liveContainer.innerHTML = `<p class="disc-detail-panel__messages-empty">Couldn't load messages right now.</p>`;
+        }
+      });
+  }
+
+  // Wires the inline "leave a message" form to post via fetch instead of a
+  // normal form submit, so adding a message never navigates away from the
+  // map -- the whole point of expanding in place instead of linking out.
+  function wireMessageForm(place) {
+    const form = document.getElementById("disc-detail-message-form");
+    if (!form) return;
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!place.slug) return;
+
+      const nameInput = form.querySelector('[name="author_name"]');
+      const bodyInput = form.querySelector('[name="body"]');
+      const submitBtn = form.querySelector('.disc-detail-panel__message-submit');
+      const errorEl = form.querySelector('.disc-detail-panel__message-error');
+      const authorName = (nameInput?.value || "").trim();
+      const body = (bodyInput?.value || "").trim();
+
+      if (errorEl) { errorEl.hidden = true; errorEl.textContent = ""; }
+      if (!authorName || !body) return;
+
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Posting…"; }
+
+      fetch(`/api/listing/${encodeURIComponent(place.slug)}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ author_name: authorName, body: body })
+      })
+        .then((res) => res.json().then((data) => ({ ok: res.ok, data: data })))
+        .then(({ ok, data }) => {
+          if (!ok) throw new Error(data?.error || "Could not post message.");
+          place._messages = [data.message, ...(place._messages || [])];
+          renderMessagesInto(document.getElementById("disc-detail-messages"), place._messages);
+          form.reset();
+        })
+        .catch((err) => {
+          if (errorEl) {
+            errorEl.textContent = err.message || "Something went wrong posting your message. Please try again.";
+            errorEl.hidden = false;
+          }
+        })
+        .finally(() => {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Post message"; }
+        });
+    });
+  }
+
+  // `opts.expanded` renders the full card (untruncated mission, location,
+  // messages of support) in place of the brief map-pin preview -- see
+  // expandDetailPanel() below, triggered by the "See more" button instead
+  // of navigating to the full listing page.
+  function renderDetailPanelContent(place, opts) {
+    opts = opts || {};
+    const expanded = !!opts.expanded;
+
     const panelEl = getDetailPanelEl();
     if (!panelEl) return;
 
@@ -1694,19 +1947,20 @@ document.addEventListener("DOMContentLoaded", function () {
     if (place.category) headerMetaBits.push(escapeHtml(place.category.replace(/_/g, " ")));
     if (place.distance_miles != null) headerMetaBits.push(`${place.distance_miles} mi`);
 
-    // Long mission statements get cut to ~140 words with a "See more" link
-    // out to the full charity page, rather than pushing the Donate button
-    // further down the sheet.
+    // Long mission statements get cut to ~140 words with a "See more"
+    // button that expands the whole sheet in place -- the full text only
+    // shows once expanded.
     const DESCRIPTION_WORD_LIMIT = 140;
     let descriptionHtml = "";
     if (place.description) {
       const words = place.description.trim().split(/\s+/);
       const isLong = words.length > DESCRIPTION_WORD_LIMIT;
-      const shownText = isLong ? words.slice(0, DESCRIPTION_WORD_LIMIT).join(" ") : place.description;
-      const seeMoreHtml = (isLong && place.slug)
-        ? ` <a href="/listing/${encodeURIComponent(place.slug)}" class="disc-detail-panel__see-more" onclick="event.stopPropagation();">See more</a>`
-        : "";
-      descriptionHtml = `<p class="disc-detail-panel__description">${escapeHtml(shownText)}${isLong ? "…" : ""}${seeMoreHtml}</p>`;
+      if (expanded || !isLong) {
+        descriptionHtml = `<p class="disc-detail-panel__description">${escapeHtml(place.description)}</p>`;
+      } else {
+        const shownText = words.slice(0, DESCRIPTION_WORD_LIMIT).join(" ");
+        descriptionHtml = `<p class="disc-detail-panel__description">${escapeHtml(shownText)}… <button type="button" class="disc-detail-panel__see-more" data-expand-trigger>See more</button></p>`;
+      }
     }
 
     // A goal of null/0 means the org never set one -- skip the progress
@@ -1729,19 +1983,54 @@ document.addEventListener("DOMContentLoaded", function () {
       ? `<a href="/donate/${encodeURIComponent(place.slug || "")}" class="disc-detail-panel__donate-btn" onclick="event.stopPropagation();" aria-label="Donate to ${escapeHtml(place.name)}">♥ Donate</a>`
       : "";
 
+    const locationHtml = (expanded && place.address)
+      ? `<div class="disc-detail-panel__section">
+           <div class="disc-detail-panel__section-title">Location</div>
+           <div class="disc-detail-panel__location-row">
+             <span class="disc-detail-panel__location-icon">📍</span>
+             <span class="disc-detail-panel__location-text">${escapeHtml(place.address)}</span>
+             <a
+               href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}"
+               target="_blank" rel="noopener"
+               class="disc-detail-panel__location-action"
+               onclick="event.stopPropagation();"
+             >Directions</a>
+           </div>
+         </div>`
+      : "";
+
+    const messagesHtml = expanded
+      ? `<div class="disc-detail-panel__section">
+           <div class="disc-detail-panel__section-title">Messages of support</div>
+           <div class="disc-detail-panel__messages" id="disc-detail-messages">
+             <p class="disc-detail-panel__messages-loading">Loading messages…</p>
+           </div>
+           <form class="disc-detail-panel__message-form" id="disc-detail-message-form">
+             <input type="text" name="author_name" placeholder="Your name" maxlength="80" required>
+             <textarea name="body" placeholder="Leave a note of encouragement or support" rows="3" maxlength="2000" required></textarea>
+             <button type="submit" class="disc-detail-panel__message-submit">Post message</button>
+             <p class="disc-detail-panel__message-error" hidden></p>
+           </form>
+         </div>`
+      : "";
+
     panelEl.innerHTML = `
-      <div class="disc-detail-panel__inner">
-        <button type="button" class="disc-detail-panel__close" aria-label="Close details">✕</button>
-        <div class="disc-detail-panel__header">
-          <div class="disc-detail-panel__header-emoji">${emoji}</div>
-          <div class="disc-detail-panel__header-text">
-            <div class="disc-detail-panel__name">${escapeHtml(place.name)}</div>
-            <div class="disc-detail-panel__meta">${headerMetaBits.join(" · ")}</div>
+      <button type="button" class="disc-detail-panel__close" aria-label="Close details">✕</button>
+      <div class="disc-detail-panel__scroll">
+        <div class="disc-detail-panel__inner">
+          <div class="disc-detail-panel__header">
+            <div class="disc-detail-panel__header-emoji">${emoji}</div>
+            <div class="disc-detail-panel__header-text">
+              <div class="disc-detail-panel__name">${escapeHtml(place.name)}</div>
+              <div class="disc-detail-panel__meta">${headerMetaBits.join(" · ")}</div>
+            </div>
           </div>
+          ${descriptionHtml}
+          ${progressHtml}
+          ${donateHtml}
+          ${locationHtml}
+          ${messagesHtml}
         </div>
-        ${descriptionHtml}
-        ${progressHtml}
-        ${donateHtml}
       </div>
     `;
 
@@ -1752,11 +2041,40 @@ document.addEventListener("DOMContentLoaded", function () {
         closeDetailPanel();
       });
     }
+
+    const seeMoreBtn = panelEl.querySelector("[data-expand-trigger]");
+    if (seeMoreBtn) {
+      seeMoreBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        expandDetailPanel(place);
+      });
+    }
+
+    if (expanded) {
+      wireMessageForm(place);
+      loadDetailMessages(place);
+    }
+  }
+
+  // "See more" -- grows the sheet up toward the header in place and swaps
+  // in the full card (untruncated mission, location, messages of support)
+  // instead of sending the donor to a separate listing page.
+  function expandDetailPanel(place) {
+    const panelEl = getDetailPanelEl();
+    if (!panelEl) return;
+    panelEl.classList.add("is-expanded");
+    renderDetailPanelContent(place, { expanded: true });
+    if (state.map) {
+      window.setTimeout(() => {
+        state.map.easeTo({ offset: mapOverlayOffset(), duration: 250 });
+      }, 50);
+    }
   }
 
   function openDetailPanel(place) {
     const panelEl = getDetailPanelEl();
     if (!panelEl) return;
+    panelEl.classList.remove("is-expanded");
     renderDetailPanelContent(place);
     panelEl.hidden = false;
     // Force a reflow so the browser registers the max-height:0 starting
@@ -1777,6 +2095,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const panelEl = getDetailPanelEl();
     if (!panelEl) return;
     panelEl.classList.remove("is-open");
+    panelEl.classList.remove("is-expanded");
     state.detailPlaceId = null;
     window.setTimeout(() => {
       if (!panelEl.classList.contains("is-open")) panelEl.hidden = true;

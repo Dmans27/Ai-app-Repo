@@ -5031,10 +5031,30 @@ def listing_data(slug):
     print("[LISTING_DATA_SLUG]", slug, flush=True)
     print("[LISTING_DATA_PHOTOS_COUNT]", len(photos), flush=True)
 
+    # Raised-so-far, same helper the Discover panel and the listing page
+    # both already use, so all three places agree on this number.
+    if listing.get("fundraising_goal_cents"):
+        enrich_internal_results_with_donations([listing])
+
+    # Most recent "Messages of support" -- the Discover panel's expanded
+    # view shows these inline instead of sending the donor to the full
+    # listing page just to read/leave one.
+    messages = query_all(
+        """
+        SELECT author_name, body, created_at
+        FROM listing_comments
+        WHERE listing_id = :listing_id AND is_approved = 1
+        ORDER BY created_at DESC
+        LIMIT 20
+        """,
+        {"listing_id": listing.get("id")}
+    ) or []
+
     return {
         "name": listing.get("name"),
         "category": listing.get("category"),
         "address": listing.get("address"),
+        "phone": listing.get("phone"),
         "website": listing.get("website"),
         "photo_url": listing.get("photo_url"),
         "photos": photos,
@@ -5042,6 +5062,9 @@ def listing_data(slug):
         "latitude": listing.get("latitude"),
         "longitude": listing.get("longitude"),
         "slug": listing.get("slug"),
+        "goal_cents": listing.get("fundraising_goal_cents"),
+        "raised_cents": listing.get("raised_cents", 0),
+        "messages": messages,
     }
     
 
@@ -8312,11 +8335,17 @@ def send_list_invite():
 
 @app.post("/listing/<slug>/comments")
 def add_listing_comment(slug):
+    # NOTE: this used to build its SQL with "?" placeholders and a
+    # positional tuple, which query_one()/execute() haven't accepted since
+    # the switch to named (:param) SQLAlchemy params -- normalize_params()
+    # raises on anything that isn't a dict, so every submission of this
+    # form was hitting a 500 instead of actually saving. Fixed in passing
+    # while wiring up the Discover panel's own "Messages of support".
     listing = query_one("""
         SELECT *
         FROM listings
-        WHERE slug=? AND status='published'
-    """, (slug,))
+        WHERE slug = :slug AND status = 'published'
+    """, {"slug": slug})
 
     if not listing:
         abort(404)
@@ -8342,16 +8371,64 @@ def add_listing_comment(slug):
         INSERT INTO listing_comments (
             listing_id, author_name, author_email, body, rating, is_approved, created_at
         )
-        VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
-    """, (
-        listing["id"],
-        author_name,
-        author_email,
-        body,
-        rating
-    ))
+        VALUES (
+            :listing_id, :author_name, :author_email, :body, :rating, 1, CURRENT_TIMESTAMP
+        )
+    """, {
+        "listing_id": listing["id"],
+        "author_name": author_name,
+        "author_email": author_email or None,
+        "body": body,
+        "rating": rating,
+    })
 
     return redirect(url_for("listing_page", slug=slug))
+
+
+@app.post("/api/listing/<slug>/messages")
+def add_listing_message_api(slug):
+    """AJAX twin of add_listing_comment() above, for the Discover map
+    panel's inline "Messages of support" section -- posts a message and
+    returns it as JSON instead of redirecting, so the panel never has to
+    navigate away from the map to let someone leave a note."""
+    listing = query_one(
+        "SELECT * FROM listings WHERE slug = :slug AND status = 'published'",
+        {"slug": slug}
+    )
+    if not listing:
+        return jsonify({"error": "Not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    author_name = (data.get("author_name") or "").strip()[:80]
+    body = (data.get("body") or "").strip()[:2000]
+
+    if not author_name or not body:
+        return jsonify({"error": "Please add your name and a short message."}), 400
+
+    execute(
+        """
+        INSERT INTO listing_comments (
+            listing_id, author_name, body, rating, is_approved, created_at
+        )
+        VALUES (
+            :listing_id, :author_name, :body, 5, 1, CURRENT_TIMESTAMP
+        )
+        """,
+        {
+            "listing_id": listing["id"],
+            "author_name": author_name,
+            "body": body,
+        }
+    )
+
+    return jsonify({
+        "ok": True,
+        "message": {
+            "author_name": author_name,
+            "body": body,
+            "created_at": datetime.utcnow().isoformat()
+        }
+    })
 
 
 
