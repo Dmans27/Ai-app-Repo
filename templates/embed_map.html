@@ -43,13 +43,19 @@
       flex-direction: column; gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding: 2px 4px 2px 2px;
       scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.35) transparent; }
     .cards.is-visible { display: flex; }
-    .card { flex: 0 0 auto; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px;
+    .card { position: relative; overflow: hidden; flex: 0 0 auto; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px;
       text-align: left; font: inherit; color: #fff; background: rgba(20,20,22,0.86);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px; cursor: pointer; transition: border-color 0.15s; }
     .card:hover { border-color: rgba(255,255,255,0.3); }
     .card:focus-visible { outline: 2px solid #7ee2bf; outline-offset: 2px; }
     .card.is-active { border-color: rgba(126,226,191,0.7); }
+    /* With a picture: it fills the card, a dark fade keeps the text readable. */
+    .card.has-photo { min-height: 92px; justify-content: flex-end; background: #1b1d21; }
+    .card__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+    .card.has-photo::before { content: ""; position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.38) 42%, rgba(0,0,0,0.84) 100%); }
+    .card.has-photo .card__top, .card.has-photo .card__addr { position: relative; z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
     .card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .card__title { display: flex; align-items: center; gap: 7px; min-width: 0; }
     .card__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -62,6 +68,7 @@
         padding: 0 10px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding: 0 10px; scrollbar-width: none; }
       .cards::-webkit-scrollbar { display: none; }
       .card { width: 220px; scroll-snap-align: start; }
+      .card.has-photo { min-height: 84px; }
     }
   </style>
 </head>
@@ -205,6 +212,18 @@
         card.type = 'button';
         card.className = 'card' + (place === activePlace ? ' is-active' : '');
         card.setAttribute('data-idx', String(index));
+        // Background picture (served through /embed/photo, never a raw Google link).
+        if (place.photo) {
+          var img = document.createElement('img');
+          img.className = 'card__bg';
+          img.alt = '';
+          img.loading = 'lazy';
+          img.decoding = 'async';
+          img.addEventListener('error', function () { img.remove(); card.classList.remove('has-photo'); }, { once: true });
+          img.src = place.photo;
+          card.appendChild(img);
+          card.classList.add('has-photo');
+        }
         var top = document.createElement('div');
         top.className = 'card__top';
         var title = document.createElement('div');

@@ -19,6 +19,12 @@ header built from that list, and browsers refuse to show the page inside
 any other website. Change the setting in Render if the media site gets a
 custom domain.
 
+Pictures on the cards come through /embed/photo/<saved place id>. That route
+looks the photo up on the server (so the Google API key stored inside some
+older photo links is never put in the embed page), asks Google for the real
+image address, and sends the browser there. Answers are cached for a few hours
+so a busy article doesn't turn into lots of billable Google photo requests.
+
 Wired up with two lines near the bottom of cms_app.py:
 
     from embed_maps import register_embed_routes
@@ -26,8 +32,11 @@ Wired up with two lines near the bottom of cms_app.py:
 """
 import os
 import re
+import time
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-from flask import abort, render_template, request, url_for
+import requests
+from flask import abort, redirect, render_template, request, url_for
 
 DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
 
@@ -63,23 +72,36 @@ def _safe_http(url):
     return url if url.lower().startswith(("http://", "https://")) else ""
 
 
-def _listing_slug(place, query_one):
+_LISTING_COLS = ("slug, COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url, "
+                 "google_rating")
+
+
+def _listing_info(place, query_one):
     """The directory listing that matches a saved place (same lookup order
-    as the public map page: listing id, Google place id, then name)."""
+    as the public map page: listing id, Google place id, then name).
+    Returns the listing's slug, photo and Google rating, or None."""
     try:
         row = None
         if getattr(place, "listing_id", None):
-            row = query_one("SELECT slug FROM listings WHERE id = :id LIMIT 1",
+            row = query_one(f"SELECT {_LISTING_COLS} FROM listings WHERE id = :id LIMIT 1",
                             {"id": place.listing_id})
         if not row and getattr(place, "place_id", None):
-            row = query_one("SELECT slug FROM listings WHERE place_id = :place_id LIMIT 1",
+            row = query_one(f"SELECT {_LISTING_COLS} FROM listings WHERE place_id = :place_id LIMIT 1",
                             {"place_id": place.place_id})
         if not row and place.name:
-            row = query_one("SELECT slug FROM listings WHERE LOWER(name) = LOWER(:name) LIMIT 1",
+            row = query_one(f"SELECT {_LISTING_COLS} FROM listings WHERE LOWER(name) = LOWER(:name) LIMIT 1",
                             {"name": place.name})
-        return row["slug"] if row else None
+        return row
     except Exception:
-        return None  # a missing listing just means no "Show listing" link
+        return None  # a missing listing just means no link, photo or rating
+
+
+def _rating(value):
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return round(number, 1) if number > 0 else None
 
 
 def _places_json(places, query_one):
@@ -87,6 +109,8 @@ def _places_json(places, query_one):
     for place in places:
         if place.latitude is None or place.longitude is None:
             continue
+        listing = _listing_info(place, query_one)
+        stored_photo = _safe_http((place.photo_url or "") or (listing["photo_url"] if listing else ""))
         out.append({
             "name": place.name or "",
             "lat": float(place.latitude),
@@ -95,11 +119,61 @@ def _places_json(places, query_one):
             "address": place.address or "",
             "notes": place.notes or "",
             "website": _safe_http(place.website),
-            "listing": _listing_slug(place, query_one),
+            "listing": listing["slug"] if listing else None,
+            "rating": _rating(listing["google_rating"]) if listing else None,
+            # Never the stored link itself: it can contain an API key.
+            "photo": url_for("embed_place_photo", saved_place_id=place.id) if stored_photo else None,
         })
         if len(out) >= MAX_PLACES:
             break
     return out
+
+
+# ---- Card pictures ----------------------------------------------------------
+
+_PHOTO_FETCH_HOSTS = {"maps.googleapis.com", "places.googleapis.com"}
+_PHOTO_IMAGE_SUFFIXES = (".googleusercontent.com", ".ggpht.com")
+_PHOTO_TTL = 6 * 3600       # remember a resolved picture for 6 hours
+_MISS_TTL = 10 * 60         # remember "no picture" for 10 minutes
+_PHOTO_CACHE_MAX = 1000
+_photo_cache = {}           # saved place id -> (expires, image url or None)
+_CARD_PHOTO_WIDTH = "500"   # cards are small, no need for the full-size photo
+
+
+def _is_image_host(host):
+    host = (host or "").lower()
+    return host.endswith(_PHOTO_IMAGE_SUFFIXES)
+
+
+def _public_photo_url(stored):
+    """Turn a stored photo link into an image address that is safe to show
+    publicly (no API key). Returns None if that isn't possible."""
+    parts = urlparse(stored)
+    host = (parts.hostname or "").lower()
+    if parts.scheme != "https":
+        return None
+    if _is_image_host(host):
+        return stored if "key=" not in parts.query.lower() else None
+    if host not in _PHOTO_FETCH_HOSTS:
+        return None  # only ever call Google, never an address someone typed in
+    # Ask Google where the picture lives; it answers with a redirect to the
+    # key-free image address, and we hand that to the browser instead.
+    query = []
+    for key, value in parse_qsl(parts.query, keep_blank_values=True):
+        if key.lower() in ("maxwidth", "maxwidthpx"):
+            value = _CARD_PHOTO_WIDTH
+        query.append((key, value))
+    try:
+        reply = requests.get(urlunparse(parts._replace(query=urlencode(query))),
+                             allow_redirects=False, timeout=6)
+    except requests.RequestException:
+        return None
+    location = reply.headers.get("Location", "")
+    target = urlparse(location)
+    if (reply.status_code in (301, 302, 303, 307, 308) and target.scheme == "https"
+            and _is_image_host(target.hostname) and "key=" not in target.query.lower()):
+        return location
+    return None
 
 
 def register_embed_routes(app, SavedList, query_one):
@@ -127,6 +201,36 @@ def register_embed_routes(app, SavedList, query_one):
         title = f"{name}’s saved places" if name else "Saved places"
         return _render(title, _places_json(places, query_one),
                        url_for("user_public_map", user_id=user_id), request)
+
+    @app.get("/embed/photo/<int:saved_place_id>")
+    def embed_place_photo(saved_place_id):
+        now = time.time()
+        hit = _photo_cache.get(saved_place_id)
+        if hit and hit[0] > now:
+            target = hit[1]
+        else:
+            # Only places that sit in a PUBLIC list are ever served.
+            row = query_one(
+                "SELECT p.photo_url AS photo_url, p.listing_id AS listing_id, "
+                "p.place_id AS place_id, p.name AS name "
+                "FROM saved_place p JOIN saved_list l ON l.id = p.saved_list_id "
+                "WHERE p.id = :id AND l.is_public LIMIT 1",
+                {"id": saved_place_id})
+            if not row:
+                abort(404)
+            stored = _safe_http(row["photo_url"])
+            if not stored:
+                listing = _listing_info(type("P", (), dict(row))(), query_one)
+                stored = _safe_http(listing["photo_url"]) if listing else ""
+            target = _public_photo_url(stored) if stored else None
+            if len(_photo_cache) >= _PHOTO_CACHE_MAX:
+                _photo_cache.clear()
+            _photo_cache[saved_place_id] = (now + (_PHOTO_TTL if target else _MISS_TTL), target)
+        if not target:
+            abort(404)
+        reply = redirect(target, code=302)
+        reply.headers["Cache-Control"] = "public, max-age=21600"
+        return reply
 
     @app.after_request
     def _allow_embedding(response):

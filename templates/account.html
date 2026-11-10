@@ -50,10 +50,15 @@
        globe (see CARDS_MIN_ZOOM in the script). */
     .acct-map-cards{display:none;position:absolute;z-index:5;left:16px;top:56px;width:272px;max-height:calc(100% - 72px);flex-direction:column;gap:8px;overflow-y:auto;overscroll-behavior:contain;padding:2px 4px 2px 2px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.35) transparent}
     .acct-map-cards.is-visible{display:flex}
-    .acct-card{flex:0 0 auto;box-sizing:border-box;width:100%;display:flex;flex-direction:column;gap:3px;padding:10px 12px;text-align:left;font:inherit;color:#fff;background:rgba(20,20,22,0.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:14px;cursor:pointer;transition:border-color 0.15s}
+    .acct-card{position:relative;overflow:hidden;flex:0 0 auto;box-sizing:border-box;width:100%;display:flex;flex-direction:column;gap:3px;padding:10px 12px;text-align:left;font:inherit;color:#fff;background:rgba(20,20,22,0.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:14px;cursor:pointer;transition:border-color 0.15s}
     .acct-card:hover{border-color:rgba(255,255,255,0.3)}
     .acct-card:focus-visible{outline:2px solid #7ee2bf;outline-offset:2px}
     .acct-card.is-active{border-color:rgba(126,226,191,0.7)}
+    /* With a picture: it fills the card, a dark fade keeps the text readable. */
+    .acct-card.has-photo{min-height:92px;justify-content:flex-end;background:#1b1d21}
+    .acct-card__bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+    .acct-card.has-photo::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.38) 42%,rgba(0,0,0,0.84) 100%)}
+    .acct-card.has-photo .acct-card__top,.acct-card.has-photo .acct-card__addr{position:relative;z-index:2;text-shadow:0 1px 3px rgba(0,0,0,0.6)}
     .acct-card__top{display:flex;align-items:center;justify-content:space-between;gap:8px}
     .acct-card__title{display:flex;align-items:center;gap:7px;min-width:0}
     .acct-card__dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -65,6 +70,7 @@
       .acct-map-cards{top:auto;bottom:26px;left:0;right:0;width:auto;max-height:none;flex-direction:row;gap:10px;padding:0 16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
       .acct-map-cards::-webkit-scrollbar{display:none}
       .acct-card{width:240px;scroll-snap-align:start}
+      .acct-card.has-photo{min-height:84px}
     }
     /* Floats directly on top of the map (like a native maps app) instead of
        sitting in its own bar above it — no backing panel means no seam or
@@ -583,7 +589,9 @@ document.addEventListener("DOMContentLoaded",function(){
     cardsEl._places=inView;
     cardsEl.innerHTML=inView.map(function(p,i){
       const rt=pr(p);
-      return`<button type="button" class="acct-card${p===activePlace?" is-active":""}" data-idx="${i}">
+      const photo=(p.photo_url||(Array.isArray(p.photo_urls)&&p.photo_urls[0])||"");
+      return`<button type="button" class="acct-card${photo?" has-photo":""}${p===activePlace?" is-active":""}" data-idx="${i}">
+        ${photo?`<img class="acct-card__bg" src="${escapeHtml(photo)}" alt="" loading="lazy" decoding="async" onerror="this.closest('.acct-card').classList.remove('has-photo');this.remove()">`:""}
         <div class="acct-card__top">
           <div class="acct-card__title"><span class="acct-card__dot" style="background:${categoryColor(p)}"></span><span class="acct-card__name">${escapeHtml(p.name||"")}</span></div>
           ${rt!=null?`<span class="acct-card__rating">★ ${rt.toFixed(1)}</span>`:""}

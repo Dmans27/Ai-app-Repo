@@ -8028,7 +8028,7 @@ def _account_context():
             if getattr(place, "listing_id", None):
                 listing = query_one(
                     """
-                    SELECT id, slug, photo_url, photo_urls_json
+                    SELECT id, slug, photo_url, photo_urls_json, google_rating
                     FROM listings
                     WHERE id = :listing_id
                     LIMIT 1
@@ -8039,7 +8039,7 @@ def _account_context():
             if not listing and getattr(place, "place_id", None):
                 listing = query_one(
                     """
-                    SELECT id, slug, photo_url, photo_urls_json
+                    SELECT id, slug, photo_url, photo_urls_json, google_rating
                     FROM listings
                     WHERE place_id = :place_id
                     LIMIT 1
@@ -8050,7 +8050,7 @@ def _account_context():
             if not listing and place.name:
                 listing = query_one(
                     """
-                    SELECT id, slug, photo_url, photo_urls_json
+                    SELECT id, slug, photo_url, photo_urls_json, google_rating
                     FROM listings
                     WHERE LOWER(name) = LOWER(:name)
                     LIMIT 1
@@ -8109,6 +8109,8 @@ def _account_context():
                         "category": place.category or "",
                         "photo_url": resolved_photo_url,
                         "photo_urls": resolved_photo_urls,
+                        "rating": (round(float(listing["google_rating"]), 1)
+                                   if listing and listing.get("google_rating") else None),
                         "city": place_dict["city"],
                         "cuisine": place_dict["cuisine"],
                         "slug": place_dict["slug"],
