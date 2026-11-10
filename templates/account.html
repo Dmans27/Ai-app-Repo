@@ -44,16 +44,28 @@
       body.page-account.acct-map-expanded .mobile-content.account-page-content{padding-bottom:0 !important}
       body.page-account.acct-map-expanded .acct-map-card{margin-bottom:0 !important}
     }
-    .acct-map-carousel{display:none;position:absolute;left:0;right:0;bottom:16px;gap:10px;padding:0 16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;z-index:5}
-    .acct-map-carousel::-webkit-scrollbar{display:none}
-    .acct-map-card-item{scroll-snap-align:center;flex-shrink:0;width:220px;display:flex;gap:10px;padding:10px;background:rgba(20,20,22,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;cursor:pointer;transition:border-color 0.15s,transform 0.15s;color:#fff}
-    .acct-map-card-item:hover{border-color:rgba(255,255,255,0.22)}
-    .acct-map-card-item.is-active{border-color:rgba(126,226,191,0.55);transform:translateY(-3px)}
-    .acct-map-card-item__img{width:48px;height:48px;flex-shrink:0;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:18px}
-    .acct-map-card-item__img img{width:100%;height:100%;object-fit:cover;display:block}
-    .acct-map-card-item__body{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px}
-    .acct-map-card-item__name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .acct-map-card-item__meta{font-size:11.5px;color:rgba(255,255,255,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    /* Place cards on top of the map. Desktop: a vertical, scrollable list down
+       the left side. Phone (<=640px): a swipeable strip along the bottom.
+       Only shown once the map is zoomed in to city level -- never at the
+       globe (see CARDS_MIN_ZOOM in the script). */
+    .acct-map-cards{display:none;position:absolute;z-index:5;left:16px;top:56px;width:272px;max-height:calc(100% - 72px);flex-direction:column;gap:8px;overflow-y:auto;overscroll-behavior:contain;padding:2px 4px 2px 2px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.35) transparent}
+    .acct-map-cards.is-visible{display:flex}
+    .acct-card{flex:0 0 auto;box-sizing:border-box;width:100%;display:flex;flex-direction:column;gap:3px;padding:10px 12px;text-align:left;font:inherit;color:#fff;background:rgba(20,20,22,0.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:0.5px solid rgba(255,255,255,0.12);border-radius:14px;cursor:pointer;transition:border-color 0.15s}
+    .acct-card:hover{border-color:rgba(255,255,255,0.3)}
+    .acct-card:focus-visible{outline:2px solid #7ee2bf;outline-offset:2px}
+    .acct-card.is-active{border-color:rgba(126,226,191,0.7)}
+    .acct-card__top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .acct-card__title{display:flex;align-items:center;gap:7px;min-width:0}
+    .acct-card__dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .acct-card__name{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .acct-card__rating{flex-shrink:0;font-size:12px;font-weight:800;color:#f5b301}
+    .acct-card__addr{font-size:11.5px;line-height:1.35;color:rgba(255,255,255,0.62);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    @media(max-width:900px){.acct-map-cards{width:240px}}
+    @media(max-width:640px){
+      .acct-map-cards{top:auto;bottom:26px;left:0;right:0;width:auto;max-height:none;flex-direction:row;gap:10px;padding:0 16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+      .acct-map-cards::-webkit-scrollbar{display:none}
+      .acct-card{width:240px;scroll-snap-align:start}
+    }
     /* Floats directly on top of the map (like a native maps app) instead of
        sitting in its own bar above it — no backing panel means no seam or
        color mismatch against the map underneath, in either light or dark
@@ -281,7 +293,7 @@
               {% endif %}
 
               <div id="account-map" class="account-map"></div>
-              <div class="acct-map-carousel" id="acct-map-carousel"></div>
+              <div class="acct-map-cards" id="acct-map-cards" aria-label="Saved places in view"></div>
             </section>
 
             <div class="acct-listing-wrap" id="acct-listing-wrap">
@@ -324,8 +336,13 @@ document.addEventListener("DOMContentLoaded",function(){
   if(!token)return;
   let aC="all",aL="all",aR=0,mk=[];
   let userLoc=null,youMarker=null; // browser geolocation, once resolved -- lets the map auto-zoom to where you already are instead of starting zoomed all the way out
-  const carouselEl=document.getElementById("acct-map-carousel");
-  let activeCardIdx=-1,carouselScrollTimer=null;
+  // Place cards over the map (left list on desktop, bottom strip on phones).
+  // They only appear once the map is zoomed in at least this far (roughly
+  // "a city fills the view"); at globe / country level they stay hidden.
+  // Raise the number to make them appear later, lower it to appear sooner.
+  const CARDS_MIN_ZOOM=10;
+  const cardsEl=document.getElementById("acct-map-cards");
+  let filtered=[],cardsKey="",activePlace=null;
   const listWrap=document.getElementById("acct-listing-wrap");
   const listStrip=document.getElementById("acct-listing-strip");
   const LIST_HIDE_ZOOM=4;
@@ -399,10 +416,13 @@ document.addEventListener("DOMContentLoaded",function(){
         .setPopup(new mapboxgl.Popup({offset:24,closeButton:true,className:"acct-map-popup",maxWidth:"300px"}).setHTML(popupHtml(p)))
         .addTo(map);
       m._place=p;
+      m.getPopup().on("open",function(){setActiveCard(p);});
+      m.getPopup().on("close",function(){if(activePlace===p)setActiveCard(null);});
       mk.push(m);
     });
+    filtered=fl;
     updateCamera(fl);
-    updateCarousel(fl);
+    updateCards();
     renderListingStrip(fl);
   }
   function renderListingStrip(fl){
@@ -537,61 +557,71 @@ document.addEventListener("DOMContentLoaded",function(){
          else on the page depends on this succeeding */
     },{enableHighAccuracy:true,timeout:10000,maximumAge:5*60*1000});
   }
-  function updateCarousel(fl){
-    if(!carouselEl)return;
-    activeCardIdx=-1;
-    if(aL==="all"||!fl.length){
-      carouselEl.style.display="none";
-      carouselEl.innerHTML="";
-      carouselEl._places=[];
-      return;
-    }
-    carouselEl._places=fl;
-    carouselEl.innerHTML=fl.map((p,i)=>{
-      const rt=pr(p);
-      return`<article class="acct-map-card-item" data-idx="${i}">
-        <div class="acct-map-card-item__img">${p.photo_url?`<img src="${escapeHtml(p.photo_url)}" alt="" loading="lazy">`:`<span>📍</span>`}</div>
-        <div class="acct-map-card-item__body">
-          <div class="acct-map-card-item__name">${escapeHtml(p.name||"")}</div>
-          <div class="acct-map-card-item__meta">${escapeHtml(p.category||"")}${p.category&&rt!=null?" · ":""}${rt!=null?"★ "+rt.toFixed(1):""}</div>
-        </div>
-      </article>`;
-    }).join("");
-    carouselEl.style.display="flex";
-    carouselEl.scrollLeft=0;
-    // Sync the highlighted card + map center once the cards have laid out.
-    requestAnimationFrame(handleCarouselScroll);
+  // ---- Place cards (name, rating, address) -------------------------------
+  function hideCards(){
+    if(!cardsEl)return;
+    cardsEl.classList.remove("is-visible");
+    cardsEl.innerHTML="";
+    cardsEl._places=[];
+    cardsKey="";
   }
-  function handleCarouselScroll(){
-    if(!carouselEl)return;
-    const list=carouselEl._places||[];
-    const cards=[...carouselEl.querySelectorAll(".acct-map-card-item")];
-    if(!list.length||!cards.length)return;
-    const center=carouselEl.scrollLeft+carouselEl.clientWidth/2;
-    let closest=0,closestDist=Infinity;
-    cards.forEach((card,i)=>{
-      const cardCenter=card.offsetLeft+card.offsetWidth/2;
-      const dist=Math.abs(cardCenter-center);
-      if(dist<closestDist){closestDist=dist;closest=i;}
+  // Re-syncs the cards to the saved places currently on screen (and passing
+  // the active filters). Does nothing, and shows nothing, until the map is
+  // zoomed in to city level.
+  function updateCards(){
+    if(!cardsEl)return;
+    if(map.getZoom()<CARDS_MIN_ZOOM){hideCards();return;}
+    const w=mel.clientWidth,h=mel.clientHeight;
+    const inView=filtered.filter(function(p){
+      const pt=map.project([p.lng,p.lat]);
+      return pt.x>=0&&pt.x<=w&&pt.y>=0&&pt.y<=h;
     });
-    if(closest===activeCardIdx)return;
-    activeCardIdx=closest;
-    cards.forEach((c,i)=>c.classList.toggle("is-active",i===closest));
-    const p=list[closest];
-    if(p&&p.lng!=null&&p.lat!=null){
-      map.easeTo({center:[p.lng,p.lat],duration:550});
-    }
+    if(!inView.length){hideCards();return;}
+    const key=inView.map(function(p){return places.indexOf(p);}).join(",");
+    if(key===cardsKey&&cardsEl.classList.contains("is-visible")){scrollToActiveCard();return;}
+    cardsKey=key;
+    cardsEl._places=inView;
+    cardsEl.innerHTML=inView.map(function(p,i){
+      const rt=pr(p);
+      return`<button type="button" class="acct-card${p===activePlace?" is-active":""}" data-idx="${i}">
+        <div class="acct-card__top">
+          <div class="acct-card__title"><span class="acct-card__dot" style="background:${categoryColor(p)}"></span><span class="acct-card__name">${escapeHtml(p.name||"")}</span></div>
+          ${rt!=null?`<span class="acct-card__rating">★ ${rt.toFixed(1)}</span>`:""}
+        </div>
+        ${p.address?`<div class="acct-card__addr">${escapeHtml(p.address)}</div>`:""}
+      </button>`;
+    }).join("");
+    cardsEl.scrollTop=0;cardsEl.scrollLeft=0;
+    cardsEl.classList.add("is-visible");
+    scrollToActiveCard();
   }
-  function initCarousel(){
-    if(!carouselEl)return;
-    carouselEl.addEventListener("scroll",function(){
-      clearTimeout(carouselScrollTimer);
-      carouselScrollTimer=setTimeout(handleCarouselScroll,110);
-    },{passive:true});
-    carouselEl.addEventListener("click",function(e){
-      const card=e.target.closest(".acct-map-card-item");
+  function setActiveCard(p){
+    activePlace=p;
+    if(!cardsEl)return;
+    const list=cardsEl._places||[];
+    cardsEl.querySelectorAll(".acct-card").forEach(function(c,i){c.classList.toggle("is-active",!!p&&list[i]===p);});
+    scrollToActiveCard();
+  }
+  function scrollToActiveCard(){
+    if(!cardsEl||!activePlace)return;
+    const i=(cardsEl._places||[]).indexOf(activePlace);
+    const card=i>=0?cardsEl.querySelectorAll(".acct-card")[i]:null;
+    if(!card)return;
+    // Scroll only the card list itself (scrollIntoView could scroll the page too).
+    if(getComputedStyle(cardsEl).flexDirection==="row")cardsEl.scrollTo({left:Math.max(0,card.offsetLeft-16),behavior:"smooth"});
+    else cardsEl.scrollTo({top:Math.max(0,card.offsetTop-8),behavior:"smooth"});
+  }
+  function initCards(){
+    if(!cardsEl)return;
+    cardsEl.addEventListener("click",function(e){
+      const card=e.target.closest(".acct-card");
       if(!card)return;
-      card.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
+      const p=(cardsEl._places||[])[Number(card.dataset.idx)];
+      if(!p||p.lng==null||p.lat==null)return;
+      setActiveCard(p);
+      map.flyTo({center:[p.lng,p.lat],zoom:Math.max(map.getZoom(),14),pitch:55,bearing:-17,duration:1100,essential:true});
+      const m=mk.find(function(mm){return mm._place===p;});
+      if(m)setTimeout(function(){if(!m.getPopup().isOpen())m.togglePopup();},650);
     });
   }
   function blc(){
@@ -686,6 +716,16 @@ document.addEventListener("DOMContentLoaded",function(){
   // clipped at the bottom.
   map.setPadding({top:topReserve,bottom:Math.round(boxHeight*0.04),left:0,right:0});
   map.on("zoom",updateListingVisibility);
+  // Cards: hide the moment you zoom back out past the threshold, show as
+  // soon as you zoom in past it, and re-sync the list to what's in view
+  // whenever a pan/zoom finishes.
+  map.on("zoom",function(){
+    const showing=cardsEl&&cardsEl.classList.contains("is-visible");
+    const close=map.getZoom()>=CARDS_MIN_ZOOM;
+    if(showing&&!close)hideCards();
+    else if(!showing&&close)updateCards();
+  });
+  map.on("moveend",updateCards);
   updateListingVisibility();
   map.on("style.load",function(){
     map.setFog({
@@ -718,7 +758,7 @@ document.addEventListener("DOMContentLoaded",function(){
       }catch(e){/* style has no composite building layer — skip */}
     }
   });
-  blc();wc();initCarousel();initListingStrip();initShareButton();
+  blc();wc();initCards();initListingStrip();initShareButton();
 });
 </script>
 
