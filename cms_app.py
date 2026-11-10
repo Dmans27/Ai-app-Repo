@@ -8989,6 +8989,13 @@ def admin_ai_generate(page_id):
 
 
 # -----------------------
+# Map-only pages other sites can embed (the media site's Interactive map block)
+# -----------------------
+from embed_maps import register_embed_routes
+register_embed_routes(app, SavedList, query_one)
+
+
+# -----------------------
 # Run
 # -----------------------
 if __name__ == "__main__":

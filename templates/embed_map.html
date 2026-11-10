@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ title }} · map</title>
+
+  {# A map and nothing else: no header, menu or sign-in. Shown inside an
+     iframe on other sites -- see embed_maps.py. #}
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1c1f1d; background: #e9eceb; }
+    #map { position: absolute; inset: 0; }
+    .chip {
+      position: absolute; top: 10px; left: 10px; z-index: 2; max-width: calc(100% - 120px);
+      padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,0.94); color: #1c1f1d;
+      font-weight: 600; font-size: 13px; text-decoration: none; box-shadow: 0 1px 6px rgba(0,0,0,0.22);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chip span { font-weight: 400; color: #5b625e; }
+    .note {
+      position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center;
+      padding: 24px; text-align: center; color: #4a514d; background: #e9eceb;
+    }
+    .note[hidden] { display: none; }
+    .pop { max-width: 230px; font-size: 13px; }
+    .pop strong { font-size: 14px; }
+    .pop__cat { margin-top: 3px; color: #5b625e; text-transform: capitalize; }
+    .pop__addr { margin-top: 6px; }
+    .pop__notes { margin-top: 6px; font-style: italic; }
+    .pop__links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .pop__links a { color: #1d6fa5; font-weight: 600; text-decoration: none; }
+    .mapboxgl-popup-content { padding: 12px 14px 12px; border-radius: 10px; }
+    .mapboxgl-popup-close-button { font-size: 18px; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <a id="chip" class="chip" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
+  <div id="note" class="note" hidden></div>
+
+  <script id="map-data" type="application/json">{{ payload|tojson }}</script>
+  <script>
+    (function () {
+      var data = JSON.parse(document.getElementById('map-data').textContent || '{}');
+      var places = data.places || [];
+      var note = document.getElementById('note');
+
+      function say(message) { note.textContent = message; note.hidden = false; }
+
+      // The title chip links to the full page for this map.
+      var chip = document.getElementById('chip');
+      chip.href = data.open || '#';
+      chip.textContent = data.title || 'Map';
+      var count = document.createElement('span');
+      count.textContent = ' · ' + places.length + (places.length === 1 ? ' place' : ' places');
+      chip.appendChild(count);
+      chip.hidden = false;
+
+      if (typeof mapboxgl === 'undefined') { say('The map could not load. Please check your connection and try again.'); return; }
+      if (!data.token) { say('This map is not available right now.'); return; }
+      if (!places.length) { say('No pinned places on this map yet.'); return; }
+
+      mapboxgl.accessToken = data.token;
+
+      function categoryColor(category) {
+        var c = (category || '').toLowerCase();
+        if (c.indexOf('coffee') >= 0) return '#C6935A';
+        if (c.indexOf('bar') >= 0 || c.indexOf('cocktail') >= 0) return '#B368F7';
+        if (c.indexOf('wine') >= 0) return '#B4436C';
+        if (c.indexOf('rooftop') >= 0) return '#5AC8E8';
+        if (c.indexOf('shop') >= 0) return '#F5B301';
+        if (c.indexOf('restaurant') >= 0 || c.indexOf('food') >= 0) return '#E2574C';
+        return '#2f9e7e';
+      }
+
+      function markerEl(place) {
+        var el = document.createElement('div');
+        el.style.cursor = 'pointer';
+        el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))';
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', place.name);
+        el.innerHTML = '<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 1C6.8 1 1 6.7 1 13.7c0 9.6 13 21.3 13 21.3s13-11.7 13-21.3C27 6.7 21.2 1 14 1z" fill="' +
+          categoryColor(place.category) + '" stroke="#0b0c0d" stroke-width="1.5"/><circle cx="14" cy="13.5" r="5" fill="#0b0c0d" fill-opacity="0.85"/></svg>';
+        return el;
+      }
+
+      // Popups are built with textContent, never innerHTML, so a place name
+      // or note can't inject markup into the page.
+      function addText(parent, tag, className, text) {
+        var el = document.createElement(tag);
+        if (className) el.className = className;
+        el.textContent = text;
+        parent.appendChild(el);
+        return el;
+      }
+
+      function addLink(parent, label, href) {
+        var a = document.createElement('a');
+        a.textContent = label;
+        a.href = href;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        parent.appendChild(a);
+      }
+
+      function popupNode(place) {
+        var box = document.createElement('div');
+        box.className = 'pop';
+        addText(box, 'strong', '', place.name);
+        if (place.category) addText(box, 'div', 'pop__cat', place.category.replace(/_/g, ' '));
+        if (place.address) addText(box, 'div', 'pop__addr', place.address);
+        if (place.notes) addText(box, 'div', 'pop__notes', place.notes);
+        var links = document.createElement('div');
+        links.className = 'pop__links';
+        addLink(links, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng);
+        if (place.website) addLink(links, 'Website', place.website);
+        if (place.listing) addLink(links, 'Show listing', '/listing/' + encodeURIComponent(place.listing));
+        box.appendChild(links);
+        return box;
+      }
+
+      var map = new mapboxgl.Map({
+        container: 'map',
+        style: data.style,
+        center: [places[0].lng, places[0].lat],
+        zoom: 11,
+        cooperativeGestures: true   // inside an article: two fingers / ctrl+scroll move the map, one finger scrolls the page
+      });
+      map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
+      map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+      var bounds = new mapboxgl.LngLatBounds();
+      places.forEach(function (place) {
+        new mapboxgl.Marker({ element: markerEl(place) })
+          .setLngLat([place.lng, place.lat])
+          .setPopup(new mapboxgl.Popup({ offset: 26, maxWidth: '260px' }).setDOMContent(popupNode(place)))
+          .addTo(map);
+        bounds.extend([place.lng, place.lat]);
+      });
+
+      map.on('load', function () {
+        if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
+        else map.jumpTo({ center: [places[0].lng, places[0].lat], zoom: 13 });
+      });
+    })();
+  </script>
+</body>
+</html>
