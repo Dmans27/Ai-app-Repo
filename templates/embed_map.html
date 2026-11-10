@@ -35,10 +35,39 @@
     .pop__links a { color: #1d6fa5; font-weight: 600; text-decoration: none; }
     .mapboxgl-popup-content { padding: 12px 14px 12px; border-radius: 10px; }
     .mapboxgl-popup-close-button { font-size: 18px; padding: 2px 6px; }
+
+    /* Place cards (name, rating, address). Wide embed: a scrollable list down
+       the left. Narrow embed (<=640px wide): a swipeable strip along the
+       bottom. Only shown once zoomed in to city level, never at wide views. */
+    .cards { display: none; position: absolute; z-index: 2; left: 10px; top: 56px; width: 240px; max-height: calc(100% - 72px);
+      flex-direction: column; gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding: 2px 4px 2px 2px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.35) transparent; }
+    .cards.is-visible { display: flex; }
+    .card { flex: 0 0 auto; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px;
+      text-align: left; font: inherit; color: #fff; background: rgba(20,20,22,0.86);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px; cursor: pointer; transition: border-color 0.15s; }
+    .card:hover { border-color: rgba(255,255,255,0.3); }
+    .card:focus-visible { outline: 2px solid #7ee2bf; outline-offset: 2px; }
+    .card.is-active { border-color: rgba(126,226,191,0.7); }
+    .card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .card__title { display: flex; align-items: center; gap: 7px; min-width: 0; }
+    .card__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .card__name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card__rating { flex-shrink: 0; font-size: 12px; font-weight: 800; color: #f5b301; }
+    .card__addr { font-size: 11.5px; line-height: 1.35; color: rgba(255,255,255,0.65);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    @media (max-width: 640px) {
+      .cards { top: auto; bottom: 28px; left: 0; right: 0; width: auto; max-height: none; flex-direction: row; gap: 10px;
+        padding: 0 10px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding: 0 10px; scrollbar-width: none; }
+      .cards::-webkit-scrollbar { display: none; }
+      .card { width: 220px; scroll-snap-align: start; }
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div id="cards" class="cards" aria-label="Places in view"></div>
   <a id="chip" class="chip" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
   <div id="note" class="note" hidden></div>
 
@@ -133,18 +162,128 @@
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
       map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
+      // ---- Place cards ----------------------------------------------------
+      // Shown only once the map is zoomed in at least this far (about "a city
+      // fills the view"). Raise the number to show them later, lower for sooner.
+      var CARDS_MIN_ZOOM = 10;
+      var mapEl = document.getElementById('map');
+      var cardsEl = document.getElementById('cards');
+      var cardsKey = '';
+      var activePlace = null;
+      var markers = [];
+
+      function hideCards() {
+        cardsEl.classList.remove('is-visible');
+        cardsEl.innerHTML = '';
+        cardsEl._places = [];
+        cardsKey = '';
+      }
+
+      function scrollToActiveCard() {
+        if (!activePlace) return;
+        var i = (cardsEl._places || []).indexOf(activePlace);
+        var card = i >= 0 ? cardsEl.querySelectorAll('.card')[i] : null;
+        if (!card) return;
+        // Scroll only the card list itself (scrollIntoView could scroll the article too).
+        if (getComputedStyle(cardsEl).flexDirection === 'row') cardsEl.scrollTo({ left: Math.max(0, card.offsetLeft - 10), behavior: 'smooth' });
+        else cardsEl.scrollTo({ top: Math.max(0, card.offsetTop - 8), behavior: 'smooth' });
+      }
+
+      function setActive(place) {
+        activePlace = place;
+        var list = cardsEl._places || [];
+        cardsEl.querySelectorAll('.card').forEach(function (c, i) {
+          c.classList.toggle('is-active', !!place && list[i] === place);
+        });
+        scrollToActiveCard();
+      }
+
+      // Cards are built with textContent, like the popups, so a place name or
+      // address can't inject markup.
+      function cardNode(place, index) {
+        var card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'card' + (place === activePlace ? ' is-active' : '');
+        card.setAttribute('data-idx', String(index));
+        var top = document.createElement('div');
+        top.className = 'card__top';
+        var title = document.createElement('div');
+        title.className = 'card__title';
+        var dot = document.createElement('span');
+        dot.className = 'card__dot';
+        dot.style.background = categoryColor(place.category);
+        title.appendChild(dot);
+        addText(title, 'span', 'card__name', place.name);
+        top.appendChild(title);
+        if (place.rating !== null && place.rating !== undefined && place.rating !== '' && !isNaN(Number(place.rating))) {
+          addText(top, 'span', 'card__rating', '★ ' + Number(place.rating).toFixed(1));
+        }
+        card.appendChild(top);
+        if (place.address) addText(card, 'div', 'card__addr', place.address);
+        return card;
+      }
+
+      // Re-syncs the cards to the places currently on screen. Shows nothing
+      // until the map is zoomed in to city level.
+      function updateCards() {
+        if (map.getZoom() < CARDS_MIN_ZOOM) { hideCards(); return; }
+        var w = mapEl.clientWidth, h = mapEl.clientHeight;
+        var inView = places.filter(function (p) {
+          var pt = map.project([p.lng, p.lat]);
+          return pt.x >= 0 && pt.x <= w && pt.y >= 0 && pt.y <= h;
+        });
+        if (!inView.length) { hideCards(); return; }
+        var key = inView.map(function (p) { return places.indexOf(p); }).join(',');
+        if (key === cardsKey && cardsEl.classList.contains('is-visible')) { scrollToActiveCard(); return; }
+        cardsKey = key;
+        cardsEl._places = inView;
+        cardsEl.innerHTML = '';
+        inView.forEach(function (p, i) { cardsEl.appendChild(cardNode(p, i)); });
+        cardsEl.scrollTop = 0;
+        cardsEl.scrollLeft = 0;
+        cardsEl.classList.add('is-visible');
+        scrollToActiveCard();
+      }
+
+      cardsEl.addEventListener('click', function (e) {
+        var card = e.target.closest('.card');
+        if (!card) return;
+        var place = (cardsEl._places || [])[Number(card.getAttribute('data-idx'))];
+        if (!place) return;
+        setActive(place);
+        map.flyTo({ center: [place.lng, place.lat], zoom: Math.max(map.getZoom(), 14), duration: 1000, essential: true });
+        var marker = markers.filter(function (m) { return m._place === place; })[0];
+        if (marker) setTimeout(function () { if (!marker.getPopup().isOpen()) marker.togglePopup(); }, 600);
+      });
+
       var bounds = new mapboxgl.LngLatBounds();
       places.forEach(function (place) {
-        new mapboxgl.Marker({ element: markerEl(place) })
+        var popup = new mapboxgl.Popup({ offset: 26, maxWidth: '260px' }).setDOMContent(popupNode(place));
+        popup.on('open', function () { setActive(place); });
+        popup.on('close', function () { if (activePlace === place) setActive(null); });
+        var marker = new mapboxgl.Marker({ element: markerEl(place) })
           .setLngLat([place.lng, place.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 26, maxWidth: '260px' }).setDOMContent(popupNode(place)))
+          .setPopup(popup)
           .addTo(map);
+        marker._place = place;
+        markers.push(marker);
         bounds.extend([place.lng, place.lat]);
       });
+
+      // Hide the moment you zoom back out, show as soon as you zoom in past
+      // the threshold, and re-sync the list whenever a pan/zoom finishes.
+      map.on('zoom', function () {
+        var showing = cardsEl.classList.contains('is-visible');
+        var close = map.getZoom() >= CARDS_MIN_ZOOM;
+        if (showing && !close) hideCards();
+        else if (!showing && close) updateCards();
+      });
+      map.on('moveend', updateCards);
 
       map.on('load', function () {
         if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
         else map.jumpTo({ center: [places[0].lng, places[0].lat], zoom: 13 });
+        updateCards();
       });
     })();
   </script>
