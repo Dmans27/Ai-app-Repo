@@ -711,7 +711,7 @@
         // The pin lands a little below the middle so the pin card above it ends up centred.
         var cardH = Math.min(300, Math.max(190, window.innerHeight - 150));
         map.flyTo({ center: [place.lng, place.lat], zoom: Math.max(map.getZoom(), 14), duration: 1000, essential: true,
-                    offset: [0, 36 + cardH / 2] });
+                    offset: [0, 36 + cardH / 2 - bottomInset() / 2] });
         var marker = markers.filter(function (m) { return m._place === place; })[0];
         if (marker) setTimeout(function () { if (!marker.getPopup().isOpen()) marker.togglePopup(); }, 600);
       });
@@ -719,6 +719,16 @@
       // When a pin card opens, slide the map so the card sits in the middle of
       // the map and is shown in full. The card always opens above its pin
       // (anchor: 'bottom'), so it never flips to the other side while moving.
+      // On a phone the row of place cards runs along the bottom of the map and
+      // would cover the pin card, so the card is centred in the part of the map
+      // above that row. Returns how many pixels the row takes up (0 if none).
+      function bottomInset() {
+        if (!cardsEl.classList.contains('is-visible')) return 0;
+        if (getComputedStyle(cardsEl).flexDirection !== 'row') return 0;   // desktop: the list sits at the side
+        var c = cardsEl.getBoundingClientRect(), m = mapEl.getBoundingClientRect();
+        return Math.max(0, Math.round(m.bottom - c.top));
+      }
+
       function centerCard(popup) {
         function go() {
           if (openPopup !== popup) return;
@@ -726,8 +736,9 @@
           var content = el && el.querySelector('.mapboxgl-popup-content');
           if (!content) return;
           var r = content.getBoundingClientRect(), m = mapEl.getBoundingClientRect();
+          var inset = bottomInset();
           var dx = (r.left + r.width / 2) - (m.left + m.width / 2);
-          var dy = (r.top + r.height / 2) - (m.top + m.height / 2);
+          var dy = (r.top + r.height / 2) - (m.top + (m.height - inset) / 2);
           if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
           map.panBy([dx, dy], { duration: 450, essential: true });
         }
