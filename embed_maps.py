@@ -59,6 +59,8 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import requests
 from flask import abort, jsonify, redirect, render_template, request, url_for
+from sqlalchemy import (Column, DateTime, Integer, MetaData, PrimaryKeyConstraint,
+                        String, Table, delete, func, insert, select)
 
 DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
 
@@ -499,7 +501,97 @@ def _city_maps_for(SavedList, user, query_one):
     return out[:MAX_CITIES]
 
 
+
+# ---- Custom maps -------------------------------------------------------------
+# A custom map is a name plus a hand-picked set of the person's saved places
+# ("Vienna coffee weekend"). Two small tables hold them. They are created here,
+# the first time the app starts with this code (CREATE TABLE only if missing).
+
+_maps_meta = MetaData()
+_custom_maps = Table(
+    "custom_maps", _maps_meta,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("user_id", Integer, nullable=False, index=True),
+    Column("name", String(80), nullable=False),
+    Column("created_at", DateTime, server_default=func.now()),
+)
+_custom_map_places = Table(
+    "custom_map_places", _maps_meta,
+    Column("map_id", Integer, nullable=False),
+    Column("saved_place_id", Integer, nullable=False),
+    PrimaryKeyConstraint("map_id", "saved_place_id"),
+)
+
+MAX_CUSTOM_MAPS = 50
+MAP_NAME_MAX = 80
+_tables_ready = False
+
+
+def _engine(app):
+    return app.extensions["sqlalchemy"].engine
+
+
+def _ensure_tables(app):
+    """Creates the two tables if they are missing. Never raises: a database
+    hiccup at start-up must not stop the whole app from booting."""
+    global _tables_ready
+    if _tables_ready:
+        return True
+    try:
+        with app.app_context():
+            _maps_meta.create_all(_engine(app), checkfirst=True)
+        _tables_ready = True
+    except Exception as exc:  # noqa: BLE001
+        print(f"[custom maps] could not create tables: {exc}", flush=True)
+    return _tables_ready
+
+
+def _clean_map_name(value):
+    return " ".join(str(value or "").split())[:MAP_NAME_MAX]
+
+
+def _my_places(SavedList, user, query_one):
+    """{saved place id: (place, list, city)} for every pinned place the person has saved."""
+    out = {}
+    lists = SavedList.query.filter_by(user_id=user.id).order_by(SavedList.id).all()
+    for lst in lists:
+        for place in lst.places:
+            if place.latitude is None or place.longitude is None:
+                continue
+            out[place.id] = (place, lst, _city_of(place, query_one))
+    return out
+
+
+def _custom_maps_for(app, SavedList, user):
+    """The person's custom maps: [{id, name, public, private}], newest first."""
+    if not _ensure_tables(app):
+        return []
+    with _engine(app).connect() as conn:
+        maps = conn.execute(select(_custom_maps).where(_custom_maps.c.user_id == user.id)
+                            .order_by(_custom_maps.c.id.desc())).mappings().all()
+        links = {}
+        if maps:
+            rows = conn.execute(select(_custom_map_places).where(
+                _custom_map_places.c.map_id.in_([m["id"] for m in maps]))).mappings().all()
+            for row in rows:
+                links.setdefault(row["map_id"], []).append(row["saved_place_id"])
+    visibility = {}
+    for lst in SavedList.query.filter_by(user_id=user.id).all():
+        for place in lst.places:
+            if place.latitude is not None and place.longitude is not None:
+                visibility[place.id] = bool(lst.is_public)
+    out = []
+    for m in maps:
+        ids = [i for i in links.get(m["id"], []) if i in visibility]
+        out.append({"id": m["id"], "name": m["name"],
+                    "public": sum(1 for i in ids if visibility[i]),
+                    "private": sum(1 for i in ids if not visibility[i])})
+    return out
+
+
 def register_embed_routes(app, SavedList, query_one):
+    _ensure_tables(app)
+
     @app.get("/embed/list/<slug>")
     def embed_list_map(slug):
         saved_list = SavedList.query.filter_by(slug=slug, is_public=True).first_or_404()
@@ -553,9 +645,108 @@ def register_embed_routes(app, SavedList, query_one):
             if entry["public"]:
                 entry["url"] = url_for("embed_profile_map", user_id=current_user.id,
                                        city=entry["city"], _external=True)
-        reply = jsonify({"maps": maps})
+        custom = _custom_maps_for(app, SavedList, current_user)
+        for entry in custom:
+            if entry["public"]:
+                entry["url"] = url_for("embed_custom_map", map_id=entry["id"], _external=True)
+        reply = jsonify({"maps": maps, "custom": custom})
         reply.headers["Cache-Control"] = "no-store"
         return reply
+
+    @app.get("/account/my-places.json")
+    def account_my_places():
+        # What the "new map" picker offers: every pinned place the person has saved.
+        from flask_login import current_user
+        if not current_user.is_authenticated:
+            return jsonify({"error": "sign in"}), 401
+        mine = _my_places(SavedList, current_user, query_one)
+        spellings = {}
+        for _place, _lst, city in mine.values():
+            if city:
+                spellings.setdefault(_city_key(city), []).append(city)
+        labels = {key: _pick_label(names) for key, names in spellings.items()}   # "vienna" + "Vienna" = one group
+        places = [{"id": pid, "name": place.name or "", "city": labels.get(_city_key(city), ""),
+                   "category": place.category or "", "list": lst.title or "",
+                   "public": bool(lst.is_public)}
+                  for pid, (place, lst, city) in mine.items()]
+        places.sort(key=lambda p: (p["city"] == "", p["city"].casefold(), p["name"].casefold()))
+        reply = jsonify({"places": places[:1000]})
+        reply.headers["Cache-Control"] = "no-store"
+        return reply
+
+    @app.post("/account/custom-maps")
+    def account_custom_map_create():
+        from flask_login import current_user
+        if not current_user.is_authenticated:
+            return jsonify({"error": "Please sign in again."}), 401
+        if not request.is_json:
+            return jsonify({"error": "Bad request."}), 400
+        if not _ensure_tables(app):
+            return jsonify({"error": "Maps are not available right now."}), 503
+        data = request.get_json(silent=True) or {}
+        name = _clean_map_name(data.get("name"))
+        if not name:
+            return jsonify({"error": "Give the map a name."}), 400
+        raw_ids = data.get("place_ids")
+        if not isinstance(raw_ids, list):
+            return jsonify({"error": "Pick at least one place."}), 400
+        wanted = []
+        for item in raw_ids[:MAX_PLACES * 2]:
+            if isinstance(item, int) and not isinstance(item, bool) and item not in wanted:
+                wanted.append(item)
+        mine = _my_places(SavedList, current_user, query_one)
+        ids = [i for i in wanted if i in mine][:MAX_PLACES]   # only the person's own places
+        if not ids:
+            return jsonify({"error": "Pick at least one place."}), 400
+        with _engine(app).begin() as conn:
+            count = conn.execute(select(func.count()).select_from(_custom_maps)
+                                 .where(_custom_maps.c.user_id == current_user.id)).scalar()
+            if count >= MAX_CUSTOM_MAPS:
+                return jsonify({"error": f"You can have up to {MAX_CUSTOM_MAPS} custom maps. Delete one first."}), 400
+            result = conn.execute(insert(_custom_maps).values(user_id=current_user.id, name=name))
+            map_id = result.inserted_primary_key[0]
+            conn.execute(insert(_custom_map_places),
+                         [{"map_id": map_id, "saved_place_id": i} for i in ids])
+        return jsonify({"ok": True, "id": map_id}), 201
+
+    @app.delete("/account/custom-maps/<int:map_id>")
+    def account_custom_map_delete(map_id):
+        from flask_login import current_user
+        if not current_user.is_authenticated:
+            return jsonify({"error": "Please sign in again."}), 401
+        if not _ensure_tables(app):
+            return jsonify({"error": "Maps are not available right now."}), 503
+        with _engine(app).begin() as conn:
+            owned = conn.execute(select(_custom_maps.c.id).where(
+                _custom_maps.c.id == map_id, _custom_maps.c.user_id == current_user.id)).first()
+            if not owned:
+                return jsonify({"error": "Map not found."}), 404
+            conn.execute(delete(_custom_map_places).where(_custom_map_places.c.map_id == map_id))
+            conn.execute(delete(_custom_maps).where(_custom_maps.c.id == map_id))
+        return jsonify({"ok": True})
+
+    @app.get("/embed/m/<int:map_id>")
+    def embed_custom_map(map_id):
+        # A custom map: the hand-picked places, and only those on PUBLIC lists.
+        if not _ensure_tables(app):
+            abort(404)
+        with _engine(app).connect() as conn:
+            row = conn.execute(select(_custom_maps).where(_custom_maps.c.id == map_id)).mappings().first()
+            if not row:
+                abort(404)
+            picked = [r[0] for r in conn.execute(
+                select(_custom_map_places.c.saved_place_id)
+                .where(_custom_map_places.c.map_id == map_id)
+                .order_by(_custom_map_places.c.saved_place_id))]
+        wanted = set(picked)
+        lists = (SavedList.query.filter_by(user_id=row["user_id"], is_public=True)
+                 .order_by(SavedList.id).all())
+        places = [p for lst in lists for p in lst.places if p.id in wanted]
+        if not places:
+            abort(404)
+        return _render(row["name"], _places_json(places, query_one),
+                       url_for("user_public_map", user_id=row["user_id"]), request,
+                       cards_min_zoom=CITY_CARDS_MIN_ZOOM)
 
     @app.get("/embed/photo/<int:saved_place_id>")
     def embed_place_photo(saved_place_id):

@@ -89,13 +89,19 @@
     .acct-filter-option:hover{background:rgba(0,0,0,0.05)}
     .acct-filter-option.is-active{background:rgba(16,163,127,0.14);color:#0f6e56}
 
-    /* My maps button + popover -- one map per city, built from saved places */
+    /* My maps button + popover -- one map per city, plus custom maps you build */
     .acct-maps-btn{position:absolute;top:8px;right:86px;z-index:7;height:38px;padding:0 14px;border-radius:19px;border:0.5px solid rgba(0,0,0,0.08);background:#ffffff;color:rgba(0,0,0,0.75);font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.22);transition:transform 0.15s}
     .acct-maps-btn:hover{transform:scale(1.04)}
-    .acct-maps-panel{position:absolute;top:52px;right:16px;z-index:8;width:min(320px,calc(100% - 32px));max-height:min(420px,70%);overflow:auto;background:#ffffff;border-radius:18px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.35);padding:16px;display:none;flex-direction:column;gap:10px}
+    .acct-maps-panel{position:absolute;top:52px;right:16px;z-index:8;width:min(340px,calc(100% - 32px));max-height:min(460px,75%);overflow:auto;background:#ffffff;border-radius:18px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.35);padding:16px;display:none;flex-direction:column;gap:10px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#14151a}
+    .acct-maps-panel button,.acct-maps-panel input,.acct-maps-panel a{font-family:inherit}
     .acct-maps-panel.is-open{display:flex}
+    .acct-maps-panel__head{display:flex;align-items:center;justify-content:space-between;gap:8px}
     .acct-maps-panel__title{font-size:13px;font-weight:800;color:#14151a;margin:0}
     .acct-maps-panel__desc{font-size:11.5px;color:rgba(0,0,0,0.5);margin:-4px 0 2px;line-height:1.4}
+    .acct-maps-add{width:30px;height:30px;border-radius:50%;border:none;background:#10a37f;color:#fff;font-size:20px;font-weight:500;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:0 2px 6px rgba(16,163,127,0.35);transition:transform 0.15s}
+    .acct-maps-add:hover{transform:scale(1.08)}
+    .acct-maps-add:focus-visible{outline:2px solid #0d8a6c;outline-offset:2px}
+    .acct-maps-sub{font-size:10.5px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:rgba(0,0,0,0.4);margin:10px 0 4px}
     .acct-maps-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:0.5px solid rgba(0,0,0,0.08)}
     .acct-maps-row__main{flex:1;min-width:0}
     .acct-maps-row__city{font-size:13px;font-weight:700;color:#14151a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -103,7 +109,26 @@
     .acct-maps-row__btn{flex-shrink:0;height:28px;padding:0 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.12);background:#f5f5f7;color:rgba(0,0,0,0.75);font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
     .acct-maps-row__btn--copy{background:#10a37f;border-color:#10a37f;color:#fff}
     .acct-maps-row__btn--copy.is-copied{background:#0d8a6c}
+    .acct-maps-row__btn--del{padding:0 8px;color:rgba(0,0,0,0.5)}
+    .acct-maps-row__btn--del.is-armed{background:#fee;border-color:#e88;color:#b00}
     .acct-maps-empty{font-size:12px;color:rgba(0,0,0,0.55);line-height:1.45;margin:0}
+    .acct-maps-new{display:none;flex-direction:column;gap:10px}
+    .acct-maps-new.is-open{display:flex}
+    .acct-maps-back{align-self:flex-start;border:none;background:none;padding:0;font-size:12px;font-weight:700;color:rgba(0,0,0,0.55);cursor:pointer}
+    .acct-maps-input{width:100%;box-sizing:border-box;height:34px;padding:0 10px;border-radius:9px;border:0.5px solid rgba(0,0,0,0.15);background:#f5f5f7;font-size:13px;color:#14151a}
+    .acct-maps-input:focus{outline:2px solid #10a37f;outline-offset:0;background:#fff}
+    .acct-maps-pick{max-height:200px;overflow:auto;border:0.5px solid rgba(0,0,0,0.1);border-radius:10px;padding:2px 10px}
+    .acct-maps-pick__city{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:rgba(0,0,0,0.45);padding:8px 0 2px}
+    .acct-maps-pick__all{border:none;background:none;font-size:10.5px;font-weight:700;color:#0d8a6c;cursor:pointer;padding:0;text-transform:none;letter-spacing:0}
+    .acct-maps-pick__item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12.5px;color:#14151a;cursor:pointer}
+    .acct-maps-pick__item input{flex-shrink:0;width:16px;height:16px;accent-color:#10a37f}
+    .acct-maps-pick__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .acct-maps-pick__tag{font-size:10px;color:rgba(0,0,0,0.4);flex-shrink:0}
+    .acct-maps-new__foot{display:flex;align-items:center;gap:8px}
+    .acct-maps-new__count{flex:1;font-size:11.5px;color:rgba(0,0,0,0.5)}
+    .acct-maps-new__go{height:32px;padding:0 14px;border-radius:9px;border:none;background:#10a37f;color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+    .acct-maps-new__go:disabled{background:rgba(0,0,0,0.15);cursor:default}
+    .acct-maps-error{font-size:11.5px;color:#b00;margin:0}
     /* Share-my-map button + popover — floats top-right of the map, in the
        space the old zoom controls used to occupy. */
     .acct-share-btn{position:absolute;top:8px;right:40px;z-index:7;width:38px;height:38px;border-radius:50%;border:0.5px solid rgba(0,0,0,0.08);background:#ffffff;color:rgba(0,0,0,0.75);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.22);transition:transform 0.15s}
@@ -303,9 +328,25 @@
               {% if current_user.is_authenticated %}
                 <button type="button" class="acct-maps-btn" id="acct-maps-toggle" aria-label="My maps">🗺 My maps</button>
                 <div class="acct-maps-panel" id="acct-maps-panel">
-                  <p class="acct-maps-panel__title">My maps</p>
-                  <p class="acct-maps-panel__desc">One map per city, made from the places you save. Copy a city's link and paste it into an article: the map opens zoomed to that city with its place cards showing.</p>
-                  <div id="acct-maps-list"><p class="acct-maps-empty">Loading…</p></div>
+                  <div class="acct-maps-panel__head">
+                    <p class="acct-maps-panel__title" id="acct-maps-title">My maps</p>
+                    <button type="button" class="acct-maps-add" id="acct-maps-add" aria-label="Create a new map" title="Create a new map">+</button>
+                  </div>
+                  <div id="acct-maps-view">
+                    <p class="acct-maps-panel__desc">Maps made from the places you save. Copy a map's link and paste it into an article: it opens zoomed to those places with their cards showing. Tap + to build your own.</p>
+                    <div id="acct-maps-list"><p class="acct-maps-empty">Loading…</p></div>
+                  </div>
+                  <div class="acct-maps-new" id="acct-maps-new">
+                    <button type="button" class="acct-maps-back" id="acct-maps-back">← Back to my maps</button>
+                    <input type="text" class="acct-maps-input" id="acct-maps-name" maxlength="80" placeholder="Name your map, e.g. Vienna coffee weekend" aria-label="Map name" autocomplete="off">
+                    <input type="search" class="acct-maps-input" id="acct-maps-search" placeholder="Search your saved places" aria-label="Search your saved places" autocomplete="off">
+                    <div class="acct-maps-pick" id="acct-maps-pick"></div>
+                    <p class="acct-maps-error" id="acct-maps-error" hidden></p>
+                    <div class="acct-maps-new__foot">
+                      <span class="acct-maps-new__count" id="acct-maps-count">0 selected</span>
+                      <button type="button" class="acct-maps-new__go" id="acct-maps-create" disabled>Create map</button>
+                    </div>
+                  </div>
                 </div>
 
                 <button type="button" class="acct-share-btn" id="acct-share-toggle" aria-label="Share my map">🔗</button>
@@ -699,8 +740,20 @@ document.addEventListener("DOMContentLoaded",function(){
     const toggle=document.getElementById("acct-maps-toggle");
     const panel=document.getElementById("acct-maps-panel");
     const list=document.getElementById("acct-maps-list");
-    if(!toggle||!panel||!list)return;
-    let loaded=false;
+    const view=document.getElementById("acct-maps-view");
+    const addBtn=document.getElementById("acct-maps-add");
+    const newView=document.getElementById("acct-maps-new");
+    const titleEl=document.getElementById("acct-maps-title");
+    const nameIn=document.getElementById("acct-maps-name");
+    const searchIn=document.getElementById("acct-maps-search");
+    const pick=document.getElementById("acct-maps-pick");
+    const countEl=document.getElementById("acct-maps-count");
+    const createBtn=document.getElementById("acct-maps-create");
+    const errEl=document.getElementById("acct-maps-error");
+    if(!toggle||!panel||!list||!addBtn||!newView)return;
+    let loaded=false,myPlaces=null;
+    const selected=new Set();
+    function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
     function copyText(text,btn){
       const done=()=>{
         btn.textContent="Copied!";btn.classList.add("is-copied");
@@ -713,43 +766,126 @@ document.addEventListener("DOMContentLoaded",function(){
       };
       if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(old);}else{old();}
     }
-    function render(maps){
-      list.innerHTML="";
-      if(!maps.length){
-        const p=document.createElement("p");p.className="acct-maps-empty";
-        p.textContent="No city maps yet. Save places that are pinned on the map and each city gets its own map here.";
-        list.appendChild(p);return;
-      }
-      maps.forEach(function(m){
-        const row=document.createElement("div");row.className="acct-maps-row";
-        const main=document.createElement("div");main.className="acct-maps-row__main";
-        const city=document.createElement("div");city.className="acct-maps-row__city";city.textContent=m.city;
-        const meta=document.createElement("div");meta.className="acct-maps-row__meta";
-        const n=m.public;
-        meta.textContent=n?(n+(n===1?" place":" places")+(m.private?" · "+m.private+" private (not shown)":"")):"Only on private lists. Make a list public to share this map.";
-        main.appendChild(city);main.appendChild(meta);row.appendChild(main);
-        if(m.url){
-          const view=document.createElement("a");view.className="acct-maps-row__btn";view.textContent="View";
-          view.href=m.url;view.target="_blank";view.rel="noopener noreferrer";
-          const copy=document.createElement("button");copy.type="button";copy.className="acct-maps-row__btn acct-maps-row__btn--copy";copy.textContent="Copy link";
-          copy.addEventListener("click",function(){copyText(m.url,copy);});
-          row.appendChild(view);row.appendChild(copy);
+    function linkButtons(row,m){
+      if(!m.url)return;
+      const v=el("a","acct-maps-row__btn","View");v.href=m.url;v.target="_blank";v.rel="noopener noreferrer";
+      const c=el("button","acct-maps-row__btn acct-maps-row__btn--copy","Copy link");c.type="button";
+      c.addEventListener("click",function(){copyText(m.url,c);});
+      row.appendChild(v);row.appendChild(c);
+    }
+    function countText(m){
+      const n=m.public;
+      return n?(n+(n===1?" place":" places")+(m.private?" · "+m.private+" private (not shown)":"")):"Only on private lists. Make a list public to share this map.";
+    }
+    function deleteButton(row,m){
+      const d=el("button","acct-maps-row__btn acct-maps-row__btn--del","✕");d.type="button";d.setAttribute("aria-label","Delete "+m.name);d.title="Delete this map";
+      let timer=null;
+      d.addEventListener("click",function(){
+        if(!d.classList.contains("is-armed")){
+          d.classList.add("is-armed");d.textContent="Delete?";
+          timer=setTimeout(function(){d.classList.remove("is-armed");d.textContent="✕";},3000);return;
         }
-        list.appendChild(row);
+        clearTimeout(timer);d.disabled=true;
+        fetch("/account/custom-maps/"+m.id,{method:"DELETE",credentials:"same-origin"})
+          .then(function(r){if(!r.ok)throw new Error("bad");load();})
+          .catch(function(){d.disabled=false;d.classList.remove("is-armed");d.textContent="✕";});
       });
+      row.appendChild(d);
+    }
+    function render(d){
+      list.innerHTML="";
+      const cities=d.maps||[],custom=d.custom||[];
+      if(!cities.length&&!custom.length){
+        list.appendChild(el("p","acct-maps-empty","No maps yet. Save places that are pinned on the map and each city gets its own map here, or tap + to build your own."));return;
+      }
+      if(custom.length){
+        list.appendChild(el("div","acct-maps-sub","Your maps"));
+        custom.forEach(function(m){
+          const row=el("div","acct-maps-row"),main=el("div","acct-maps-row__main");
+          main.appendChild(el("div","acct-maps-row__city",m.name));main.appendChild(el("div","acct-maps-row__meta",countText(m)));
+          row.appendChild(main);linkButtons(row,m);deleteButton(row,m);list.appendChild(row);
+        });
+      }
+      if(cities.length){
+        if(custom.length)list.appendChild(el("div","acct-maps-sub","By city"));
+        cities.forEach(function(m){
+          const row=el("div","acct-maps-row"),main=el("div","acct-maps-row__main");
+          main.appendChild(el("div","acct-maps-row__city",m.city));main.appendChild(el("div","acct-maps-row__meta",countText(m)));
+          row.appendChild(main);linkButtons(row,m);list.appendChild(row);
+        });
+      }
     }
     function load(){
       loaded=true;
       fetch("/account/city-maps.json",{credentials:"same-origin"})
         .then(function(r){if(!r.ok)throw new Error("bad");return r.json();})
-        .then(function(d){render(d.maps||[]);})
+        .then(render)
         .catch(function(){
-          loaded=false;
-          list.innerHTML="";
-          const p=document.createElement("p");p.className="acct-maps-empty";p.textContent="Couldn't load your maps. Close this and try again.";
-          list.appendChild(p);
+          loaded=false;list.innerHTML="";
+          list.appendChild(el("p","acct-maps-empty","Couldn't load your maps. Close this and try again."));
         });
     }
+    /* ---- new map ---- */
+    function showError(msg){errEl.hidden=!msg;errEl.textContent=msg||"";}
+    function updateCount(){
+      const n=selected.size;
+      countEl.textContent=n+" selected";
+      createBtn.disabled=!(n&&nameIn.value.trim());
+    }
+    function drawPicker(){
+      pick.innerHTML="";
+      if(myPlaces===null){pick.appendChild(el("p","acct-maps-empty","Loading your places…"));return;}
+      const q=searchIn.value.trim().toLowerCase();
+      const shown=myPlaces.filter(function(p){return !q||(p.name+" "+p.city+" "+p.category+" "+p.list).toLowerCase().indexOf(q)>=0;});
+      if(!myPlaces.length){pick.appendChild(el("p","acct-maps-empty","You have no pinned places yet. Save some places from the map first."));return;}
+      if(!shown.length){pick.appendChild(el("p","acct-maps-empty","No saved places match that search."));return;}
+      const groups=[];const byCity={};
+      shown.forEach(function(p){const k=p.city||"No city";if(!byCity[k]){byCity[k]=[];groups.push(k);}byCity[k].push(p);});
+      groups.forEach(function(city){
+        const head=el("div","acct-maps-pick__city");head.appendChild(el("span",null,city));
+        const all=el("button","acct-maps-pick__all","Select all");all.type="button";
+        all.addEventListener("click",function(){
+          const every=byCity[city].every(function(p){return selected.has(p.id);});
+          byCity[city].forEach(function(p){if(every)selected.delete(p.id);else selected.add(p.id);});
+          drawPicker();updateCount();
+        });
+        head.appendChild(all);pick.appendChild(head);
+        byCity[city].forEach(function(p){
+          const label=el("label","acct-maps-pick__item");
+          const cb=document.createElement("input");cb.type="checkbox";cb.checked=selected.has(p.id);
+          cb.addEventListener("change",function(){if(cb.checked)selected.add(p.id);else selected.delete(p.id);updateCount();});
+          label.appendChild(cb);label.appendChild(el("span","acct-maps-pick__name",p.name));
+          if(!p.public)label.appendChild(el("span","acct-maps-pick__tag","private list"));
+          pick.appendChild(label);
+        });
+      });
+    }
+    function openNew(){
+      view.hidden=true;addBtn.style.display="none";newView.classList.add("is-open");titleEl.textContent="New map";
+      selected.clear();nameIn.value="";searchIn.value="";showError("");updateCount();
+      myPlaces=null;drawPicker();
+      fetch("/account/my-places.json",{credentials:"same-origin"})
+        .then(function(r){if(!r.ok)throw new Error("bad");return r.json();})
+        .then(function(d){myPlaces=d.places||[];drawPicker();})
+        .catch(function(){pick.innerHTML="";pick.appendChild(el("p","acct-maps-empty","Couldn't load your places. Go back and try again."));});
+      nameIn.focus();
+    }
+    function closeNew(){
+      newView.classList.remove("is-open");view.hidden=false;addBtn.style.display="";titleEl.textContent="My maps";
+    }
+    addBtn.addEventListener("click",function(e){e.stopPropagation();openNew();});
+    document.getElementById("acct-maps-back").addEventListener("click",closeNew);
+    nameIn.addEventListener("input",updateCount);
+    searchIn.addEventListener("input",drawPicker);
+    createBtn.addEventListener("click",function(){
+      showError("");createBtn.disabled=true;createBtn.textContent="Creating…";
+      fetch("/account/custom-maps",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({name:nameIn.value.trim(),place_ids:Array.from(selected)})})
+        .then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||"Couldn't create the map. Try again.");return d;});})
+        .then(function(){closeNew();list.innerHTML="";list.appendChild(el("p","acct-maps-empty","Loading…"));load();})
+        .catch(function(e){showError(e.message);})
+        .then(function(){createBtn.textContent="Create map";updateCount();});
+    });
     toggle.addEventListener("click",function(e){
       e.stopPropagation();
       const sp=document.getElementById("acct-share-panel");if(sp)sp.classList.remove("is-open");
@@ -757,7 +893,9 @@ document.addEventListener("DOMContentLoaded",function(){
       if(panel.classList.contains("is-open")&&!loaded)load();
     });
     document.addEventListener("click",function(e){
-      if(!e.target.closest("#acct-maps-panel")&&!e.target.closest("#acct-maps-toggle"))panel.classList.remove("is-open");
+      /* composedPath, not target.closest: a click on a button that redraws the list leaves e.target detached */
+      const path=e.composedPath?e.composedPath():[];
+      if(path.indexOf(panel)<0&&path.indexOf(toggle)<0)panel.classList.remove("is-open");
     });
   }
   function initShareButton(){
