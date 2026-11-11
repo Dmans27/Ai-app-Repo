@@ -71,6 +71,12 @@
       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; font-size: 12.5px; font-weight: 700; text-decoration: none; }
     .pop__links a:hover, .pop__links button:hover { background: rgba(255,255,255,0.32); }
     .pop__links a.is-primary { background: #fff; color: #15171a; border-color: transparent; }
+    /* "Save" -- only shown when the map sits in a page that can keep saved places (the media site). */
+    .pop__links button.is-save[hidden], .detail__actions button.is-save[hidden] { display: none; }
+    .pop__links button.is-save.is-saved { background: #2f9e7e; border-color: transparent; }
+    .detail__actions button { font: inherit; cursor: pointer; padding: 9px 16px; border-radius: 999px; border: 0; background: #eef1ef; color: #1c1f1d; font-weight: 700; font-size: 13.5px; }
+    .detail__actions button:hover { background: #e2e6e3; }
+    .detail__actions button.is-save.is-saved { background: #2f9e7e; color: #fff; }
 
     /* Full-size place panel: covers the map (not the page) with the place's
        pictures, facts from your directory and live details from Google. */
@@ -315,6 +321,55 @@
       }
 
       // The small pin card that opens over a marker.
+      // ---- Saving places (when this map is shown inside another page) ------
+      // The page around the map (the media site's article) can keep a
+      // "places to try" list for the signed-in reader. We only talk to it
+      // by postMessage: say hello, and if the page answers, show a Save
+      // button. Standing alone (or in a page that doesn't answer) nothing
+      // changes. Saves are made by the page, never from in here.
+      var bridge = { on: false, signedIn: false, saved: {} };
+      var saveButtons = [];
+      function placeKey(place) { return location.host + ':' + place.id; }
+      function canSave(place) { return place.id !== undefined && place.id !== null; }
+      function paintSaveButtons() {
+        saveButtons.forEach(function (item) {
+          var on = !!bridge.saved[placeKey(item.place)];
+          item.btn.hidden = !bridge.on;
+          item.btn.classList.toggle('is-saved', on);
+          item.btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          item.btn.textContent = on ? '✓ Saved' : '+ Save';
+        });
+      }
+      function saveButton(parent, place, inDetail) {
+        if (!canSave(place) || window.parent === window) return null;
+        // The full-size panel is rebuilt each time it renders: drop the old button.
+        if (inDetail) saveButtons = saveButtons.filter(function (item) { return !item.detail; });
+        var btn = addText(parent, 'button', 'is-save', '+ Save');
+        btn.type = 'button';
+        btn.hidden = !bridge.on;
+        btn.addEventListener('click', function () {
+          var photo = place.photo ? location.origin + place.photo : '';
+          window.parent.postMessage({ type: 'mansfield:save-place', place: {
+            key: placeKey(place), name: place.name, category: place.category || '',
+            address: place.address || '', lat: place.lat, lng: place.lng,
+            website: place.website || '', photo: photo,
+            listing: place.listing ? location.origin + '/listing/' + encodeURIComponent(place.listing) : ''
+          } }, '*');
+        });
+        saveButtons.push({ btn: btn, place: place, detail: !!inDetail });
+        paintSaveButtons();
+        return btn;
+      }
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || !e.data || e.data.type !== 'mansfield:saved-state') return;
+        bridge.on = true;
+        bridge.signedIn = !!e.data.signedIn;
+        bridge.saved = {};
+        (Array.isArray(e.data.keys) ? e.data.keys : []).forEach(function (k) { if (typeof k === 'string') bridge.saved[k] = true; });
+        paintSaveButtons();
+      });
+      if (window.parent !== window) window.parent.postMessage({ type: 'mansfield:hello' }, '*');
+
       function popupNode(place) {
         var box = document.createElement('div');
         box.className = 'pop';
@@ -344,6 +399,7 @@
         var more = addText(links, 'button', '', place.listing ? 'Show listing' : 'Details');
         more.type = 'button';
         more.addEventListener('click', function () { openDetail(place); });
+        saveButton(links, place);
         bottom.appendChild(links);
         box.appendChild(bottom);
 
@@ -427,6 +483,7 @@
         if (site) addLink(actions, 'Website', site);
         if (d.mapsUri) addLink(actions, 'Google Maps', d.mapsUri);
         if (place.listing) addLink(actions, 'Full listing ↗', '/listing/' + encodeURIComponent(place.listing));
+        saveButton(actions, place, true);
         detailBody.appendChild(actions);
 
         if (d.description) addText(detailBody, 'p', 'detail__text', d.description);
