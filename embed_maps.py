@@ -13,6 +13,14 @@ iframe loads:
                        single place. Its pictures come through
                        /embed/listing-photo/<slug> and its details through
                        /embed/card-detail/<slug>, the same way as for pins.
+  /embed/stack?d=...   several of those cards in a swipe row (d is a small
+                       base64 JSON list: [{"s": slug, "b": booking link,
+                       "l": button label, "v": video link}, ...]).
+
+A card may also carry a Book / Reserve button (?b=<link>&l=<label>) and a short
+video (?v=<link>) that plays when the reader double-taps the picture. Booking
+links must be web links; a video must be a plain video file hosted on one of the
+sites named in EMBED_ALLOWED_ORIGINS (the media site), never anywhere else.
 
 Both pages are just a map (no header, menu or sign-in) and are marked
 noindex so search engines don't list them as pages of their own.
@@ -41,6 +49,7 @@ Wired up with two lines near the bottom of cms_app.py:
     from embed_maps import register_embed_routes
     register_embed_routes(app, SavedList, query_one)
 """
+import base64
 import json
 import os
 import re
@@ -369,6 +378,45 @@ def _card_listing(query_one, slug):
         return None
 
 
+BOOK_LABEL_MAX = 30
+VIDEO_SUFFIXES = (".mp4", ".webm", ".mov", ".m4v")
+MAX_STACK = 8
+
+
+def _clean_book(url, label):
+    """The writer's booking link and button label, or None. Web links only."""
+    url = _safe_http(url)
+    if not url or len(url) > 600:
+        return None
+    label = " ".join(str(label or "").split())[:BOOK_LABEL_MAX] or "Book"
+    return {"url": url, "label": label}
+
+
+def _clean_video(app, url):
+    """A video link, but only a plain video file on a site that is allowed to
+    embed these cards (EMBED_ALLOWED_ORIGINS) -- so a card can never be made to
+    load video from somewhere else."""
+    url = (url or "").strip()
+    if not url or len(url) > 600:
+        return None
+    try:
+        parts = urlparse(url)
+    except ValueError:
+        return None
+    if parts.scheme not in ("http", "https") or not parts.netloc or parts.username:
+        return None
+    if not parts.path.lower().endswith(VIDEO_SUFFIXES):
+        return None
+    origin = f"{parts.scheme}://{parts.netloc.lower()}"
+    for allowed in allowed_origins(app):
+        if allowed.endswith(":*"):       # "http://localhost:*" (development only)
+            if parts.scheme + "://" + (parts.hostname or "") == allowed[:-2]:
+                return url
+        elif origin == allowed.lower():
+            return url
+    return None
+
+
 def _card_payload(listing):
     """What the card page needs about one listing. Same shape as a map pin, with
     an id of "L<listing id>" (so a saved card can never be mistaken for a saved
@@ -390,6 +438,8 @@ def _card_payload(listing):
         "photo": url_for("embed_listing_photo", slug=slug) if photos else None,
         "photos": [url_for("embed_listing_photo", slug=slug, i=n) for n in range(len(photos))],
         "detailUrl": url_for("embed_card_detail", slug=slug),
+        "book": None,
+        "video": None,
     }
 
 
@@ -474,8 +524,36 @@ def register_embed_routes(app, SavedList, query_one):
         style = request.args.get("style", "photo")
         style = style if style in CARD_STYLES else "photo"
         place = _card_payload(listing)
+        place["book"] = _clean_book(request.args.get("b"), request.args.get("l"))
+        place["video"] = _clean_video(app, request.args.get("v"))
         return render_template("embed_card.html", payload={"style": style, "place": place},
                                style=style, title=place["name"])
+
+    @app.get("/embed/stack")
+    def embed_stack():
+        # d = url-safe base64 of a JSON list, one entry per place.
+        raw = request.args.get("d", "")
+        try:
+            items = json.loads(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)).decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            abort(404)
+        if not isinstance(items, list):
+            abort(404)
+        places = []
+        for item in items[:MAX_STACK]:
+            if not isinstance(item, dict):
+                continue
+            listing = _card_listing(query_one, str(item.get("s") or ""))
+            if not listing or listing.get("latitude") is None or listing.get("longitude") is None:
+                continue
+            place = _card_payload(listing)
+            place["book"] = _clean_book(item.get("b"), item.get("l"))
+            place["video"] = _clean_video(app, item.get("v"))
+            places.append(place)
+        if not places:
+            abort(404)
+        return render_template("embed_card.html", payload={"style": "stack", "places": places},
+                               style="stack", title="Places")
 
     @app.get("/embed/listing-photo/<slug>")
     def embed_listing_photo(slug):

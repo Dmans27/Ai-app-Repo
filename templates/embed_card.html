@@ -7,7 +7,8 @@
   <title>{{ title }}</title>
 
   {# One place from the directory as a card, to show inside an iframe on another
-     site (see embed_maps.py). Four looks, chosen with ?style=photo|wide|full|strip. #}
+     site (see embed_maps.py). Four looks for one place, chosen with ?style=photo|wide|full|strip, or a swipe row of
+     several places (style stack). #}
   <style>
     html, body { margin: 0; }
     body { font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1c1f1d; background: transparent; }
@@ -108,6 +109,22 @@
     body.is-fs .detail__text, body.is-fs .detail__note { font-size: 16px; }
 
 
+    /* Book / Reserve */
+    .pop__links a.is-book { background: #2f9e7e; color: #fff; border-color: transparent; }
+    .pop__links a.is-book:hover { background: #26876b; }
+    .detail__actions a.is-book { background: #2f9e7e; color: #fff; }
+    .detail__actions a.is-book:hover { background: #26876b; }
+
+    /* Short video: a badge on the picture; double-tap (or tap the badge) plays it. */
+    .vidhost { position: relative; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    .vid-badge { position: absolute; top: 10px; right: 10px; z-index: 4; font: inherit; font-size: 11.5px; font-weight: 800; padding: 5px 10px; border: 0; border-radius: 999px; cursor: pointer;
+      background: rgba(0,0,0,0.55); color: #fff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .vid-badge:hover { background: rgba(0,0,0,0.75); }
+    .vid { position: absolute; inset: 0; z-index: 8; background: #000; cursor: pointer; }
+    .vid video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .vid__close { position: absolute; top: 10px; right: 10px; z-index: 2; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; font-size: 20px; line-height: 32px;
+      background: rgba(0,0,0,0.55); color: #fff; cursor: pointer; }
+
     /* ---- Place card styles ---- */
     /* Photo card: the same card as a map pin, on its own. */
     .s-photo .pop { width: 100%; max-width: 440px; height: 380px; margin: 0 auto; border-radius: 18px; overflow: hidden; background: #16181b;
@@ -128,7 +145,26 @@
       .wide__photo { flex: 0 0 auto; height: 230px; min-height: 230px; }
     }
 
+    /* Stack: several places in a swipe row. Swiping a card moves the row; the
+       row's own arrows and dots do the navigating (photos open in the viewer). */
+    .stack { position: relative; }
+    .stack__row { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 2px 6px 12px; scroll-padding-left: 6px; }
+    .stack__row::-webkit-scrollbar { display: none; }
+    .stack__item { flex: 0 0 min(330px, 84%); scroll-snap-align: start; min-width: 0; }
+    .s-stack .pop { width: 100%; max-width: none; height: 390px; margin: 0; border-radius: 18px; overflow: hidden; background: #16181b; box-shadow: 0 4px 16px rgba(0,0,0,0.22); }
+    .s-stack .pop__slides { overflow: hidden; touch-action: pan-y; }
+    .s-stack .pop .pop__nav, .s-stack .pop .pop__dots { display: none !important; }
+    .stack > .pop__nav { top: 190px; z-index: 5; background: rgba(255,255,255,0.92); color: #1c1f1d; box-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+    .stack > .pop__nav:hover { background: #fff; }
+    .stack > .pop__nav--prev { left: 12px; }
+    .stack > .pop__nav--next { right: 12px; }
+    .stack__dots { display: flex; justify-content: center; gap: 6px; margin-top: -2px; }
+    .stack__dots[hidden] { display: none; }
+    .stack__dot { width: 7px; height: 7px; border-radius: 50%; background: #c9cfcc; }
+    .stack__dot.is-on { background: #2f9e7e; }
+
     /* Photo strip: a swipeable row of pictures, then the name and buttons. */
+    .strip__media { position: relative; }
     .strip__row { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; border-radius: 16px; }
     .strip__row::-webkit-scrollbar { display: none; }
     .strip__img { flex: 0 0 78%; height: 240px; object-fit: cover; border-radius: 16px; scroll-snap-align: start; background: #d9ddda; }
@@ -162,7 +198,7 @@
     (function () {
       var data = JSON.parse(document.getElementById('card-data').textContent || '{}');
       var place = data.place;
-      var STYLE = ['photo', 'wide', 'full', 'strip'].indexOf(data.style) >= 0 ? data.style : 'photo';
+      var STYLE = ['photo', 'wide', 'full', 'strip', 'stack'].indexOf(data.style) >= 0 ? data.style : 'photo';
       var cardEl = document.getElementById('card');
       var inFrame = window.parent !== window;
 
@@ -349,6 +385,7 @@
         var links = document.createElement('div');
         links.className = 'pop__links';
         addLink(links, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
+        addBook(links, place);
         if (place.website) addLink(links, 'Website', place.website);
         // Opens the full-size panel over the map (no leaving the article).
         var more = addText(links, 'button', '', place.listing ? 'Show listing' : 'Details');
@@ -482,6 +519,7 @@
         var actions = document.createElement('div');
         actions.className = 'detail__actions';
         addLink(actions, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
+        addBook(actions, place);
         if (photoUrls(place).length) {
           var photosBtn = addText(actions, 'button', 'is-photos', 'Photos');
           photosBtn.type = 'button';
@@ -558,8 +596,62 @@
 
 
 
-      // ---- The four looks -------------------------------------------------
+      // ---- The looks ------------------------------------------------------
       function el(tag, cls) { var n = document.createElement(tag); if (cls) n.className = cls; return n; }
+
+      // Book / Reserve: the writer's own link and label for this place.
+      function addBook(parent, place) {
+        if (!place.book || !place.book.url) return null;
+        var a = addLink(parent, place.book.label || 'Book', place.book.url);
+        a.className = 'is-book';
+        a.rel = 'noopener noreferrer sponsored nofollow';
+        return a;
+      }
+
+      // A short clip for this place. A "Video" badge sits on the picture, and
+      // double-tapping (or double-clicking) the picture plays it, muted and
+      // looping, over the card. Tap it or the x to close.
+      function attachVideo(host, place) {
+        if (!place.video || !host) return;
+        host.classList.add('vidhost');
+        var badge = addText(host, 'button', 'vid-badge', '▶ Video');
+        badge.type = 'button';
+        badge.setAttribute('aria-label', 'Play a short video of ' + place.name);
+        var layer = null, openedAt = 0;
+        function close() {
+          if (!layer) return;
+          var v = layer.querySelector('video');
+          if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+          layer.remove();
+          layer = null;
+        }
+        function open() {
+          if (layer) return;
+          layer = el('div', 'vid');
+          var v = document.createElement('video');
+          v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.controls = false;
+          v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+          v.addEventListener('error', function () { close(); badge.remove(); });
+          v.src = place.video;
+          layer.appendChild(v);
+          var x = addText(layer, 'button', 'vid__close', '×');
+          x.type = 'button';
+          x.setAttribute('aria-label', 'Close video');
+          layer.addEventListener('click', function () { if (Date.now() - openedAt > 450) close(); });
+          host.appendChild(layer);
+          openedAt = Date.now();
+          var p = v.play(); if (p && p.catch) p.catch(function () {});
+        }
+        badge.addEventListener('click', function (e) { e.stopPropagation(); open(); });
+        host.addEventListener('dblclick', function (e) { if (!e.target.closest('button, a')) open(); });
+        var lastTap = 0, lx = 0, ly = 0;
+        host.addEventListener('pointerup', function (e) {
+          if (e.pointerType === 'mouse' || e.target.closest('button, a')) return;
+          var now = Date.now();
+          if (now - lastTap < 320 && Math.abs(e.clientX - lx) < 40 && Math.abs(e.clientY - ly) < 40) { lastTap = 0; open(); }
+          else { lastTap = now; lx = e.clientX; ly = e.clientY; }
+        });
+      }
 
       function metaNode(place, d) {
         d = d || {};
@@ -580,6 +672,7 @@
         d = d || {};
         var row = el('div', 'detail__actions');
         addLink(row, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
+        addBook(row, place);
         var site = d.website || place.website;
         if (site) addLink(row, 'Website', site);
         if (photoUrls(place).length) {
@@ -602,19 +695,62 @@
           .then(function (d) { if (d) then(d); });
       }
 
-      function photoCard() {
-        var box = popupNode(place);
-        // Same card as a map pin, plus a Photos button next to Directions.
+      // The pin card, for one place: a Photos button after Directions/Book, and the video.
+      function photoCardNode(pl) {
+        var box = popupNode(pl);
         var links = box.querySelector('.pop__links');
-        if (links && photoUrls(place).length) {
+        if (links && photoUrls(pl).length) {
           var photos = document.createElement('button');
           photos.type = 'button';
           photos.textContent = 'Photos';
-          photos.addEventListener('click', function () { openViewer(place); });
-          links.insertBefore(photos, links.children[1] || null);
+          photos.addEventListener('click', function () { openViewer(pl); });
+          links.insertBefore(photos, links.children[links.querySelector('.is-book') ? 2 : 1] || null);
         }
-        cardEl.appendChild(box);
+        attachVideo(box, pl);
         if (box._open) box._open();
+        return box;
+      }
+
+      function photoCard() { cardEl.appendChild(photoCardNode(place)); }
+
+      // Several places in a swipe row.
+      function stackCard() {
+        var wrap = el('div', 'stack');
+        var row = el('div', 'stack__row');
+        var places = data.places || [];
+        places.forEach(function (pl) {
+          var item = el('div', 'stack__item');
+          item.appendChild(photoCardNode(pl));
+          row.appendChild(item);
+        });
+        wrap.appendChild(row);
+        var prev = navButton(wrap, 'pop__nav--prev', '‹', 'Previous place');
+        var next = navButton(wrap, 'pop__nav--next', '›', 'Next place');
+        var dots = el('div', 'stack__dots');
+        places.forEach(function () { dots.appendChild(el('span', 'stack__dot')); });
+        wrap.appendChild(dots);
+        function step() {
+          var first = row.children[0], second = row.children[1];
+          return first ? (second ? second.offsetLeft - first.offsetLeft : first.offsetWidth) : 0;
+        }
+        function refresh() {
+          var at = step() ? Math.round(row.scrollLeft / step()) : 0;
+          at = Math.max(0, Math.min(places.length - 1, at));
+          Array.prototype.forEach.call(dots.children, function (d, i) { d.classList.toggle('is-on', i === at); });
+          prev.hidden = at <= 0 || places.length < 2;
+          next.hidden = at >= places.length - 1 || places.length < 2;
+          dots.hidden = places.length < 2;
+        }
+        prev.addEventListener('click', function () { row.scrollBy({ left: -step(), behavior: 'smooth' }); });
+        next.addEventListener('click', function () { row.scrollBy({ left: step(), behavior: 'smooth' }); });
+        var ticking = false;
+        row.addEventListener('scroll', function () {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(function () { ticking = false; refresh(); });
+        }, { passive: true });
+        cardEl.appendChild(wrap);
+        refresh();
       }
 
       function wideCard() {
@@ -630,6 +766,7 @@
           photo.appendChild(dots);
           box.appendChild(photo);
           wireCarousel(urls, slides, prev, next, dots, 'pop__slide').open();
+          attachVideo(photo, place);
         }
         var info = el('div', 'wide__info');
         box.appendChild(info);
@@ -650,6 +787,7 @@
       function stripCard() {
         var urls = photoUrls(place);
         if (urls.length) {
+          var media = el('div', 'strip__media');
           var row = el('div', 'strip__row');
           urls.forEach(function (u) {
             var img = el('img', 'strip__img');
@@ -659,7 +797,9 @@
             img.src = u;
             row.appendChild(img);
           });
-          cardEl.appendChild(row);
+          media.appendChild(row);
+          cardEl.appendChild(media);
+          attachVideo(media, place);
         }
         var info = el('div', 'strip__info');
         cardEl.appendChild(info);
@@ -679,11 +819,13 @@
         detailEl.classList.add('detail--inline', 'is-open');
         detailEl.hidden = false;
         buildGallery(place);
+        if (!detailGallery.hidden) attachVideo(detailGallery, place);
         renderDetail(place, null, true);
         loadDetail(function (d) { if (currentDetail === place) renderDetail(place, d, false); });
       }
 
-      if (!place) {
+      if (STYLE === 'stack' && data.places && data.places.length) stackCard();
+      else if (!place) {
         var note = document.getElementById('note');
         note.textContent = 'This place is not available right now.';
         note.hidden = false;
