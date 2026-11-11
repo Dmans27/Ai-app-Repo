@@ -30,6 +30,7 @@ Wired up with two lines near the bottom of cms_app.py:
     from embed_maps import register_embed_routes
     register_embed_routes(app, SavedList, query_one)
 """
+import json
 import os
 import re
 import time
@@ -73,7 +74,9 @@ def _safe_http(url):
 
 
 _LISTING_COLS = ("slug, COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url, "
-                 "google_rating")
+                 "photo_urls_json, google_rating")
+
+MAX_PHOTOS = 6  # pictures per place in the pop-up carousel
 
 
 def _listing_info(place, query_one):
@@ -96,6 +99,26 @@ def _listing_info(place, query_one):
         return None  # a missing listing just means no link, photo or rating
 
 
+def _stored_photos(own_photo, listing):
+    """Every stored photo link for a place, main picture first: the place's
+    own photo, then the directory listing's photo and gallery. Links only
+    (never shown to visitors -- they go through /embed/photo)."""
+    found = [own_photo or "", listing["photo_url"] if listing else ""]
+    raw = listing.get("photo_urls_json") if listing else None
+    if raw:
+        try:
+            gallery = json.loads(raw) or []
+        except (TypeError, ValueError):
+            gallery = []
+        found += [g for g in gallery if isinstance(g, str)]
+    photos = []
+    for url in found:
+        url = _safe_http(url)
+        if url and url not in photos:
+            photos.append(url)
+    return photos[:MAX_PHOTOS]
+
+
 def _rating(value):
     try:
         number = float(value)
@@ -110,7 +133,7 @@ def _places_json(places, query_one):
         if place.latitude is None or place.longitude is None:
             continue
         listing = _listing_info(place, query_one)
-        stored_photo = _safe_http((place.photo_url or "") or (listing["photo_url"] if listing else ""))
+        stored_photos = _stored_photos(place.photo_url, listing)
         out.append({
             "name": place.name or "",
             "lat": float(place.latitude),
@@ -121,8 +144,10 @@ def _places_json(places, query_one):
             "website": _safe_http(place.website),
             "listing": listing["slug"] if listing else None,
             "rating": _rating(listing["google_rating"]) if listing else None,
-            # Never the stored link itself: it can contain an API key.
-            "photo": url_for("embed_place_photo", saved_place_id=place.id) if stored_photo else None,
+            # Never the stored links themselves: they can contain an API key.
+            "photo": url_for("embed_place_photo", saved_place_id=place.id) if stored_photos else None,
+            "photos": [url_for("embed_place_photo", saved_place_id=place.id, i=n)
+                       for n in range(len(stored_photos))],
         })
         if len(out) >= MAX_PLACES:
             break
@@ -136,7 +161,7 @@ _PHOTO_IMAGE_SUFFIXES = (".googleusercontent.com", ".ggpht.com")
 _PHOTO_TTL = 6 * 3600       # remember a resolved picture for 6 hours
 _MISS_TTL = 10 * 60         # remember "no picture" for 10 minutes
 _PHOTO_CACHE_MAX = 1000
-_photo_cache = {}           # saved place id -> (expires, image url or None)
+_photo_cache = {}           # (saved place id, picture number) -> (expires, image url or None)
 _CARD_PHOTO_WIDTH = "500"   # cards are small, no need for the full-size photo
 
 
@@ -204,8 +229,12 @@ def register_embed_routes(app, SavedList, query_one):
 
     @app.get("/embed/photo/<int:saved_place_id>")
     def embed_place_photo(saved_place_id):
+        number = request.args.get("i", 0, type=int)  # which of the place's pictures
+        if number < 0 or number >= MAX_PHOTOS:
+            abort(404)
         now = time.time()
-        hit = _photo_cache.get(saved_place_id)
+        cache_key = (saved_place_id, number)
+        hit = _photo_cache.get(cache_key)
         if hit and hit[0] > now:
             target = hit[1]
         else:
@@ -218,14 +247,12 @@ def register_embed_routes(app, SavedList, query_one):
                 {"id": saved_place_id})
             if not row:
                 abort(404)
-            stored = _safe_http(row["photo_url"])
-            if not stored:
-                listing = _listing_info(type("P", (), dict(row))(), query_one)
-                stored = _safe_http(listing["photo_url"]) if listing else ""
-            target = _public_photo_url(stored) if stored else None
+            listing = _listing_info(type("P", (), dict(row))(), query_one)
+            photos = _stored_photos(row["photo_url"], listing)
+            target = _public_photo_url(photos[number]) if number < len(photos) else None
             if len(_photo_cache) >= _PHOTO_CACHE_MAX:
                 _photo_cache.clear()
-            _photo_cache[saved_place_id] = (now + (_PHOTO_TTL if target else _MISS_TTL), target)
+            _photo_cache[cache_key] = (now + (_PHOTO_TTL if target else _MISS_TTL), target)
         if not target:
             abort(404)
         reply = redirect(target, code=302)

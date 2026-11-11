@@ -26,19 +26,51 @@
       padding: 24px; text-align: center; color: #4a514d; background: #e9eceb;
     }
     .note[hidden] { display: none; }
-    .pop { max-width: 230px; font-size: 13px; }
-    .pop strong { font-size: 14px; }
-    .pop__cat { margin-top: 3px; color: #5b625e; text-transform: capitalize; }
-    .pop__addr { margin-top: 6px; }
-    .pop__notes { margin-top: 6px; font-style: italic; }
-    .pop__links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 10px; }
-    .pop__links a { color: #1d6fa5; font-weight: 600; text-decoration: none; }
-    .mapboxgl-popup-content { padding: 12px 14px 12px; border-radius: 10px; }
     .mapboxgl-popup-close-button { font-size: 18px; line-height: 22px; width: 24px; height: 24px; padding: 0; top: 6px; right: 6px;
-      border-radius: 50%; background: rgba(255,255,255,0.88); }
-    /* The place's Google picture across the top of the pop-up. */
-    .pop__photo { display: block; width: calc(100% + 28px); height: 120px; margin: -12px -14px 10px; object-fit: cover;
-      border-radius: 10px 10px 0 0; background: #dfe3e1; }
+      border-radius: 50%; background: rgba(255,255,255,0.88); z-index: 3; }
+
+    /* Pin pop-up: the place's Google pictures fill the whole card (swipe, or
+       use the arrows, to see more), the category sits top-left, the name and
+       the buttons run along the bottom. */
+    .mapboxgl-popup.pop-card .mapboxgl-popup-content { padding: 0; overflow: hidden; border-radius: 16px; background: #16181b;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+    .pop-card.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
+    .pop-card.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
+    .pop-card.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip { border-top-color: #16181b; }
+    .pop-card.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
+    .pop-card.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
+    .pop-card.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip { border-bottom-color: #16181b; }
+    .pop-card.mapboxgl-popup-anchor-left .mapboxgl-popup-tip { border-right-color: #16181b; }
+    .pop-card.mapboxgl-popup-anchor-right .mapboxgl-popup-tip { border-left-color: #16181b; }
+    .pop { position: relative; width: 270px; height: clamp(190px, calc(100vh - 150px), 300px); color: #fff; font-size: 13px; }
+    .pop__slides { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+      overscroll-behavior-x: contain; background: linear-gradient(160deg, #2b2f36, #16181b); }
+    .pop__slides::-webkit-scrollbar { display: none; }
+    .pop__slide { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: center; display: block; }
+    .pop__scrim { position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 28%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.88) 100%); }
+    .pop__cat { position: absolute; top: 10px; left: 10px; z-index: 2; max-width: calc(100% - 64px); padding: 4px 10px; border-radius: 999px;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; font-size: 11.5px; font-weight: 700;
+      text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pop__nav { position: absolute; top: 42%; z-index: 2; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;
+      background: rgba(0,0,0,0.45); color: #fff; font-size: 20px; line-height: 28px; cursor: pointer; }
+    .pop__nav:hover { background: rgba(0,0,0,0.65); }
+    .pop__nav--prev { left: 8px; }
+    .pop__nav--next { right: 8px; }
+    .pop__nav[hidden], .pop__dots[hidden] { display: none; }
+    .pop__bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
+    .pop__dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 1px; }
+    .pop__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.45); }
+    .pop__dot.is-on { background: #fff; }
+    .pop__name { font-size: 17px; font-weight: 800; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .pop__notes { font-size: 12px; font-style: italic; color: rgba(255,255,255,0.82); text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .pop__links { display: flex; flex-wrap: wrap; gap: 8px; pointer-events: auto; }
+    .pop__links a { padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,0.2); border: 0.5px solid rgba(255,255,255,0.32);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; font-size: 12.5px; font-weight: 700; text-decoration: none; }
+    .pop__links a:hover { background: rgba(255,255,255,0.32); }
+    .pop__links a.is-primary { background: #fff; color: #15171a; border-color: transparent; }
 
     /* Place cards (name, rating, address). Wide embed: a scrollable list down
        the left. Narrow embed (<=640px wide): a swipeable strip along the
@@ -157,29 +189,98 @@
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
         parent.appendChild(a);
+        return a;
       }
 
+      // The pop-up card is built once per place but its pictures are only
+      // requested when the card is opened (and the next one as you swipe), so
+      // a map with many places doesn't download every photo up front.
       function popupNode(place) {
         var box = document.createElement('div');
         box.className = 'pop';
-        if (place.photo) {
-          var pic = document.createElement('img');
-          pic.className = 'pop__photo';
-          pic.alt = '';
-          pic.addEventListener('error', function () { pic.remove(); }, { once: true });
-          pic.src = place.photo;
-          box.appendChild(pic);
-        }
-        addText(box, 'strong', '', place.name);
+        var urls = (place.photos && place.photos.length) ? place.photos : (place.photo ? [place.photo] : []);
+
+        var slides = document.createElement('div');
+        slides.className = 'pop__slides';
+        box.appendChild(slides);
+        var scrim = document.createElement('div');
+        scrim.className = 'pop__scrim';
+        box.appendChild(scrim);
         if (place.category) addText(box, 'div', 'pop__cat', place.category.replace(/_/g, ' '));
-        if (place.address) addText(box, 'div', 'pop__addr', place.address);
-        if (place.notes) addText(box, 'div', 'pop__notes', place.notes);
+
+        var prev = addText(box, 'button', 'pop__nav pop__nav--prev', '‹');
+        var next = addText(box, 'button', 'pop__nav pop__nav--next', '›');
+        prev.type = next.type = 'button';
+        prev.setAttribute('aria-label', 'Previous photo');
+        next.setAttribute('aria-label', 'Next photo');
+
+        var bottom = document.createElement('div');
+        bottom.className = 'pop__bottom';
+        var dots = document.createElement('div');
+        dots.className = 'pop__dots';
+        bottom.appendChild(dots);
+        addText(bottom, 'div', 'pop__name', place.name);
+        if (place.notes) addText(bottom, 'div', 'pop__notes', place.notes);
         var links = document.createElement('div');
         links.className = 'pop__links';
-        addLink(links, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng);
+        addLink(links, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
         if (place.website) addLink(links, 'Website', place.website);
         if (place.listing) addLink(links, 'Show listing', '/listing/' + encodeURIComponent(place.listing));
-        box.appendChild(links);
+        bottom.appendChild(links);
+        box.appendChild(bottom);
+
+        var live = urls.map(function (u) {
+          var img = document.createElement('img');
+          img.className = 'pop__slide';
+          img.alt = '';
+          img.decoding = 'async';
+          var dot = document.createElement('span');
+          dot.className = 'pop__dot';
+          slides.appendChild(img);
+          dots.appendChild(dot);
+          var item = { img: img, dot: dot, url: u };
+          // A picture that can't load is dropped rather than left as a blank slide.
+          img.addEventListener('error', function () {
+            img.remove();
+            dot.remove();
+            live = live.filter(function (x) { return x !== item; });
+            refresh();
+          });
+          return item;
+        });
+
+        var opened = false;   // nothing is requested until the card is actually opened
+        function load(n) {
+          var item = live[n];
+          if (opened && item && !item.img.getAttribute('src')) item.img.src = item.url;
+        }
+        function index() {
+          var w = slides.clientWidth;
+          return w ? Math.max(0, Math.min(live.length - 1, Math.round(slides.scrollLeft / w))) : 0;
+        }
+        function refresh() {
+          var multi = live.length > 1;
+          prev.hidden = next.hidden = dots.hidden = !multi;
+          var at = index();
+          live.forEach(function (x, i) { x.dot.classList.toggle('is-on', i === at); });
+          load(at);
+          load(at + 1);
+        }
+        function go(step) {
+          var to = Math.max(0, Math.min(live.length - 1, index() + step));
+          slides.scrollTo({ left: to * slides.clientWidth, behavior: 'smooth' });
+        }
+        prev.addEventListener('click', function () { go(-1); });
+        next.addEventListener('click', function () { go(1); });
+        var ticking = false;
+        slides.addEventListener('scroll', function () {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(function () { ticking = false; refresh(); });
+        }, { passive: true });
+
+        box._open = function () { opened = true; slides.scrollLeft = 0; refresh(); };
+        refresh();
         return box;
       }
 
@@ -303,8 +404,9 @@
 
       var bounds = new mapboxgl.LngLatBounds();
       places.forEach(function (place) {
-        var popup = new mapboxgl.Popup({ offset: 26, maxWidth: '260px' }).setDOMContent(popupNode(place));
-        popup.on('open', function () { setActive(place); });
+        var node = popupNode(place);
+        var popup = new mapboxgl.Popup({ offset: 26, maxWidth: '300px', className: 'pop-card' }).setDOMContent(node);
+        popup.on('open', function () { setActive(place); node._open(); });
         popup.on('close', function () { if (activePlace === place) setActive(null); });
         var marker = new mapboxgl.Marker({ element: markerEl(place) })
           .setLngLat([place.lng, place.lat])
