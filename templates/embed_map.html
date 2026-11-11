@@ -305,6 +305,7 @@
       var cardsKey = '';
       var activePlace = null;
       var markers = [];
+      var openPopup = null;   // the pin card that is currently open, if any
 
       function hideCards() {
         cardsEl.classList.remove('is-visible');
@@ -396,6 +397,8 @@
         if (!card) return;
         var place = (cardsEl._places || [])[Number(card.getAttribute('data-idx'))];
         if (!place) return;
+        // Clicking another card closes the pin card that was open straight away.
+        if (openPopup && openPopup._place !== place) openPopup.remove();
         setActive(place);
         map.flyTo({ center: [place.lng, place.lat], zoom: Math.max(map.getZoom(), 14), duration: 1000, essential: true });
         var marker = markers.filter(function (m) { return m._place === place; })[0];
@@ -406,8 +409,18 @@
       places.forEach(function (place) {
         var node = popupNode(place);
         var popup = new mapboxgl.Popup({ offset: 26, maxWidth: '300px', className: 'pop-card' }).setDOMContent(node);
-        popup.on('open', function () { setActive(place); node._open(); });
-        popup.on('close', function () { if (activePlace === place) setActive(null); });
+        popup._place = place;
+        // Only one pin card is open at a time: opening another closes the previous one.
+        popup.on('open', function () {
+          if (openPopup && openPopup !== popup) openPopup.remove();
+          openPopup = popup;
+          setActive(place);
+          node._open();
+        });
+        popup.on('close', function () {
+          if (openPopup === popup) openPopup = null;
+          if (activePlace === place) setActive(null);
+        });
         var marker = new mapboxgl.Marker({ element: markerEl(place) })
           .setLngLat([place.lng, place.lat])
           .setPopup(popup)
