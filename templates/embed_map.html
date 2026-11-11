@@ -71,6 +71,19 @@
       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; font-size: 12.5px; font-weight: 700; text-decoration: none; }
     .pop__links a:hover, .pop__links button:hover { background: rgba(255,255,255,0.32); }
     .pop__links a.is-primary { background: #fff; color: #15171a; border-color: transparent; }
+    /* Photos viewer: just the pictures, nothing else -- swipe, arrows, a close button. */
+    .viewer { position: absolute; inset: 0; z-index: 30; background: #000; opacity: 0; transition: opacity 0.25s ease; }
+    .viewer.is-open { opacity: 1; }
+    .viewer[hidden] { display: none; }
+    .viewer .pop__slides { background: #000; }
+    .viewer__slide { flex: 0 0 100%; width: 100%; height: 100%; object-fit: contain; scroll-snap-align: center; display: block; }
+    .viewer .pop__nav { top: 50%; transform: translateY(-50%); width: 38px; height: 38px; font-size: 26px; line-height: 36px; background: rgba(255,255,255,0.18); }
+    .viewer .pop__nav:hover { background: rgba(255,255,255,0.32); }
+    .viewer .pop__dots { position: absolute; left: 0; right: 0; bottom: 16px; pointer-events: none; }
+    .viewer__close { position: absolute; top: 12px; right: 12px; z-index: 3; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%;
+      background: rgba(255,255,255,0.2); color: #fff; font-size: 22px; line-height: 36px; cursor: pointer; }
+    .viewer__close:hover { background: rgba(255,255,255,0.35); }
+    @media (prefers-reduced-motion: reduce) { .viewer { transition: none; } }
     /* "Save" -- only shown when the map sits in a page that can keep saved places (the media site). */
     .pop__links button.is-save[hidden], .detail__actions button.is-save[hidden] { display: none; }
     .pop__links button.is-save.is-saved { background: #2f9e7e; border-color: transparent; }
@@ -182,6 +195,7 @@
       </div>
     </div>
   </div>
+  <div id="viewer" class="viewer" role="dialog" aria-modal="true" aria-label="Photos" hidden></div>
   <a id="chip" class="chip" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
   <div id="note" class="note" hidden></div>
 
@@ -420,6 +434,7 @@
       // slides back down when it closes.
       var closeTimer = null;
       function closeDetail() {
+        closeViewer();
         currentDetail = null;
         detailEl.classList.remove('is-open');
         clearTimeout(closeTimer);
@@ -427,6 +442,7 @@
       }
       detailBack.addEventListener('click', closeDetail);
       document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !viewerEl.hidden) { closeViewer(); return; }
         if (e.key === 'Escape' && !detailEl.hidden) closeDetail();
       });
 
@@ -445,6 +461,49 @@
         detailGallery.appendChild(dots);
         wireCarousel(urls, slides, prev, next, dots, 'pop__slide').open();
       }
+
+      // ---- Photos viewer ---------------------------------------------------
+      // Opens over the place panel with only the pictures: swipe, arrows and a
+      // close button. No names, captions or counts.
+      var viewerEl = document.getElementById('viewer');
+      var viewerTimer = null;
+      function closeViewer() {
+        if (viewerEl.hidden) return;
+        viewerEl.classList.remove('is-open');
+        clearTimeout(viewerTimer);
+        viewerTimer = setTimeout(function () { viewerEl.hidden = true; viewerEl.innerHTML = ''; }, 260);
+      }
+      function openViewer(place) {
+        var urls = photoUrls(place);
+        if (!urls.length) return;
+        clearTimeout(viewerTimer);
+        viewerEl.innerHTML = '';
+        var slides = document.createElement('div');
+        slides.className = 'pop__slides';
+        viewerEl.appendChild(slides);
+        var prev = navButton(viewerEl, 'pop__nav--prev', '‹', 'Previous photo');
+        var next = navButton(viewerEl, 'pop__nav--next', '›', 'Next photo');
+        var dots = document.createElement('div');
+        dots.className = 'pop__dots';
+        viewerEl.appendChild(dots);
+        var close = addText(viewerEl, 'button', 'viewer__close', '×');
+        close.type = 'button';
+        close.setAttribute('aria-label', 'Close photos');
+        close.addEventListener('click', closeViewer);
+        viewerEl._slides = slides;
+        wireCarousel(urls, slides, prev, next, dots, 'viewer__slide').open();
+        viewerEl.hidden = false;
+        void viewerEl.offsetHeight;
+        viewerEl.classList.add('is-open');
+        close.focus({ preventScroll: true });
+      }
+      document.addEventListener('keydown', function (e) {
+        if (viewerEl.hidden) return;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          var sl = viewerEl._slides;
+          if (sl) sl.scrollBy({ left: (e.key === 'ArrowLeft' ? -1 : 1) * sl.clientWidth, behavior: 'smooth' });
+        }
+      });
 
       function section(title) {
         var box = document.createElement('div');
@@ -478,6 +537,11 @@
         var actions = document.createElement('div');
         actions.className = 'detail__actions';
         addLink(actions, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
+        if (photoUrls(place).length) {
+          var photosBtn = addText(actions, 'button', 'is-photos', 'Photos');
+          photosBtn.type = 'button';
+          photosBtn.addEventListener('click', function () { openViewer(place); });
+        }
         if (d.phone) addLink(actions, 'Call', 'tel:' + String(d.phone).replace(/[^+\d]/g, ''));
         var site = d.website || place.website;
         if (site) addLink(actions, 'Website', site);
