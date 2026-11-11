@@ -625,7 +625,7 @@
       // ---- Place cards ----------------------------------------------------
       // Shown only once the map is zoomed in at least this far (about "a city
       // fills the view"). Raise the number to show them later, lower for sooner.
-      var CARDS_MIN_ZOOM = 10;
+      var CARDS_MIN_ZOOM = Number(data.cardsMinZoom) || 10;
       var mapEl = document.getElementById('map');
       var cardsEl = document.getElementById('cards');
       var cardsKey = '';

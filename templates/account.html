@@ -89,6 +89,21 @@
     .acct-filter-option:hover{background:rgba(0,0,0,0.05)}
     .acct-filter-option.is-active{background:rgba(16,163,127,0.14);color:#0f6e56}
 
+    /* My maps button + popover -- one map per city, built from saved places */
+    .acct-maps-btn{position:absolute;top:8px;right:86px;z-index:7;height:38px;padding:0 14px;border-radius:19px;border:0.5px solid rgba(0,0,0,0.08);background:#ffffff;color:rgba(0,0,0,0.75);font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.22);transition:transform 0.15s}
+    .acct-maps-btn:hover{transform:scale(1.04)}
+    .acct-maps-panel{position:absolute;top:52px;right:16px;z-index:8;width:min(320px,calc(100% - 32px));max-height:min(420px,70%);overflow:auto;background:#ffffff;border-radius:18px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.35);padding:16px;display:none;flex-direction:column;gap:10px}
+    .acct-maps-panel.is-open{display:flex}
+    .acct-maps-panel__title{font-size:13px;font-weight:800;color:#14151a;margin:0}
+    .acct-maps-panel__desc{font-size:11.5px;color:rgba(0,0,0,0.5);margin:-4px 0 2px;line-height:1.4}
+    .acct-maps-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:0.5px solid rgba(0,0,0,0.08)}
+    .acct-maps-row__main{flex:1;min-width:0}
+    .acct-maps-row__city{font-size:13px;font-weight:700;color:#14151a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .acct-maps-row__meta{font-size:11px;color:rgba(0,0,0,0.5);margin-top:1px}
+    .acct-maps-row__btn{flex-shrink:0;height:28px;padding:0 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.12);background:#f5f5f7;color:rgba(0,0,0,0.75);font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+    .acct-maps-row__btn--copy{background:#10a37f;border-color:#10a37f;color:#fff}
+    .acct-maps-row__btn--copy.is-copied{background:#0d8a6c}
+    .acct-maps-empty{font-size:12px;color:rgba(0,0,0,0.55);line-height:1.45;margin:0}
     /* Share-my-map button + popover — floats top-right of the map, in the
        space the old zoom controls used to occupy. */
     .acct-share-btn{position:absolute;top:8px;right:40px;z-index:7;width:38px;height:38px;border-radius:50%;border:0.5px solid rgba(0,0,0,0.08);background:#ffffff;color:rgba(0,0,0,0.75);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.22);transition:transform 0.15s}
@@ -286,6 +301,13 @@
               </div>
 
               {% if current_user.is_authenticated %}
+                <button type="button" class="acct-maps-btn" id="acct-maps-toggle" aria-label="My maps">🗺 My maps</button>
+                <div class="acct-maps-panel" id="acct-maps-panel">
+                  <p class="acct-maps-panel__title">My maps</p>
+                  <p class="acct-maps-panel__desc">One map per city, made from the places you save. Copy a city's link and paste it into an article: the map opens zoomed to that city with its place cards showing.</p>
+                  <div id="acct-maps-list"><p class="acct-maps-empty">Loading…</p></div>
+                </div>
+
                 <button type="button" class="acct-share-btn" id="acct-share-toggle" aria-label="Share my map">🔗</button>
                 <div class="acct-share-panel" id="acct-share-panel">
                   <p class="acct-share-panel__title">Share your map</p>
@@ -673,6 +695,71 @@ document.addEventListener("DOMContentLoaded",function(){
       if(!e.target.closest("#acct-map-chips"))closeAllMenus();
     });
   }
+  function initMyMaps(){
+    const toggle=document.getElementById("acct-maps-toggle");
+    const panel=document.getElementById("acct-maps-panel");
+    const list=document.getElementById("acct-maps-list");
+    if(!toggle||!panel||!list)return;
+    let loaded=false;
+    function copyText(text,btn){
+      const done=()=>{
+        btn.textContent="Copied!";btn.classList.add("is-copied");
+        setTimeout(()=>{btn.textContent="Copy link";btn.classList.remove("is-copied");},1600);
+      };
+      const old=()=>{
+        const t=document.createElement("textarea");t.value=text;document.body.appendChild(t);t.select();
+        try{document.execCommand("copy");}catch(e){}
+        t.remove();done();
+      };
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(old);}else{old();}
+    }
+    function render(maps){
+      list.innerHTML="";
+      if(!maps.length){
+        const p=document.createElement("p");p.className="acct-maps-empty";
+        p.textContent="No city maps yet. Save places that are pinned on the map and each city gets its own map here.";
+        list.appendChild(p);return;
+      }
+      maps.forEach(function(m){
+        const row=document.createElement("div");row.className="acct-maps-row";
+        const main=document.createElement("div");main.className="acct-maps-row__main";
+        const city=document.createElement("div");city.className="acct-maps-row__city";city.textContent=m.city;
+        const meta=document.createElement("div");meta.className="acct-maps-row__meta";
+        const n=m.public;
+        meta.textContent=n?(n+(n===1?" place":" places")+(m.private?" · "+m.private+" private (not shown)":"")):"Only on private lists. Make a list public to share this map.";
+        main.appendChild(city);main.appendChild(meta);row.appendChild(main);
+        if(m.url){
+          const view=document.createElement("a");view.className="acct-maps-row__btn";view.textContent="View";
+          view.href=m.url;view.target="_blank";view.rel="noopener noreferrer";
+          const copy=document.createElement("button");copy.type="button";copy.className="acct-maps-row__btn acct-maps-row__btn--copy";copy.textContent="Copy link";
+          copy.addEventListener("click",function(){copyText(m.url,copy);});
+          row.appendChild(view);row.appendChild(copy);
+        }
+        list.appendChild(row);
+      });
+    }
+    function load(){
+      loaded=true;
+      fetch("/account/city-maps.json",{credentials:"same-origin"})
+        .then(function(r){if(!r.ok)throw new Error("bad");return r.json();})
+        .then(function(d){render(d.maps||[]);})
+        .catch(function(){
+          loaded=false;
+          list.innerHTML="";
+          const p=document.createElement("p");p.className="acct-maps-empty";p.textContent="Couldn't load your maps. Close this and try again.";
+          list.appendChild(p);
+        });
+    }
+    toggle.addEventListener("click",function(e){
+      e.stopPropagation();
+      const sp=document.getElementById("acct-share-panel");if(sp)sp.classList.remove("is-open");
+      panel.classList.toggle("is-open");
+      if(panel.classList.contains("is-open")&&!loaded)load();
+    });
+    document.addEventListener("click",function(e){
+      if(!e.target.closest("#acct-maps-panel")&&!e.target.closest("#acct-maps-toggle"))panel.classList.remove("is-open");
+    });
+  }
   function initShareButton(){
     const toggle=document.getElementById("acct-share-toggle");
     const panel=document.getElementById("acct-share-panel");
@@ -681,6 +768,7 @@ document.addEventListener("DOMContentLoaded",function(){
     if(!toggle||!panel)return;
     toggle.addEventListener("click",function(e){
       e.stopPropagation();
+      const mp=document.getElementById("acct-maps-panel");if(mp)mp.classList.remove("is-open");
       panel.classList.toggle("is-open");
     });
     document.addEventListener("click",function(e){
@@ -766,7 +854,7 @@ document.addEventListener("DOMContentLoaded",function(){
       }catch(e){/* style has no composite building layer — skip */}
     }
   });
-  blc();wc();initCards();initListingStrip();initShareButton();
+  blc();wc();initCards();initListingStrip();initShareButton();initMyMaps();
 });
 </script>
 

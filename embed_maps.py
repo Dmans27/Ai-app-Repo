@@ -443,6 +443,62 @@ def _card_payload(listing):
     }
 
 
+
+# ---- City maps ---------------------------------------------------------------
+# Every place already carries a city (its own, or the one on its directory
+# listing). A "city map" is simply the public places in one city: the embed
+# link takes ?city=Vienna, and the map opens already fitted to those places.
+
+MAX_CITIES = 200
+CITY_CARDS_MIN_ZOOM = 7  # a city map shows its cards as soon as it opens
+
+
+def _clean_city(value):
+    return " ".join(str(value or "").split())[:120]
+
+
+def _city_key(value):
+    return _clean_city(value).casefold()
+
+
+def _city_of(place, query_one):
+    """The city of a saved place: its own, else its directory listing's."""
+    own = _clean_city(getattr(place, "city", None))
+    if own:
+        return own
+    row = _listing_info(place, query_one, cols="city")
+    return _clean_city(row["city"]) if row and row.get("city") else ""
+
+
+def _pick_label(names):
+    """Several spellings of one city ("vienna", "Vienna"): show the most common."""
+    counts = {}
+    for name in names:
+        counts[name] = counts.get(name, 0) + 1
+    return sorted(counts, key=lambda n: (-counts[n], n != n.title(), n))[0]
+
+
+def _city_maps_for(SavedList, user, query_one):
+    """The signed-in person's cities: [{city, public, private}] -- how many
+    pinned places each has on public lists (embeddable) and on private ones."""
+    lists = SavedList.query.filter_by(user_id=user.id).order_by(SavedList.id).all()
+    found = {}
+    for lst in lists:
+        for place in lst.places:
+            if place.latitude is None or place.longitude is None:
+                continue
+            city = _city_of(place, query_one)
+            if not city:
+                continue
+            entry = found.setdefault(_city_key(city), {"names": [], "public": 0, "private": 0})
+            entry["names"].append(city)
+            entry["public" if lst.is_public else "private"] += 1
+    out = [{"city": _pick_label(e["names"]), "public": e["public"], "private": e["private"]}
+           for e in found.values()]
+    out.sort(key=lambda e: (-(e["public"] + e["private"]), e["city"].casefold()))
+    return out[:MAX_CITIES]
+
+
 def register_embed_routes(app, SavedList, query_one):
     @app.get("/embed/list/<slug>")
     def embed_list_map(slug):
@@ -466,8 +522,40 @@ def register_embed_routes(app, SavedList, query_one):
         owner = getattr(lists[0], "user", None)
         name = (getattr(owner, "name", None) or "").strip()
         title = f"{name}’s saved places" if name else "Saved places"
+        cards_min_zoom = None
+
+        # ?city=Vienna -> a city map: just that city's places, so the map
+        # opens fitted to the city (never the whole world) with cards showing.
+        wanted = _city_key(request.args.get("city"))
+        if wanted:
+            in_city = [(p, _city_of(p, query_one)) for p in places]
+            in_city = [(p, c) for p, c in in_city if c and _city_key(c) == wanted]
+            if not in_city:
+                abort(404)
+            places = [p for p, _ in in_city]
+            label = _pick_label([c for _, c in in_city])
+            title = f"{name}’s {label} places" if name else f"{label} places"
+            cards_min_zoom = CITY_CARDS_MIN_ZOOM
+
         return _render(title, _places_json(places, query_one),
-                       url_for("user_public_map", user_id=user_id), request)
+                       url_for("user_public_map", user_id=user_id), request,
+                       cards_min_zoom=cards_min_zoom)
+
+    @app.get("/account/city-maps.json")
+    def account_city_maps():
+        # The "My maps" list on the account page: one map per city, built
+        # from the cities on the places this person has saved.
+        from flask_login import current_user
+        if not current_user.is_authenticated:
+            return jsonify({"error": "sign in"}), 401
+        maps = _city_maps_for(SavedList, current_user, query_one)
+        for entry in maps:
+            if entry["public"]:
+                entry["url"] = url_for("embed_profile_map", user_id=current_user.id,
+                                       city=entry["city"], _external=True)
+        reply = jsonify({"maps": maps})
+        reply.headers["Cache-Control"] = "no-store"
+        return reply
 
     @app.get("/embed/photo/<int:saved_place_id>")
     def embed_place_photo(saved_place_id):
@@ -602,7 +690,7 @@ def register_embed_routes(app, SavedList, query_one):
         return response
 
 
-def _render(title, places, open_url, req):
+def _render(title, places, open_url, req, cards_min_zoom=None):
     style = STYLES.get(req.args.get("style", "light"), STYLES["light"])
     return render_template(
         "embed_map.html",
@@ -612,6 +700,7 @@ def _render(title, places, open_url, req):
             "title": title,
             "open": open_url,
             "places": places,
+            "cardsMinZoom": cards_min_zoom,
         },
         title=title,
     )
