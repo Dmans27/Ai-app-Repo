@@ -34,7 +34,11 @@
     .pop__links { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 10px; }
     .pop__links a { color: #1d6fa5; font-weight: 600; text-decoration: none; }
     .mapboxgl-popup-content { padding: 12px 14px 12px; border-radius: 10px; }
-    .mapboxgl-popup-close-button { font-size: 18px; padding: 2px 6px; }
+    .mapboxgl-popup-close-button { font-size: 18px; line-height: 22px; width: 24px; height: 24px; padding: 0; top: 6px; right: 6px;
+      border-radius: 50%; background: rgba(255,255,255,0.88); }
+    /* The place's Google picture across the top of the pop-up. */
+    .pop__photo { display: block; width: calc(100% + 28px); height: 120px; margin: -12px -14px 10px; object-fit: cover;
+      border-radius: 10px 10px 0 0; background: #dfe3e1; }
 
     /* Place cards (name, rating, address). Wide embed: a scrollable list down
        the left. Narrow embed (<=640px wide): a swipeable strip along the
@@ -63,12 +67,24 @@
     .card__rating { flex-shrink: 0; font-size: 12px; font-weight: 800; color: #f5b301; }
     .card__addr { font-size: 11.5px; line-height: 1.35; color: rgba(255,255,255,0.65);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    /* Full screen: lots of room, so bigger cards with bigger pictures and text. */
+    body.is-fs .cards { left: 20px; top: 72px; width: 380px; max-height: calc(100% - 96px); gap: 12px; }
+    body.is-fs .card { padding: 14px 18px; border-radius: 18px; gap: 5px; }
+    body.is-fs .card.has-photo { min-height: 160px; }
+    body.is-fs .card__name { font-size: 18px; }
+    body.is-fs .card__rating { font-size: 15px; }
+    body.is-fs .card__addr { font-size: 14px; }
+    body.is-fs .card__dot { width: 10px; height: 10px; }
+    body.is-fs .chip { top: 16px; left: 20px; font-size: 15px; padding: 9px 16px; }
     @media (max-width: 640px) {
       .cards { top: auto; bottom: 28px; left: 0; right: 0; width: auto; max-height: none; flex-direction: row; gap: 10px;
         padding: 0 10px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding: 0 10px; scrollbar-width: none; }
       .cards::-webkit-scrollbar { display: none; }
       .card { width: 220px; scroll-snap-align: start; }
       .card.has-photo { min-height: 84px; }
+      body.is-fs .cards { top: auto; bottom: 34px; left: 0; right: 0; width: auto; max-height: none; padding: 0 16px; }
+      body.is-fs .card { width: 290px; }
+      body.is-fs .card.has-photo { min-height: 130px; }
     }
   </style>
 </head>
@@ -146,6 +162,14 @@
       function popupNode(place) {
         var box = document.createElement('div');
         box.className = 'pop';
+        if (place.photo) {
+          var pic = document.createElement('img');
+          pic.className = 'pop__photo';
+          pic.alt = '';
+          pic.addEventListener('error', function () { pic.remove(); }, { once: true });
+          pic.src = place.photo;
+          box.appendChild(pic);
+        }
         addText(box, 'strong', '', place.name);
         if (place.category) addText(box, 'div', 'pop__cat', place.category.replace(/_/g, ' '));
         if (place.address) addText(box, 'div', 'pop__addr', place.address);
@@ -167,7 +191,9 @@
         cooperativeGestures: true   // inside an article: two fingers / ctrl+scroll move the map, one finger scrolls the page
       });
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-      map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+      // Full screen the whole page (not just the map) so the title chip and the
+      // place cards stay visible when it is full screen.
+      map.addControl(new mapboxgl.FullscreenControl({ container: document.body }), 'top-right');
 
       // ---- Place cards ----------------------------------------------------
       // Shown only once the map is zoomed in at least this far (about "a city
@@ -298,6 +324,16 @@
         else if (!showing && close) updateCards();
       });
       map.on('moveend', updateCards);
+      map.on('resize', updateCards);
+
+      // Remember when the page is full screen (the cards get bigger).
+      function syncFullscreen() {
+        var on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        document.body.classList.toggle('is-fs', on);
+        map.resize();
+      }
+      document.addEventListener('fullscreenchange', syncFullscreen);
+      document.addEventListener('webkitfullscreenchange', syncFullscreen);
 
       map.on('load', function () {
         if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
