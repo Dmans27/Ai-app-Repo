@@ -25,6 +25,12 @@ older photo links is never put in the embed page), asks Google for the real
 image address, and sends the browser there. Answers are cached for a few hours
 so a busy article doesn't turn into lots of billable Google photo requests.
 
+The full-size "Show listing" panel inside the map gets its facts from
+/embed/place/<saved place id>: your own directory data (phone, description,
+rating, on-site reviews) plus live details from Google Places (opening hours,
+open-now, what the place serves), fetched on the server with the Google key and
+remembered for 24 hours so a busy article doesn't mean many billable requests.
+
 Wired up with two lines near the bottom of cms_app.py:
 
     from embed_maps import register_embed_routes
@@ -34,10 +40,11 @@ import json
 import os
 import re
 import time
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import requests
-from flask import abort, redirect, render_template, request, url_for
+from flask import abort, jsonify, redirect, render_template, request, url_for
 
 DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
 
@@ -79,20 +86,21 @@ _LISTING_COLS = ("slug, COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '
 MAX_PHOTOS = 6  # pictures per place in the pop-up carousel
 
 
-def _listing_info(place, query_one):
+def _listing_info(place, query_one, cols=None):
     """The directory listing that matches a saved place (same lookup order
     as the public map page: listing id, Google place id, then name).
     Returns the listing's slug, photo and Google rating, or None."""
+    cols = cols or _LISTING_COLS
     try:
         row = None
         if getattr(place, "listing_id", None):
-            row = query_one(f"SELECT {_LISTING_COLS} FROM listings WHERE id = :id LIMIT 1",
+            row = query_one(f"SELECT {cols} FROM listings WHERE id = :id LIMIT 1",
                             {"id": place.listing_id})
         if not row and getattr(place, "place_id", None):
-            row = query_one(f"SELECT {_LISTING_COLS} FROM listings WHERE place_id = :place_id LIMIT 1",
+            row = query_one(f"SELECT {cols} FROM listings WHERE place_id = :place_id LIMIT 1",
                             {"place_id": place.place_id})
         if not row and place.name:
-            row = query_one(f"SELECT {_LISTING_COLS} FROM listings WHERE LOWER(name) = LOWER(:name) LIMIT 1",
+            row = query_one(f"SELECT {cols} FROM listings WHERE LOWER(name) = LOWER(:name) LIMIT 1",
                             {"name": place.name})
         return row
     except Exception:
@@ -135,6 +143,7 @@ def _places_json(places, query_one):
         listing = _listing_info(place, query_one)
         stored_photos = _stored_photos(place.photo_url, listing)
         out.append({
+            "id": place.id,
             "name": place.name or "",
             "lat": float(place.latitude),
             "lng": float(place.longitude),
@@ -201,6 +210,140 @@ def _public_photo_url(stored):
     return None
 
 
+# ---- Full-size "Show listing" panel ----------------------------------------
+
+_DETAIL_COLS = ("id AS listing_row_id, slug, phone, website, address, description, "
+                "google_rating, google_rating_count, place_id AS listing_place_id")
+_GOOGLE_PLACE_ID = re.compile(r"^[A-Za-z0-9_-]{10,200}$")
+_GOOGLE_FIELDS = ",".join([
+    "formattedAddress", "internationalPhoneNumber", "websiteUri", "googleMapsUri",
+    "rating", "userRatingCount", "editorialSummary", "utcOffsetMinutes", "regularOpeningHours",
+    "servesBreakfast", "servesBrunch", "servesLunch", "servesDinner", "servesDessert",
+    "servesCoffee", "servesCocktails", "servesBeer", "servesWine", "servesVegetarianFood",
+    "dineIn", "takeout", "delivery", "outdoorSeating", "reservable",
+])
+_GOOGLE_TAGS = [
+    ("servesCoffee", "Coffee"), ("servesBreakfast", "Breakfast"), ("servesBrunch", "Brunch"),
+    ("servesLunch", "Lunch"), ("servesDinner", "Dinner"), ("servesDessert", "Dessert"),
+    ("servesCocktails", "Cocktails"), ("servesBeer", "Beer"), ("servesWine", "Wine"),
+    ("servesVegetarianFood", "Vegetarian options"), ("dineIn", "Dine-in"), ("takeout", "Takeaway"),
+    ("delivery", "Delivery"), ("outdoorSeating", "Outdoor seating"), ("reservable", "Takes reservations"),
+]
+_DETAIL_TTL = 24 * 3600     # opening hours and tags rarely change
+_DETAIL_MISS_TTL = 10 * 60
+_DETAIL_CACHE_MAX = 500
+_detail_cache = {}          # Google place id -> (expires, Google's answer or None)
+
+
+def _google_details(place_id):
+    """Live details for one place from Google Places (New), cached for a day.
+    Returns Google's JSON, or None (no key, no id, or Google said no)."""
+    key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    if not key or not place_id or not _GOOGLE_PLACE_ID.match(place_id):
+        return None
+    now = time.time()
+    hit = _detail_cache.get(place_id)
+    if hit and hit[0] > now:
+        return hit[1]
+    data = None
+    try:
+        reply = requests.get(
+            f"https://places.googleapis.com/v1/places/{place_id}",
+            headers={"X-Goog-Api-Key": key, "X-Goog-FieldMask": _GOOGLE_FIELDS},
+            params={"languageCode": "en"}, timeout=6)
+        if reply.status_code == 200:
+            data = reply.json()
+    except (requests.RequestException, ValueError):
+        data = None
+    if len(_detail_cache) >= _DETAIL_CACHE_MAX:
+        _detail_cache.clear()
+    _detail_cache[place_id] = (now + (_DETAIL_TTL if data else _DETAIL_MISS_TTL), data)
+    return data
+
+
+def _open_now(periods, offset_minutes, now=None):
+    """Is the place open right now? Worked out here from the weekly opening
+    periods (so the cached answer never goes stale). None if unknown."""
+    if not periods or offset_minutes is None:
+        return None
+    local = (now or datetime.now(timezone.utc)) + timedelta(minutes=offset_minutes)
+    current = ((local.weekday() + 1) % 7) * 1440 + local.hour * 60 + local.minute  # minutes since Sunday 00:00
+    for period in periods:
+        opens, closes = period.get("open"), period.get("close")
+        if not opens:
+            continue
+        start = opens.get("day", 0) * 1440 + opens.get("hour", 0) * 60 + opens.get("minute", 0)
+        if not closes:
+            return True  # open around the clock
+        end = closes.get("day", 0) * 1440 + closes.get("hour", 0) * 60 + closes.get("minute", 0)
+        if (start <= current < end) if start <= end else (current >= start or current < end):
+            return True
+    return False
+
+
+def _place_detail(row, query_one, now=None):
+    """Everything the full-size panel shows, merged from your directory data
+    and live Google details. `row` is the saved place."""
+    place = type("P", (), dict(row))()
+    listing = _listing_info(place, query_one, _DETAIL_COLS)
+    listing = listing or {}
+    google = _google_details(row.get("place_id") or listing.get("listing_place_id")) or {}
+
+    hours = (google.get("regularOpeningHours") or {})
+    lines = hours.get("weekdayDescriptions") or []
+    offset = google.get("utcOffsetMinutes")
+    local = (now or datetime.now(timezone.utc)) + timedelta(minutes=offset or 0)
+    # Find today's line by weekday name instead of trusting the list order.
+    today_index = None
+    if offset is not None and lines:
+        for index, line in enumerate(lines):
+            if line.lower().startswith(local.strftime("%A").lower()):
+                today_index = index
+                break
+    today_line = lines[today_index] if today_index is not None else None
+
+    reviews = []
+    if listing.get("listing_row_id"):
+        try:
+            for r in _site_reviews(query_one, listing["listing_row_id"]):
+                reviews.append({"author": r["author_name"], "rating": r["rating"], "body": r["body"]})
+        except Exception:
+            reviews = []
+
+    rating = google.get("rating") or listing.get("google_rating")
+    return {
+        "address": listing.get("address") or google.get("formattedAddress") or row.get("address") or "",
+        "phone": listing.get("phone") or google.get("internationalPhoneNumber") or "",
+        "website": _safe_http(listing.get("website") or google.get("websiteUri") or row.get("website")),
+        "mapsUri": _safe_http(google.get("googleMapsUri")),
+        "description": (listing.get("description") or (google.get("editorialSummary") or {}).get("text") or "")[:600],
+        "rating": _rating(rating),
+        "ratingCount": google.get("userRatingCount") or listing.get("google_rating_count") or None,
+        "openNow": _open_now(hours.get("periods"), offset, now),
+        "todayHours": today_line,
+        "hours": lines if len(lines) == 7 else None,
+        "todayIndex": today_index,
+        "tags": [label for key, label in _GOOGLE_TAGS if google.get(key) is True],
+        "reviews": reviews,
+        "live": bool(google),
+    }
+
+
+def _site_reviews(query_one, listing_id):
+    """Up to three approved reviews people left on your site for a listing
+    (newest first). query_one returns a single row, so ask three times."""
+    found = []
+    for offset in range(3):
+        row = query_one(
+            "SELECT author_name, rating, body FROM listing_comments "
+            "WHERE listing_id = :id AND is_approved = 1 ORDER BY id DESC LIMIT 1 OFFSET :off",
+            {"id": listing_id, "off": offset})
+        if not row:
+            break
+        found.append(row)
+    return found
+
+
 def register_embed_routes(app, SavedList, query_one):
     @app.get("/embed/list/<slug>")
     def embed_list_map(slug):
@@ -257,6 +400,21 @@ def register_embed_routes(app, SavedList, query_one):
             abort(404)
         reply = redirect(target, code=302)
         reply.headers["Cache-Control"] = "public, max-age=21600"
+        return reply
+
+    @app.get("/embed/place/<int:saved_place_id>")
+    def embed_place_detail(saved_place_id):
+        # Only places that sit in a PUBLIC list are ever served.
+        row = query_one(
+            "SELECT p.name AS name, p.address AS address, p.website AS website, "
+            "p.listing_id AS listing_id, p.place_id AS place_id "
+            "FROM saved_place p JOIN saved_list l ON l.id = p.saved_list_id "
+            "WHERE p.id = :id AND l.is_public LIMIT 1",
+            {"id": saved_place_id})
+        if not row:
+            abort(404)
+        reply = jsonify(_place_detail(dict(row), query_one))
+        reply.headers["Cache-Control"] = "public, max-age=60"
         return reply
 
     @app.after_request

@@ -67,10 +67,50 @@
     .pop__notes { font-size: 12px; font-style: italic; color: rgba(255,255,255,0.82); text-shadow: 0 1px 3px rgba(0,0,0,0.6);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .pop__links { display: flex; flex-wrap: wrap; gap: 8px; pointer-events: auto; }
-    .pop__links a { padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,0.2); border: 0.5px solid rgba(255,255,255,0.32);
+    .pop__links a, .pop__links button { font: inherit; cursor: pointer; padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,0.2); border: 0.5px solid rgba(255,255,255,0.32);
       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; font-size: 12.5px; font-weight: 700; text-decoration: none; }
-    .pop__links a:hover { background: rgba(255,255,255,0.32); }
+    .pop__links a:hover, .pop__links button:hover { background: rgba(255,255,255,0.32); }
     .pop__links a.is-primary { background: #fff; color: #15171a; border-color: transparent; }
+
+    /* Full-size place panel: covers the map (not the page) with the place's
+       pictures, facts from your directory and live details from Google. */
+    .detail { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; background: #fff; color: #1c1f1d; }
+    .detail[hidden] { display: none; }
+    .detail__bar { flex: 0 0 auto; padding: 10px 12px; border-bottom: 1px solid #e3e6e4; background: #fff; }
+    .detail__back { font: inherit; font-weight: 700; font-size: 13.5px; padding: 7px 14px; border: 0; border-radius: 999px; background: #eef1ef; color: #1c1f1d; cursor: pointer; }
+    .detail__back:hover { background: #e2e6e3; }
+    .detail__scroll { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
+    .detail__inner { max-width: 760px; margin: 0 auto; padding-bottom: 28px; }
+    .detail__gallery { position: relative; height: clamp(170px, 36vh, 330px); background: #d9ddda; overflow: hidden; }
+    .detail__gallery[hidden] { display: none; }
+    .detail__dots { position: absolute; left: 0; right: 0; bottom: 10px; z-index: 2; pointer-events: none; }
+    .detail__body { padding: 16px 18px 0; display: flex; flex-direction: column; gap: 14px; }
+    .detail__name { margin: 0; font-size: 22px; font-weight: 800; line-height: 1.2; }
+    .detail__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13.5px; color: #4a514d; }
+    .detail__cat { padding: 3px 10px; border-radius: 999px; background: #eef1ef; font-weight: 700; text-transform: capitalize; }
+    .detail__rating { color: #b8780a; font-weight: 800; }
+    .detail__open { font-weight: 800; }
+    .detail__open.is-open { color: #1b7f55; }
+    .detail__open.is-closed { color: #b3392f; }
+    .detail__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .detail__actions a { padding: 9px 16px; border-radius: 999px; background: #eef1ef; color: #1c1f1d; font-weight: 700; font-size: 13.5px; text-decoration: none; }
+    .detail__actions a:hover { background: #e2e6e3; }
+    .detail__actions a.is-primary { background: #1d6fa5; color: #fff; }
+    .detail__text { margin: 0; font-size: 14.5px; line-height: 1.55; }
+    .detail__note { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid #2f9e7e; font-style: italic; font-size: 14.5px; line-height: 1.5; color: #3a403d; }
+    .detail__h { margin: 0 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #6b726e; }
+    .detail__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .detail__tag { padding: 4px 11px; border-radius: 999px; border: 1px solid #d9dedb; font-size: 12.5px; }
+    .detail__hours summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+    .detail__hours ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13.5px; line-height: 1.7; }
+    .detail__hours li.is-today { font-weight: 800; }
+    .detail__review { padding: 10px 0; border-top: 1px solid #edf0ee; font-size: 13.5px; line-height: 1.5; }
+    .detail__review strong { font-size: 13px; }
+    .detail__stars { color: #b8780a; margin-left: 6px; }
+    .detail__loading { margin: 0; font-size: 13px; color: #6b726e; }
+    body.is-fs .detail__inner { max-width: 920px; }
+    body.is-fs .detail__name { font-size: 28px; }
+    body.is-fs .detail__text, body.is-fs .detail__note { font-size: 16px; }
 
     /* Place cards (name, rating, address). Wide embed: a scrollable list down
        the left. Narrow embed (<=640px wide): a swipeable strip along the
@@ -123,6 +163,15 @@
 <body>
   <div id="map"></div>
   <div id="cards" class="cards" aria-label="Places in view"></div>
+  <div id="detail" class="detail" role="dialog" aria-modal="true" aria-label="Place details" hidden>
+    <div class="detail__bar"><button type="button" class="detail__back" id="detail-back">← Back to map</button></div>
+    <div class="detail__scroll" id="detail-scroll">
+      <div class="detail__inner">
+        <div class="detail__gallery" id="detail-gallery" hidden></div>
+        <div class="detail__body" id="detail-body"></div>
+      </div>
+    </div>
+  </div>
   <a id="chip" class="chip" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
   <div id="note" class="note" hidden></div>
 
@@ -186,52 +235,23 @@
         var a = document.createElement('a');
         a.textContent = label;
         a.href = href;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
+        if (/^https?:/i.test(href) || href.charAt(0) === '/') {
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+        }
         parent.appendChild(a);
         return a;
       }
 
-      // The pop-up card is built once per place but its pictures are only
-      // requested when the card is opened (and the next one as you swipe), so
-      // a map with many places doesn't download every photo up front.
-      function popupNode(place) {
-        var box = document.createElement('div');
-        box.className = 'pop';
-        var urls = (place.photos && place.photos.length) ? place.photos : (place.photo ? [place.photo] : []);
-
-        var slides = document.createElement('div');
-        slides.className = 'pop__slides';
-        box.appendChild(slides);
-        var scrim = document.createElement('div');
-        scrim.className = 'pop__scrim';
-        box.appendChild(scrim);
-        if (place.category) addText(box, 'div', 'pop__cat', place.category.replace(/_/g, ' '));
-
-        var prev = addText(box, 'button', 'pop__nav pop__nav--prev', '‹');
-        var next = addText(box, 'button', 'pop__nav pop__nav--next', '›');
-        prev.type = next.type = 'button';
-        prev.setAttribute('aria-label', 'Previous photo');
-        next.setAttribute('aria-label', 'Next photo');
-
-        var bottom = document.createElement('div');
-        bottom.className = 'pop__bottom';
-        var dots = document.createElement('div');
-        dots.className = 'pop__dots';
-        bottom.appendChild(dots);
-        addText(bottom, 'div', 'pop__name', place.name);
-        if (place.notes) addText(bottom, 'div', 'pop__notes', place.notes);
-        var links = document.createElement('div');
-        links.className = 'pop__links';
-        addLink(links, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
-        if (place.website) addLink(links, 'Website', place.website);
-        if (place.listing) addLink(links, 'Show listing', '/listing/' + encodeURIComponent(place.listing));
-        bottom.appendChild(links);
-        box.appendChild(bottom);
-
+      // A swipeable photo carousel (arrows, dots, swipe). Pictures are only
+      // requested once open() is called, and the next one as you swipe, so a
+      // map with many places doesn't download every photo up front. A picture
+      // that can't load is dropped rather than left as a blank slide.
+      function wireCarousel(urls, slides, prev, next, dots, imgClass) {
+        var opened = false;
         var live = urls.map(function (u) {
           var img = document.createElement('img');
-          img.className = 'pop__slide';
+          img.className = imgClass;
           img.alt = '';
           img.decoding = 'async';
           var dot = document.createElement('span');
@@ -239,7 +259,6 @@
           slides.appendChild(img);
           dots.appendChild(dot);
           var item = { img: img, dot: dot, url: u };
-          // A picture that can't load is dropped rather than left as a blank slide.
           img.addEventListener('error', function () {
             img.remove();
             dot.remove();
@@ -248,8 +267,6 @@
           });
           return item;
         });
-
-        var opened = false;   // nothing is requested until the card is actually opened
         function load(n) {
           var item = live[n];
           if (opened && item && !item.img.getAttribute('src')) item.img.src = item.url;
@@ -278,10 +295,184 @@
           ticking = true;
           requestAnimationFrame(function () { ticking = false; refresh(); });
         }, { passive: true });
-
-        box._open = function () { opened = true; slides.scrollLeft = 0; refresh(); };
         refresh();
+        return { open: function () { opened = true; slides.scrollLeft = 0; refresh(); } };
+      }
+
+      function photoUrls(place) {
+        return (place.photos && place.photos.length) ? place.photos : (place.photo ? [place.photo] : []);
+      }
+
+      function navButton(parent, cls, glyph, label) {
+        var b = addText(parent, 'button', 'pop__nav ' + cls, glyph);
+        b.type = 'button';
+        b.setAttribute('aria-label', label);
+        return b;
+      }
+
+      // The small pin card that opens over a marker.
+      function popupNode(place) {
+        var box = document.createElement('div');
+        box.className = 'pop';
+
+        var slides = document.createElement('div');
+        slides.className = 'pop__slides';
+        box.appendChild(slides);
+        var scrim = document.createElement('div');
+        scrim.className = 'pop__scrim';
+        box.appendChild(scrim);
+        if (place.category) addText(box, 'div', 'pop__cat', place.category.replace(/_/g, ' '));
+        var prev = navButton(box, 'pop__nav--prev', '‹', 'Previous photo');
+        var next = navButton(box, 'pop__nav--next', '›', 'Next photo');
+
+        var bottom = document.createElement('div');
+        bottom.className = 'pop__bottom';
+        var dots = document.createElement('div');
+        dots.className = 'pop__dots';
+        bottom.appendChild(dots);
+        addText(bottom, 'div', 'pop__name', place.name);
+        if (place.notes) addText(bottom, 'div', 'pop__notes', place.notes);
+        var links = document.createElement('div');
+        links.className = 'pop__links';
+        addLink(links, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
+        if (place.website) addLink(links, 'Website', place.website);
+        // Opens the full-size panel over the map (no leaving the article).
+        var more = addText(links, 'button', '', place.listing ? 'Show listing' : 'Details');
+        more.type = 'button';
+        more.addEventListener('click', function () { openDetail(place); });
+        bottom.appendChild(links);
+        box.appendChild(bottom);
+
+        var carousel = wireCarousel(photoUrls(place), slides, prev, next, dots, 'pop__slide');
+        box._open = carousel.open;
         return box;
+      }
+
+      // ---- Full-size place panel ------------------------------------------
+      var detailEl = document.getElementById('detail');
+      var detailBody = document.getElementById('detail-body');
+      var detailGallery = document.getElementById('detail-gallery');
+      var detailScroll = document.getElementById('detail-scroll');
+      var detailBack = document.getElementById('detail-back');
+      var currentDetail = null;
+
+      function closeDetail() {
+        detailEl.hidden = true;
+        currentDetail = null;
+      }
+      detailBack.addEventListener('click', closeDetail);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !detailEl.hidden) closeDetail();
+      });
+
+      function buildGallery(place) {
+        detailGallery.innerHTML = '';
+        var urls = photoUrls(place);
+        detailGallery.hidden = !urls.length;
+        if (!urls.length) return;
+        var slides = document.createElement('div');
+        slides.className = 'pop__slides';
+        detailGallery.appendChild(slides);
+        var prev = navButton(detailGallery, 'pop__nav--prev', '‹', 'Previous photo');
+        var next = navButton(detailGallery, 'pop__nav--next', '›', 'Next photo');
+        var dots = document.createElement('div');
+        dots.className = 'pop__dots detail__dots';
+        detailGallery.appendChild(dots);
+        wireCarousel(urls, slides, prev, next, dots, 'pop__slide').open();
+      }
+
+      function section(title) {
+        var box = document.createElement('div');
+        addText(box, 'h3', 'detail__h', title);
+        detailBody.appendChild(box);
+        return box;
+      }
+
+      // Draws the panel. `d` is the extra detail from the server (your
+      // directory data + live Google details); null while it's loading or
+      // if it couldn't be loaded -- the panel still shows what the map knows.
+      function renderDetail(place, d, loading) {
+        d = d || {};
+        detailBody.innerHTML = '';
+        addText(detailBody, 'h2', 'detail__name', place.name);
+
+        var meta = document.createElement('div');
+        meta.className = 'detail__meta';
+        if (place.category) addText(meta, 'span', 'detail__cat', place.category.replace(/_/g, ' '));
+        var rating = (d.rating !== null && d.rating !== undefined) ? d.rating : place.rating;
+        if (rating !== null && rating !== undefined && !isNaN(Number(rating))) {
+          var stars = addText(meta, 'span', 'detail__rating', '★ ' + Number(rating).toFixed(1));
+          if (d.ratingCount) stars.textContent += ' (' + Number(d.ratingCount).toLocaleString() + ')';
+        }
+        if (d.openNow === true || d.openNow === false) {
+          addText(meta, 'span', 'detail__open ' + (d.openNow ? 'is-open' : 'is-closed'), d.openNow ? 'Open now' : 'Closed now');
+        }
+        if (d.todayHours) addText(meta, 'span', '', d.todayHours.replace(/^[^:]+:\s*/, ''));
+        if (meta.children.length) detailBody.appendChild(meta);
+
+        var actions = document.createElement('div');
+        actions.className = 'detail__actions';
+        addLink(actions, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
+        if (d.phone) addLink(actions, 'Call', 'tel:' + String(d.phone).replace(/[^+\d]/g, ''));
+        var site = d.website || place.website;
+        if (site) addLink(actions, 'Website', site);
+        if (d.mapsUri) addLink(actions, 'Google Maps', d.mapsUri);
+        if (place.listing) addLink(actions, 'Full listing ↗', '/listing/' + encodeURIComponent(place.listing));
+        detailBody.appendChild(actions);
+
+        if (d.description) addText(detailBody, 'p', 'detail__text', d.description);
+        if (place.notes) addText(detailBody, 'p', 'detail__note', place.notes);
+
+        if (d.tags && d.tags.length) {
+          var tags = section('Good to know');
+          var row = document.createElement('div');
+          row.className = 'detail__tags';
+          d.tags.forEach(function (t) { addText(row, 'span', 'detail__tag', t); });
+          tags.appendChild(row);
+        }
+
+        if (d.hours && d.hours.length) {
+          var hours = document.createElement('details');
+          hours.className = 'detail__hours';
+          addText(hours, 'summary', '', 'Opening hours');
+          var list = document.createElement('ul');
+          d.hours.forEach(function (line, i) {
+            addText(list, 'li', i === d.todayIndex ? 'is-today' : '', line);
+          });
+          hours.appendChild(list);
+          detailBody.appendChild(hours);
+        }
+
+        var address = d.address || place.address;
+        if (address) addText(section('Address'), 'div', 'detail__text', address);
+
+        if (d.reviews && d.reviews.length) {
+          var reviews = section('What people say');
+          d.reviews.forEach(function (r) {
+            var item = document.createElement('div');
+            item.className = 'detail__review';
+            var who = addText(item, 'strong', '', r.author || 'Guest');
+            if (r.rating) addText(who, 'span', 'detail__stars', '★'.repeat(Math.max(1, Math.min(5, Number(r.rating) || 0))));
+            addText(item, 'div', '', r.body || '');
+            reviews.appendChild(item);
+          });
+        }
+
+        if (loading) addText(detailBody, 'p', 'detail__loading', 'Loading more details…');
+      }
+
+      function openDetail(place) {
+        currentDetail = place;
+        buildGallery(place);
+        renderDetail(place, null, place.id !== undefined && place.id !== null);
+        detailEl.hidden = false;
+        detailScroll.scrollTop = 0;
+        detailBack.focus();
+        if (place.id === undefined || place.id === null) return;
+        fetch('/embed/place/' + encodeURIComponent(place.id), { credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; })
+          .then(function (d) { if (currentDetail === place) renderDetail(place, d, false); });
       }
 
       var map = new mapboxgl.Map({
