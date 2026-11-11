@@ -74,8 +74,12 @@
 
     /* Full-size place panel: covers the map (not the page) with the place's
        pictures, facts from your directory and live details from Google. */
-    .detail { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; background: #fff; color: #1c1f1d; }
+    .detail { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; background: #fff; color: #1c1f1d;
+      transform: translateY(100%); transition: transform 0.38s cubic-bezier(0.22, 0.8, 0.25, 1); will-change: transform; }
+    .detail.is-open { transform: translateY(0); }
     .detail[hidden] { display: none; }
+    .detail__scroll { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { .detail { transition: none; } .detail__scroll { scroll-behavior: auto; } }
     .detail__bar { flex: 0 0 auto; padding: 10px 12px; border-bottom: 1px solid #e3e6e4; background: #fff; }
     .detail__back { font: inherit; font-weight: 700; font-size: 13.5px; padding: 7px 14px; border: 0; border-radius: 999px; background: #eef1ef; color: #1c1f1d; cursor: pointer; }
     .detail__back:hover { background: #e2e6e3; }
@@ -356,9 +360,14 @@
       var detailBack = document.getElementById('detail-back');
       var currentDetail = null;
 
+      // The panel slides up from the bottom of the map when it opens and
+      // slides back down when it closes.
+      var closeTimer = null;
       function closeDetail() {
-        detailEl.hidden = true;
         currentDetail = null;
+        detailEl.classList.remove('is-open');
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(function () { detailEl.hidden = true; }, 400);
       }
       detailBack.addEventListener('click', closeDetail);
       document.addEventListener('keydown', function (e) {
@@ -465,9 +474,14 @@
         currentDetail = place;
         buildGallery(place);
         renderDetail(place, null, place.id !== undefined && place.id !== null);
+        clearTimeout(closeTimer);
         detailEl.hidden = false;
+        detailScroll.style.scrollBehavior = 'auto';
         detailScroll.scrollTop = 0;
-        detailBack.focus();
+        detailScroll.style.scrollBehavior = '';
+        void detailEl.offsetHeight;                    // so the slide-up starts from the bottom
+        detailEl.classList.add('is-open');
+        detailBack.focus({ preventScroll: true });
         if (place.id === undefined || place.id === null) return;
         fetch('/embed/place/' + encodeURIComponent(place.id), { credentials: 'same-origin' })
           .then(function (r) { return r.ok ? r.json() : null; })
