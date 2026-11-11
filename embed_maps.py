@@ -8,6 +8,11 @@ iframe loads:
 
   /embed/list/<slug>   one public list, as a map
   /embed/u/<user_id>   every place in a user's PUBLIC lists, on one map
+  /embed/card/<slug>   one directory listing (a business or hotel) as a card,
+                       ?style=photo|wide|full|strip -- for stories about a
+                       single place. Its pictures come through
+                       /embed/listing-photo/<slug> and its details through
+                       /embed/card-detail/<slug>, the same way as for pins.
 
 Both pages are just a map (no header, menu or sign-in) and are marked
 noindex so search engines don't list them as pages of their own.
@@ -344,6 +349,50 @@ def _site_reviews(query_one, listing_id):
     return found
 
 
+# ---- One listing as a card (/embed/card/<slug>) -----------------------------
+
+CARD_STYLES = ("photo", "wide", "full", "strip")
+_SLUG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,200}$")
+_CARD_COLS = ("id, slug, name, category, address, website, latitude, longitude, place_id, "
+              "COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url, "
+              "photo_urls_json, google_rating")
+
+
+def _card_listing(query_one, slug):
+    """A published directory listing by slug, or None. Drafts are never served."""
+    if not _SLUG.match(slug or ""):
+        return None
+    try:
+        return query_one(f"SELECT {_CARD_COLS} FROM listings WHERE slug = :slug AND status = 'published' LIMIT 1",
+                         {"slug": slug})
+    except Exception:
+        return None
+
+
+def _card_payload(listing):
+    """What the card page needs about one listing. Same shape as a map pin, with
+    an id of "L<listing id>" (so a saved card can never be mistaken for a saved
+    pin that happens to have the same number) and its own picture/detail links."""
+    photos = _stored_photos("", listing)
+    slug = listing["slug"]
+    lat, lng = listing.get("latitude"), listing.get("longitude")
+    return {
+        "id": f"L{listing['id']}",
+        "name": listing.get("name") or "",
+        "lat": float(lat) if lat is not None else None,
+        "lng": float(lng) if lng is not None else None,
+        "category": listing.get("category") or "",
+        "address": listing.get("address") or "",
+        "notes": "",
+        "website": _safe_http(listing.get("website")),
+        "listing": slug,
+        "rating": _rating(listing.get("google_rating")),
+        "photo": url_for("embed_listing_photo", slug=slug) if photos else None,
+        "photos": [url_for("embed_listing_photo", slug=slug, i=n) for n in range(len(photos))],
+        "detailUrl": url_for("embed_card_detail", slug=slug),
+    }
+
+
 def register_embed_routes(app, SavedList, query_one):
     @app.get("/embed/list/<slug>")
     def embed_list_map(slug):
@@ -414,6 +463,54 @@ def register_embed_routes(app, SavedList, query_one):
         if not row:
             abort(404)
         reply = jsonify(_place_detail(dict(row), query_one))
+        reply.headers["Cache-Control"] = "public, max-age=60"
+        return reply
+
+    @app.get("/embed/card/<slug>")
+    def embed_card(slug):
+        listing = _card_listing(query_one, slug)
+        if not listing or listing.get("latitude") is None or listing.get("longitude") is None:
+            abort(404)
+        style = request.args.get("style", "photo")
+        style = style if style in CARD_STYLES else "photo"
+        place = _card_payload(listing)
+        return render_template("embed_card.html", payload={"style": style, "place": place},
+                               style=style, title=place["name"])
+
+    @app.get("/embed/listing-photo/<slug>")
+    def embed_listing_photo(slug):
+        number = request.args.get("i", 0, type=int)
+        if number < 0 or number >= MAX_PHOTOS:
+            abort(404)
+        now = time.time()
+        cache_key = (f"listing:{slug}", number)
+        hit = _photo_cache.get(cache_key)
+        if hit and hit[0] > now:
+            target = hit[1]
+        else:
+            listing = _card_listing(query_one, slug)
+            if not listing:
+                abort(404)
+            photos = _stored_photos("", listing)
+            target = _public_photo_url(photos[number]) if number < len(photos) else None
+            if len(_photo_cache) >= _PHOTO_CACHE_MAX:
+                _photo_cache.clear()
+            _photo_cache[cache_key] = (now + (_PHOTO_TTL if target else _MISS_TTL), target)
+        if not target:
+            abort(404)
+        reply = redirect(target, code=302)
+        reply.headers["Cache-Control"] = "public, max-age=21600"
+        return reply
+
+    @app.get("/embed/card-detail/<slug>")
+    def embed_card_detail(slug):
+        listing = _card_listing(query_one, slug)
+        if not listing:
+            abort(404)
+        row = {"name": listing.get("name"), "address": listing.get("address"),
+               "website": listing.get("website"), "listing_id": listing["id"],
+               "place_id": listing.get("place_id")}
+        reply = jsonify(_place_detail(row, query_one))
         reply.headers["Cache-Control"] = "public, max-age=60"
         return reply
 
