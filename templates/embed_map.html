@@ -14,13 +14,6 @@
     html, body { height: 100%; margin: 0; }
     body { font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1c1f1d; background: #e9eceb; }
     #map { position: absolute; inset: 0; }
-    .chip {
-      position: absolute; top: 10px; left: 10px; z-index: 2; max-width: calc(100% - 120px);
-      padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,0.94); color: #1c1f1d;
-      font-weight: 600; font-size: 13px; text-decoration: none; box-shadow: 0 1px 6px rgba(0,0,0,0.22);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .chip span { font-weight: 400; color: #5b625e; }
     .note {
       position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center;
       padding: 24px; text-align: center; color: #4a514d; background: #e9eceb;
@@ -170,7 +163,6 @@
     body.is-fs .card__rating { font-size: 15px; }
     body.is-fs .card__addr { font-size: 14px; }
     body.is-fs .card__dot { width: 10px; height: 10px; }
-    body.is-fs .chip { top: 16px; left: 20px; font-size: 15px; padding: 9px 16px; }
     @media (max-width: 640px) {
       .cards { top: auto; bottom: 28px; left: 0; right: 0; width: auto; max-height: none; flex-direction: row; gap: 10px;
         padding: 0 10px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding: 0 10px; scrollbar-width: none; }
@@ -196,7 +188,6 @@
     </div>
   </div>
   <div id="viewer" class="viewer" role="dialog" aria-modal="true" aria-label="Photos" hidden></div>
-  <a id="chip" class="chip" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
   <div id="note" class="note" hidden></div>
 
   <script id="map-data" type="application/json">{{ payload|tojson }}</script>
@@ -207,15 +198,6 @@
       var note = document.getElementById('note');
 
       function say(message) { note.textContent = message; note.hidden = false; }
-
-      // The title chip links to the full page for this map.
-      var chip = document.getElementById('chip');
-      chip.href = data.open || '#';
-      chip.textContent = data.title || 'Map';
-      var count = document.createElement('span');
-      count.textContent = ' · ' + places.length + (places.length === 1 ? ' place' : ' places');
-      chip.appendChild(count);
-      chip.hidden = false;
 
       if (typeof mapboxgl === 'undefined') { say('The map could not load. Please check your connection and try again.'); return; }
       if (!data.token) { say('This map is not available right now.'); return; }
@@ -618,7 +600,7 @@
         cooperativeGestures: true   // inside an article: two fingers / ctrl+scroll move the map, one finger scrolls the page
       });
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
-      // Full screen the whole page (not just the map) so the title chip and the
+      // Full screen the whole page (not just the map) so the
       // place cards stay visible when it is full screen.
       map.addControl(new mapboxgl.FullscreenControl({ container: document.body }), 'top-right');
 
@@ -726,15 +708,40 @@
         // Clicking another card closes the pin card that was open straight away.
         if (openPopup && openPopup._place !== place) openPopup.remove();
         setActive(place);
-        map.flyTo({ center: [place.lng, place.lat], zoom: Math.max(map.getZoom(), 14), duration: 1000, essential: true });
+        // The pin lands a little below the middle so the pin card above it ends up centred.
+        var cardH = Math.min(300, Math.max(190, window.innerHeight - 150));
+        map.flyTo({ center: [place.lng, place.lat], zoom: Math.max(map.getZoom(), 14), duration: 1000, essential: true,
+                    offset: [0, 36 + cardH / 2] });
         var marker = markers.filter(function (m) { return m._place === place; })[0];
         if (marker) setTimeout(function () { if (!marker.getPopup().isOpen()) marker.togglePopup(); }, 600);
       });
 
+      // When a pin card opens, slide the map so the card sits in the middle of
+      // the map and is shown in full. The card always opens above its pin
+      // (anchor: 'bottom'), so it never flips to the other side while moving.
+      function centerCard(popup) {
+        function go() {
+          if (openPopup !== popup) return;
+          var el = popup.getElement();
+          var content = el && el.querySelector('.mapboxgl-popup-content');
+          if (!content) return;
+          var r = content.getBoundingClientRect(), m = mapEl.getBoundingClientRect();
+          var dx = (r.left + r.width / 2) - (m.left + m.width / 2);
+          var dy = (r.top + r.height / 2) - (m.top + m.height / 2);
+          if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+          map.panBy([dx, dy], { duration: 450, essential: true });
+        }
+        // Wait for the card to be laid out; if the map is still flying to the
+        // pin (a card in the list was tapped), wait for it to land first.
+        requestAnimationFrame(function () {
+          if (map.isMoving()) map.once('moveend', go); else go();
+        });
+      }
+
       var bounds = new mapboxgl.LngLatBounds();
       places.forEach(function (place) {
         var node = popupNode(place);
-        var popup = new mapboxgl.Popup({ offset: 26, maxWidth: '300px', className: 'pop-card' }).setDOMContent(node);
+        var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '300px', className: 'pop-card' }).setDOMContent(node);
         popup._place = place;
         // Only one pin card is open at a time: opening another closes the previous one.
         popup.on('open', function () {
@@ -742,6 +749,7 @@
           openPopup = popup;
           setActive(place);
           node._open();
+          centerCard(popup);
         });
         popup.on('close', function () {
           if (openPopup === popup) openPopup = null;
