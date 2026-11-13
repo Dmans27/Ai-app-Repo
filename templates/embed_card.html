@@ -209,6 +209,28 @@
     @media (max-width: 480px) { .strip__img { height: 200px; flex-basis: 86%; } }
     .strip__info { display: flex; flex-direction: column; gap: 8px; padding: 12px 4px 0; }
 
+    /* Wide screens: inside a story on a desktop the frame is as wide as the text (about 800px),
+       so the photo card grows to fill it -- a bigger picture, bigger name and buttons. Under 600px
+       (phones) nothing changes. */
+    @media (min-width: 600px) {
+      .s-photo .pop { max-width: none; height: clamp(400px, 56vw, 540px); border-radius: 22px; }
+      .s-stack .pop { height: 440px; border-radius: 22px; }
+      .s-stack .stack__item { flex-basis: min(400px, 84%); }
+      .s-stack .stack > .pop__nav, .stack > .pop__nav { top: 215px; }
+      .s-photo .pop .pop__cat, .s-stack .pop .pop__cat { top: 16px; left: 16px; padding: 6px 13px; font-size: 12.5px; max-width: calc(100% - 110px); }
+      .s-photo .pop .pop__nav { width: 42px; height: 42px; font-size: 25px; line-height: 40px; }
+      .s-photo .pop .pop__nav--prev { left: 16px; }
+      .s-photo .pop .pop__nav--next { right: 16px; }
+      .s-photo .pop .pop__bottom, .s-stack .pop .pop__bottom { padding: 18px 22px 16px; }
+      .s-photo .pop .pop__name, .s-stack .pop .pop__name { font-size: 24px; }
+      .s-photo .pop .pop__notes, .s-stack .pop .pop__notes { font-size: 14.5px; }
+      .s-photo .pop .pop__links a, .s-photo .pop .pop__links button,
+      .s-stack .pop .pop__links a, .s-stack .pop .pop__links button { padding: 9px 18px; font-size: 14px; }
+      .s-photo .pop .pop__dot, .s-stack .pop .pop__dot { width: 7px; height: 7px; }
+      .s-photo .vid-glow, .s-stack .vid-glow { --vr: 22px; -webkit-mask-image: radial-gradient(circle at 100% 0, #000 0, #000 80px, transparent 230px); mask-image: radial-gradient(circle at 100% 0, #000 0, #000 80px, transparent 230px); }
+      .s-photo .vid-hit, .s-stack .vid-hit { width: 96px; height: 96px; }
+    }
+
     /* Full place page: the details panel, sitting inside the frame instead of sliding over it. */
     body.s-full, body.s-full html { height: 100%; }
     body.s-full #card { display: none; }
