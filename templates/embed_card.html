@@ -31,8 +31,8 @@
     .pop__nav--prev { left: 8px; }
     .pop__nav--next { right: 8px; }
     .pop__nav[hidden], .pop__dots[hidden] { display: none; }
-    .pop__bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px; display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
-    .pop__dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 1px; }
+    .pop__bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 12px 12px 10px; display: flex; flex-direction: column; gap: 0; pointer-events: none; }
+    .pop__dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 7px; }
     .pop__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.45); }
     .pop__dot.is-on { background: #fff; }
     .pop__name { font-size: 17px; font-weight: 800; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,0.6);
@@ -44,6 +44,22 @@
       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); color: #fff; font-size: 12.5px; font-weight: 700; text-decoration: none; }
     .pop__links a:hover, .pop__links button:hover { background: rgba(255,255,255,0.32); }
     .pop__links a.is-primary { background: #fff; color: #15171a; border-color: transparent; }
+    /* Collapsed card: only the place's name shows. Tap the name, or swipe up on the card, to
+       slide up the notes and buttons; tap the name again or swipe down to put them away. */
+    .pop__bottom::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; top: -70px; z-index: -1; pointer-events: none;
+      background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.55)); opacity: 0; transition: opacity 0.3s ease; }
+    .pop.is-open .pop__bottom::before { opacity: 1; }
+    .pop__namebtn { display: block; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left;
+      cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: margin-bottom 0.32s cubic-bezier(0.22, 0.8, 0.25, 1); }
+    .pop__namebtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 6px; }
+    .pop.is-open .pop__namebtn { margin-bottom: 7px; }
+    .pop__reveal { display: grid; grid-template-rows: 0fr; visibility: hidden;
+      transition: grid-template-rows 0.32s cubic-bezier(0.22, 0.8, 0.25, 1), visibility 0s linear 0.32s; }
+    .pop__reveal-inner { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 7px; padding-bottom: 2px; opacity: 0; transform: translateY(10px);
+      transition: opacity 0.25s ease, transform 0.32s cubic-bezier(0.22, 0.8, 0.25, 1); }
+    .pop.is-open .pop__reveal { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows 0.32s cubic-bezier(0.22, 0.8, 0.25, 1), visibility 0s; }
+    .pop.is-open .pop__reveal-inner { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) { .pop__reveal, .pop__reveal-inner, .pop__namebtn, .pop__bottom::before { transition: none; } }
     /* Photos viewer: just the pictures, nothing else -- swipe, arrows, a close button. */
     .viewer { position: absolute; inset: 0; z-index: 30; background: #000; opacity: 0; transition: opacity 0.25s ease; }
     .viewer.is-open { opacity: 1; }
@@ -115,11 +131,32 @@
     .detail__actions a.is-book { background: #2f9e7e; color: #fff; }
     .detail__actions a.is-book:hover { background: #26876b; }
 
-    /* Short video: a badge on the picture; double-tap (or tap the badge) plays it. */
+    /* Short video: no label. A moving glow on the top-right edge of the picture (the same
+       glow as the search bar) says "there's a clip here"; tap it once to play. Cards
+       without a video get none of this. Double-tapping the picture also plays it. */
     .vidhost { position: relative; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
-    .vid-badge { position: absolute; top: 10px; right: 10px; z-index: 4; font: inherit; font-size: 11.5px; font-weight: 800; padding: 5px 10px; border: 0; border-radius: 999px; cursor: pointer;
-      background: rgba(0,0,0,0.55); color: #fff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-    .vid-badge:hover { background: rgba(0,0,0,0.75); }
+    @property --vg { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+    .vid-glow { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: var(--vr, 18px);
+      background: radial-gradient(circle at 100% 0, rgba(110,231,255,0.30), rgba(16,185,129,0.14) 38%, rgba(16,185,129,0) 72%);
+      -webkit-mask-image: radial-gradient(circle at 100% 0, #000 0, #000 64px, transparent 180px);
+      mask-image: radial-gradient(circle at 100% 0, #000 0, #000 64px, transparent 180px);
+      animation: vidGlowBreathe 2.6s ease-in-out infinite; }
+    .vid-glow::before, .vid-glow::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 3px;
+      background: conic-gradient(from var(--vg), #9de8c8, #10b981, #6ee7ff, #10b981, #9de8c8);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude;
+      animation: vidGlowSpin 4s linear infinite; }
+    .vid-glow::after { padding: 5px; filter: blur(7px); }
+    .strip__media .vid-glow { --vr: 16px; }
+    /* Looks with no rounded corner at that spot (photo beside the facts, full page): a soft corner glow instead of an edge. */
+    .vid-glow.is-soft { inset: 0 0 auto auto; width: 120px; height: 120px; border-radius: 0; -webkit-mask-image: none; mask-image: none;
+      background: radial-gradient(circle at 100% 0, rgba(16,185,129,0.6), rgba(110,231,255,0.28) 38%, rgba(110,231,255,0) 70%); }
+    .vid-glow.is-soft::before, .vid-glow.is-soft::after { display: none; }
+    .vid-hit { position: absolute; top: 0; right: 0; z-index: 5; width: 78px; height: 78px; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .vid-hit:focus-visible { outline: 2px solid #fff; outline-offset: -8px; border-radius: 16px; }
+    @keyframes vidGlowSpin { to { --vg: 360deg; } }
+    @keyframes vidGlowBreathe { 0%, 100% { opacity: 0.78; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .vid-glow, .vid-glow::before, .vid-glow::after { animation: none; } }
     .vid { position: absolute; inset: 0; z-index: 8; background: #000; cursor: pointer; }
     .vid video { width: 100%; height: 100%; object-fit: cover; display: block; }
     .vid__close { position: absolute; top: 10px; right: 10px; z-index: 2; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; font-size: 20px; line-height: 32px;
@@ -361,6 +398,37 @@
       });
       if (window.parent !== window) window.parent.postMessage({ type: 'mansfield:hello' }, '*');
 
+      // Swipe up on a card to open it, swipe down to close it. Touch uses screenY, not
+      // clientY: when the finger drags the article past under us the card moves with
+      // it, so only screen coordinates show how far the finger really went. Nothing
+      // is cancelled, so the page still scrolls as usual. A mouse can drag too.
+      function wireSwipe(box, setOpen, isOpen) {
+        var sx = 0, sy = 0, live = false, done = false, mouse = false;
+        function skip(t) { return !!(t && t.closest && t.closest('a, button:not(.pop__namebtn), .vid')); }
+        function check(dx, dy) {
+          if (done || Math.abs(dy) < 28 || Math.abs(dy) < Math.abs(dx) * 1.3) return;
+          if (dy < 0 && !isOpen()) { setOpen(true); done = true; }
+          else if (dy > 0 && isOpen()) { setOpen(false); done = true; }
+        }
+        box.addEventListener('touchstart', function (e) {
+          if (e.touches.length !== 1 || skip(e.target)) { live = false; return; }
+          sx = e.touches[0].screenX; sy = e.touches[0].screenY; live = true; done = false;
+        }, { passive: true });
+        box.addEventListener('touchmove', function (e) {
+          if (live && e.touches.length === 1) check(e.touches[0].screenX - sx, e.touches[0].screenY - sy);
+        }, { passive: true });
+        box.addEventListener('touchend', function () { live = false; }, { passive: true });
+        box.addEventListener('touchcancel', function () { live = false; }, { passive: true });
+        box.addEventListener('pointerdown', function (e) {
+          if (e.pointerType !== 'mouse' || e.button !== 0 || skip(e.target)) return;
+          sx = e.screenX; sy = e.screenY; mouse = true; done = false;
+        });
+        document.addEventListener('pointermove', function (e) {
+          if (mouse && e.pointerType === 'mouse') check(e.screenX - sx, e.screenY - sy);
+        });
+        document.addEventListener('pointerup', function () { mouse = false; });
+      }
+
       function popupNode(place) {
         var box = document.createElement('div');
         box.className = 'pop';
@@ -380,8 +448,19 @@
         var dots = document.createElement('div');
         dots.className = 'pop__dots';
         bottom.appendChild(dots);
-        addText(bottom, 'div', 'pop__name', place.name);
-        if (place.notes) addText(bottom, 'div', 'pop__notes', place.notes);
+        // Only the name shows until the card is opened (tap the name or swipe up).
+        var nameBtn = document.createElement('button');
+        nameBtn.type = 'button';
+        nameBtn.className = 'pop__namebtn';
+        nameBtn.setAttribute('aria-expanded', 'false');
+        addText(nameBtn, 'span', 'pop__name', place.name);
+        bottom.appendChild(nameBtn);
+        var reveal = document.createElement('div');
+        reveal.className = 'pop__reveal';
+        var revealInner = document.createElement('div');
+        revealInner.className = 'pop__reveal-inner';
+        reveal.appendChild(revealInner);
+        if (place.notes) addText(revealInner, 'div', 'pop__notes', place.notes);
         var links = document.createElement('div');
         links.className = 'pop__links';
         addLink(links, 'Directions', 'https://www.google.com/maps/dir/?api=1&destination=' + place.lat + ',' + place.lng).className = 'is-primary';
@@ -392,8 +471,21 @@
         more.type = 'button';
         more.addEventListener('click', function () { openDetail(place); });
         saveButton(links, place);
-        bottom.appendChild(links);
+        revealInner.appendChild(links);
+        bottom.appendChild(reveal);
         box.appendChild(bottom);
+
+        var isOpen = false;
+        function setOpen(on) {
+          isOpen = !!on;
+          box.classList.toggle('is-open', isOpen);
+          nameBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+        nameBtn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!isOpen); });
+        box.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && isOpen) { e.stopPropagation(); setOpen(false); nameBtn.focus({ preventScroll: true }); }
+        });
+        wireSwipe(box, setOpen, function () { return isOpen; });
 
         var carousel = wireCarousel(photoUrls(place), slides, prev, next, dots, 'pop__slide');
         box._open = carousel.open;
@@ -608,15 +700,20 @@
         return a;
       }
 
-      // A short clip for this place. A "Video" badge sits on the picture, and
-      // double-tapping (or double-clicking) the picture plays it, muted and
-      // looping, over the card. Tap it or the x to close.
+      // A short clip for this place. A glowing edge in the picture's top-right
+      // corner (no label) shows there is one; tapping it once, or double-tapping
+      // the picture, plays it muted and looping over the card. Tap it or the x to close.
       function attachVideo(host, place) {
         if (!place.video || !host) return;
         host.classList.add('vidhost');
-        var badge = addText(host, 'button', 'vid-badge', '▶ Video');
+        var glow = el('span', 'vid-glow' + ((host.classList.contains('wide__photo') || host === detailGallery) ? ' is-soft' : ''));
+        glow.setAttribute('aria-hidden', 'true');
+        host.appendChild(glow);
+        var badge = el('button', 'vid-hit');
         badge.type = 'button';
+        badge.title = 'Play video';
         badge.setAttribute('aria-label', 'Play a short video of ' + place.name);
+        host.appendChild(badge);
         var layer = null, openedAt = 0;
         function close() {
           if (!layer) return;
@@ -631,7 +728,7 @@
           var v = document.createElement('video');
           v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.controls = false;
           v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
-          v.addEventListener('error', function () { close(); badge.remove(); });
+          v.addEventListener('error', function () { close(); badge.remove(); glow.remove(); });
           v.src = place.video;
           layer.appendChild(v);
           var x = addText(layer, 'button', 'vid__close', '×');
