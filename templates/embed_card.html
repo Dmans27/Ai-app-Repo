@@ -35,7 +35,7 @@
     .pop__dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 7px; }
     .pop__dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.45); }
     .pop__dot.is-on { background: #fff; }
-    .pop__name { font-size: 17px; font-weight: 800; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    .pop__name { min-width: 0; font-size: 17px; font-weight: 800; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,0.6);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .pop__notes { font-size: 12px; font-style: italic; color: rgba(255,255,255,0.82); text-shadow: 0 1px 3px rgba(0,0,0,0.6);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -49,9 +49,16 @@
     .pop__bottom::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; top: -70px; z-index: -1; pointer-events: none;
       background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.55)); opacity: 0; transition: opacity 0.3s ease; }
     .pop.is-open .pop__bottom::before { opacity: 1; }
-    .pop__namebtn { display: block; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left;
+    .pop__namebtn { display: flex; align-items: center; gap: 9px; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left;
       cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: margin-bottom 0.32s cubic-bezier(0.22, 0.8, 0.25, 1); }
     .pop__namebtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 6px; }
+    /* Google star rating, right beside the place's name. */
+    .pop__rating { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px; border-radius: 999px;
+      font-size: 12.5px; font-weight: 800; line-height: 1.2; white-space: nowrap; color: #fff; text-shadow: none;
+      background: rgba(255,255,255,0.18); border: 0.5px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .pop__rating-star { color: #fbbc04; font-size: 1.05em; line-height: 1; }
+    .pop__rating-count { font-weight: 600; opacity: 0.82; }
     .pop.is-open .pop__namebtn { margin-bottom: 7px; }
     .pop__reveal { display: grid; grid-template-rows: 0fr; visibility: hidden;
       transition: grid-template-rows 0.32s cubic-bezier(0.22, 0.8, 0.25, 1), visibility 0s linear 0.32s; }
@@ -227,6 +234,8 @@
       .s-photo .pop .pop__bottom { padding: clamp(18px, 1.6vw, 30px) clamp(22px, 1.9vw, 36px) clamp(16px, 1.4vw, 28px); }
       .s-photo .pop .pop__name, .s-stack .pop .pop__name { font-size: 24px; }
       .s-photo .pop .pop__name { font-size: clamp(24px, 2.1vw, 38px); }
+      .s-photo .pop .pop__rating, .s-stack .pop .pop__rating { font-size: 14.5px; padding: 4px 11px 4px 9px; gap: 5px; }
+      .s-photo .pop .pop__rating { font-size: clamp(14.5px, 1.15vw, 20px); }
       .s-photo .pop .pop__notes, .s-stack .pop .pop__notes { font-size: 14.5px; }
       .s-photo .pop .pop__notes { font-size: clamp(14.5px, 1.1vw, 20px); }
       .s-photo .pop .pop__links a, .s-photo .pop .pop__links button,
@@ -484,6 +493,19 @@
         nameBtn.className = 'pop__namebtn';
         nameBtn.setAttribute('aria-expanded', 'false');
         addText(nameBtn, 'span', 'pop__name', place.name);
+        // Google's star rating (and review count, when we have it) next to the name.
+        var rate = Number(place.rating);
+        if (isFinite(rate) && rate > 0) {
+          var cnt = Number(place.ratingCount);
+          var chip = document.createElement('span');
+          chip.className = 'pop__rating';
+          chip.setAttribute('title', 'Google rating');
+          chip.setAttribute('aria-label', 'Rated ' + rate.toFixed(1) + ' out of 5 on Google' + (cnt > 0 ? ', ' + cnt.toLocaleString() + ' reviews' : ''));
+          addText(chip, 'span', 'pop__rating-star', '\u2605');
+          addText(chip, 'span', '', rate.toFixed(1));
+          if (cnt > 0) addText(chip, 'span', 'pop__rating-count', '(' + (cnt >= 1000 ? (Math.round(cnt / 100) / 10) + 'k' : cnt) + ')');
+          nameBtn.appendChild(chip);
+        }
         bottom.appendChild(nameBtn);
         var reveal = document.createElement('div');
         reveal.className = 'pop__reveal';

@@ -97,7 +97,7 @@ def _safe_http(url):
 
 
 _LISTING_COLS = ("slug, COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url, "
-                 "photo_urls_json, google_rating")
+                 "photo_urls_json, google_rating, google_rating_count")
 
 MAX_PHOTOS = 6  # pictures per place in the pop-up carousel
 
@@ -151,6 +151,15 @@ def _rating(value):
     return round(number, 1) if number > 0 else None
 
 
+def _count(value):
+    """A review count as a whole number, or None."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
 def _places_json(places, query_one):
     out = []
     for place in places:
@@ -169,6 +178,7 @@ def _places_json(places, query_one):
             "website": _safe_http(place.website),
             "listing": listing["slug"] if listing else None,
             "rating": _rating(listing["google_rating"]) if listing else None,
+            "ratingCount": _count(listing.get("google_rating_count")) if listing else None,
             # Never the stored links themselves: they can contain an API key.
             "photo": url_for("embed_place_photo", saved_place_id=place.id) if stored_photos else None,
             "photos": [url_for("embed_place_photo", saved_place_id=place.id, i=n)
@@ -366,7 +376,7 @@ CARD_STYLES = ("photo", "wide", "full", "strip")
 _SLUG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,200}$")
 _CARD_COLS = ("id, slug, name, category, address, website, latitude, longitude, place_id, "
               "COALESCE(NULLIF(photo_url, ''), NULLIF(card_image_url, '')) AS photo_url, "
-              "photo_urls_json, google_rating")
+              "photo_urls_json, google_rating, google_rating_count")
 
 
 def _card_listing(query_one, slug):
@@ -437,6 +447,7 @@ def _card_payload(listing):
         "website": _safe_http(listing.get("website")),
         "listing": slug,
         "rating": _rating(listing.get("google_rating")),
+        "ratingCount": _count(listing.get("google_rating_count")),
         "photo": url_for("embed_listing_photo", slug=slug) if photos else None,
         "photos": [url_for("embed_listing_photo", slug=slug, i=n) for n in range(len(photos))],
         "detailUrl": url_for("embed_card_detail", slug=slug),
