@@ -55,8 +55,8 @@
     /* Grab bar: a thin bar at the top middle hints that the card can be touched or swiped up. The
        space around it is a dead zone -- a swipe that starts there moves neither the card nor the
        page behind it. */
-    .pop__grab { position: relative; align-self: flex-start; flex: 0 0 auto; pointer-events: auto; width: 110px; height: 26px; padding: 0; margin: -2px 0 0;
-      border: 0; background: none; display: flex; justify-content: flex-start; align-items: center; cursor: pointer;
+    .pop__grab { position: relative; align-self: flex-start; flex: 0 0 auto; pointer-events: auto; width: 110px; max-width: 100%; height: 26px; padding: 0; margin: -2px 0 0;
+      border: 0; background: none; display: flex; justify-content: center; align-items: center; cursor: pointer;
       touch-action: none; -webkit-tap-highlight-color: transparent; }
     .pop__grab-bar { display: block; width: 42px; height: 4px; border-radius: 999px; background: rgba(255,255,255,0.8);
       box-shadow: 0 1px 4px rgba(0,0,0,0.38); transition: width 0.25s ease, background-color 0.2s ease;
@@ -551,6 +551,20 @@
         box.appendChild(bottom);
 
         var isOpen = false;
+        // Centre the grab bar over the place's title (the name text, not the rating chip).
+        var nameText = nameBtn.querySelector('.pop__name');
+        function placeGrab() {
+          var nr = nameText.getBoundingClientRect(), br = bottom.getBoundingClientRect();
+          if (!nr.width || !br.width) return;
+          var pad = parseFloat(getComputedStyle(bottom).paddingLeft) || 0;
+          var gw = grab.offsetWidth || 110;
+          var left = (nr.left + nr.width / 2) - (br.left + pad) - gw / 2;
+          var room = br.width - 2 * pad - gw;
+          grab.style.marginLeft = Math.max(0, Math.min(room, left)) + 'px';
+        }
+        if (window.ResizeObserver) new ResizeObserver(placeGrab).observe(bottom); else window.addEventListener('resize', placeGrab);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeGrab);
+        requestAnimationFrame(placeGrab);
         function setOpen(on) {
           isOpen = !!on;
           box.classList.toggle('is-open', isOpen);
