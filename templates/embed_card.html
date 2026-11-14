@@ -52,6 +52,20 @@
     .pop__namebtn { display: flex; align-items: center; gap: 9px; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left;
       cursor: pointer; pointer-events: auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: margin-bottom 0.32s cubic-bezier(0.22, 0.8, 0.25, 1); }
     .pop__namebtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 6px; }
+    /* Grab bar: a thin bar at the top middle hints that the card can be touched or swiped up. The
+       space around it is a dead zone -- a swipe that starts there moves neither the card nor the
+       page behind it. */
+    .pop__grab { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 4; width: 132px; height: 38px; padding: 0; margin: 0;
+      border: 0; background: none; display: flex; justify-content: center; align-items: flex-start; cursor: pointer;
+      touch-action: none; -webkit-tap-highlight-color: transparent; }
+    .pop__grab-bar { display: block; margin-top: 9px; width: 38px; height: 4px; border-radius: 999px; background: rgba(255,255,255,0.8);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.38); transition: width 0.25s ease, background-color 0.2s ease;
+      animation: grabNudge 3.6s ease-in-out 1.2s 5; }
+    .pop__grab:hover .pop__grab-bar { background: #fff; }
+    .pop__grab:focus-visible { outline: 2px solid #fff; outline-offset: -4px; border-radius: 14px; }
+    .pop.is-open .pop__grab-bar { width: 28px; }
+    @keyframes grabNudge { 0%, 68%, 100% { transform: translateY(0); } 78% { transform: translateY(-4px); } 90% { transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .pop__grab-bar { animation: none; } }
     /* Google star rating, right beside the place's name. */
     .pop__rating { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px; border-radius: 999px;
       font-size: 12.5px; font-weight: 800; line-height: 1.2; white-space: nowrap; color: #fff; text-shadow: none;
@@ -234,6 +248,8 @@
       .s-photo .pop .pop__bottom { padding: clamp(18px, 1.6vw, 30px) clamp(22px, 1.9vw, 36px) clamp(16px, 1.4vw, 28px); }
       .s-photo .pop .pop__name, .s-stack .pop .pop__name { font-size: 24px; }
       .s-photo .pop .pop__name { font-size: clamp(24px, 2.1vw, 38px); }
+      .s-photo .pop .pop__grab { width: 170px; height: 50px; }
+      .s-photo .pop .pop__grab-bar { width: 50px; height: 5px; margin-top: 15px; }
       .s-photo .pop .pop__rating, .s-stack .pop .pop__rating { font-size: 14.5px; padding: 4px 11px 4px 9px; gap: 5px; }
       .s-photo .pop .pop__rating { font-size: clamp(14.5px, 1.15vw, 20px); }
       .s-photo .pop .pop__notes, .s-stack .pop .pop__notes { font-size: 14.5px; }
@@ -443,7 +459,7 @@
       // is cancelled, so the page still scrolls as usual. A mouse can drag too.
       function wireSwipe(box, setOpen, isOpen) {
         var sx = 0, sy = 0, live = false, done = false, mouse = false;
-        function skip(t) { return !!(t && t.closest && t.closest('a, button:not(.pop__namebtn), .vid')); }
+        function skip(t) { return !!(t && t.closest && t.closest('a, button:not(.pop__namebtn):not(.pop__grab), .vid')); }
         function check(dx, dy) {
           if (done || Math.abs(dy) < 28 || Math.abs(dy) < Math.abs(dx) * 1.3) return;
           if (dy < 0 && !isOpen()) { setOpen(true); done = true; }
@@ -478,6 +494,13 @@
         var scrim = document.createElement('div');
         scrim.className = 'pop__scrim';
         box.appendChild(scrim);
+        var grab = document.createElement('button');
+        grab.type = 'button';
+        grab.className = 'pop__grab';
+        grab.setAttribute('aria-label', 'Show details');
+        grab.setAttribute('aria-expanded', 'false');
+        addText(grab, 'span', 'pop__grab-bar', '').setAttribute('aria-hidden', 'true');
+        box.appendChild(grab);
         if (place.category) addText(box, 'div', 'pop__cat', place.category.replace(/_/g, ' '));
         var prev = navButton(box, 'pop__nav--prev', '‹', 'Previous photo');
         var next = navButton(box, 'pop__nav--next', '›', 'Next photo');
@@ -532,8 +555,13 @@
           isOpen = !!on;
           box.classList.toggle('is-open', isOpen);
           nameBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          grab.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          grab.setAttribute('aria-label', isOpen ? 'Hide details' : 'Show details');
         }
         nameBtn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!isOpen); });
+        grab.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!isOpen); });
+        // Dead zone: a finger dragging on the grab bar never scrolls the page behind the card.
+        grab.addEventListener('touchmove', function (e) { if (e.cancelable) e.preventDefault(); }, { passive: false });
         box.addEventListener('keydown', function (e) {
           if (e.key === 'Escape' && isOpen) { e.stopPropagation(); setOpen(false); nameBtn.focus({ preventScroll: true }); }
         });
