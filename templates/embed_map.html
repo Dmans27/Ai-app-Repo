@@ -174,37 +174,40 @@
       body.is-fs .card.has-photo { min-height: 130px; }
     }
 
-    /* Filter bar: chips that narrow the map to some kinds of place (Food,
-       Coffee, ...) and, when there are ratings, to the top rated. Wide embed:
-       along the bottom, beside the card list. Narrow embed (<=640px, phones):
-       along the top, left of the zoom buttons. Only shown when there is more
-       than one kind of place to choose between. */
-    .filters { display: none; position: absolute; z-index: 4; left: 10px; right: 10px; bottom: 32px; gap: 6px; padding: 2px;
-      overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    /* Filter bar: one blurred pill of icons that narrows the map to some
+       kinds of place (food, coffee, ...) and, when there are ratings, to the
+       top rated. Wide embed: centred along the bottom, beside the card list.
+       Narrow embed (<=640px, phones): along the top, left of the zoom buttons.
+       Only shown when there is more than one kind of place to choose between. */
+    .filters { display: none; position: absolute; z-index: 4; left: 10px; right: 10px; bottom: 30px;
+      justify-content: center; align-items: center; gap: 6px; pointer-events: none; }
     .filters.is-visible { display: flex; }
-    .filters::-webkit-scrollbar { display: none; }
-    /* Centred when the chips fit, still scrollable from the first chip when they don't. */
-    .filters > :first-child { margin-left: auto; }
-    .filters > :last-child { margin-right: auto; }
-    .chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 13px; box-sizing: border-box;
-      border-radius: 999px; border: 0.5px solid rgba(255,255,255,0.14); background: rgba(20,20,22,0.86);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; white-space: nowrap; cursor: pointer; }
-    .chip:hover { border-color: rgba(255,255,255,0.35); }
-    .chip:focus-visible { outline: 2px solid #7ee2bf; outline-offset: 2px; }
-    .chip.is-on { background: #fff; color: #15171a; border-color: transparent; }
-    .chip__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .chip__star { color: #f5b301; }
-    .chip__n { font-weight: 600; opacity: 0.6; }
-    .filters__empty { flex: 0 0 auto; align-self: center; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.92);
-      color: #4a514d; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+    .filters__pill { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 4px; box-sizing: border-box;
+      border-radius: 999px; background: rgba(22,23,26,0.5); border: 0.5px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22); pointer-events: auto;
+      overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+    .filters__pill::-webkit-scrollbar { display: none; }
+    .fbtn { flex: 0 0 auto; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center;
+      border: 0; border-radius: 50%; background: transparent; color: #fff; cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease; }
+    .fbtn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .fbtn:hover { background: rgba(255,255,255,0.14); }
+    .fbtn:focus-visible { outline: 2px solid #7ee2bf; outline-offset: 1px; }
+    .fbtn.is-on { background: var(--c, #fff); color: #fff; }
+    .fbtn--all.is-on { background: #fff; color: #15171a; }
+    .fbtn--top.is-on { background: #f5b301; color: #15171a; }
+    .filters__empty { flex: 0 0 auto; padding: 7px 12px; border-radius: 999px; background: rgba(22,23,26,0.5); color: #fff;
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
     body.has-cards .filters { left: 262px; }              /* clear of the card list down the left */
-    body.is-fs .filters { bottom: 40px; }
+    body.is-fs .filters { bottom: 38px; }
     body.is-fs.has-cards .filters { left: 416px; }
-    body.is-fs .chip { min-height: 40px; padding: 8px 16px; font-size: 14px; }
+    body.is-fs .fbtn { width: 42px; height: 42px; }
+    body.is-fs .fbtn svg { width: 22px; height: 22px; }
     @media (max-width: 640px) {
-      .filters, body.has-cards .filters, body.is-fs .filters, body.is-fs.has-cards .filters { top: 10px; bottom: auto; left: 10px; right: 50px; }
-      .filters > :first-child, .filters > :last-child { margin-left: 0; margin-right: 0; }
+      .filters, body.has-cards .filters, body.is-fs .filters, body.is-fs.has-cards .filters {
+        top: 10px; bottom: auto; left: 10px; right: 50px; justify-content: flex-start; }
+      .fbtn { width: 38px; height: 38px; }
     }
   </style>
 </head>
@@ -254,7 +257,7 @@
       var GROUP_ORDER = ['food', 'coffee', 'bars', 'wine', 'rooftops', 'shops', 'other'];
       function groupOf(category) {
         var c = (category || '').toLowerCase();
-        if (c.indexOf('coffee') >= 0) return 'coffee';
+        if (c.indexOf('coffee') >= 0 || c.indexOf('cafe') >= 0 || c.indexOf('caf\u00e9') >= 0) return 'coffee';
         if (c.indexOf('bar') >= 0 || c.indexOf('cocktail') >= 0) return 'bars';
         if (c.indexOf('wine') >= 0) return 'wine';
         if (c.indexOf('rooftop') >= 0) return 'rooftops';
@@ -877,21 +880,34 @@
       var rated = places.filter(function (p) { return Number(p.rating) >= TOP_RATED; }).length;
       var offerTopRated = rated >= 2 && rated < places.length;
 
+      // Simple line icons, one per filter (drawn here, so nothing extra to load).
+      var ICONS = {
+        all: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+        food: '<path d="M4.5 11a7.5 6 0 0 1 15 0z"/><path d="M3.5 14.5h17"/><path d="M5 17.5h14a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 17.5z"/>',
+        coffee: '<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5v2.5M12 3.5v2.5"/>',
+        bars: '<path d="M4.5 4.5h15L12 13z"/><path d="M12 13v6.5M8 19.5h8"/>',
+        wine: '<path d="M8 3.5h8l-.4 5a3.6 3.6 0 0 1-7.2 0z"/><path d="M12 12v7.5M8.5 19.5h7"/>',
+        rooftops: '<path d="M3.5 20h17"/><path d="M5.5 20v-9h4v9"/><path d="M10.5 20V5h5v15"/><path d="M16.5 20v-6h3v6"/>',
+        shops: '<path d="M5 8.5h14l-1 11.5H6z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>',
+        other: '<path d="M12 21s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+        top: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>'
+      };
+
+      var pill = document.createElement('div');
+      pill.className = 'filters__pill';
+      filterEl.appendChild(pill);
+
       function chip(label, opts) {
         var b = document.createElement('button');
         b.type = 'button';
-        b.className = 'chip';
-        if (opts.color) {
-          var dot = document.createElement('span');
-          dot.className = 'chip__dot';
-          dot.style.background = opts.color;
-          b.appendChild(dot);
-        }
-        if (opts.star) addText(b, 'span', 'chip__star', '★');
-        addText(b, 'span', '', label);
-        if (opts.count) addText(b, 'span', 'chip__n', String(opts.count));
+        b.className = 'fbtn fbtn--' + opts.icon;
+        b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[opts.icon] + '</svg>';   // our own fixed icons, never place data
+        var name = opts.count ? label + ' (' + opts.count + ')' : label;
+        b.setAttribute('aria-label', name);
+        b.title = name;
+        if (opts.color) b.style.setProperty('--c', opts.color);
         b.addEventListener('click', opts.onClick);
-        filterEl.appendChild(b);
+        pill.appendChild(b);
         return b;
       }
 
@@ -931,18 +947,18 @@
       }
 
       if (places.length >= 3 && (present.length >= 2 || offerTopRated)) {
-        chips.push({ key: 'all', el: chip('All', { count: places.length, onClick: function () {
+        chips.push({ key: 'all', el: chip('All places', { icon: 'all', count: places.length, onClick: function () {
           picked = {}; topRated = false; applyFilters(true);
         } }) });
         if (present.length >= 2) {
           present.forEach(function (g) {
-            chips.push({ key: g, el: chip(GROUPS[g].label, { color: GROUPS[g].color, count: counts[g], onClick: function () {
+            chips.push({ key: g, el: chip(GROUPS[g].label, { icon: g, color: GROUPS[g].color, count: counts[g], onClick: function () {
               picked[g] = !picked[g]; applyFilters(true);
             } }) });
           });
         }
         if (offerTopRated) {
-          chips.push({ key: 'top', el: chip(TOP_RATED + '+', { star: true, onClick: function () {
+          chips.push({ key: 'top', el: chip('Rated ' + TOP_RATED + ' and up', { icon: 'top', onClick: function () {
             topRated = !topRated; applyFilters(true);
           } }) });
         }
