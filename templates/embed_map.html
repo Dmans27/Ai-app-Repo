@@ -173,11 +173,45 @@
       body.is-fs .card { width: 290px; }
       body.is-fs .card.has-photo { min-height: 130px; }
     }
+
+    /* Filter bar: chips that narrow the map to some kinds of place (Food,
+       Coffee, ...) and, when there are ratings, to the top rated. Wide embed:
+       along the bottom, beside the card list. Narrow embed (<=640px, phones):
+       along the top, left of the zoom buttons. Only shown when there is more
+       than one kind of place to choose between. */
+    .filters { display: none; position: absolute; z-index: 4; left: 10px; right: 10px; bottom: 32px; gap: 6px; padding: 2px;
+      overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .filters.is-visible { display: flex; }
+    .filters::-webkit-scrollbar { display: none; }
+    /* Centred when the chips fit, still scrollable from the first chip when they don't. */
+    .filters > :first-child { margin-left: auto; }
+    .filters > :last-child { margin-right: auto; }
+    .chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 13px; box-sizing: border-box;
+      border-radius: 999px; border: 0.5px solid rgba(255,255,255,0.14); background: rgba(20,20,22,0.86);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+    .chip:hover { border-color: rgba(255,255,255,0.35); }
+    .chip:focus-visible { outline: 2px solid #7ee2bf; outline-offset: 2px; }
+    .chip.is-on { background: #fff; color: #15171a; border-color: transparent; }
+    .chip__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .chip__star { color: #f5b301; }
+    .chip__n { font-weight: 600; opacity: 0.6; }
+    .filters__empty { flex: 0 0 auto; align-self: center; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.92);
+      color: #4a514d; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+    body.has-cards .filters { left: 262px; }              /* clear of the card list down the left */
+    body.is-fs .filters { bottom: 40px; }
+    body.is-fs.has-cards .filters { left: 416px; }
+    body.is-fs .chip { min-height: 40px; padding: 8px 16px; font-size: 14px; }
+    @media (max-width: 640px) {
+      .filters, body.has-cards .filters, body.is-fs .filters, body.is-fs.has-cards .filters { top: 10px; bottom: auto; left: 10px; right: 50px; }
+      .filters > :first-child, .filters > :last-child { margin-left: 0; margin-right: 0; }
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div id="cards" class="cards" aria-label="Places in view"></div>
+  <div id="filters" class="filters" role="toolbar" aria-label="Filter places"></div>
   <div id="detail" class="detail" role="dialog" aria-modal="true" aria-label="Place details" hidden>
     <div class="detail__bar"><button type="button" class="detail__back" id="detail-back">← Back to map</button></div>
     <div class="detail__scroll" id="detail-scroll">
@@ -205,16 +239,30 @@
 
       mapboxgl.accessToken = data.token;
 
-      function categoryColor(category) {
+      // Every place falls into one of these groups. The group decides the pin
+      // colour and is what the filter bar filters by, so a chip's dot always
+      // matches the pins it shows.
+      var GROUPS = {
+        food:     { label: 'Food',     color: '#E2574C' },
+        coffee:   { label: 'Coffee',   color: '#C6935A' },
+        bars:     { label: 'Bars',     color: '#B368F7' },
+        wine:     { label: 'Wine',     color: '#B4436C' },
+        rooftops: { label: 'Rooftops', color: '#5AC8E8' },
+        shops:    { label: 'Shops',    color: '#F5B301' },
+        other:    { label: 'Other',    color: '#2f9e7e' }
+      };
+      var GROUP_ORDER = ['food', 'coffee', 'bars', 'wine', 'rooftops', 'shops', 'other'];
+      function groupOf(category) {
         var c = (category || '').toLowerCase();
-        if (c.indexOf('coffee') >= 0) return '#C6935A';
-        if (c.indexOf('bar') >= 0 || c.indexOf('cocktail') >= 0) return '#B368F7';
-        if (c.indexOf('wine') >= 0) return '#B4436C';
-        if (c.indexOf('rooftop') >= 0) return '#5AC8E8';
-        if (c.indexOf('shop') >= 0) return '#F5B301';
-        if (c.indexOf('restaurant') >= 0 || c.indexOf('food') >= 0) return '#E2574C';
-        return '#2f9e7e';
+        if (c.indexOf('coffee') >= 0) return 'coffee';
+        if (c.indexOf('bar') >= 0 || c.indexOf('cocktail') >= 0) return 'bars';
+        if (c.indexOf('wine') >= 0) return 'wine';
+        if (c.indexOf('rooftop') >= 0) return 'rooftops';
+        if (c.indexOf('shop') >= 0) return 'shops';
+        if (c.indexOf('restaurant') >= 0 || c.indexOf('food') >= 0) return 'food';
+        return 'other';
       }
+      function categoryColor(category) { return GROUPS[groupOf(category)].color; }
 
       function markerEl(place) {
         var el = document.createElement('div');
@@ -616,6 +664,7 @@
       var openPopup = null;   // the pin card that is currently open, if any
 
       function hideCards() {
+        document.body.classList.remove('has-cards');
         cardsEl.classList.remove('is-visible');
         cardsEl.innerHTML = '';
         cardsEl._places = [];
@@ -684,6 +733,7 @@
         if (map.getZoom() < CARDS_MIN_ZOOM) { hideCards(); return; }
         var w = mapEl.clientWidth, h = mapEl.clientHeight;
         var inView = places.filter(function (p) {
+          if (!passes(p)) return false;
           var pt = map.project([p.lng, p.lat]);
           return pt.x >= 0 && pt.x <= w && pt.y >= 0 && pt.y <= h;
         });
@@ -697,6 +747,7 @@
         cardsEl.scrollTop = 0;
         cardsEl.scrollLeft = 0;
         cardsEl.classList.add('is-visible');
+        document.body.classList.add('has-cards');
         scrollToActiveCard();
       }
 
@@ -794,6 +845,110 @@
       }
       document.addEventListener('fullscreenchange', syncFullscreen);
       document.addEventListener('webkitfullscreenchange', syncFullscreen);
+
+      // ---- Filter bar ------------------------------------------------------
+      var TOP_RATED = 4.5;
+      var filterEl = document.getElementById('filters');
+      var picked = {};          // group key -> true; nothing picked means every group
+      var topRated = false;
+
+      function passes(place) {
+        var any = false;
+        for (var k in picked) { if (picked[k]) { any = true; break; } }
+        if (any && !picked[groupOf(place.category)]) return false;
+        if (topRated && !(Number(place.rating) >= TOP_RATED)) return false;
+        return true;
+      }
+
+      function pretty(text) {
+        text = String(text || '').replace(/_/g, ' ').trim();
+        return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+      }
+
+      var counts = {};
+      places.forEach(function (p) { var g = groupOf(p.category); counts[g] = (counts[g] || 0) + 1; });
+      var present = GROUP_ORDER.filter(function (g) { return counts[g]; });
+      // "Other" reads better as the real category when all of them share one (e.g. "Bakery").
+      var otherNames = places.filter(function (p) { return groupOf(p.category) === 'other'; })
+        .map(function (p) { return pretty(p.category); });
+      if (otherNames.length && otherNames[0] && otherNames.every(function (n) { return n === otherNames[0]; })) {
+        GROUPS.other.label = otherNames[0];
+      }
+      var rated = places.filter(function (p) { return Number(p.rating) >= TOP_RATED; }).length;
+      var offerTopRated = rated >= 2 && rated < places.length;
+
+      function chip(label, opts) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip';
+        if (opts.color) {
+          var dot = document.createElement('span');
+          dot.className = 'chip__dot';
+          dot.style.background = opts.color;
+          b.appendChild(dot);
+        }
+        if (opts.star) addText(b, 'span', 'chip__star', '★');
+        addText(b, 'span', '', label);
+        if (opts.count) addText(b, 'span', 'chip__n', String(opts.count));
+        b.addEventListener('click', opts.onClick);
+        filterEl.appendChild(b);
+        return b;
+      }
+
+      var chips = [];
+      function paintChips() {
+        var any = Object.keys(picked).some(function (k) { return picked[k]; });
+        chips.forEach(function (c) {
+          var on = c.key === 'all' ? (!any && !topRated) : c.key === 'top' ? topRated : !!picked[c.key];
+          c.el.classList.toggle('is-on', on);
+          c.el.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+
+      // Narrows the map: hides pins that don't match, closes a pin card that
+      // no longer matches, rebuilds the card list and zooms to what's left.
+      function applyFilters(refit) {
+        var shown = places.filter(passes);
+        markers.forEach(function (m) { m.getElement().style.display = passes(m._place) ? '' : 'none'; });
+        if (openPopup && !passes(openPopup._place)) openPopup.remove();
+        var empty = filterEl.querySelector('.filters__empty');
+        if (!shown.length && !empty) addText(filterEl, 'span', 'filters__empty', 'No places match');
+        if (shown.length && empty) empty.remove();
+        paintChips();
+        cardsKey = '';
+        if (!refit || !shown.length) { updateCards(); return; }
+        var phone = window.innerWidth <= 640;
+        var pad = { top: 56, bottom: 56, left: 56, right: 56 };
+        if (phone) { pad.top += 40; pad.bottom += 100; }               // the bar on top, the card row along the bottom
+        else { pad.bottom += 40; if (mapEl.clientWidth > 700) pad.left += 240; }   // the bar along the bottom, the card list on the left
+        if (shown.length === 1) {
+          map.flyTo({ center: [shown[0].lng, shown[0].lat], zoom: Math.max(map.getZoom(), 14), duration: 700, essential: true });
+        } else {
+          var b = new mapboxgl.LngLatBounds();
+          shown.forEach(function (p) { b.extend([p.lng, p.lat]); });
+          map.fitBounds(b, { padding: pad, maxZoom: 15, duration: 700, essential: true });
+        }
+      }
+
+      if (places.length >= 3 && (present.length >= 2 || offerTopRated)) {
+        chips.push({ key: 'all', el: chip('All', { count: places.length, onClick: function () {
+          picked = {}; topRated = false; applyFilters(true);
+        } }) });
+        if (present.length >= 2) {
+          present.forEach(function (g) {
+            chips.push({ key: g, el: chip(GROUPS[g].label, { color: GROUPS[g].color, count: counts[g], onClick: function () {
+              picked[g] = !picked[g]; applyFilters(true);
+            } }) });
+          });
+        }
+        if (offerTopRated) {
+          chips.push({ key: 'top', el: chip(TOP_RATED + '+', { star: true, onClick: function () {
+            topRated = !topRated; applyFilters(true);
+          } }) });
+        }
+        paintChips();
+        filterEl.classList.add('is-visible');
+      }
 
       map.on('load', function () {
         if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
