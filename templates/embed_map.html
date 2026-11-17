@@ -128,51 +128,64 @@
     body.is-fs .detail__name { font-size: 28px; }
     body.is-fs .detail__text, body.is-fs .detail__note { font-size: 16px; }
 
-    /* Place cards (name, rating, address). Wide embed: a scrollable list down
-       the left. Narrow embed (<=640px wide): a swipeable strip along the
-       bottom. Only shown once zoomed in to city level, never at wide views. */
-    .cards { display: none; position: absolute; z-index: 2; left: 10px; top: 56px; width: 240px; max-height: calc(100% - 72px);
+    /* Place cards: picture on the left; name, rating, kind of place and your
+       note on the right. Wide embed: a scrollable list down the left. Narrow
+       embed (<=640px wide): a swipeable row along the bottom. Only shown once
+       zoomed in to city level, never at wide views. */
+    .cards { display: none; position: absolute; z-index: 2; left: 10px; top: 56px; width: 300px; max-height: calc(100% - 72px);
       flex-direction: column; gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding: 2px 4px 2px 2px;
       scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.35) transparent; }
     .cards.is-visible { display: flex; }
-    .card { position: relative; overflow: hidden; flex: 0 0 auto; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; gap: 3px; padding: 9px 12px;
-      text-align: left; font: inherit; color: #fff; background: rgba(20,20,22,0.86);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px; cursor: pointer; transition: border-color 0.15s; }
+    .card { flex: 0 0 auto; box-sizing: border-box; width: 100%; display: flex; align-items: stretch; padding: 0; overflow: hidden;
+      text-align: left; font: inherit; color: #fff; background: #121316; border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.28); cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
     .card:hover { border-color: rgba(255,255,255,0.3); }
     .card:focus-visible { outline: 2px solid #7ee2bf; outline-offset: 2px; }
-    .card.is-active { border-color: rgba(126,226,191,0.7); }
-    /* With a picture: it fills the card, a dark fade keeps the text readable. */
-    .card.has-photo { min-height: 92px; justify-content: flex-end; background: #1b1d21; }
-    .card__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-    .card.has-photo::before { content: ""; position: absolute; inset: 0; z-index: 1;
-      background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.38) 42%, rgba(0,0,0,0.84) 100%); }
-    .card.has-photo .card__top, .card.has-photo .card__addr { position: relative; z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
-    .card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .card__title { display: flex; align-items: center; gap: 7px; min-width: 0; }
-    .card__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .card__name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card__rating { flex-shrink: 0; font-size: 12px; font-weight: 800; color: #f5b301; }
-    .card__addr { font-size: 11.5px; line-height: 1.35; color: rgba(255,255,255,0.65);
+    .card.is-active { border-color: var(--c, #7ee2bf); box-shadow: 0 0 0 1.5px var(--c, #7ee2bf), 0 6px 18px rgba(0,0,0,0.28); }
+    .card__img, .card__ph { flex: 0 0 92px; width: 92px; min-height: 92px; align-self: stretch; object-fit: cover; display: block; background: #23262b; }
+    .card__ph { display: flex; align-items: center; justify-content: center; }
+    .card__ph svg { width: 30px; height: 30px; fill: none; stroke: var(--c, #fff); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
+    .card__info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 10px 12px; }
+    .card__name { font-size: 14.5px; font-weight: 800; line-height: 1.25;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card__rating { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: rgba(255,255,255,0.88); white-space: nowrap; }
+    .card__num { font-weight: 800; }
+    .stars { position: relative; display: inline-block; font-size: 12px; line-height: 1; letter-spacing: 1px; color: rgba(255,255,255,0.22); }
+    .stars__fill { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #f5b301; }
+    .card__count { color: rgba(255,255,255,0.55); }
+    .card__sub { font-size: 12px; color: rgba(255,255,255,0.62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card__sub b { font-weight: 700; color: rgba(255,255,255,0.82); text-transform: capitalize; }
+    .card__note { font-size: 12.5px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     /* Full screen: lots of room, so bigger cards with bigger pictures and text. */
-    body.is-fs .cards { left: 20px; top: 72px; width: 380px; max-height: calc(100% - 96px); gap: 12px; }
-    body.is-fs .card { padding: 14px 18px; border-radius: 18px; gap: 5px; }
-    body.is-fs .card.has-photo { min-height: 160px; }
+    body.is-fs .cards { left: 20px; top: 72px; width: 400px; max-height: calc(100% - 96px); gap: 12px; }
+    body.is-fs .card__img, body.is-fs .card__ph { flex-basis: 128px; width: 128px; min-height: 128px; }
+    body.is-fs .card__info { padding: 14px 16px; gap: 6px; }
     body.is-fs .card__name { font-size: 18px; }
-    body.is-fs .card__rating { font-size: 15px; }
-    body.is-fs .card__addr { font-size: 14px; }
-    body.is-fs .card__dot { width: 10px; height: 10px; }
+    body.is-fs .card__rating, body.is-fs .card__note { font-size: 14.5px; }
+    body.is-fs .card__sub { font-size: 13.5px; }
     @media (max-width: 640px) {
       .cards { top: auto; bottom: 28px; left: 0; right: 0; width: auto; max-height: none; flex-direction: row; gap: 10px;
-        padding: 0 10px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding: 0 10px; scrollbar-width: none; }
+        padding: 4px 14px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-padding: 0 14px; scrollbar-width: none; }
       .cards::-webkit-scrollbar { display: none; }
-      .card { width: 220px; scroll-snap-align: start; }
-      .card.has-photo { min-height: 84px; }
-      body.is-fs .cards { top: auto; bottom: 34px; left: 0; right: 0; width: auto; max-height: none; padding: 0 16px; }
-      body.is-fs .card { width: 290px; }
-      body.is-fs .card.has-photo { min-height: 130px; }
+      .card { width: calc(100vw - 56px); max-width: 360px; scroll-snap-align: start; }
+      .card__img, .card__ph { flex-basis: 112px; width: 112px; min-height: 112px; }
+      body.is-fs .cards { top: auto; bottom: 34px; left: 0; right: 0; width: auto; max-height: none; padding: 4px 16px; }
+      body.is-fs .card { width: calc(100vw - 64px); max-width: 400px; }
+      body.is-fs .card__img, body.is-fs .card__ph { flex-basis: 120px; width: 120px; min-height: 120px; }
     }
+
+    /* Pins: a white circle with the place's icon, ringed in its colour. The
+       chosen place grows, fills with its colour and gets a point. */
+    .mk { position: relative; width: 34px; height: 34px; cursor: pointer; }
+    .mk__dot { position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: #fff; border: 2px solid var(--c); box-shadow: 0 2px 7px rgba(0,0,0,0.38);
+      transition: transform 0.18s ease, background-color 0.18s ease; }
+    .mk__dot svg { width: 18px; height: 18px; fill: none; stroke: var(--c); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .mk::after { content: ""; position: absolute; left: 50%; top: 100%; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--c);
+      opacity: 0; transform: translateY(-14px); transition: opacity 0.18s ease, transform 0.18s ease; }
+    .mk.is-active .mk__dot { transform: translateY(-8px) scale(1.22); background: var(--c); }
+    .mk.is-active .mk__dot svg { stroke: #fff; }
+    .mk.is-active::after { opacity: 1; transform: translateY(-4px); }
 
     /* Filter bar: one blurred pill of icons that narrows the map to some
        kinds of place (food, coffee, ...) and, when there are ratings, to the
@@ -217,9 +230,6 @@
     /* List view (phones, on the map's own page -- e.g. a shared link): a button
        under the zoom buttons opens the places as a scrolling list of cards.
        Inside a story the page around the map draws its own List button. */
-    .ctrl-list svg { width: 18px; height: 18px; fill: none; stroke: #333; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .mapboxgl-ctrl-group.ctrl-list { display: none; }
-    @media (max-width: 640px) { body.is-standalone .mapboxgl-ctrl-group.ctrl-list { display: block; } }
     .lsheet { position: fixed; inset: 0; z-index: 20; visibility: hidden; }
     .lsheet.is-open { visibility: visible; }
     .lsheet__scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.25s ease; }
@@ -252,6 +262,34 @@
     body.list-open .detail { z-index: 25; }            /* a listing opened from the list sits on top of it */
     /* Behind a story on a phone: the page's "Back to story" button runs along the bottom. */
     @media (max-width: 640px) { body.story-mode .cards { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+    /* Phones: the filter chips show their names, in a row you can swipe. */
+    .fbtn__label { display: none; }
+    @media (max-width: 640px) {
+      .filters, body.is-fs .filters { left: 10px; right: 50px; justify-content: flex-start; }
+      body.touch-full .filters { right: 10px; }
+      .filters__pill { gap: 8px; padding: 2px; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+        -webkit-backdrop-filter: none; backdrop-filter: none; }
+      .fbtn { width: auto; height: 38px; gap: 6px; padding: 0 15px 0 12px; border-radius: 999px; background: rgba(16,18,20,0.74);
+        border: 0.5px solid rgba(255,255,255,0.22); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+      .fbtn svg { width: 17px; height: 17px; }
+      .fbtn__label { display: inline; font-size: 14px; font-weight: 700; white-space: nowrap; }
+      .fbtn.is-on, .fbtn--all.is-on, .fbtn--top.is-on { background: #fff; color: #15171a; border-color: transparent; }
+      .fbtn.is-on svg { stroke: var(--c, #15171a); }
+      .fbtn--top.is-on svg { stroke: #e0a100; }
+      body.touch-full .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group { display: none; }   /* pinch to zoom instead */
+    }
+    .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group { display: none; }   /* the locate control's own button; ours is .maptool--locate */
+    .maptools { display: none; }
+    @media (max-width: 640px) {
+      body.is-standalone .maptools { display: block; }
+      body.is-standalone .cards { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+    }
+    .maptool { position: absolute; z-index: 5; bottom: calc(34px + env(safe-area-inset-bottom, 0px)); height: 46px; border: 0; cursor: pointer;
+      background: #fff; color: #15171a; box-shadow: 0 4px 16px rgba(0,0,0,0.3); font: inherit; }
+    .maptool svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .maptool--list { left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 0 22px 0 18px;
+      border-radius: 999px; font-size: 15.5px; font-weight: 700; }
+    .maptool--locate { right: 14px; width: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
   </style>
 </head>
 <body>
@@ -328,29 +366,48 @@
         wine:     { label: 'Wine',     color: '#B4436C' },
         rooftops: { label: 'Rooftops', color: '#5AC8E8' },
         shops:    { label: 'Shops',    color: '#F5B301' },
+        hotels:   { label: 'Hotels',   color: '#5B7CFA' },
+        sights:   { label: 'Sights',   color: '#E8833A' },
         other:    { label: 'Other',    color: '#2f9e7e' }
       };
-      var GROUP_ORDER = ['food', 'coffee', 'bars', 'wine', 'rooftops', 'shops', 'other'];
+      var GROUP_ORDER = ['food', 'coffee', 'bars', 'wine', 'rooftops', 'shops', 'hotels', 'sights', 'other'];
       function groupOf(category) {
         var c = (category || '').toLowerCase();
         if (c.indexOf('coffee') >= 0 || c.indexOf('cafe') >= 0 || c.indexOf('caf\u00e9') >= 0) return 'coffee';
         if (c.indexOf('bar') >= 0 || c.indexOf('cocktail') >= 0) return 'bars';
         if (c.indexOf('wine') >= 0) return 'wine';
         if (c.indexOf('rooftop') >= 0) return 'rooftops';
+        if (/hotel|hostel|lodging|guest ?house|apartment|resort|\binn\b/.test(c)) return 'hotels';
+        if (/museum|gallery|sight|attraction|landmark|monument|palace|church|cathedral|castle|park|tourist/.test(c)) return 'sights';
         if (c.indexOf('shop') >= 0) return 'shops';
         if (c.indexOf('restaurant') >= 0 || c.indexOf('food') >= 0) return 'food';
         return 'other';
       }
       function categoryColor(category) { return GROUPS[groupOf(category)].color; }
 
+      // Simple line icons for each kind of place, used by the pins, the cards and the filter chips (drawn here, nothing extra to load).
+      var ICONS = {
+        all: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+        food: '<path d="M4.5 11a7.5 6 0 0 1 15 0z"/><path d="M3.5 14.5h17"/><path d="M5 17.5h14a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 17.5z"/>',
+        coffee: '<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5v2.5M12 3.5v2.5"/>',
+        bars: '<path d="M4.5 4.5h15L12 13z"/><path d="M12 13v6.5M8 19.5h8"/>',
+        wine: '<path d="M8 3.5h8l-.4 5a3.6 3.6 0 0 1-7.2 0z"/><path d="M12 12v7.5M8.5 19.5h7"/>',
+        rooftops: '<path d="M3.5 20h17"/><path d="M5.5 20v-9h4v9"/><path d="M10.5 20V5h5v15"/><path d="M16.5 20v-6h3v6"/>',
+        shops: '<path d="M5 8.5h14l-1 11.5H6z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>',
+        hotels: '<path d="M3.5 18.5V6"/><path d="M3.5 14h17v4.5"/><path d="M20.5 14v-2.5a3 3 0 0 0-3-3H11V14"/><circle cx="7.3" cy="11" r="1.8"/>',
+        sights: '<path d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.3"/>',
+        other: '<path d="M12 21s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+        top: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>'
+      };
+
       function markerEl(place) {
+        var g = groupOf(place.category);
         var el = document.createElement('div');
-        el.style.cursor = 'pointer';
-        el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))';
+        el.className = 'mk';
+        el.style.setProperty('--c', GROUPS[g].color);
         el.setAttribute('role', 'button');
         el.setAttribute('aria-label', place.name);
-        el.innerHTML = '<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg"><path d="M14 1C6.8 1 1 6.7 1 13.7c0 9.6 13 21.3 13 21.3s13-11.7 13-21.3C27 6.7 21.2 1 14 1z" fill="' +
-          categoryColor(place.category) + '" stroke="#0b0c0d" stroke-width="1.5"/><circle cx="14" cy="13.5" r="5" fill="#0b0c0d" fill-opacity="0.85"/></svg>';
+        el.innerHTML = '<span class="mk__dot"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[g] + '</svg></span>';   // fixed icons only, never place data
         return el;
       }
 
@@ -763,8 +820,18 @@
         else cardsEl.scrollTo({ top: Math.max(0, card.offsetTop - 8), behavior: 'smooth' });
       }
 
+      function paintPins(place) {
+        markers.forEach(function (m) {
+          var on = !!place && m._place === place;
+          var el = m.getElement();
+          el.classList.toggle('is-active', on);
+          el.style.zIndex = on ? '3' : '';
+        });
+      }
+
       function setActive(place) {
         activePlace = place;
+        paintPins(place);
         var list = cardsEl._places || [];
         cardsEl.querySelectorAll('.card').forEach(function (c, i) {
           c.classList.toggle('is-active', !!place && list[i] === place);
@@ -774,38 +841,59 @@
 
       // Cards are built with textContent, like the popups, so a place name or
       // address can't inject markup.
+      function iconPlaceholder(place) {
+        var ph = document.createElement('span');
+        ph.className = 'card__ph';
+        ph.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[groupOf(place.category)] + '</svg>';
+        return ph;
+      }
+
       function cardNode(place, index) {
         var card = document.createElement('button');
         card.type = 'button';
         card.className = 'card' + (place === activePlace ? ' is-active' : '');
         card.setAttribute('data-idx', String(index));
-        // Background picture (served through /embed/photo, never a raw Google link).
+        card.style.setProperty('--c', categoryColor(place.category));
+        // Picture on the left (served through /embed/photo, never a raw Google link).
         if (place.photo) {
           var img = document.createElement('img');
-          img.className = 'card__bg';
+          img.className = 'card__img';
           img.alt = '';
           img.loading = 'lazy';
           img.decoding = 'async';
-          img.addEventListener('error', function () { img.remove(); card.classList.remove('has-photo'); }, { once: true });
+          img.addEventListener('error', function () { img.replaceWith(iconPlaceholder(place)); }, { once: true });
           img.src = place.photo;
           card.appendChild(img);
-          card.classList.add('has-photo');
+        } else {
+          card.appendChild(iconPlaceholder(place));
         }
-        var top = document.createElement('div');
-        top.className = 'card__top';
-        var title = document.createElement('div');
-        title.className = 'card__title';
-        var dot = document.createElement('span');
-        dot.className = 'card__dot';
-        dot.style.background = categoryColor(place.category);
-        title.appendChild(dot);
-        addText(title, 'span', 'card__name', place.name);
-        top.appendChild(title);
-        if (place.rating !== null && place.rating !== undefined && place.rating !== '' && !isNaN(Number(place.rating))) {
-          addText(top, 'span', 'card__rating', '★ ' + Number(place.rating).toFixed(1));
+        var info = document.createElement('div');
+        info.className = 'card__info';
+        addText(info, 'div', 'card__name', place.name);
+        var r = Number(place.rating);
+        if (place.rating !== null && place.rating !== undefined && place.rating !== '' && r > 0) {
+          var row = document.createElement('div');
+          row.className = 'card__rating';
+          addText(row, 'span', 'card__num', r.toFixed(1));
+          var stars = addText(row, 'span', 'stars', '★★★★★');
+          var fill = addText(stars, 'span', 'stars__fill', '★★★★★');
+          fill.style.width = Math.max(0, Math.min(100, r / 5 * 100)) + '%';
+          stars.setAttribute('aria-hidden', 'true');
+          if (Number(place.ratingCount) > 0) addText(row, 'span', 'card__count', '(' + Number(place.ratingCount).toLocaleString() + ')');
+          info.appendChild(row);
         }
-        card.appendChild(top);
-        if (place.address) addText(card, 'div', 'card__addr', place.address);
+        var kind = place.category ? place.category.replace(/_/g, ' ') : '';
+        var street = (place.address || '').split(',')[0].trim();
+        if (kind || street) {
+          var sub = document.createElement('div');
+          sub.className = 'card__sub';
+          if (kind) addText(sub, 'b', '', kind);
+          if (kind && street) sub.appendChild(document.createTextNode(' · '));
+          if (street) sub.appendChild(document.createTextNode(street));
+          info.appendChild(sub);
+        }
+        if (place.notes) addText(info, 'div', 'card__note', place.notes);
+        card.appendChild(info);
         return card;
       }
 
@@ -832,6 +920,20 @@
         document.body.classList.add('has-cards');
         scrollToActiveCard();
       }
+
+      var swipeTimer = null;
+      cardsEl.addEventListener('scroll', function () {
+        if (getComputedStyle(cardsEl).flexDirection !== 'row') return;
+        clearTimeout(swipeTimer);
+        swipeTimer = setTimeout(function () {
+          var mid = cardsEl.getBoundingClientRect().left + 14, best = null, bestD = Infinity;
+          cardsEl.querySelectorAll('.card').forEach(function (c, i) {
+            var d = Math.abs(c.getBoundingClientRect().left - mid);
+            if (d < bestD) { bestD = d; best = (cardsEl._places || [])[i]; }
+          });
+          if (best && !openPopup) paintPins(best);   // highlight only: the map stays where it is
+        }, 120);
+      }, { passive: true });
 
       cardsEl.addEventListener('click', function (e) {
         var card = e.target.closest('.card');
@@ -959,18 +1061,6 @@
       var rated = places.filter(function (p) { return Number(p.rating) >= TOP_RATED; }).length;
       var offerTopRated = rated >= 2 && rated < places.length;
 
-      // Simple line icons, one per filter (drawn here, so nothing extra to load).
-      var ICONS = {
-        all: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
-        food: '<path d="M4.5 11a7.5 6 0 0 1 15 0z"/><path d="M3.5 14.5h17"/><path d="M5 17.5h14a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 17.5z"/>',
-        coffee: '<path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5v2.5M12 3.5v2.5"/>',
-        bars: '<path d="M4.5 4.5h15L12 13z"/><path d="M12 13v6.5M8 19.5h8"/>',
-        wine: '<path d="M8 3.5h8l-.4 5a3.6 3.6 0 0 1-7.2 0z"/><path d="M12 12v7.5M8.5 19.5h7"/>',
-        rooftops: '<path d="M3.5 20h17"/><path d="M5.5 20v-9h4v9"/><path d="M10.5 20V5h5v15"/><path d="M16.5 20v-6h3v6"/>',
-        shops: '<path d="M5 8.5h14l-1 11.5H6z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>',
-        other: '<path d="M12 21s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
-        top: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>'
-      };
 
       var pill = document.createElement('div');
       pill.className = 'filters__pill';
@@ -981,6 +1071,7 @@
         b.type = 'button';
         b.className = 'fbtn fbtn--' + opts.icon;
         b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[opts.icon] + '</svg>';   // our own fixed icons, never place data
+        addText(b, 'span', 'fbtn__label', opts.short || label);   // shown on phones
         var name = opts.count ? label + ' (' + opts.count + ')' : label;
         b.setAttribute('aria-label', name);
         b.title = name;
@@ -1026,7 +1117,7 @@
       }
 
       if (places.length >= 3 && (present.length >= 2 || offerTopRated)) {
-        chips.push({ key: 'all', el: chip('All places', { icon: 'all', count: places.length, onClick: function () {
+        chips.push({ key: 'all', el: chip('All places', { icon: 'all', short: 'All', count: places.length, onClick: function () {
           picked = {}; topRated = false; applyFilters(true);
         } }) });
         if (present.length >= 2) {
@@ -1037,7 +1128,7 @@
           });
         }
         if (offerTopRated) {
-          chips.push({ key: 'top', el: chip('Rated ' + TOP_RATED + ' and up', { icon: 'top', onClick: function () {
+          chips.push({ key: 'top', el: chip('Rated ' + TOP_RATED + ' and up', { icon: 'top', short: TOP_RATED + '+', onClick: function () {
             topRated = !topRated; applyFilters(true);
           } }) });
         }
@@ -1123,22 +1214,29 @@
         if (e.key === 'Escape' && lsheet.classList.contains('is-open') && detailEl.hidden && viewerEl.hidden) closeList();
       });
 
+      if (standalone || STORY_MODE) document.body.classList.add('touch-full');   // the map fills the screen: pinch to zoom
       if (standalone) {
-        map.addControl({
-          onAdd: function () {
-            var box = document.createElement('div');
-            box.className = 'mapboxgl-ctrl mapboxgl-ctrl-group ctrl-list';
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.setAttribute('aria-label', 'Show places as a list');
-            btn.title = 'List';
-            btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>';
-            btn.addEventListener('click', openList);
-            box.appendChild(btn);
-            return box;
-          },
-          onRemove: function () {}
-        }, 'top-right');
+        var tools = document.createElement('div');
+        tools.className = 'maptools';
+        var listBtn = document.createElement('button');
+        listBtn.type = 'button';
+        listBtn.className = 'maptool maptool--list';
+        listBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg><span>List</span>';
+        listBtn.addEventListener('click', openList);
+        tools.appendChild(listBtn);
+        // "Where am I": Mapbox's own locate control does the work (blue dot,
+        // permission prompt); its button is hidden and ours triggers it.
+        var geo = new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false, showUserHeading: false });
+        map.addControl(geo, 'top-left');
+        var locBtn = document.createElement('button');
+        locBtn.type = 'button';
+        locBtn.className = 'maptool maptool--locate';
+        locBtn.setAttribute('aria-label', 'Show where I am');
+        locBtn.title = 'Where am I';
+        locBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.8"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg>';
+        locBtn.addEventListener('click', function () { try { geo.trigger(); } catch (e) {} });
+        tools.appendChild(locBtn);
+        document.body.appendChild(tools);
       }
 
       // ---- Show one place (asked by the story around the map) -------------
