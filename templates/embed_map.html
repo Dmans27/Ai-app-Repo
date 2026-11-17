@@ -250,6 +250,8 @@
     .lcard__rating { color: #f5b301; font-weight: 800; }
     .lcard__cat { text-transform: capitalize; }
     body.list-open .detail { z-index: 25; }            /* a listing opened from the list sits on top of it */
+    /* Behind a story on a phone: the page's "Back to story" button runs along the bottom. */
+    @media (max-width: 640px) { body.story-mode .cards { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
   </style>
 </head>
 <body>
@@ -282,6 +284,12 @@
   <script>
     (function () {
       var data = JSON.parse(document.getElementById('map-data').textContent || '{}');
+      // ?mode=story: the map fills the screen behind a story on the media site
+      // ("travel map story"). It pans with one finger, has no full-screen
+      // button (it already fills the screen) and keeps its card row clear of
+      // the "Back to story" button the page puts along the bottom.
+      var STORY_MODE = /(^|[?&])mode=story(&|$)/.test(location.search);
+      if (STORY_MODE) document.body.classList.add('story-mode');
       var places = data.places || [];
       var note = document.getElementById('note');
 
@@ -717,12 +725,14 @@
         style: data.style,
         center: [places[0].lng, places[0].lat],
         zoom: 11,
-        cooperativeGestures: true   // inside an article: two fingers / ctrl+scroll move the map, one finger scrolls the page
+        // Inside an article: two fingers / ctrl+scroll move the map, one finger scrolls the page.
+        // On its own page, or filling the screen behind a story, one finger moves the map.
+        cooperativeGestures: window.parent !== window && !STORY_MODE
       });
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
       // Full screen the whole page (not just the map) so the
       // place cards stay visible when it is full screen.
-      map.addControl(new mapboxgl.FullscreenControl({ container: document.body }), 'top-right');
+      if (!STORY_MODE) map.addControl(new mapboxgl.FullscreenControl({ container: document.body }), 'top-right');
 
       // ---- Place cards ----------------------------------------------------
       // Shown only once the map is zoomed in at least this far (about "a city
@@ -1130,6 +1140,27 @@
           onRemove: function () {}
         }, 'top-right');
       }
+
+      // ---- Show one place (asked by the story around the map) -------------
+      // A link to a directory listing inside a travel map story asks the map
+      // to fly to that place and open its card. Found by its listing, or by name.
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || window.parent === window || !e.data || e.data.type !== 'mansfield:focus-place') return;
+        var slug = String(e.data.listing || ''), name = String(e.data.name || '').trim().toLowerCase();
+        var place = places.filter(function (p) { return slug && p.listing === slug; })[0] ||
+                    places.filter(function (p) { return name && (p.name || '').toLowerCase() === name; })[0];
+        window.parent.postMessage({ type: 'mansfield:focused', found: !!place }, e.origin || '*');
+        if (!place) return;
+        if (!passes(place)) { picked = {}; topRated = false; applyFilters(false); }
+        if (!viewerEl.hidden) closeViewer();
+        if (!detailEl.hidden) closeDetail();
+        if (lsheet.classList.contains('is-open')) closeList();
+        if (openPopup && openPopup._place !== place) openPopup.remove();
+        setActive(place);
+        map.flyTo({ center: [place.lng, place.lat], zoom: Math.max(map.getZoom(), 15), duration: 1200, essential: true });
+        var marker = markers.filter(function (m) { return m._place === place; })[0];
+        if (marker) map.once('moveend', function () { if (!marker.getPopup().isOpen()) marker.togglePopup(); });
+      });
 
       map.on('load', function () {
         if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
