@@ -268,7 +268,13 @@
        the story page passes its height in (?safe=NN, set as --safe-top below). */
     @media (max-width: 640px) {
       body.story-mode .filters { top: calc(var(--safe-top, 0px) + 12px); }
+      /* A place opened from the map: its "Back to map" bar clears the status bar, and the
+         page's Back to story / share / list buttons don't cover the end of the listing. */
+      body.story-mode .detail__bar { padding-top: calc(var(--safe-top, 0px) + 10px); }
+      body.story-mode .detail__inner { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)); }
     }
+    /* The map's own page in an app or home-screen web app that runs under the status bar. */
+    body:not(.story-mode) .detail__bar { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); }
     /* Phones: the filter chips show their names, in a row you can swipe. */
     .fbtn__label { display: none; }
     @media (max-width: 640px) {
