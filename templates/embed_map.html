@@ -176,7 +176,9 @@
 
     /* Pins: a white circle with the place's icon, ringed in its colour. The
        chosen place grows, fills with its colour and gets a point. */
-    .mk { position: relative; width: 34px; height: 34px; cursor: pointer; }
+    /* No "position" here: Mapbox places each pin with .mapboxgl-marker { position: absolute }.
+       Overriding it drops the pins into the page flow, so they stack and slide as the map moves. */
+    .mk { width: 34px; height: 34px; cursor: pointer; }
     .mk__dot { position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
       border-radius: 50%; background: #fff; border: 2px solid var(--c); box-shadow: 0 2px 7px rgba(0,0,0,0.38);
       transition: transform 0.18s ease, background-color 0.18s ease; }
@@ -262,6 +264,11 @@
     body.list-open .detail { z-index: 25; }            /* a listing opened from the list sits on top of it */
     /* Behind a story on a phone: the page's "Back to story" button runs along the bottom. */
     @media (max-width: 640px) { body.story-mode .cards { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+    /* Behind a story the map runs under the phone's status bar, but an iframe can't see the notch:
+       the story page passes its height in (?safe=NN, set as --safe-top below). */
+    @media (max-width: 640px) {
+      body.story-mode .filters { top: calc(var(--safe-top, 0px) + 12px); }
+    }
     /* Phones: the filter chips show their names, in a row you can swipe. */
     .fbtn__label { display: none; }
     @media (max-width: 640px) {
@@ -328,6 +335,11 @@
       // the "Back to story" button the page puts along the bottom.
       var STORY_MODE = /(^|[?&])mode=story(&|$)/.test(location.search);
       if (STORY_MODE) document.body.classList.add('story-mode');
+      (function () {   // the story page's status-bar height, so the filter chips sit below it
+        var m = /(?:^|[?&])safe=(\d{1,3})(?:&|$)/.exec(location.search);
+        var px = m ? Math.min(+m[1], 80) : (STORY_MODE ? 44 : 0);   // no value passed: assume a notch rather than risk a cut-off bar
+        document.documentElement.style.setProperty('--safe-top', px + 'px');
+      })();
       var places = data.places || [];
       var note = document.getElementById('note');
 
