@@ -125,7 +125,13 @@
     .detail__open { font-weight: 800; }
     .detail__open.is-open { color: #1b7f55; }
     .detail__open.is-closed { color: #b3392f; }
-    .detail__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    /* The buttons under a place's name: one row of pills you swipe sideways. On the listing
+       the row runs edge to edge, so a pill cut off at the right shows there is more. */
+    .detail__actions { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
+    .detail__actions::-webkit-scrollbar { display: none; }
+    .detail__actions > a, .detail__actions > button { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
+    .detail__body > .detail__actions { margin: 0 -18px; padding: 2px 18px; scroll-padding: 0 18px; }
     .detail__actions a { padding: 9px 16px; border-radius: 999px; background: #eef1ef; color: #1c1f1d; font-weight: 700; font-size: 13.5px; text-decoration: none; }
     .detail__actions a:hover { background: #e2e6e3; }
     .detail__actions a.is-primary { background: #1d6fa5; color: #fff; }
