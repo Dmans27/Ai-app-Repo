@@ -309,6 +309,35 @@
     .maptool--list { left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 0 22px 0 18px;
       border-radius: 999px; font-size: 15.5px; font-weight: 700; }
     .maptool--locate { right: 14px; width: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+    /* Route: a travel map story whose places are numbered stops in the order the story visits
+       them (the media site's "This story is a route"). Sent by the story page:
+         mansfield:route {stops} -> numbered pins, a dotted line, route-only cards
+         mansfield:route-step {index}, mansfield:route-view {view: 'strip'|'full', pad} */
+    .mk__num { font: 800 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--c); }
+    body.has-route .mk--stop .mk__dot { background: var(--c); border: 2.5px solid #fff; }
+    body.has-route .mk--stop .mk__num { color: #fff; }
+    body.has-route .mk--stop.is-active .mk__dot { transform: translateY(-8px) scale(1.32);
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.22), 0 3px 10px rgba(0,0,0,0.45); }
+    .mapboxgl-marker.mk--stop { z-index: 2; }          /* stops sit above the other places' small dots */
+    body.has-route .mk--past .mk__dot { filter: saturate(0.35) brightness(0.78); }
+    body.has-route .mk--off .mk__dot { transform: scale(0.6); opacity: 0.5; }
+    body.has-route .mk--off.is-active .mk__dot { transform: translateY(-6px) scale(1); opacity: 1; }
+    body.has-route .filters { display: none !important; }
+    .routepill { display: none; position: absolute; z-index: 4; top: calc(var(--safe-top, 0px) + 12px); left: 50%; transform: translateX(-50%);
+      align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; white-space: nowrap; color: #fff; font-size: 14px; font-weight: 700;
+      background: rgba(16,18,20,0.78); border: 0.5px solid rgba(255,255,255,0.2); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3); pointer-events: none; }
+    .routepill svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .routepill small { font-size: 13px; font-weight: 600; opacity: 0.68; }
+    body.has-route .routepill { display: inline-flex; }
+    /* The strip above the story: just the map and its pins, nothing to tap. */
+    body.route-strip .cards, body.route-strip .routepill, body.route-strip .mapboxgl-ctrl-top-right,
+    body.route-strip .mapboxgl-popup, body.route-strip .maptools, body.route-strip .mapboxgl-ctrl-bottom-right { display: none !important; }
+    .card__step { font-size: 10.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); white-space: nowrap; }
+    .card__read { align-self: flex-start; margin-top: 3px; padding: 5px 11px; border-radius: 999px; background: #fff; color: #15171a;
+      font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .pop__links button.is-read { background: #fff; color: #15171a; border-color: transparent; }
   </style>
 </head>
 <body>
@@ -924,6 +953,8 @@
       // Re-syncs the cards to the places currently on screen. Shows nothing
       // until the map is zoomed in to city level.
       function updateCards() {
+        if (route && routeView === 'strip') { hideCards(); return; }
+        if (route && routeView === 'full') { showRouteCards(); return; }
         if (map.getZoom() < CARDS_MIN_ZOOM) { hideCards(); return; }
         var w = mapEl.clientWidth, h = mapEl.clientHeight;
         var inView = places.filter(function (p) {
@@ -964,6 +995,7 @@
         if (!card) return;
         var place = (cardsEl._places || [])[Number(card.getAttribute('data-idx'))];
         if (!place) return;
+        if (e.target.closest('[data-read]')) { readAbout(place); return; }
         // Clicking another card closes the pin card that was open straight away.
         if (openPopup && openPopup._place !== place) openPopup.remove();
         setActive(place);
@@ -1013,6 +1045,7 @@
         var node = popupNode(place);
         var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '300px', className: 'pop-card' }).setDOMContent(node);
         popup._place = place;
+        popup._node = node;
         // Only one pin card is open at a time: opening another closes the previous one.
         popup.on('open', function () {
           if (openPopup && openPopup !== popup) openPopup.remove();
@@ -1037,6 +1070,7 @@
       // Hide the moment you zoom back out, show as soon as you zoom in past
       // the threshold, and re-sync the list whenever a pan/zoom finishes.
       map.on('zoom', function () {
+        if (route) return;   // a route shows its stops at every zoom (see showRouteCards)
         var showing = cardsEl.classList.contains('is-visible');
         var close = map.getZoom() >= CARDS_MIN_ZOOM;
         if (showing && !close) hideCards();
@@ -1282,6 +1316,209 @@
         map.flyTo({ center: [place.lng, place.lat], zoom: Math.max(map.getZoom(), 15), duration: 1200, essential: true });
         var marker = markers.filter(function (m) { return m._place === place; })[0];
         if (marker) map.once('moveend', function () { if (!marker.getPopup().isOpen()) marker.togglePopup(); });
+      });
+
+      // ---- Route: numbered stops (a travel map story) -----------------------
+      // The story page lists the places its text links to, in reading order.
+      // Those become stops 1, 2, 3...: numbered pins joined by a dotted line,
+      // and cards for just those stops. The page then tells us which stop the
+      // reader is on (route-step) and whether we are the thin strip above the
+      // story or the whole map (route-view).
+      var route = null;            // { stops: [place], legs: [metres] }
+      var routeStep = -1;
+      var routeView = 'strip';
+      var routePad = { top: 0, bottom: 0 };
+      var routeOrigin = '*';
+      var mapReady = false;
+      map.on('load', function () { mapReady = true; if (route) drawRoute(); });
+
+      function metres(a, b) {
+        var R = 6371000, toR = Math.PI / 180;
+        var dLat = (b.lat - a.lat) * toR, dLng = (b.lng - a.lng) * toR;
+        var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * toR) * Math.cos(b.lat * toR) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+      }
+      // Straight-line distance, so walking time adds a bit for real streets.
+      function legText(m) {
+        if (m <= 2500) return Math.max(1, Math.round(m * 1.3 / 80)) + ' min walk';
+        var km = m / 1000;
+        return (km >= 10 ? Math.round(km) : km.toFixed(1)) + ' km';
+      }
+      function kmText(m) { var km = m / 1000; return (km >= 10 ? Math.round(km) : km.toFixed(1)) + ' km'; }
+
+      function drawRoute() {
+        if (!route || !mapReady) return;
+        var line = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: route.stops.map(function (p) { return [p.lng, p.lat]; }) } };
+        var src = map.getSource('mansfield-route');
+        if (src) { src.setData(line); return; }
+        map.addSource('mansfield-route', { type: 'geojson', data: line });
+        // A soft dark band with white dots on it: reads on light and dark map styles alike.
+        map.addLayer({ id: 'mansfield-route-band', type: 'line', source: 'mansfield-route',
+          layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#15171a', 'line-opacity': 0.28, 'line-width': 7 } });
+        map.addLayer({ id: 'mansfield-route-dots', type: 'line', source: 'mansfield-route',
+          layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-opacity': 0.92, 'line-width': 3.5, 'line-dasharray': [0, 2] } });
+      }
+
+      function frameOn(list, pad, maxZoom, duration) {
+        if (!list.length) return;
+        var h = mapEl.clientHeight, w = mapEl.clientWidth;
+        var top = Math.max(0, pad.top || 0) + 28, bottom = Math.max(0, pad.bottom || 0) + 28;
+        if (top + bottom > h - 40) { var k = (h - 40) / (top + bottom); top *= k; bottom *= k; }
+        var side = Math.min(44, w / 5);
+        var b = new mapboxgl.LngLatBounds();
+        list.forEach(function (p) { b.extend([p.lng, p.lat]); });
+        map.fitBounds(b, { padding: { top: top, bottom: bottom, left: side, right: side }, maxZoom: maxZoom, duration: duration, essential: true });
+      }
+
+      function paintRoute() {
+        if (!route) return;
+        markers.forEach(function (m) {
+          var k = route.stops.indexOf(m._place);
+          m.getElement().classList.toggle('mk--past', k >= 0 && routeStep >= 0 && k < routeStep && routeView === 'strip');
+        });
+      }
+
+      // The strip follows the reader: the stop they are reading about, with
+      // the one before and after it for context; before the first stop, the
+      // whole route.
+      function showStep(duration) {
+        if (!route) return;
+        var s = route.stops, i = routeStep;
+        if (routeView === 'strip') {
+          if (i < 0) frameOn(s, routePad, 15, duration);
+          else frameOn([s[i - 1], s[i], s[i + 1]].filter(Boolean), routePad, 16, duration);
+        }
+      }
+
+      function showRouteCards() {
+        if (cardsKey === 'route' && cardsEl.classList.contains('is-visible')) { scrollToActiveCard(); return; }
+        cardsKey = 'route';
+        var stops = route.stops;
+        cardsEl._places = stops.slice();
+        cardsEl.innerHTML = '';
+        stops.forEach(function (p, i) {
+          var card = cardNode(p, i);
+          var info = card.querySelector('.card__info');
+          var step = document.createElement('div');
+          step.className = 'card__step';
+          step.textContent = 'Stop ' + (i + 1) + ' of ' + stops.length + (i ? ' · ' + legText(route.legs[i - 1]) : '');
+          info.insertBefore(step, info.firstChild);
+          var note = info.querySelector('.card__note');
+          if (note) note.remove();   // room for the button; the note is in the story
+          var read = addText(info, 'span', 'card__read', 'Read about this');
+          read.setAttribute('data-read', '1');
+          cardsEl.appendChild(card);
+        });
+        cardsEl.scrollLeft = 0;
+        cardsEl.classList.add('is-visible');
+        document.body.classList.add('has-cards');
+        scrollToActiveCard();
+      }
+
+      function readAbout(place) {
+        var i = route ? route.stops.indexOf(place) : -1;
+        if (i < 0) return;
+        window.parent.postMessage({ type: 'mansfield:read-about', listing: place.listing || '', name: place.name || '', index: i }, routeOrigin);
+      }
+
+      function applyRoute(wanted) {
+        var stops = [];
+        (Array.isArray(wanted) ? wanted : []).slice(0, 60).forEach(function (w) {
+          var slug = String((w && w.listing) || ''), name = String((w && w.name) || '').trim().toLowerCase();
+          var place = places.filter(function (p) { return slug && p.listing === slug; })[0] ||
+                      places.filter(function (p) { return name && (p.name || '').toLowerCase() === name; })[0];
+          if (place && stops.indexOf(place) < 0) stops.push(place);
+        });
+        if (stops.length < 2) return [];
+        var legs = [];
+        for (var i = 1; i < stops.length; i++) legs.push(metres(stops[i - 1], stops[i]));
+        route = { stops: stops, legs: legs };
+        document.body.classList.add('has-route');
+        if (openPopup) openPopup.remove();
+        markers.forEach(function (m) {
+          var el = m.getElement(), k = stops.indexOf(m._place);
+          el.classList.toggle('mk--stop', k >= 0);
+          el.classList.toggle('mk--off', k < 0);
+          if (k >= 0) {
+            var dot = el.querySelector('.mk__dot');
+            dot.innerHTML = '';
+            addText(dot, 'b', 'mk__num', String(k + 1));
+            el.setAttribute('aria-label', 'Stop ' + (k + 1) + ': ' + m._place.name);
+            var node = m.getPopup()._node, links = node && node.querySelector('.pop__links');
+            if (links && !links.querySelector('.is-read')) {
+              var read = document.createElement('button');
+              read.type = 'button';
+              read.className = 'is-read';
+              read.textContent = 'Read about this';
+              read.addEventListener('click', (function (place) { return function () { readAbout(place); }; })(m._place));
+              links.insertBefore(read, links.firstChild);
+            }
+          }
+        });
+        var total = legs.reduce(function (a, b) { return a + b; }, 0);
+        var pill = document.createElement('div');
+        pill.className = 'routepill';
+        pill.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4" r="2"/><path d="M10 22l2-7 3 3v6M8 12l3-4 4 1 2 4M11 8l-2 6"/></svg>';
+        addText(pill, 'span', '', total <= 10000 ? 'Walking route' : 'Route');
+        addText(pill, 'small', '', '· ' + stops.length + ' stops · ' + kmText(total));
+        document.body.appendChild(pill);
+        cardsKey = '';
+        drawRoute();
+        paintRoute();
+        showStep(0);
+        updateCards();
+        return stops;
+      }
+
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || window.parent === window || !e.data || typeof e.data.type !== 'string') return;
+        var t = e.data.type;
+        if (t === 'mansfield:route') {
+          routeOrigin = e.origin || '*';
+          var stops = route ? route.stops : applyRoute(e.data.stops);
+          var total = route ? route.legs.reduce(function (a, b) { return a + b; }, 0) : 0;
+          window.parent.postMessage({ type: 'mansfield:route-ready', total: total, legs: route ? route.legs : [],
+            stops: stops.map(function (p) {
+              var g = groupOf(p.category);
+              return { listing: p.listing || '', name: p.name || '', category: p.category || '', group: g, color: GROUPS[g].color,
+                       address: p.address || '', lat: p.lat, lng: p.lng };
+            }) }, routeOrigin);
+        } else if (t === 'mansfield:route-step' && route) {
+          var i = Math.round(Number(e.data.index));
+          if (!(i >= -1 && i < route.stops.length) || i === routeStep) return;
+          routeStep = i;
+          if (routeView === 'strip') setActive(i >= 0 ? route.stops[i] : null);
+          paintRoute();
+          showStep(900);
+        } else if (t === 'mansfield:route-view' && route) {
+          var view = e.data.view === 'full' ? 'full' : 'strip';
+          var pad = e.data.pad || {};
+          routePad = { top: Math.max(0, Number(pad.top) || 0), bottom: Math.max(0, Number(pad.bottom) || 0) };
+          var was = routeView;
+          routeView = view;
+          document.body.classList.toggle('route-strip', view === 'strip');
+          paintRoute();
+          if (view === 'strip') {
+            if (openPopup) openPopup.remove();
+            if (!viewerEl.hidden) closeViewer();
+            if (!detailEl.hidden) closeDetail();
+            if (lsheet.classList.contains('is-open')) closeList();
+            setActive(routeStep >= 0 ? route.stops[routeStep] : null);
+            hideCards();
+            showStep(was === 'strip' ? 600 : 0);
+          } else {
+            cardsKey = '';
+            updateCards();
+            // Show the stop the reader was on, above the card row.
+            requestAnimationFrame(function () {
+              if (e.data.focus === false) return;
+              var s = route.stops, i = routeStep;
+              var on = i >= 0 ? [s[i - 1], s[i], s[i + 1]].filter(Boolean) : s;   // the stop, with the one before and after
+              frameOn(on, { top: (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-top')) || 0) + 56,
+                            bottom: bottomInset() + 10 }, 15.5, 700);
+            });
+          }
+        }
       });
 
       map.on('load', function () {
