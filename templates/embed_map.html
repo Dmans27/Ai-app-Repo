@@ -209,6 +209,8 @@
       /* Equal room on both sides keeps it centred and clear of the zoom buttons on the right. */
       .filters, body.is-fs .filters { top: 10px; bottom: auto; left: 50px; right: 50px; }
       body.has-filters .cards, body.is-fs.has-filters .cards { max-height: none; }
+      /* Expanded to full screen: 20px lower, and always below the phone's notch / status bar. */
+      body.is-fs .filters { top: max(30px, calc(env(safe-area-inset-top, 0px) + 10px)); }
       .fbtn { width: 38px; height: 38px; }
     }
 
