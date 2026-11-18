@@ -19,6 +19,11 @@ iframe loads:
   /embed/walk?c=lng,lat;lng,lat;...   the walking path through a route's stops
                        (travel "route" stories), from Mapbox walking
                        directions -- see "Walking paths" below.
+  /embed/route-map?s=slug,slug,...    a map of just those directory listings,
+                       in that order (the media site's AI "Plan a walk").
+  /embed/places-near   directory listings near a point or in a city, with
+                       filters -- for the media site's server only (it sends
+                       the shared WALK_PLAN_KEY), see "AI walks" below.
 
 A card may also carry a Book / Reserve button (?b=<link>&l=<label>) and a short
 video (?v=<link>) that plays when the reader double-taps the picture. Booking
@@ -65,6 +70,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import requests
 from flask import abort, jsonify, redirect, render_template, request, url_for
+from sqlalchemy import text as sql_text
 from sqlalchemy import (Column, DateTime, Integer, MetaData, PrimaryKeyConstraint,
                         String, Table, Text, delete, func, insert, select)
 
@@ -669,12 +675,17 @@ def _parse_walk_points(raw):
 
 
 def _is_pinned_place(query_one, lng, lat):
-    """True if a saved place sits at this point (within ~2 m)."""
+    """True if a saved place or a published directory listing sits at this
+    point (within ~2 m)."""
     d = 0.00002
+    box = {"la": lat - d, "lb": lat + d, "na": lng - d, "nb": lng + d}
     row = query_one(
         "SELECT 1 AS x FROM saved_place WHERE latitude BETWEEN :la AND :lb "
-        "AND longitude BETWEEN :na AND :nb LIMIT 1",
-        {"la": lat - d, "lb": lat + d, "na": lng - d, "nb": lng + d})
+        "AND longitude BETWEEN :na AND :nb LIMIT 1", box)
+    if not row:
+        row = query_one(
+            "SELECT 1 AS x FROM listings WHERE status = 'published' AND latitude BETWEEN :la AND :lb "
+            "AND longitude BETWEEN :na AND :nb LIMIT 1", box)
     return bool(row)
 
 
@@ -745,6 +756,89 @@ def _fetch_walk(points):
     except (ValueError, TypeError, KeyError):
         shaped = None
     return (shaped, None) if shaped else (None, "no_route")
+
+
+# ---- AI walks ----------------------------------------------------------------
+# The media site's "Plan a walk": a reader asks (typed or spoken) for something
+# like "3 highly rated coffee shops near me"; the media site's server works out
+# what they mean, asks /embed/places-near for matching listings from this
+# directory, picks and orders the stops, then shows /embed/route-map?s=... with
+# its walking route. Only the media site's server may search (it sends the shared
+# secret WALK_PLAN_KEY, set to the same value in both Render services).
+
+# The same groups as the map's filter bar (templates/embed_map.html groupOf).
+PLACE_GROUPS = ("food", "coffee", "bars", "wine", "rooftops", "shops", "hotels", "sights", "other")
+_HOTEL = re.compile(r"hotel|hostel|lodging|guest ?house|apartment|resort|\binn\b")
+_SIGHT = re.compile(r"museum|gallery|sight|attraction|landmark|monument|palace|church|cathedral|castle|park|tourist")
+
+
+def place_group(category):
+    c = (category or "").lower()
+    if "coffee" in c or "cafe" in c or "café" in c:
+        return "coffee"
+    if "bar" in c or "cocktail" in c:
+        return "bars"
+    if "wine" in c:
+        return "wine"
+    if "rooftop" in c:
+        return "rooftops"
+    if _HOTEL.search(c):
+        return "hotels"
+    if _SIGHT.search(c):
+        return "sights"
+    if "shop" in c:
+        return "shops"
+    if "restaurant" in c or "food" in c:
+        return "food"
+    return "other"
+
+
+NEAR_MAX_RADIUS = 20000      # metres
+NEAR_MAX_RESULTS = 60
+_geo_cache = {}              # text -> (expires, (lng, lat) or None)
+
+
+def _walk_key_ok():
+    want = (os.environ.get("WALK_PLAN_KEY") or "").strip()
+    got = (request.headers.get("X-Walk-Key") or "").strip()
+    return bool(want) and len(got) == len(want) and hashlib.sha256(got.encode()).digest() == hashlib.sha256(want.encode()).digest()
+
+
+def _geocode(text, near=None):
+    """A named place ("Naschmarkt, Vienna") -> (lng, lat), from Mapbox, remembered for a day."""
+    text = " ".join(str(text or "").split())[:120]
+    token = (os.environ.get("MAPBOX_SECRET_TOKEN") or os.environ.get("MAPBOX_TOKEN") or "").strip()
+    if not text or not token:
+        return None
+    key = (text.lower(), near)
+    hit = _geo_cache.get(key)
+    if hit and hit[0] > time.time():
+        return hit[1]
+    params = {"limit": 1, "access_token": token}
+    if near:
+        params["proximity"] = f"{near[0]},{near[1]}"
+    found = None
+    try:
+        r = requests.get("https://api.mapbox.com/geocoding/v5/mapbox.places/"
+                         + requests.utils.quote(text, safe="") + ".json", params=params, timeout=8)
+        if r.status_code == 200:
+            feats = (r.json() or {}).get("features") or []
+            if feats and isinstance(feats[0].get("center"), list):
+                found = (float(feats[0]["center"][0]), float(feats[0]["center"][1]))
+    except (requests.RequestException, ValueError, TypeError):
+        found = None
+    if len(_geo_cache) > 2000:
+        _geo_cache.clear()
+    _geo_cache[key] = (time.time() + 86400, found)
+    return found
+
+
+def _float_arg(name, lo, hi):
+    try:
+        v = float(request.args.get(name))
+    except (TypeError, ValueError):
+        return None
+    return v if lo <= v <= hi and not math.isnan(v) else None
 
 
 def register_embed_routes(app, SavedList, query_one):
@@ -1071,6 +1165,92 @@ def register_embed_routes(app, SavedList, query_one):
         reply = app.response_class(body, mimetype="application/json")
         reply.headers["Cache-Control"] = "no-store" if from_me else "public, max-age=86400"
         return reply
+
+    @app.get("/embed/places-near")
+    def embed_places_near():
+        """Directory listings for an AI walk. ?lat&lng (or ?near=<place name>),
+        ?city, ?groups=coffee,food, ?q=words, ?min_rating, ?radius (metres), ?limit."""
+        if not _walk_key_ok():
+            return jsonify(error="forbidden"), 403
+        lat, lng = _float_arg("lat", -90, 90), _float_arg("lng", -180, 180)
+        city = " ".join(str(request.args.get("city") or "").split())[:80]
+        center = (lng, lat) if lat is not None and lng is not None else None
+        near_text = str(request.args.get("near") or "").strip()
+        if near_text:
+            spot = _geocode(near_text + (", " + city if city and city.lower() not in near_text.lower() else ""), center)
+            if spot:
+                center = spot
+        radius = _float_arg("radius", 100, NEAR_MAX_RADIUS) or 2500
+        groups = {g for g in str(request.args.get("groups") or "").lower().split(",") if g in PLACE_GROUPS}
+        words = [w for w in re.split(r"[^\w']+", str(request.args.get("q") or "").lower()) if len(w) > 2][:8]
+        min_rating = _float_arg("min_rating", 0, 5) or 0
+        limit = int(_float_arg("limit", 1, NEAR_MAX_RESULTS) or 30)
+
+        sql = ("SELECT id, slug, name, category, city, address, description, latitude, longitude, "
+               "google_rating, google_rating_count FROM listings WHERE status = 'published' "
+               "AND latitude IS NOT NULL AND longitude IS NOT NULL AND slug IS NOT NULL")
+        params = {}
+        if center:
+            dlat = radius / 111320.0
+            dlng = radius / (111320.0 * max(0.2, math.cos(math.radians(center[1]))))
+            sql += " AND latitude BETWEEN :la AND :lb AND longitude BETWEEN :na AND :nb"
+            params.update(la=center[1] - dlat, lb=center[1] + dlat, na=center[0] - dlng, nb=center[0] + dlng)
+        elif city:
+            sql += " AND LOWER(city) = LOWER(:city)"
+            params["city"] = city
+        else:
+            return jsonify(error="where", places=[]), 400
+        sql += " LIMIT 2000"
+        try:
+            with _engine(app).connect() as conn:
+                rows = [dict(r._mapping) for r in conn.execute(sql_text(sql), params)]
+        except Exception as exc:  # noqa: BLE001
+            print(f"[places-near] query failed: {exc}", flush=True)
+            return jsonify(error="unavailable", places=[]), 503
+
+        out = []
+        for r in rows:
+            group = place_group(r.get("category"))
+            if groups and group not in groups:
+                continue
+            rating = _rating(r.get("google_rating"))
+            if min_rating and not (rating and rating >= min_rating):
+                continue
+            hay = " ".join(str(r.get(k) or "") for k in ("name", "category", "description")).lower()
+            matched = sum(1 for w in words if w in hay)
+            dist = _metres(center, (float(r["longitude"]), float(r["latitude"]))) if center else None
+            if dist is not None and dist > radius:
+                continue
+            out.append({
+                "slug": r["slug"], "name": r.get("name") or "", "category": r.get("category") or "",
+                "group": group, "lat": float(r["latitude"]), "lng": float(r["longitude"]),
+                "rating": rating, "ratingCount": _count(r.get("google_rating_count")),
+                "address": r.get("address") or "", "city": r.get("city") or "",
+                "about": " ".join(str(r.get("description") or "").split())[:200],
+                "matched": matched, "distance": round(dist) if dist is not None else None,
+            })
+        out.sort(key=lambda p: (-p["matched"], p["distance"] if p["distance"] is not None else 0,
+                                -(p["rating"] or 0)))
+        reply = jsonify(places=out[:limit], center=[center[0], center[1]] if center else None, total=len(out))
+        reply.headers["Cache-Control"] = "no-store"
+        return reply
+
+    @app.get("/embed/route-map")
+    def embed_route_map():
+        """A map of just these listings, in this order (an AI-planned walk)."""
+        slugs = [s for s in str(request.args.get("s") or "").split(",") if s][:WALK_MAX_STOPS]
+        places, seen = [], set()
+        for slug in slugs:
+            if slug in seen:
+                continue
+            seen.add(slug)
+            listing = _card_listing(query_one, slug)
+            if listing and listing.get("latitude") is not None and listing.get("longitude") is not None:
+                places.append(_card_payload(listing))
+        if not places:
+            abort(404)
+        title = " ".join(str(request.args.get("t") or "").split())[:120] or "Your walk"
+        return _render(title, places, None, request, cards_min_zoom=CITY_CARDS_MIN_ZOOM)
 
     @app.after_request
     def _allow_embedding(response):
