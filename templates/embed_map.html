@@ -1406,10 +1406,15 @@
         if (src) { src.setData(line); return; }
         map.addSource('mansfield-route', { type: 'geojson', data: line });
         // A soft dark band with white dots on it: reads on light and dark map styles alike.
+        // Layer 1: a soft dark band under the line (the "casing")
         map.addLayer({ id: 'mansfield-route-band', type: 'line', source: 'mansfield-route',
-          layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#15171a', 'line-opacity': 0.28, 'line-width': 7 } });
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#15171a', 'line-opacity': 0.28, 'line-width': 7 } });
+
+        // Layer 2: the white line on top -- this is the dotted one
         map.addLayer({ id: 'mansfield-route-dots', type: 'line', source: 'mansfield-route',
-          layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-opacity': 0.92, 'line-width': 3.5, 'line-dasharray': [0, 2] } });
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#ffffff', 'line-opacity': 0.92, 'line-width': 3.5 } });
       }
 
       function frameOn(list, pad, maxZoom, duration) {
