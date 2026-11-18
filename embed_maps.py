@@ -77,11 +77,16 @@ from sqlalchemy import (Column, DateTime, Integer, MetaData, PrimaryKeyConstrain
 DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
 
 # The embed page only ever uses one of these Mapbox styles, picked with
-# ?style=light|dark|streets (anything else falls back to light).
+# ?style=light|dark|streets|mansfield (anything else falls back to light).
+# "mansfield" is Danny's own walking style from Mapbox Studio, used for walking
+# routes; MAPBOX_WALK_STYLE in Render can point it at a different published style.
+_DEFAULT_WALK_STYLE = "mapbox://styles/dmans27/cmuwij0nf012501sa5ke4hsl0"
+_walk_style = (os.environ.get("MAPBOX_WALK_STYLE") or "").strip()
 STYLES = {
     "light": "mapbox://styles/mapbox/light-v11",
     "dark": "mapbox://styles/mapbox/dark-v11",
     "streets": "mapbox://styles/mapbox/streets-v12",
+    "mansfield": _walk_style if re.match(r"^mapbox://styles/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$", _walk_style) else _DEFAULT_WALK_STYLE,
 }
 
 MAX_PLACES = 300  # plenty for one map, and keeps the page light
