@@ -16,6 +16,9 @@ iframe loads:
   /embed/stack?d=...   several of those cards in a swipe row (d is a small
                        base64 JSON list: [{"s": slug, "b": booking link,
                        "l": button label, "v": video link}, ...]).
+  /embed/walk?c=lng,lat;lng,lat;...   the walking path through a route's stops
+                       (travel "route" stories), from Mapbox walking
+                       directions -- see "Walking paths" below.
 
 A card may also carry a Book / Reserve button (?b=<link>&l=<label>) and a short
 video (?v=<link>) that plays when the reader double-taps the picture. Booking
@@ -50,9 +53,12 @@ Wired up with two lines near the bottom of cms_app.py:
     register_embed_routes(app, SavedList, query_one)
 """
 import base64
+import hashlib
 import json
+import math
 import os
 import re
+import threading
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -60,7 +66,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 import requests
 from flask import abort, jsonify, redirect, render_template, request, url_for
 from sqlalchemy import (Column, DateTime, Integer, MetaData, PrimaryKeyConstraint,
-                        String, Table, delete, func, insert, select)
+                        String, Table, Text, delete, func, insert, select)
 
 DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
 
@@ -533,6 +539,15 @@ _custom_map_places = Table(
     PrimaryKeyConstraint("map_id", "saved_place_id"),
 )
 
+# Walking paths (see "Walking paths" below): one row per route, so each route
+# only ever costs one Mapbox request, also across restarts and deploys.
+_walk_cache = Table(
+    "walk_route_cache", _maps_meta,
+    Column("key", String(64), primary_key=True),
+    Column("body", Text, nullable=False),
+    Column("created_at", DateTime, server_default=func.now()),
+)
+
 MAX_CUSTOM_MAPS = 50
 MAP_NAME_MAX = 80
 _tables_ready = False
@@ -598,6 +613,138 @@ def _custom_maps_for(app, SavedList, user):
                     "public": sum(1 for i in ids if visibility[i]),
                     "private": sum(1 for i in ids if not visibility[i])})
     return out
+
+
+# ---- Walking paths ------------------------------------------------------------
+# The real path along the streets between a route's stops, with distances,
+# times and turn instructions, from the Mapbox Directions API ("walking"
+# profile: prefers sidewalks and footpaths). Asked for on the server, so the
+# token stays here (MAPBOX_SECRET_TOKEN in Render; falls back to MAPBOX_TOKEN).
+#
+#   GET /embed/walk?c=lng,lat;lng,lat;...          the route's stops, in order
+#   GET /embed/walk?c=lng,lat;...&from=me          the first point is the walker
+#        (re-routing during "Start walk"): never stored, never logged, and it
+#        must be within WALK_FROM_MAX_M of the next stop.
+#
+# Every stop must be a pinned place in this directory (so the endpoint can't be
+# used as a free directions service for anywhere), answers are kept in the
+# walk_route_cache table, and new Mapbox requests are rate-limited per visitor.
+
+WALK_URL = "https://api.mapbox.com/directions/v5/mapbox/walking/"
+WALK_MAX_STOPS = 25            # Mapbox's limit for one request
+WALK_MAX_SPAN_M = 60000        # a walk, not a road trip
+WALK_FROM_MAX_M = 5000         # re-routing: the walker must be near the next stop
+WALK_CACHE_DAYS = 60           # streets change slowly
+WALK_LIMIT = 30                # new Mapbox requests per visitor per window
+WALK_WINDOW = 600              # seconds
+_walk_hits = {}                # ip -> [timestamps]
+_walk_lock = threading.Lock()
+
+
+def _metres(a, b):
+    r, to_r = 6371000.0, math.pi / 180
+    d_lat, d_lng = (b[1] - a[1]) * to_r, (b[0] - a[0]) * to_r
+    h = math.sin(d_lat / 2) ** 2 + math.cos(a[1] * to_r) * math.cos(b[1] * to_r) * math.sin(d_lng / 2) ** 2
+    return 2 * r * math.asin(min(1.0, math.sqrt(h)))
+
+
+def _parse_walk_points(raw):
+    """'lng,lat;lng,lat;...' -> [(lng, lat), ...] rounded to ~1 m, or None."""
+    parts = str(raw or "").split(";")
+    if not (2 <= len(parts) <= WALK_MAX_STOPS):
+        return None
+    points = []
+    for part in parts:
+        try:
+            lng, lat = (float(x) for x in part.split(","))
+        except (TypeError, ValueError):
+            return None
+        if not (-180 <= lng <= 180 and -90 <= lat <= 90) or math.isnan(lng) or math.isnan(lat):
+            return None
+        points.append((round(lng, 5), round(lat, 5)))
+    for a, b in zip(points, points[1:]):
+        if _metres(a, b) > WALK_MAX_SPAN_M:
+            return None
+    return points
+
+
+def _is_pinned_place(query_one, lng, lat):
+    """True if a saved place sits at this point (within ~2 m)."""
+    d = 0.00002
+    row = query_one(
+        "SELECT 1 AS x FROM saved_place WHERE latitude BETWEEN :la AND :lb "
+        "AND longitude BETWEEN :na AND :nb LIMIT 1",
+        {"la": lat - d, "lb": lat + d, "na": lng - d, "nb": lng + d})
+    return bool(row)
+
+
+def _walk_rate_ok(ip):
+    now = time.time()
+    with _walk_lock:
+        if len(_walk_hits) > 5000:
+            _walk_hits.clear()
+        hits = [t for t in _walk_hits.get(ip, []) if t > now - WALK_WINDOW]
+        if len(hits) >= WALK_LIMIT:
+            _walk_hits[ip] = hits
+            return False
+        hits.append(now)
+        _walk_hits[ip] = hits
+        return True
+
+
+def _walk_token():
+    return (os.environ.get("MAPBOX_SECRET_TOKEN") or os.environ.get("MAPBOX_TOKEN") or "").strip()
+
+
+def _shape_walk(data):
+    """Keep only what the map needs from a Directions reply."""
+    route = (data.get("routes") or [None])[0]
+    if not route or not isinstance(route.get("geometry"), dict):
+        return None
+    coords = [[round(float(x), 6), round(float(y), 6)] for x, y in route["geometry"].get("coordinates", [])[:6000]]
+    if len(coords) < 2:
+        return None
+    legs = []
+    for leg in route.get("legs") or []:
+        steps = []
+        for st in leg.get("steps") or []:
+            man = st.get("maneuver") or {}
+            loc = man.get("location") or [None, None]
+            steps.append({
+                "text": str(man.get("instruction") or "")[:200],
+                "type": str(man.get("type") or "")[:30],
+                "modifier": str(man.get("modifier") or "")[:30],
+                "distance": round(float(st.get("distance") or 0), 1),
+                "at": [round(float(loc[0]), 6), round(float(loc[1]), 6)] if loc[0] is not None else None,
+            })
+        legs.append({"distance": round(float(leg.get("distance") or 0), 1),
+                     "duration": round(float(leg.get("duration") or 0), 1),
+                     "steps": steps})
+    return {"geometry": {"type": "LineString", "coordinates": coords},
+            "distance": round(float(route.get("distance") or 0), 1),
+            "duration": round(float(route.get("duration") or 0), 1),
+            "legs": legs}
+
+
+def _fetch_walk(points):
+    token = _walk_token()
+    if not token:
+        return None, "no_token"
+    coords = ";".join(f"{lng},{lat}" for lng, lat in points)
+    try:
+        r = requests.get(WALK_URL + coords, params={
+            "geometries": "geojson", "overview": "full", "steps": "true",
+            "access_token": token}, timeout=12)
+    except requests.RequestException:
+        return None, "unreachable"
+    if r.status_code != 200:
+        print(f"[walk] mapbox answered {r.status_code}", flush=True)
+        return None, "mapbox_error"
+    try:
+        shaped = _shape_walk(r.json())
+    except (ValueError, TypeError, KeyError):
+        shaped = None
+    return (shaped, None) if shaped else (None, "no_route")
 
 
 def register_embed_routes(app, SavedList, query_one):
@@ -880,6 +1027,49 @@ def register_embed_routes(app, SavedList, query_one):
                "place_id": listing.get("place_id")}
         reply = jsonify(_place_detail(row, query_one))
         reply.headers["Cache-Control"] = "public, max-age=60"
+        return reply
+
+    @app.get("/embed/walk")
+    def embed_walk():
+        points = _parse_walk_points(request.args.get("c"))
+        if not points:
+            return jsonify(error="bad_points"), 400
+        from_me = request.args.get("from") == "me"
+        stops = points[1:] if from_me else points
+        if from_me and _metres(points[0], points[1]) > WALK_FROM_MAX_M:
+            return jsonify(error="too_far"), 400
+        for lng, lat in stops:
+            if not _is_pinned_place(query_one, lng, lat):
+                return jsonify(error="unknown_stop"), 400
+
+        key = hashlib.sha256(";".join(f"{a},{b}" for a, b in points).encode()).hexdigest()
+        if not from_me and _ensure_tables(app):
+            try:
+                with _engine(app).connect() as conn:
+                    row = conn.execute(select(_walk_cache).where(_walk_cache.c.key == key)).mappings().first()
+                if row and row["created_at"] and row["created_at"] > datetime.utcnow() - timedelta(days=WALK_CACHE_DAYS):
+                    reply = app.response_class(row["body"], mimetype="application/json")
+                    reply.headers["Cache-Control"] = "public, max-age=86400"
+                    return reply
+            except Exception as exc:  # noqa: BLE001
+                print(f"[walk] cache read failed: {exc}", flush=True)
+
+        ip = (request.headers.get("X-Forwarded-For") or request.remote_addr or "").split(",")[0].strip()
+        if not _walk_rate_ok(ip):
+            return jsonify(error="busy"), 429
+        shaped, err = _fetch_walk(points)
+        if not shaped:
+            return jsonify(error=err), 502
+        body = json.dumps(shaped, separators=(",", ":"))
+        if not from_me and _ensure_tables(app):
+            try:
+                with _engine(app).begin() as conn:
+                    conn.execute(delete(_walk_cache).where(_walk_cache.c.key == key))
+                    conn.execute(insert(_walk_cache).values(key=key, body=body, created_at=datetime.utcnow()))
+            except Exception as exc:  # noqa: BLE001
+                print(f"[walk] cache write failed: {exc}", flush=True)
+        reply = app.response_class(body, mimetype="application/json")
+        reply.headers["Cache-Control"] = "no-store" if from_me else "public, max-age=86400"
         return reply
 
     @app.after_request

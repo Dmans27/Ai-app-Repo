@@ -338,6 +338,50 @@
     .card__read { align-self: flex-start; margin-top: 3px; padding: 5px 11px; border-radius: 999px; background: #fff; color: #15171a;
       font-size: 12px; font-weight: 800; white-space: nowrap; }
     .pop__links button.is-read { background: #fff; color: #15171a; border-color: transparent; }
+    .routepill__start { pointer-events: auto; margin-left: 4px; padding: 6px 12px; border: 0; border-radius: 999px; background: #2f9e7e; color: #fff;
+      font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+    .routepill__start svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+    .routepill__start[hidden] { display: none; }
+
+    /* "Start walk": follow the walker along the route (see "Walk mode" in the script). */
+    .walkbar, .walkarrive, .walkrecenter { display: none; }
+    body.walking .routepill, body.walking .cards { display: none !important; }
+    body.walking .walkbar { display: block; position: absolute; z-index: 6; top: calc(var(--safe-top, 0px) + 10px); left: 10px; right: 10px;
+      padding: 12px 12px 10px 14px; border-radius: 18px; background: rgba(16,18,20,0.9); color: #fff; border: 0.5px solid rgba(255,255,255,0.18);
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+    .walkbar__row { display: flex; align-items: center; gap: 11px; }
+    .walkbar__num { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; background: var(--c, #2f9e7e); border: 2.5px solid #fff; box-sizing: border-box;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
+    .walkbar__num[hidden] { display: none; }
+    .walkbar__text { flex: 1; min-width: 0; }
+    .walkbar__next { font-size: 15.5px; font-weight: 800; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .walkbar__eta { font-size: 13px; color: rgba(255,255,255,0.72); margin-top: 1px; }
+    .walkbar__end { flex: 0 0 auto; padding: 8px 13px; border: 0; border-radius: 999px; background: rgba(255,255,255,0.16); color: #fff;
+      font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+    .walkbar__turn { display: flex; align-items: center; gap: 9px; margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.14);
+      font-size: 14px; font-weight: 600; line-height: 1.3; }
+    .walkbar__turn[hidden] { display: none; }
+    .walkbar__turn svg { flex: 0 0 auto; width: 22px; height: 22px; fill: none; stroke: #7ee2bf; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    body.walking .walkrecenter:not([hidden]) { display: flex; position: absolute; z-index: 6; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+      align-items: center; gap: 7px; height: 42px; padding: 0 15px 0 12px; border: 0; border-radius: 999px; background: #fff; color: #15171a;
+      font: inherit; font-size: 14px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,0.3); cursor: pointer; }
+    .walkrecenter svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    body.walking .walkarrive:not([hidden]) { display: block; position: absolute; z-index: 6; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+      padding: 14px 14px 12px; border-radius: 18px; background: #fff; color: #15171a; box-shadow: 0 10px 28px rgba(0,0,0,0.35); }
+    body.walking .walkarrive:not([hidden]) ~ .walkrecenter { bottom: calc(210px + env(safe-area-inset-bottom, 0px)); }
+    .walkarrive__kicker { font-size: 11px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c, #2f9e7e); }
+    .walkarrive__name { margin-top: 2px; font-size: 17px; font-weight: 800; }
+    .walkarrive__row { display: flex; gap: 8px; margin-top: 10px; }
+    .walkarrive__row button { flex: 1; height: 40px; border: 0; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+      background: #eef1ef; color: #15171a; }
+    .walkarrive__row button.is-primary { background: #15171a; color: #fff; }
+    .me { width: 22px; height: 22px; }
+    .me__dot { position: absolute; inset: 3px; border-radius: 50%; background: #2f7cf6; border: 3px solid #fff; box-sizing: border-box;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
+    .me__halo { position: absolute; inset: -14px; border-radius: 50%; background: rgba(47,124,246,0.2); animation: me-pulse 2.2s ease-out infinite; }
+    @keyframes me-pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .me__halo { animation: none; } }
+    body.has-route .mk--done .mk__dot { filter: saturate(0.3) brightness(0.8); }
   </style>
 </head>
 <body>
@@ -1338,17 +1382,22 @@
         var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * toR) * Math.cos(b.lat * toR) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
         return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
       }
-      // Straight-line distance, so walking time adds a bit for real streets.
-      function legText(m) {
-        if (m <= 2500) return Math.max(1, Math.round(m * 1.3 / 80)) + ' min walk';
+      // With the real walking path (Mapbox) we have real times; before it
+      // arrives, straight-line distance plus a bit for real streets.
+      function legText(m, secs) {
+        if (secs > 0 && secs <= 3 * 3600) return Math.max(1, Math.round(secs / 60)) + ' min walk';
+        if (!(secs > 0) && m <= 2500) return Math.max(1, Math.round(m * 1.3 / 80)) + ' min walk';
         var km = m / 1000;
         return (km >= 10 ? Math.round(km) : km.toFixed(1)) + ' km';
       }
+      function legLabel(i) { return legText(route.legs[i], route.durations ? route.durations[i] : 0); }
       function kmText(m) { var km = m / 1000; return (km >= 10 ? Math.round(km) : km.toFixed(1)) + ' km'; }
 
       function drawRoute() {
         if (!route || !mapReady) return;
-        var line = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: route.stops.map(function (p) { return [p.lng, p.lat]; }) } };
+        // The real path along the streets once Mapbox has answered (or a re-routed walk), else straight lines.
+        var coords = (walk && walk.drawn) || route.path || route.stops.map(function (p) { return [p.lng, p.lat]; });
+        var line = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } };
         var src = map.getSource('mansfield-route');
         if (src) { src.setData(line); return; }
         map.addSource('mansfield-route', { type: 'geojson', data: line });
@@ -1401,7 +1450,7 @@
           var info = card.querySelector('.card__info');
           var step = document.createElement('div');
           step.className = 'card__step';
-          step.textContent = 'Stop ' + (i + 1) + ' of ' + stops.length + (i ? ' · ' + legText(route.legs[i - 1]) : '');
+          step.textContent = 'Stop ' + (i + 1) + ' of ' + stops.length + (i ? ' · ' + legLabel(i - 1) : '');
           info.insertBefore(step, info.firstChild);
           var note = info.querySelector('.card__note');
           if (note) note.remove();   // room for the button; the note is in the story
@@ -1459,15 +1508,323 @@
         var pill = document.createElement('div');
         pill.className = 'routepill';
         pill.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4" r="2"/><path d="M10 22l2-7 3 3v6M8 12l3-4 4 1 2 4M11 8l-2 6"/></svg>';
-        addText(pill, 'span', '', total <= 10000 ? 'Walking route' : 'Route');
-        addText(pill, 'small', '', '· ' + stops.length + ' stops · ' + kmText(total));
+        route.pillTitle = addText(pill, 'span', '', total <= 10000 ? 'Walking route' : 'Route');
+        route.pillSub = addText(pill, 'small', '', '· ' + stops.length + ' stops · ' + kmText(total));
+        var startBtn = document.createElement('button');
+        startBtn.type = 'button';
+        startBtn.className = 'routepill__start';
+        startBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>';   // fixed icon
+        addText(startBtn, 'span', '', 'Start');
+        startBtn.setAttribute('aria-label', 'Start walk: follow the route with your location');
+        startBtn.hidden = !('geolocation' in navigator);
+        startBtn.addEventListener('click', startWalk);
+        pill.appendChild(startBtn);
         document.body.appendChild(pill);
         cardsKey = '';
         drawRoute();
         paintRoute();
         showStep(0);
         updateCards();
+        fetchWalk();
         return stops;
+      }
+
+      // ---- The real walking path (Mapbox walking directions, via /embed/walk) --
+      function walkQuery(points) {
+        return points.map(function (p) { return (+p[0]).toFixed(5) + ',' + (+p[1]).toFixed(5); }).join(';');
+      }
+      function fetchWalk() {
+        if (!route || route.stops.length > 25) return;
+        fetch('/embed/walk?c=' + encodeURIComponent(walkQuery(route.stops.map(function (p) { return [p.lng, p.lat]; }))), { credentials: 'omit' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d || !d.geometry || !Array.isArray(d.legs) || d.legs.length !== route.stops.length - 1) return;
+            route.path = d.geometry.coordinates;
+            route.walk = d;
+            route.legs = d.legs.map(function (l) { return Number(l.distance) || 0; });
+            route.durations = d.legs.map(function (l) { return Number(l.duration) || 0; });
+            var total = Number(d.distance) || route.legs.reduce(function (a, b) { return a + b; }, 0);
+            if (route.pillSub) route.pillSub.textContent = '· ' + route.stops.length + ' stops · ' + kmText(total) + ' · ' + Math.max(1, Math.round((Number(d.duration) || 0) / 60)) + ' min';
+            drawRoute();
+            if (routeView === 'full') { cardsKey = ''; updateCards(); }
+            // The story page shows the same times (its route card, the List).
+            window.parent.postMessage({ type: 'mansfield:route-walk', legs: route.legs, durations: route.durations,
+                                        total: total, duration: Number(d.duration) || 0 }, routeOrigin);
+          })
+          .catch(function () {});   // no path: the straight dotted lines stay
+      }
+
+      // ---- Walk mode: follow the walker along the route ----------------------
+      // Uses the phone's location only while the walk is on; it is never sent
+      // anywhere except /embed/walk when the walker strays and needs a new path.
+      var walk = null;
+      var walkEls = null;
+      var ARRIVE_M = 30, OFF_M = 40, SPEED = 1.3;   // metres, metres, metres per second
+
+      function walkUi() {
+        if (walkEls) return walkEls;
+        var bar = document.createElement('div');
+        bar.className = 'walkbar';
+        bar.setAttribute('role', 'status');
+        bar.setAttribute('aria-live', 'polite');
+        bar.innerHTML = '<div class="walkbar__row"><span class="walkbar__num" hidden></span><div class="walkbar__text"><div class="walkbar__next"></div>' +
+          '<div class="walkbar__eta"></div></div><button type="button" class="walkbar__end">End</button></div>' +
+          '<div class="walkbar__turn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"></svg><span></span></div>';
+        var arrive = document.createElement('div');
+        arrive.className = 'walkarrive';
+        arrive.hidden = true;
+        arrive.innerHTML = '<div class="walkarrive__kicker"></div><div class="walkarrive__name"></div>' +
+          '<div class="walkarrive__row"><button type="button" data-w="read">Read about this</button><button type="button" class="is-primary" data-w="go">Next stop</button></div>';
+        var recenter = document.createElement('button');
+        recenter.type = 'button';
+        recenter.className = 'walkrecenter';
+        recenter.hidden = true;
+        recenter.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8z"/></svg><span>Recenter</span>';
+        document.body.appendChild(bar);
+        document.body.appendChild(arrive);
+        document.body.appendChild(recenter);
+        bar.querySelector('.walkbar__end').addEventListener('click', endWalk);
+        recenter.addEventListener('click', function () {
+          if (!walk) return;
+          walk.follow = true;
+          recenter.hidden = true;
+          if (walk.me) map.easeTo({ center: walk.me, zoom: Math.max(map.getZoom(), 16.5), duration: 600 });
+        });
+        arrive.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-w]');
+          if (!b || !walk) return;
+          var place = route.stops[walk.arrivedAt];
+          arrive.hidden = true;
+          if (b.getAttribute('data-w') === 'read' && place) readAbout(place);
+        });
+        // Moving the map by hand stops following until Recenter.
+        map.on('dragstart', function () { if (walk && walk.follow) { walk.follow = false; recenter.hidden = false; } });
+        walkEls = { bar: bar, num: bar.querySelector('.walkbar__num'), next: bar.querySelector('.walkbar__next'),
+                    eta: bar.querySelector('.walkbar__eta'), turn: bar.querySelector('.walkbar__turn'),
+                    turnIcon: bar.querySelector('.walkbar__turn svg'), turnText: bar.querySelector('.walkbar__turn span'),
+                    arrive: arrive, kicker: arrive.querySelector('.walkarrive__kicker'), aname: arrive.querySelector('.walkarrive__name'),
+                    go: arrive.querySelector('[data-w="go"]'), recenter: recenter };
+        return walkEls;
+      }
+
+      // Geometry along a path, in metres (a flat approximation, fine at walking scale).
+      function cumulative(coords) {
+        var cum = [0];
+        for (var i = 1; i < coords.length; i++) cum.push(cum[i - 1] + metres({ lng: coords[i - 1][0], lat: coords[i - 1][1] }, { lng: coords[i][0], lat: coords[i][1] }));
+        return cum;
+      }
+      function snapTo(coords, cum, p, minAlong) {
+        var kx = Math.cos(p[1] * Math.PI / 180) * 111320, ky = 110540;
+        var best = { along: 0, off: Infinity };
+        for (var i = 0; i < coords.length - 1; i++) {
+          if (minAlong && cum[i + 1] < minAlong) continue;
+          var ax = (coords[i][0] - p[0]) * kx, ay = (coords[i][1] - p[1]) * ky;
+          var bx = (coords[i + 1][0] - p[0]) * kx, by = (coords[i + 1][1] - p[1]) * ky;
+          var dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+          var t = len2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2)) : 0;
+          var x = ax + t * dx, y = ay + t * dy, d = Math.sqrt(x * x + y * y);
+          if (d < best.off) best = { along: cum[i] + t * (cum[i + 1] - cum[i]), off: d };
+        }
+        return best;
+      }
+
+      // Lay the walk out on a path: where each remaining stop and each turn sits along it.
+      function setWalkPath(coords, legs, firstStop) {
+        walk.coords = coords;
+        walk.cum = cumulative(coords);
+        walk.first = firstStop;
+        walk.targets = [];
+        walk.steps = [];
+        var along = 0;
+        for (var k = firstStop; k < route.stops.length; k++) {
+          var s = route.stops[k];
+          var hit = snapTo(coords, walk.cum, [s.lng, s.lat], along);
+          along = hit.along;
+          walk.targets[k] = along;
+        }
+        var from = 0;
+        (legs || []).forEach(function (leg) {
+          (leg.steps || []).forEach(function (st) {
+            if (!st.at || !st.text) return;
+            var hit = snapTo(coords, walk.cum, st.at, from);
+            from = hit.along;
+            walk.steps.push({ along: hit.along, text: st.text, type: st.type, modifier: st.modifier });
+          });
+        });
+        walk.drawn = coords;
+        drawRoute();
+      }
+
+      var TURN_ICONS = {
+        left: '<path d="M14 20v-7a3 3 0 0 0-3-3H5"/><path d="M9 6l-4 4 4 4"/>',
+        right: '<path d="M10 20v-7a3 3 0 0 1 3-3h6"/><path d="M15 6l4 4-4 4"/>',
+        straight: '<path d="M12 20V5"/><path d="M7 10l5-5 5 5"/>',
+        uturn: '<path d="M8 20V9a4 4 0 0 1 8 0v4"/><path d="M12 10l4 4 4-4"/>',
+        arrive: '<path d="M6 21V4"/><path d="M6 4h11l-2 4 2 4H6"/>'
+      };
+      function turnIcon(st) {
+        if (!st) return TURN_ICONS.straight;
+        if (st.type === 'arrive') return TURN_ICONS.arrive;
+        var m = st.modifier || '';
+        if (m.indexOf('uturn') >= 0) return TURN_ICONS.uturn;
+        if (m.indexOf('left') >= 0) return TURN_ICONS.left;
+        if (m.indexOf('right') >= 0) return TURN_ICONS.right;
+        return TURN_ICONS.straight;
+      }
+      function distText(m) { return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : (Math.max(10, Math.round(m / 10) * 10)) + ' m'; }
+
+      function paintWalkPins() {
+        markers.forEach(function (m) {
+          var k = route.stops.indexOf(m._place);
+          m.getElement().classList.toggle('mk--done', !!walk && k >= 0 && k < walk.next);
+        });
+        setActive(walk && walk.next < route.stops.length ? route.stops[walk.next] : null);
+      }
+
+      function showWalkStatus(text, sub) {
+        var ui = walkUi();
+        ui.num.hidden = true;
+        ui.next.textContent = text;
+        ui.eta.textContent = sub || '';
+        ui.turn.hidden = true;
+      }
+
+      function updateWalkBar(along, off, me) {
+        var ui = walkUi();
+        if (walk.next >= route.stops.length) {
+          ui.num.hidden = true;
+          ui.next.textContent = 'Walk complete';
+          ui.eta.textContent = 'All ' + route.stops.length + ' stops. Nice walk!';
+          ui.turn.hidden = true;
+          return;
+        }
+        var s = route.stops[walk.next];
+        var straight = metres({ lng: me[0], lat: me[1] }, s);
+        var left = off > OFF_M ? straight : Math.max(0, walk.targets[walk.next] - along);
+        ui.num.hidden = false;
+        ui.num.textContent = String(walk.next + 1);
+        ui.num.style.setProperty('--c', categoryColor(s.category));
+        ui.next.textContent = 'Next: ' + s.name;
+        ui.eta.textContent = Math.max(1, Math.round(left / SPEED / 60)) + ' min · ' + distText(left);
+        var st = null;
+        if (off <= OFF_M) {
+          for (var i = 0; i < walk.steps.length; i++) {
+            if (walk.steps[i].along > along + 8 && walk.steps[i].along <= walk.targets[walk.next] + 15) { st = walk.steps[i]; break; }
+          }
+        }
+        ui.turn.hidden = false;
+        ui.turnIcon.innerHTML = turnIcon(st);   // fixed icons only
+        if (off > OFF_M) ui.turnText.textContent = 'Off the route. Finding a new way to ' + s.name + '\u2026';
+        else if (!st) ui.turnText.textContent = 'Continue to ' + s.name;
+        else if (st.type === 'arrive') ui.turnText.textContent = 'In ' + distText(st.along - along) + ', arrive at ' + s.name;
+        else ui.turnText.textContent = 'In ' + distText(st.along - along) + ', ' + st.text.charAt(0).toLowerCase() + st.text.slice(1);
+      }
+
+      function arrivedAt(k) {
+        var ui = walkUi();
+        var s = route.stops[k];
+        walk.arrivedAt = k;
+        walk.next = k + 1;
+        ui.kicker.textContent = 'You\u2019re at stop ' + (k + 1) + ' of ' + route.stops.length;
+        ui.kicker.style.setProperty('--c', categoryColor(s.category));
+        ui.aname.textContent = s.name;
+        ui.go.textContent = walk.next < route.stops.length ? 'Next stop' : 'Done';
+        ui.arrive.hidden = false;
+        clearTimeout(walk.arriveTimer);
+        walk.arriveTimer = setTimeout(function () { ui.arrive.hidden = true; }, 25000);   // out of the way once they move on
+        paintWalkPins();
+      }
+
+      function reroute(me) {
+        var now = Date.now();
+        if (walk.rerouting || now - walk.lastReroute < 20000 || walk.next >= route.stops.length) return;
+        walk.rerouting = true;
+        walk.lastReroute = now;
+        var pts = [me].concat(route.stops.slice(walk.next).map(function (p) { return [p.lng, p.lat]; })).slice(0, 25);
+        fetch('/embed/walk?from=me&c=' + encodeURIComponent(walkQuery(pts)), { credentials: 'omit', cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            walk && (walk.rerouting = false);
+            if (!walk || !d || !d.geometry) return;
+            setWalkPath(d.geometry.coordinates, d.legs, walk.next);
+            walk.offCount = 0;
+          })
+          .catch(function () { if (walk) walk.rerouting = false; });
+      }
+
+      function onFix(pos) {
+        if (!walk) return;
+        var c = pos.coords, me = [c.longitude, c.latitude];
+        walk.me = me;
+        if (!walk.marker) {
+          var el = document.createElement('div');
+          el.className = 'me';
+          el.innerHTML = '<span class="me__halo"></span><span class="me__dot"></span>';
+          walk.marker = new mapboxgl.Marker({ element: el }).setLngLat(me).addTo(map);
+          map.flyTo({ center: me, zoom: Math.max(map.getZoom(), 16.5), duration: 900, essential: true });
+        } else {
+          walk.marker.setLngLat(me);
+          if (walk.follow && !map.isMoving()) map.easeTo({ center: me, duration: 600 });
+        }
+        // First fix: if the walker is already at one of the stops, start from there.
+        if (!walk.started) {
+          walk.started = true;
+          for (var k = route.stops.length - 1; k >= 0; k--) {
+            if (metres({ lng: me[0], lat: me[1] }, route.stops[k]) <= ARRIVE_M) { arrivedAt(k); break; }
+          }
+        }
+        if (walk.next >= route.stops.length) { updateWalkBar(0, 0, me); return; }
+        var hit = snapTo(walk.coords, walk.cum, me, 0);
+        var s = route.stops[walk.next];
+        if (metres({ lng: me[0], lat: me[1] }, s) <= ARRIVE_M ||
+            (hit.off <= ARRIVE_M && hit.along >= walk.targets[walk.next] - 10)) {
+          arrivedAt(walk.next);
+        }
+        var good = !(c.accuracy > 50);
+        walk.offCount = hit.off > OFF_M && good ? (walk.offCount || 0) + 1 : 0;
+        if (walk.offCount >= 3) reroute(me);
+        updateWalkBar(hit.along, hit.off, me);
+      }
+
+      function onFixError(err) {
+        if (!walk) return;
+        if (err && err.code === 1) {
+          showWalkStatus('Location is off for this page', 'Allow location in your browser or phone settings to follow the walk.');
+          if (walk.watch !== null) navigator.geolocation.clearWatch(walk.watch);
+          walk.watch = null;
+        } else if (!walk.me) {
+          showWalkStatus('Looking for you\u2026', 'Waiting for your phone\u2019s location.');
+        }
+      }
+
+      function startWalk() {
+        if (!route || walk || !('geolocation' in navigator)) return;
+        walk = { next: 0, follow: true, offCount: 0, lastReroute: 0, watch: null, me: null, marker: null, started: false };
+        var w = route.walk;
+        setWalkPath(route.path || route.stops.map(function (p) { return [p.lng, p.lat]; }), w ? w.legs : [], 0);
+        if (openPopup) openPopup.remove();
+        document.body.classList.add('walking');
+        showWalkStatus('Looking for you\u2026', 'Allow location to follow the walk.');
+        paintWalkPins();
+        walk.watch = navigator.geolocation.watchPosition(onFix, onFixError, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
+        window.parent.postMessage({ type: 'mansfield:walk', on: true }, routeOrigin);
+      }
+
+      function endWalk() {
+        if (!walk) return;
+        if (walk.watch !== null) navigator.geolocation.clearWatch(walk.watch);
+        if (walk.marker) walk.marker.remove();
+        clearTimeout(walk.arriveTimer);
+        walk = null;
+        var ui = walkUi();
+        ui.arrive.hidden = true;
+        ui.recenter.hidden = true;
+        document.body.classList.remove('walking');
+        markers.forEach(function (m) { m.getElement().classList.remove('mk--done'); });
+        drawRoute();
+        cardsKey = '';
+        updateCards();
+        window.parent.postMessage({ type: 'mansfield:walk', on: false }, routeOrigin);
       }
 
       window.addEventListener('message', function (e) {
@@ -1487,6 +1844,7 @@
           var i = Math.round(Number(e.data.index));
           if (!(i >= -1 && i < route.stops.length) || i === routeStep) return;
           routeStep = i;
+          if (walk) return;   // reading along while walking: leave the map on the walker
           if (routeView === 'strip') setActive(i >= 0 ? route.stops[i] : null);
           paintRoute();
           showStep(900);
@@ -1503,14 +1861,20 @@
             if (!viewerEl.hidden) closeViewer();
             if (!detailEl.hidden) closeDetail();
             if (lsheet.classList.contains('is-open')) closeList();
-            setActive(routeStep >= 0 ? route.stops[routeStep] : null);
             hideCards();
-            showStep(was === 'strip' ? 600 : 0);
+            if (!walk) {   // during a walk the map stays on the walker
+              setActive(routeStep >= 0 ? route.stops[routeStep] : null);
+              showStep(was === 'strip' ? 600 : 0);
+            }
           } else {
             cardsKey = '';
             updateCards();
             // Show the stop the reader was on, above the card row.
             requestAnimationFrame(function () {
+              if (walk) {   // a walk is on: back to the walker
+                if (walk.me && walk.follow) map.easeTo({ center: walk.me, zoom: Math.max(map.getZoom(), 16.5), duration: 600 });
+                return;
+              }
               if (e.data.focus === false) return;
               var s = route.stops, i = routeStep;
               var on = i >= 0 ? [s[i - 1], s[i], s[i + 1]].filter(Boolean) : s;   // the stop, with the one before and after
