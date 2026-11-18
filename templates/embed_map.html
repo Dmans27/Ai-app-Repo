@@ -1409,12 +1409,12 @@
         // Layer 1: a soft dark band under the line (the "casing")
         map.addLayer({ id: 'mansfield-route-band', type: 'line', source: 'mansfield-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#15171a', 'line-opacity': 0.28, 'line-width': 7 } });
+        paint: { 'line-color': '#0b2414', 'line-opacity': 0.6, 'line-width': 9 } });   // dark outline so the green stands out on light streets too
 
-        // Layer 2: the white line on top -- this is the dotted one
+        // Layer 2: the bright green route line on top
         map.addLayer({ id: 'mansfield-route-dots', type: 'line', source: 'mansfield-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-opacity': 0.92, 'line-width': 3.5 } });
+        paint: { 'line-color': '#2BEA6B', 'line-opacity': 1, 'line-width': 5 } });   // bright green walking route
       }
 
       function frameOn(list, pad, maxZoom, duration) {
