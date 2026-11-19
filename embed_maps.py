@@ -826,12 +826,17 @@ def _geocode(text, near=None):
     try:
         r = requests.get("https://api.mapbox.com/geocoding/v5/mapbox.places/"
                          + requests.utils.quote(text, safe="") + ".json", params=params, timeout=8)
+        if r.status_code != 200:
+            print(f"[geocode] Mapbox said {r.status_code} for {text!r}", flush=True)
         if r.status_code == 200:
             feats = (r.json() or {}).get("features") or []
             if feats and isinstance(feats[0].get("center"), list):
                 found = (float(feats[0]["center"][0]), float(feats[0]["center"][1]))
-    except (requests.RequestException, ValueError, TypeError):
+    except (requests.RequestException, ValueError, TypeError) as exc:
+        print(f"[geocode] failed for {text!r}: {exc}", flush=True)
         found = None
+    if found is None:
+        print(f"[geocode] no match for {text!r}", flush=True)
     if len(_geo_cache) > 2000:
         _geo_cache.clear()
     _geo_cache[key] = (time.time() + 86400, found)
@@ -1181,10 +1186,21 @@ def register_embed_routes(app, SavedList, query_one):
         city = " ".join(str(request.args.get("city") or "").split())[:80]
         center = (lng, lat) if lat is not None and lng is not None else None
         near_text = str(request.args.get("near") or "").strip()
-        if near_text:
-            spot = _geocode(near_text + (", " + city if city and city.lower() not in near_text.lower() else ""), center)
+        if near_text or city:
+            # A named place or city always wins over the reader's own location:
+            # someone in Vienna asking for "the Loop, Chicago" wants Chicago. Their
+            # location only helps the geocoder pick between same-named places.
+            bias, spot = center, None
+            if near_text:
+                spot = _geocode(near_text + (", " + city if city and city.lower() not in near_text.lower() else ""), bias)
+            if not spot and city:
+                spot = _geocode(city, bias)
             if spot:
                 center = spot
+            elif city:
+                center = None          # couldn't place it on the map: search the whole city instead
+            else:
+                return jsonify(error="where", places=[]), 400
         radius = _float_arg("radius", 100, NEAR_MAX_RADIUS) or 2500
         groups = {g for g in str(request.args.get("groups") or "").lower().split(",") if g in PLACE_GROUPS}
         words = [w for w in re.split(r"[^\w']+", str(request.args.get("q") or "").lower()) if len(w) > 2][:8]
