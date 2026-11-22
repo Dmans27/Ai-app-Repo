@@ -703,12 +703,17 @@
       // The panel slides up from the bottom of the map when it opens and
       // slides back down when it closes.
       var closeTimer = null;
+      // The page around the map (Plan a walk) hides its own buttons while a full-screen listing is open.
+      function tellPanel() {
+        if (typeof tellPage === 'function') tellPage({ type: 'mansfield:panel', open: !detailEl.hidden || !viewerEl.hidden });
+      }
       function closeDetail() {
         closeViewer();
         currentDetail = null;
         detailEl.classList.remove('is-open');
         clearTimeout(closeTimer);
-        closeTimer = setTimeout(function () { detailEl.hidden = true; }, 400);
+        closeTimer = setTimeout(function () { detailEl.hidden = true; tellPanel(); }, 400);
+        tellPage({ type: 'mansfield:panel', open: false });   // closing the listing closes its photos too
       }
       detailBack.addEventListener('click', closeDetail);
       document.addEventListener('keydown', function (e) {
@@ -741,7 +746,7 @@
         if (viewerEl.hidden) return;
         viewerEl.classList.remove('is-open');
         clearTimeout(viewerTimer);
-        viewerTimer = setTimeout(function () { viewerEl.hidden = true; viewerEl.innerHTML = ''; }, 260);
+        viewerTimer = setTimeout(function () { viewerEl.hidden = true; viewerEl.innerHTML = ''; tellPanel(); }, 260);
       }
       function openViewer(place) {
         var urls = photoUrls(place);
@@ -763,6 +768,7 @@
         viewerEl._slides = slides;
         wireCarousel(urls, slides, prev, next, dots, 'viewer__slide').open();
         viewerEl.hidden = false;
+        tellPanel();
         void viewerEl.offsetHeight;
         viewerEl.classList.add('is-open');
         close.focus({ preventScroll: true });
@@ -868,6 +874,7 @@
         renderDetail(place, null, place.id !== undefined && place.id !== null);
         clearTimeout(closeTimer);
         detailEl.hidden = false;
+        tellPanel();
         detailScroll.style.scrollBehavior = 'auto';
         detailScroll.scrollTop = 0;
         detailScroll.style.scrollBehavior = '';
