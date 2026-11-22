@@ -37,6 +37,8 @@
     .pop-card.mapboxgl-popup-anchor-right .mapboxgl-popup-tip { border-left-color: #16181b; }
     .pop { position: relative; width: min(340px, calc(100vw - 28px)); height: clamp(190px, calc(100vh - 150px), 300px); color: #fff; font-size: 13px; }
     .mapboxgl-popup.pop-card { z-index: 6; }   /* an open card sits above every pin, numbered stops included */
+    /* iPad and wider: a bigger card. */
+    @media (min-width: 641px) { .pop { width: 440px; height: clamp(220px, calc(100vh - 220px), 380px); font-size: 14px; } }
     .pop__slides { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
       overscroll-behavior-x: contain; background: linear-gradient(160deg, #2b2f36, #16181b); }
     .pop__slides::-webkit-scrollbar { display: none; }
@@ -223,6 +225,11 @@
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
     /* The card list down the left stops above the bar, so the two never overlap. */
     body.has-filters .cards { max-height: calc(100% - 140px); }
+    /* The page around the map covers its top with buttons (Plan a walk): on wide screens the card
+       list starts below them and stops above the page's ask bar. */
+    @media (min-width: 641px) {
+      body.has-top-ui .cards { top: calc(var(--top-ui, 0px) + 8px); max-height: calc(100% - var(--top-ui, 0px) - 100px); }
+    }
     body.is-fs .filters { bottom: 18px; }               /* full screen: closer to the bottom edge */
     body.is-fs.has-filters .cards { max-height: calc(100% - 150px); }
     body.is-fs .fbtn { width: 42px; height: 42px; }
@@ -1090,7 +1097,13 @@
           // centre the card in the clear space between those and the card row, or if it's too
           // tall for that, line its top up just below the buttons.
           var top = Math.max(0, topUi), avail = m.height - inset - top;
-          var dx = (r.left + r.width / 2) - (m.left + m.width / 2);
+          // Wide screens list the places down the left: centre the card in the space to the right of that list.
+          var left = 0;
+          if (cardsEl.classList.contains('is-visible') && getComputedStyle(cardsEl).flexDirection === 'column') {
+            left = Math.max(0, Math.round(cardsEl.getBoundingClientRect().right - m.left));
+            if (m.width - left < r.width + 24) left = 0;   // no room beside the list: just centre it
+          }
+          var dx = (r.left + r.width / 2) - (m.left + left + (m.width - left) / 2);
           var dy = r.height + 16 > avail ? r.top - (m.top + top + 8)
                                          : (r.top + r.height / 2) - (m.top + top + avail / 2);
           if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
@@ -1106,7 +1119,7 @@
       var bounds = new mapboxgl.LngLatBounds();
       places.forEach(function (place) {
         var node = popupNode(place);
-        var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '360px', className: 'pop-card' }).setDOMContent(node);
+        var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '460px', className: 'pop-card' }).setDOMContent(node);
         popup._place = place;
         popup._node = node;
         // Only one pin card is open at a time: opening another closes the previous one.
@@ -2056,6 +2069,8 @@
           if (mapReady) paintShape(); else map.once('load', function () { paintShape(); });
         } else if (t === 'mansfield:insets') {
           topUi = Math.max(0, Math.min(400, Number(e.data.top) || 0));   // how much of the map's top the page's buttons cover
+          document.documentElement.style.setProperty('--top-ui', topUi + 'px');
+          document.body.classList.toggle('has-top-ui', topUi > 0);
         } else if (t === 'mansfield:circle-clear') {
           shape = null;
           if (drawing) setDrawing(false);
