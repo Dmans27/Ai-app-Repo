@@ -1899,16 +1899,19 @@
 
       // ---- Area tools (the media site's "Plan a walk" page) -----------------
       // The page can ask what part of the map the reader is looking at ("food
-      // in this area"), and let them draw a circle that the walk planner then
-      // searches inside. We only talk to the page we sit in.
+      // in this area"), and let them draw round an area with a finger, like a
+      // pencil, that the walk planner then searches inside. We only talk to the
+      // page we sit in.
       //   page -> map: mansfield:watch-view, mansfield:draw-circle {on},
-      //                mansfield:circle-set {center:[lng,lat], radius}, mansfield:circle-clear
+      //                mansfield:area-set {polygon: [[lng,lat],...]}, mansfield:circle-set {center, radius},
+      //                mansfield:circle-clear
       //   map -> page: mansfield:view {center, radius, zoom, byUser},
-      //                mansfield:circle {center, radius} (null when cleared), mansfield:draw {on}
+      //                mansfield:area {polygon, center, radius} (null when cleared), mansfield:draw {on}
+      // (The "circle" names are kept so older pages still work: an area is any closed shape.)
       var areaOrigin = null;
-      var circle = null;          // {center: [lng, lat], radius: metres}
-      var drawing = false, drawStart = null;
-      var AREA_MIN = 100, AREA_MAX = 20000, AREA_TAP = 500;
+      var shape = null;           // {polygon: [[lng, lat], ...] closed, center: [lng, lat], radius: metres to the farthest corner}
+      var drawing = false, path = null, lastPt = null;
+      var AREA_MIN = 100, AREA_MAX = 20000, AREA_TAP = 500, MAX_POINTS = 240;
 
       function tellPage(m) { if (areaOrigin) window.parent.postMessage(m, areaOrigin); }
 
@@ -1922,33 +1925,45 @@
       }
       map.on('moveend', function (e) { tellPage(viewNow(!!(e && e.originalEvent))); });
 
-      function circleShape(c) {
-        var pts = [], mLng = 111320 * Math.cos(c.center[1] * Math.PI / 180);
+      function circlePolygon(center, radius) {
+        var pts = [], mLng = 111320 * Math.cos(center[1] * Math.PI / 180);
         for (var i = 0; i <= 64; i++) {
           var a = i / 64 * 2 * Math.PI;
-          pts.push([c.center[0] + c.radius * Math.sin(a) / mLng, c.center[1] + c.radius * Math.cos(a) / 111320]);
+          pts.push([center[0] + radius * Math.sin(a) / mLng, center[1] + radius * Math.cos(a) / 111320]);
         }
-        return { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [pts] } };
+        return pts;
       }
-      function paintCircle() {
+      // A closed shape's middle (of its box) and the distance to its farthest point: the search circle around it.
+      function shapeFrom(poly) {
+        var minX = 180, maxX = -180, minY = 90, maxY = -90;
+        poly.forEach(function (p) { minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); });
+        var c = [(minX + maxX) / 2, (minY + maxY) / 2], r = 0;
+        poly.forEach(function (p) { r = Math.max(r, metres({ lng: c[0], lat: c[1] }, { lng: p[0], lat: p[1] })); });
+        return { polygon: poly, center: c, radius: Math.round(Math.max(AREA_MIN, Math.min(AREA_MAX, r))) };
+      }
+      function paintShape(openPath) {
         if (!mapReady) return;
-        var data = circle ? circleShape(circle) : { type: 'FeatureCollection', features: [] };
+        var feats = [];
+        if (openPath && openPath.length > 1) feats.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: openPath } });
+        else if (shape) feats.push({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [shape.polygon] } });
+        var data = { type: 'FeatureCollection', features: feats };
         var src = map.getSource('mansfield-area');
         if (src) { src.setData(data); return; }
         map.addSource('mansfield-area', { type: 'geojson', data: data });
-        map.addLayer({ id: 'mansfield-area-fill', type: 'fill', source: 'mansfield-area',
-          paint: { 'fill-color': '#2BEA6B', 'fill-opacity': 0.12, 'fill-emissive-strength': 1 } });
+        map.addLayer({ id: 'mansfield-area-fill', type: 'fill', source: 'mansfield-area', filter: ['==', ['geometry-type'], 'Polygon'],
+          paint: { 'fill-color': '#2BEA6B', 'fill-opacity': 0.14, 'fill-emissive-strength': 1 } });
         map.addLayer({ id: 'mansfield-area-line', type: 'line', source: 'mansfield-area',
-          paint: { 'line-color': '#2BEA6B', 'line-width': 3, 'line-dasharray': [2, 1.5], 'line-emissive-strength': 1 } });
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#2BEA6B', 'line-width': 4, 'line-emissive-strength': 1 } });
       }
-      map.on('load', paintCircle);
+      map.on('load', function () { paintShape(); });
 
       function setDrawing(on) {
         drawing = !!on;
-        drawStart = null;
+        path = null;
         document.body.classList.toggle('is-drawing', drawing);
         // While drawing the map stays completely still: no panning, turning, tilting or pinching,
-        // so a press-and-drag only ever draws the circle.
+        // so a finger on the map only ever draws.
         var moves = [map.dragPan, map.dragRotate, map.touchZoomRotate, map.touchPitch, map.doubleClickZoom, map.boxZoom];
         moves.forEach(function (h) { if (h) { if (drawing) h.disable(); else h.enable(); } });
         if (drawing && openPopup) openPopup.remove();
@@ -1957,24 +1972,37 @@
       }
       function drawFrom(e) {
         if (!drawing) return;
-        if (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 1) return;   // pinch: let it zoom
+        if (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 1) return;
         e.preventDefault();
-        drawStart = e.lngLat;
-        circle = { center: [e.lngLat.lng, e.lngLat.lat], radius: AREA_MIN };
-        paintCircle();
+        path = [[e.lngLat.lng, e.lngLat.lat]];
+        lastPt = e.point;
       }
       function drawTo(e) {
-        if (!drawing || !drawStart) return;
-        circle.radius = Math.max(AREA_MIN, Math.min(AREA_MAX, metres({ lng: drawStart.lng, lat: drawStart.lat }, { lng: e.lngLat.lng, lat: e.lngLat.lat })));
-        paintCircle();
+        if (!drawing || !path) return;
+        if (lastPt && Math.abs(e.point.x - lastPt.x) + Math.abs(e.point.y - lastPt.y) < 4) return;   // keep every few pixels
+        lastPt = e.point;
+        path.push([e.lngLat.lng, e.lngLat.lat]);
+        paintShape(path);
       }
       function drawEnd() {
-        if (!drawing || !drawStart) return;
-        if (circle.radius < 150) circle.radius = AREA_TAP;   // a tap: a 500 m circle around that spot
-        circle.radius = Math.round(circle.radius);
-        paintCircle();
+        if (!drawing || !path) return;
+        var poly;
+        if (path.length < 6) {                            // a tap (or a tiny scribble): a 500 m circle around that spot
+          poly = circlePolygon(path[0], AREA_TAP);
+        } else {
+          if (path.length > MAX_POINTS) {                 // thin a long line out evenly
+            var step = path.length / MAX_POINTS, thin = [];
+            for (var k = 0; k < MAX_POINTS; k++) thin.push(path[Math.floor(k * step)]);
+            path = thin;
+          }
+          poly = path.concat([path[0]]);                  // close the loop back to where the finger started
+        }
+        shape = shapeFrom(poly);
+        path = null;
+        paintShape();
         setDrawing(false);
-        tellPage({ type: 'mansfield:circle', center: circle.center, radius: circle.radius });
+        tellPage({ type: 'mansfield:area', polygon: shape.polygon, center: shape.center, radius: shape.radius });
+        tellPage({ type: 'mansfield:circle', center: shape.center, radius: shape.radius });   // older pages
       }
       map.on('mousedown', drawFrom);
       map.on('touchstart', drawFrom);
@@ -1983,6 +2011,16 @@
       map.on('mouseup', drawEnd);
       map.on('touchend', drawEnd);
 
+      function cleanPolygon(raw) {
+        if (!Array.isArray(raw) || raw.length < 4 || raw.length > 400) return null;
+        var out = [];
+        for (var i = 0; i < raw.length; i++) {
+          var p = raw[i];
+          if (!Array.isArray(p) || p.length !== 2 || !isFinite(p[0]) || !isFinite(p[1])) return null;
+          out.push([Number(p[0]), Number(p[1])]);
+        }
+        return out;
+      }
       window.addEventListener('message', function (e) {
         if (e.source !== window.parent || window.parent === window || !e.data || typeof e.data.type !== 'string') return;
         var t = e.data.type;
@@ -1993,15 +2031,20 @@
         } else if (t === 'mansfield:draw-circle') {
           areaOrigin = areaOrigin || e.origin || null;
           setDrawing(!!e.data.on);
+        } else if (t === 'mansfield:area-set') {
+          var poly = cleanPolygon(e.data.polygon);
+          if (!poly) return;
+          shape = shapeFrom(poly);
+          if (mapReady) paintShape(); else map.once('load', function () { paintShape(); });
         } else if (t === 'mansfield:circle-set') {
           var c = e.data.center, r = Number(e.data.radius);
           if (!Array.isArray(c) || c.length !== 2 || !isFinite(c[0]) || !isFinite(c[1]) || !(r > 0)) return;
-          circle = { center: [Number(c[0]), Number(c[1])], radius: Math.max(AREA_MIN, Math.min(AREA_MAX, r)) };
-          if (mapReady) paintCircle(); else map.once('load', paintCircle);
+          shape = shapeFrom(circlePolygon([Number(c[0]), Number(c[1])], Math.max(AREA_MIN, Math.min(AREA_MAX, r))));
+          if (mapReady) paintShape(); else map.once('load', function () { paintShape(); });
         } else if (t === 'mansfield:circle-clear') {
-          circle = null;
+          shape = null;
           if (drawing) setDrawing(false);
-          paintCircle();
+          paintShape();
         }
       });
 
