@@ -1950,8 +1950,7 @@
         var src = map.getSource('mansfield-area');
         if (src) { src.setData(data); return; }
         map.addSource('mansfield-area', { type: 'geojson', data: data });
-        map.addLayer({ id: 'mansfield-area-fill', type: 'fill', source: 'mansfield-area', filter: ['==', ['geometry-type'], 'Polygon'],
-          paint: { 'fill-color': '#2BEA6B', 'fill-opacity': 0.14, 'fill-emissive-strength': 1 } });
+        // Just the outline: the inside stays clear so the streets and places show through.
         map.addLayer({ id: 'mansfield-area-line', type: 'line', source: 'mansfield-area',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': '#2BEA6B', 'line-width': 4, 'line-emissive-strength': 1 } });
