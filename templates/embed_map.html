@@ -39,6 +39,7 @@
     .mapboxgl-popup.pop-card { z-index: 6; }   /* an open card sits above every pin, numbered stops included */
     /* iPad and wider: a bigger card. */
     @media (min-width: 641px) { .pop { width: 440px; height: clamp(220px, calc(100vh - 220px), 380px); font-size: 14px; } }
+    @media (min-width: 1000px) { .pop { width: 520px; } }   /* iPad landscape and laptops */
     .pop__slides { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
       overscroll-behavior-x: contain; background: linear-gradient(160deg, #2b2f36, #16181b); }
     .pop__slides::-webkit-scrollbar { display: none; }
@@ -1105,6 +1106,11 @@
         return Math.max(0, Math.round(m.bottom - c.top));
       }
 
+      function listInset() {   // wide screens: how far the card list down the left reaches into the map
+        if (!cardsEl.classList.contains('is-visible') || getComputedStyle(cardsEl).flexDirection !== 'column') return 0;
+        return Math.max(0, Math.round(cardsEl.getBoundingClientRect().right - mapEl.getBoundingClientRect().left));
+      }
+
       function centerCard(popup) {
         function go() {
           if (openPopup !== popup) return;
@@ -1118,11 +1124,10 @@
           // tall for that, line its top up just below the buttons.
           var top = Math.max(0, topUi), avail = m.height - inset - top;
           // Wide screens list the places down the left: centre the card in the space to the right of that list.
-          var left = 0;
-          if (cardsEl.classList.contains('is-visible') && getComputedStyle(cardsEl).flexDirection === 'column') {
-            left = Math.max(0, Math.round(cardsEl.getBoundingClientRect().right - m.left));
-            if (m.width - left < r.width + 24) left = 0;   // no room beside the list: just centre it
-          }
+          // Centre the card on the screen. Only if that would cover much of the card list down the
+          // left (iPad portrait) does it move to the middle of the space beside the list.
+          var left = 0, list = listInset();
+          if (list && (m.width - r.width) / 2 < list - 60 && m.width - list >= r.width + 24) left = list;
           var dx = (r.left + r.width / 2) - (m.left + left + (m.width - left) / 2);
           var dy = r.height + 16 > avail ? r.top - (m.top + top + 8)
                                          : (r.top + r.height / 2) - (m.top + top + avail / 2);
@@ -1139,7 +1144,7 @@
       var bounds = new mapboxgl.LngLatBounds();
       places.forEach(function (place) {
         var node = popupNode(place);
-        var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '460px', className: 'pop-card' }).setDOMContent(node);
+        var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '540px', className: 'pop-card' }).setDOMContent(node);
         popup._place = place;
         popup._node = node;
         // Only one pin card is open at a time: opening another closes the previous one.
@@ -1471,9 +1476,11 @@
         var top = Math.max(0, pad.top || 0) + 28, bottom = Math.max(0, pad.bottom || 0) + 28;
         if (top + bottom > h - 40) { var k = (h - 40) / (top + bottom); top *= k; bottom *= k; }
         var side = Math.min(44, w / 5);
+        var left = Math.max(side, (pad.left || 0) + 16);
+        if (left + side > w - 120) left = side;             // no room beside the list: frame across the whole map
         var b = new mapboxgl.LngLatBounds();
         list.forEach(function (p) { b.extend([p.lng, p.lat]); });
-        map.fitBounds(b, { padding: { top: top, bottom: bottom, left: side, right: side }, maxZoom: maxZoom, duration: duration, essential: true });
+        map.fitBounds(b, { padding: { top: top, bottom: bottom, left: left, right: side }, maxZoom: maxZoom, duration: duration, essential: true });
       }
 
       function paintRoute() {
@@ -1934,9 +1941,11 @@
               }
               if (e.data.focus === false) return;
               var s = route.stops, i = routeStep;
-              var on = i >= 0 ? [s[i - 1], s[i], s[i + 1]].filter(Boolean) : s;   // the stop, with the one before and after
-              frameOn(on, { top: (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-top')) || 0) + 56,
-                            bottom: bottomInset() + 10 }, 15.5, 700);
+              var on = i >= 0 ? [s[i - 1], s[i], s[i + 1]].filter(Boolean) : s.slice();   // the stop, with the one before and after
+              // The whole walk: show the area the reader drew as well, so nothing needs zooming out by hand.
+              if (i < 0 && shape) shape.polygon.forEach(function (pt) { on.push({ lng: pt[0], lat: pt[1] }); });
+              var safe = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-top')) || 0;
+              frameOn(on, { top: Math.max(safe + 56, topUi + 4), bottom: bottomInset() + 10, left: listInset() }, 15.5, 700);
             });
           }
         }
