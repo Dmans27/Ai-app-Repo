@@ -387,6 +387,7 @@
     @media (prefers-reduced-motion: reduce) { .me__halo { animation: none; } }
     body.has-route .mk--done .mk__dot { filter: saturate(0.3) brightness(0.8); }
     body.is-drawing .mapboxgl-marker { pointer-events: none; }   /* drawing a circle: pins don't catch the drag */
+    body.is-drawing #map, body.is-drawing .mapboxgl-canvas { touch-action: none; }   /* and the phone doesn't scroll or zoom the page */
   </style>
 </head>
 <body>
@@ -1946,8 +1947,11 @@
         drawing = !!on;
         drawStart = null;
         document.body.classList.toggle('is-drawing', drawing);
-        if (drawing) { map.dragPan.disable(); map.dragRotate.disable(); if (openPopup) openPopup.remove(); }
-        else { map.dragPan.enable(); map.dragRotate.enable(); }
+        // While drawing the map stays completely still: no panning, turning, tilting or pinching,
+        // so a press-and-drag only ever draws the circle.
+        var moves = [map.dragPan, map.dragRotate, map.touchZoomRotate, map.touchPitch, map.doubleClickZoom, map.boxZoom];
+        moves.forEach(function (h) { if (h) { if (drawing) h.disable(); else h.enable(); } });
+        if (drawing && openPopup) openPopup.remove();
         map.getCanvas().style.cursor = drawing ? 'crosshair' : '';
         tellPage({ type: 'mansfield:draw', on: drawing });
       }

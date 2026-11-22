@@ -21,9 +21,9 @@ iframe loads:
                        directions -- see "Walking paths" below.
   /embed/route-map?s=slug,slug,...    a map of just those directory listings,
                        in that order (the media site's AI "Plan a walk").
-  /embed/explore?lat=..&lng=..&z=..   a map to look around before planning a walk:
-                       the directory's listings around that point, opened at that
-                       spot and zoom (the media site's "Plan a walk" page)
+  /embed/explore?lat=..&lng=..&z=..   a clean map (no pins) to look around before
+                       planning a walk, opened at that spot and zoom (the media
+                       site's "Plan a walk" page)
   /embed/places-near   directory listings near a point or in a city, with
                        filters -- for the media site's server only (it sends
                        the shared WALK_PLAN_KEY), see "AI walks" below.
@@ -803,8 +803,6 @@ def place_group(category):
 
 NEAR_MAX_RADIUS = 20000      # metres
 EXPLORE_DEFAULT = (16.3713, 48.2082)   # lng, lat: Vienna, Stephansplatz
-EXPLORE_RADIUS = 4000        # metres of listings around the explore map's start
-EXPLORE_MAX = 500
 NEAR_MAX_RESULTS = 60
 _geo_cache = {}              # text -> (expires, (lng, lat) or None)
 
@@ -1281,28 +1279,16 @@ def register_embed_routes(app, SavedList, query_one):
 
     @app.get("/embed/explore")
     def embed_explore():
-        """The "Plan a walk" map before there's a walk: the published listings
-        around a point, opened right there, so a reader can move to the area they
-        want ("food in this area") or draw a circle to search in."""
+        """The "Plan a walk" map before there's a walk: a clean map with no pins,
+        opened at a point, so a reader can move to the area they want ("food in
+        this area") or draw a circle to search in. Pins only appear once the
+        walk planner has built a route (/embed/route-map)."""
         lat, lng = _float_arg("lat", -90, 90), _float_arg("lng", -180, 180)
         if lat is None or lng is None:
             lat, lng = EXPLORE_DEFAULT[1], EXPLORE_DEFAULT[0]
         zoom = _float_arg("z", 3, 19) or 13.5
-        dlat = EXPLORE_RADIUS / 111320.0
-        dlng = EXPLORE_RADIUS / (111320.0 * max(0.2, math.cos(math.radians(lat))))
-        places = []
-        try:
-            with _engine(app).connect() as conn:
-                rows = conn.execute(sql_text(
-                    f"SELECT {_CARD_COLS} FROM listings WHERE status = 'published' AND slug IS NOT NULL "
-                    "AND latitude BETWEEN :la AND :lb AND longitude BETWEEN :na AND :nb LIMIT :lim"),
-                    dict(la=lat - dlat, lb=lat + dlat, na=lng - dlng, nb=lng + dlng, lim=EXPLORE_MAX))
-                places = [_card_payload(dict(r._mapping)) for r in rows]
-        except Exception as exc:  # noqa: BLE001 -- an empty map still works for looking around
-            print(f"[explore] query failed: {exc}", flush=True)
         title = " ".join(str(request.args.get("t") or "").split())[:120] or "Plan a walk"
-        return _render(title, places, None, request, cards_min_zoom=15,
-                       extra={"explore": True, "center": [lng, lat], "zoom": zoom})
+        return _render(title, [], None, request, extra={"explore": True, "center": [lng, lat], "zoom": zoom})
 
     @app.after_request
     def _allow_embedding(response):
