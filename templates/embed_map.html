@@ -2107,6 +2107,7 @@
           if (!poly) return;
           shape = shapeFrom(poly);
           if (mapReady) paintShape(); else map.once('load', function () { paintShape(); });
+          if (route && !walk && routeView === 'full' && !openPopup) fitWalk(0);
         } else if (t === 'mansfield:circle-set') {
           var c = e.data.center, r = Number(e.data.radius);
           if (!Array.isArray(c) || c.length !== 2 || !isFinite(c[0]) || !isFinite(c[1]) || !(r > 0)) return;
@@ -2124,6 +2125,14 @@
       });
 
       map.on('load', function () {
+        // A walk (and the area drawn for it) can arrive before the map has
+        // finished loading. Don't throw that framing away: show the whole walk
+        // and the drawn area, not just the places.
+        if (route) {
+          updateCards();   // lay out the stop list first so the framing keeps clear of it
+          requestAnimationFrame(function () { if (!walk && routeView === 'full') fitWalk(0); else showStep(0); });
+          return;
+        }
         if (data.explore) map.jumpTo({ center: data.center, zoom: data.zoom || 13.5 });   // explore: stay where the page asked
         else if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
         else map.jumpTo({ center: [places[0].lng, places[0].lat], zoom: 13 });
