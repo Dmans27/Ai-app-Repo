@@ -105,6 +105,12 @@
     .detail__dots { position: absolute; left: 0; right: 0; bottom: 10px; z-index: 2; pointer-events: none; }
     .detail__body { padding: 16px 18px 0; display: flex; flex-direction: column; gap: 14px; }
     .detail__name { margin: 0; font-size: 22px; font-weight: 800; line-height: 1.2; }
+    .detail__take { margin: 14px 0 4px; padding: 12px 14px; border-radius: 14px; background: #eef8f1; border: 1px solid #cde9d6; }
+    .detail__take-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #1b4332; }
+    .detail__take-stars { color: #b07b00; letter-spacing: 0; font-size: 14px; }
+    .detail__take-text { margin: 6px 0 0; font-size: 15px; line-height: 1.5; color: #15171a; }
+    .detail__take .detail__tags { margin-top: 8px; }
+    .detail__tag--mine { background: #fff; border-color: #cde9d6; }
     .detail__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13.5px; color: #4a514d; }
     .detail__cat { padding: 3px 10px; border-radius: 999px; background: #eef1ef; font-weight: 700; text-transform: capitalize; }
     .detail__rating { color: #b8780a; font-weight: 800; }
@@ -833,6 +839,20 @@
         saveButton(actions, place, true);
         detailBody.appendChild(actions);
 
+        if (d.myTake || d.myRating) {   // the owner's own rating and words, from "Add my place"
+          var take = document.createElement('div');
+          take.className = 'detail__take';
+          var head = addText(take, 'div', 'detail__take-head', (d.curator || 'Danny') + '\u2019s take');
+          if (d.myRating) addText(head, 'span', 'detail__take-stars', '\u2605 ' + Number(d.myRating).toFixed(1).replace(/\.0$/, ''));
+          if (d.myTake) addText(take, 'p', 'detail__take-text', d.myTake);
+          if (d.myTags && d.myTags.length) {
+            var trow = document.createElement('div');
+            trow.className = 'detail__tags';
+            d.myTags.forEach(function (t) { addText(trow, 'span', 'detail__tag detail__tag--mine', t); });
+            take.appendChild(trow);
+          }
+          detailBody.appendChild(take);
+        }
         if (d.description) addText(detailBody, 'p', 'detail__text', d.description);
         if (place.notes) addText(detailBody, 'p', 'detail__note', place.notes);
 

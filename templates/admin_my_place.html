@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Add my place</title>
+  <style>
+    :root { --bg: #f4f5f2; --card: #fff; --ink: #15171a; --muted: #5d6460; --line: #dde1dc; --accent: #1b4332; --green: #2BEA6B; --star: #f5b301; --bad: #b42318; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 14px) 14px 120px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+    h1 { margin: 0; font-size: 24px; }
+    h2 { margin: 0 0 10px; font-size: 17px; }
+    a { color: var(--accent); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+    .muted { color: var(--muted); font-size: 14px; }
+    label { display: block; font-weight: 600; font-size: 14px; margin: 10px 0 4px; }
+    input[type=text], input[type=url], textarea, select { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; font: inherit; background: #fff; }
+    textarea { min-height: 110px; resize: vertical; }
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; }
+    button { font: inherit; cursor: pointer; }
+    .btn { border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 700; background: var(--accent); color: #fff; }
+    .btn--ghost { background: #eef1ef; color: var(--ink); }
+    .btn--wide { width: 100%; padding: 15px; font-size: 17px; }
+    .btn:disabled { opacity: 0.55; }
+    .results { display: grid; gap: 8px; margin-top: 10px; }
+    .result { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 10px 12px; }
+    .result b { display: block; }
+    .result small { color: var(--muted); }
+    .pill { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #e7f6ec; color: #136c34; }
+    .pill--warn { background: #fdecea; color: var(--bad); }
+    .msg { padding: 10px 12px; border-radius: 12px; margin-top: 10px; font-size: 14px; }
+    .msg--bad { background: #fdecea; color: var(--bad); }
+    .msg--ok { background: #e7f6ec; color: #136c34; }
+    .chosen { display: flex; gap: 10px; align-items: flex-start; }
+    .chosen b { font-size: 18px; }
+    details summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--muted); margin-top: 8px; }
+    .stars { display: flex; gap: 4px; align-items: center; }
+    .stars button { border: 0; background: none; font-size: 34px; line-height: 1; padding: 2px; color: #d3d7d2; }
+    .stars button.on { color: var(--star); }
+    .stars button.half { background: linear-gradient(90deg, var(--star) 50%, #d3d7d2 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .stars .val { margin-left: 8px; font-weight: 700; color: var(--muted); }
+    .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-top: 10px; }
+    .photos figure { margin: 0; position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #e9ece9; }
+    .photos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photos .x { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; font-size: 16px; line-height: 1; }
+    .photos .first::after { content: "Cover"; position: absolute; left: 4px; bottom: 4px; padding: 1px 6px; border-radius: 6px; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; font-weight: 700; }
+    .pick { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; padding: 11px 16px; border-radius: 999px; background: #eef1ef; font-weight: 700; }
+    .pick input { display: none; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tags button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 11px; font-size: 13.5px; }
+    .tags button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .count { text-align: right; font-size: 12.5px; color: var(--muted); }
+    .seg { display: flex; background: #eef1ef; border-radius: 999px; padding: 4px; }
+    .seg label { flex: 1; margin: 0; text-align: center; padding: 9px; border-radius: 999px; cursor: pointer; font-weight: 700; }
+    .seg input { display: none; }
+    .seg input:checked + span { color: #fff; }
+    .seg label:has(input:checked) { background: var(--accent); color: #fff; }
+    .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px); background: rgba(244,245,242,0.95); border-top: 1px solid var(--line); }
+    .bar .btn { max-width: 612px; display: block; margin: 0 auto; }
+    .list { list-style: none; margin: 0; padding: 0; }
+    .list li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 15px; }
+    .list li:first-child { border-top: 0; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>{{ 'Edit my place' if edit else 'Add my place' }}</h1>
+    <a href="/admin/listings">Admin</a>
+  </header>
+
+  {% if saved %}
+    <div class="msg msg--ok">Saved <b>{{ saved }}</b>. <a href="/embed/card/{{ saved }}" target="_blank" rel="noopener">See its card</a></div>
+  {% endif %}
+
+  <!-- 1. Find it on Google -->
+  <section class="card" id="find" {% if edit %}hidden{% endif %}>
+    <h2>1. Find the place</h2>
+    <p class="muted" style="margin:0 0 8px">Paste a Google Maps link (Share → Copy link), or type the name and street.</p>
+    <div class="row">
+      <input type="text" id="q" placeholder="maps.app.goo.gl/… or “Café Sperl Gumpendorfer”" autocomplete="off" enterkeyhint="search">
+      <button type="button" class="btn" id="lookup" style="flex:0 0 auto">Look up</button>
+    </div>
+    <div id="find-msg"></div>
+    <div class="results" id="results"></div>
+  </section>
+
+  <form id="form" {% if not edit %}hidden{% endif %}>
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="listing_id" value="{{ edit.id if edit else '' }}">
+    <input type="hidden" name="place_id" value="{{ (edit.place_id or '') if edit else '' }}">
+    <input type="hidden" name="lat" value="{{ edit.latitude if edit and edit.latitude is not none else '' }}">
+    <input type="hidden" name="lng" value="{{ edit.longitude if edit and edit.longitude is not none else '' }}">
+    <input type="hidden" name="google_rating" value="">
+    <input type="hidden" name="google_count" value="">
+
+    <!-- 2. The basics (from Google, editable) -->
+    <section class="card">
+      <div class="chosen">
+        <div style="flex:1">
+          <b id="chosen-name">{{ edit.name if edit else '' }}</b>
+          <div class="muted" id="chosen-address">{{ edit.address if edit else '' }}</div>
+          <div id="chosen-note"></div>
+        </div>
+        {% if not edit %}<button type="button" class="btn btn--ghost" id="change" style="padding:8px 12px">Change</button>{% endif %}
+      </div>
+      <details>
+        <summary>Details from Google (you can edit them)</summary>
+        <label for="f-name">Name</label>
+        <input type="text" id="f-name" name="name" value="{{ edit.name if edit else '' }}" required>
+        <label for="f-category">Category</label>
+        <input type="text" id="f-category" name="category" list="cats" value="{{ edit.category if edit else '' }}">
+        <datalist id="cats"><option value="coffee shop"><option value="restaurant"><option value="bar"><option value="wine bar"><option value="bakery"><option value="museum"><option value="hotel"><option value="shop"></datalist>
+        <label for="f-address">Address</label>
+        <input type="text" id="f-address" name="address" value="{{ edit.address if edit else '' }}">
+        <div class="row">
+          <div><label for="f-city">City</label><input type="text" id="f-city" name="city" value="{{ edit.city if edit else '' }}"></div>
+          <div><label for="f-state">State / region</label><input type="text" id="f-state" name="state" value="{{ edit.state if edit else '' }}"></div>
+        </div>
+        <label for="f-phone">Phone</label>
+        <input type="text" id="f-phone" name="phone" value="{{ edit.phone if edit else '' }}">
+        <label for="f-website">Website</label>
+        <input type="url" id="f-website" name="website" value="{{ edit.website if edit else '' }}">
+      </details>
+    </section>
+
+    <!-- 3. Your photos -->
+    <section class="card">
+      <h2>Your photos</h2>
+      <p class="muted" style="margin:0">Up to {{ max_photos }}. The first one is the cover on the map. They're made smaller on your phone before uploading.</p>
+      {% if edit and edit.photos %}
+        <p class="muted" style="margin:8px 0 0">It has {{ edit.photos|length }} photo{{ '' if edit.photos|length == 1 else 's' }} now. New ones go in front.</p>
+        <div class="photos">{% for p in edit.photos[:6] %}<figure><img src="{{ p }}" alt="" loading="lazy"></figure>{% endfor %}</div>
+        <label style="font-weight:500"><input type="checkbox" name="replace_photos" value="1"> Replace the current photos with my new ones</label>
+      {% endif %}
+      <label class="pick"><input type="file" id="photos" accept="image/*" multiple>＋ Add photos</label>
+      <div class="photos" id="previews"></div>
+    </section>
+
+    <!-- 4. Your rating and take -->
+    <section class="card">
+      <h2>Your rating</h2>
+      <div class="stars" id="stars">
+        {% for i in range(1, 6) %}<button type="button" data-v="{{ i }}" aria-label="{{ i }} star{{ '' if i == 1 else 's' }}">★</button>{% endfor %}
+        <span class="val" id="star-val"></span>
+      </div>
+      <p class="muted" style="margin:6px 0 0">Tap a star twice for a half star. Tap the same star again to clear.</p>
+      <input type="hidden" name="my_rating" id="my_rating" value="{{ edit.my_rating if edit and edit.my_rating else '' }}">
+
+      <h2 style="margin-top:18px">{{ curator }}'s take</h2>
+      <textarea name="my_take" id="my_take" maxlength="{{ max_take }}" placeholder="What should someone order? When's the best time to go? What makes it special?">{{ (edit.my_take or '') if edit else '' }}</textarea>
+      <div class="count"><span id="take-count">0</span> / {{ max_take }}</div>
+
+      <h2 style="margin-top:12px">Tags</h2>
+      <input type="text" name="my_tags" id="my_tags" placeholder="e.g. great for working, quiet" value="{{ (edit.my_tags or '') if edit else '' }}">
+      <div class="tags" id="tag-ideas">{% for t in tag_ideas %}<button type="button">{{ t }}</button>{% endfor %}</div>
+    </section>
+
+    <section class="card">
+      <div class="seg">
+        <label><input type="radio" name="status" value="published" {% if not edit or edit.status != 'draft' %}checked{% endif %}><span>Publish now</span></label>
+        <label><input type="radio" name="status" value="draft" {% if edit and edit.status == 'draft' %}checked{% endif %}><span>Save as draft</span></label>
+      </div>
+    </section>
+    <div id="save-msg"></div>
+    <div class="bar"><button type="submit" class="btn btn--wide" id="save">Save my place</button></div>
+  </form>
+
+  {% if mine %}
+  <section class="card" style="margin-top:18px">
+    <h2>My places ({{ mine|length }})</h2>
+    <ul class="list">
+      {% for m in mine %}
+        <li><span><a href="/admin/my-place?edit={{ m.id }}">{{ m.name }}</a><br><small class="muted">{{ m.category }}{% if m.city %} · {{ m.city }}{% endif %}{% if m.status == 'draft' %} · draft{% endif %}</small></span>
+            <span>{% if m.my_rating %}★ {{ '%g' % m.my_rating }}{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var CSRF = {{ csrf|tojson }};
+  var MAX = {{ max_photos }};
+  var form = document.getElementById('form');
+  var find = document.getElementById('find');
+  var q = document.getElementById('q');
+  var results = document.getElementById('results');
+  var findMsg = document.getElementById('find-msg');
+  var saveMsg = document.getElementById('save-msg');
+  var saveBtn = document.getElementById('save');
+  var files = [];     // the photos to upload, in order
+
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function msg(box, text, ok) { box.innerHTML = ''; if (text) box.appendChild(el('div', 'msg ' + (ok ? 'msg--ok' : 'msg--bad'), text)); }
+  function set(name, v) { var i = form.elements[name]; if (i) i.value = v == null ? '' : v; }
+
+  // ── 1. Look the place up on Google ──
+  function lookup() {
+    var text = q.value.trim();
+    if (text.length < 2) return;
+    msg(findMsg, '');
+    results.innerHTML = '';
+    var btn = document.getElementById('lookup');
+    btn.disabled = true; btn.textContent = 'Looking…';
+    fetch('/admin/my-place/lookup?q=' + encodeURIComponent(text), { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { msg(findMsg, d.error || 'Nothing found.'); return; }
+        d.results.forEach(function (p) {
+          var b = el('button', 'result');
+          b.type = 'button';
+          b.appendChild(el('b', null, p.name));
+          b.appendChild(el('small', null, p.category + ' · ' + p.address));
+          if (p.existing) b.appendChild(el('span', 'pill', 'Already in your directory: you’ll update it'));
+          if (p.closed) b.appendChild(el('span', 'pill pill--warn', 'Google says it’s closed'));
+          b.addEventListener('click', function () { choose(p); });
+          results.appendChild(b);
+        });
+        if (d.results.length === 1) choose(d.results[0]);
+      })
+      .catch(function () { msg(findMsg, 'Couldn’t reach the server. Check your connection.'); })
+      .then(function () { btn.disabled = false; btn.textContent = 'Look up'; });
+  }
+  document.getElementById('lookup').addEventListener('click', lookup);
+  q.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lookup(); } });
+
+  function choose(p) {
+    ['name', 'category', 'address', 'city', 'state', 'phone', 'website', 'lat', 'lng', 'place_id', 'google_rating', 'google_count']
+      .forEach(function (k) { set(k, p[k]); });
+    document.getElementById('chosen-name').textContent = p.name;
+    document.getElementById('chosen-address').textContent = p.category + ' · ' + p.address;
+    var note = document.getElementById('chosen-note');
+    note.innerHTML = '';
+    if (p.existing) {
+      set('listing_id', p.existing.id);
+      note.appendChild(el('span', 'pill', 'Already in your directory (' + p.existing.photos + ' photos). Saving updates it.'));
+      if (p.existing.my_rating) setRating(Number(p.existing.my_rating));
+      if (p.existing.my_take) { form.elements.my_take.value = p.existing.my_take; countTake(); }
+      if (p.existing.my_tags) { form.elements.my_tags.value = p.existing.my_tags; paintTags(); }
+    } else {
+      set('listing_id', '');
+    }
+    find.hidden = true;
+    form.hidden = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  var change = document.getElementById('change');
+  if (change) change.addEventListener('click', function () { form.hidden = true; find.hidden = false; q.focus(); });
+
+  // ── Photos: preview, reorder (first = cover), remove, shrink before upload ──
+  var previews = document.getElementById('previews');
+  function paintPhotos() {
+    previews.innerHTML = '';
+    files.forEach(function (f, i) {
+      var fig = el('figure', i === 0 ? 'first' : '');
+      var img = el('img'); img.alt = ''; img.src = f.url;
+      fig.appendChild(img);
+      var x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove photo');
+      x.addEventListener('click', function () { URL.revokeObjectURL(f.url); files.splice(i, 1); paintPhotos(); });
+      fig.appendChild(x);
+      img.addEventListener('click', function () { files.unshift(files.splice(i, 1)[0]); paintPhotos(); });   // tap = make it the cover
+      previews.appendChild(fig);
+    });
+  }
+  document.getElementById('photos').addEventListener('change', function (e) {
+    Array.prototype.forEach.call(e.target.files, function (f) {
+      if (files.length < MAX && /^image\//.test(f.type)) files.push({ file: f, url: URL.createObjectURL(f) });
+    });
+    e.target.value = '';
+    paintPhotos();
+  });
+  function shrink(f) {   // longest side 2000 px, JPEG: a phone photo goes from ~4 MB to ~0.5 MB
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (b) { resolve(b || f.file); }, 'image/jpeg', 0.85);
+      };
+      img.onerror = function () { resolve(f.file); };   // can't read it here: send it as it is
+      img.src = f.url;
+    });
+  }
+
+  // ── Rating: tap = whole star, tap again = half, third tap = clear ──
+  var stars = Array.prototype.slice.call(document.querySelectorAll('#stars button'));
+  var ratingInput = document.getElementById('my_rating');
+  function setRating(v) {
+    ratingInput.value = v ? String(v) : '';
+    stars.forEach(function (b) {
+      var n = Number(b.dataset.v);
+      b.classList.toggle('on', v >= n);
+      b.classList.toggle('half', v > n - 1 && v < n);
+    });
+    document.getElementById('star-val').textContent = v ? v + ' / 5' : '';
+  }
+  stars.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var n = Number(b.dataset.v), cur = Number(ratingInput.value) || 0;
+      setRating(cur === n ? n - 0.5 : cur === n - 0.5 ? 0 : n);
+    });
+  });
+  setRating(Number(ratingInput.value) || 0);
+
+  // ── Take and tags ──
+  function countTake() { document.getElementById('take-count').textContent = form.elements.my_take.value.length; }
+  form.elements.my_take.addEventListener('input', countTake);
+  countTake();
+  var tagsInput = form.elements.my_tags;
+  function currentTags() { return tagsInput.value.split(',').map(function (t) { return t.trim(); }).filter(Boolean); }
+  function paintTags() {
+    var have = currentTags().map(function (t) { return t.toLowerCase(); });
+    document.querySelectorAll('#tag-ideas button').forEach(function (b) { b.classList.toggle('on', have.indexOf(b.textContent.toLowerCase()) >= 0); });
+  }
+  document.querySelectorAll('#tag-ideas button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = currentTags(), i = t.map(function (x) { return x.toLowerCase(); }).indexOf(b.textContent.toLowerCase());
+      if (i >= 0) t.splice(i, 1); else t.push(b.textContent);
+      tagsInput.value = t.join(', ');
+      paintTags();
+    });
+  });
+  tagsInput.addEventListener('input', paintTags);
+  paintTags();
+
+  // ── Save ──
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    msg(saveMsg, '');
+    saveBtn.disabled = true;
+    saveBtn.textContent = files.length ? 'Uploading photos…' : 'Saving…';
+    Promise.all(files.map(shrink)).then(function (blobs) {
+      var fd = new FormData(form);
+      blobs.forEach(function (b, i) { fd.append('photos', b, 'photo-' + (i + 1) + '.jpg'); });
+      return fetch('/admin/my-place', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRF-Token': CSRF } });
+    }).then(function (r) { return r.json().catch(function () { return { ok: false, error: 'The server sent back something unexpected.' }; }); })
+      .then(function (d) {
+        if (!d.ok) { msg(saveMsg, d.error || 'Couldn’t save.'); saveBtn.disabled = false; saveBtn.textContent = 'Save my place'; return; }
+        location.href = '/admin/my-place?saved=' + encodeURIComponent(d.slug);
+      })
+      .catch(function () { msg(saveMsg, 'Couldn’t reach the server. Your entries are still here: try again.'); saveBtn.disabled = false; saveBtn.textContent = 'Save my place'; });
+  });
+})();
+</script>
+</body>
+</html>

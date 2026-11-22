@@ -259,7 +259,7 @@ def _public_photo_url(stored):
 # ---- Full-size "Show listing" panel ----------------------------------------
 
 _DETAIL_COLS = ("id AS listing_row_id, slug, phone, website, address, description, "
-                "google_rating, google_rating_count, place_id AS listing_place_id")
+                "google_rating, google_rating_count, place_id AS listing_place_id, my_rating, my_take, my_tags")
 _GOOGLE_PLACE_ID = re.compile(r"^[A-Za-z0-9_-]{10,200}$")
 _GOOGLE_FIELDS = ",".join([
     "formattedAddress", "internationalPhoneNumber", "websiteUri", "googleMapsUri",
@@ -372,6 +372,11 @@ def _place_detail(row, query_one, now=None):
         "tags": [label for key, label in _GOOGLE_TAGS if google.get(key) is True],
         "reviews": reviews,
         "live": bool(google),
+        # The owner's own words (from "Add my place"), shown above everything Google says.
+        "curator": (os.environ.get("CURATOR_NAME") or "Danny").strip()[:40],
+        "myRating": _rating(listing.get("my_rating")),
+        "myTake": (listing.get("my_take") or "").strip()[:600],
+        "myTags": [t.strip() for t in (listing.get("my_tags") or "").split(",") if t.strip()][:10],
     }
 
 
@@ -1212,7 +1217,7 @@ def register_embed_routes(app, SavedList, query_one):
         limit = int(_float_arg("limit", 1, NEAR_MAX_RESULTS) or 30)
 
         sql = ("SELECT id, slug, name, category, city, address, description, latitude, longitude, "
-               "google_rating, google_rating_count FROM listings WHERE status = 'published' "
+               "google_rating, google_rating_count, my_rating, my_take, my_tags FROM listings WHERE status = 'published' "
                "AND latitude IS NOT NULL AND longitude IS NOT NULL AND slug IS NOT NULL")
         params = {}
         if center:
@@ -1241,7 +1246,7 @@ def register_embed_routes(app, SavedList, query_one):
             rating = _rating(r.get("google_rating"))
             if min_rating and not (rating and rating >= min_rating):
                 continue
-            hay = " ".join(str(r.get(k) or "") for k in ("name", "category", "description")).lower()
+            hay = " ".join(str(r.get(k) or "") for k in ("name", "category", "description", "my_take", "my_tags")).lower()
             matched = sum(1 for w in words if w in hay)
             dist = _metres(center, (float(r["longitude"]), float(r["latitude"]))) if center else None
             if dist is not None and dist > radius:
@@ -1252,6 +1257,9 @@ def register_embed_routes(app, SavedList, query_one):
                 "rating": rating, "ratingCount": _count(r.get("google_rating_count")),
                 "address": r.get("address") or "", "city": r.get("city") or "",
                 "about": " ".join(str(r.get("description") or "").split())[:200],
+                "myRating": _rating(r.get("my_rating")),
+                "myTake": " ".join(str(r.get("my_take") or "").split())[:300],
+                "myTags": " ".join(str(r.get("my_tags") or "").split())[:200],
                 "matched": matched, "distance": round(dist) if dist is not None else None,
             })
         out.sort(key=lambda p: (-p["matched"], p["distance"] if p["distance"] is not None else 0,

@@ -9000,6 +9000,11 @@ register_embed_routes(app, SavedList, query_one)
 # -----------------------
 # Run
 # -----------------------
+# "Add my place": your own listings from your phone (my_place.py, /admin/my-place)
+from my_place import register_my_place
+register_my_place(app, engine, cloudinary.uploader)
+
+
 if __name__ == "__main__":
     init_db()
     create_admin_if_missing("you@example.com", "ChangeMe123!")
