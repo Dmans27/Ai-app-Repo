@@ -386,6 +386,7 @@
     @keyframes me-pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .me__halo { animation: none; } }
     body.has-route .mk--done .mk__dot { filter: saturate(0.3) brightness(0.8); }
+    body.is-drawing .mapboxgl-marker { pointer-events: none; }   /* drawing a circle: pins don't catch the drag */
   </style>
 </head>
 <body>
@@ -453,7 +454,7 @@
 
       if (typeof mapboxgl === 'undefined') { say('The map could not load. Please check your connection and try again.'); return; }
       if (!data.token) { say('This map is not available right now.'); return; }
-      if (!places.length) { say('No pinned places on this map yet.'); return; }
+      if (!places.length && !data.explore) { say('No pinned places on this map yet.'); return; }
 
       mapboxgl.accessToken = data.token;
 
@@ -881,8 +882,8 @@
       var map = new mapboxgl.Map({
         container: 'map',
         style: data.style,
-        center: [places[0].lng, places[0].lat],
-        zoom: 11,
+        center: data.center || [places[0].lng, places[0].lat],   // an explore map opens at its own spot
+        zoom: data.zoom || 11,
         // Inside an article: two fingers / ctrl+scroll move the map, one finger scrolls the page.
         // On its own page, or filling the screen behind a story, one finger moves the map.
         cooperativeGestures: window.parent !== window && !STORY_MODE
@@ -1894,8 +1895,115 @@
         }
       });
 
+
+      // ---- Area tools (the media site's "Plan a walk" page) -----------------
+      // The page can ask what part of the map the reader is looking at ("food
+      // in this area"), and let them draw a circle that the walk planner then
+      // searches inside. We only talk to the page we sit in.
+      //   page -> map: mansfield:watch-view, mansfield:draw-circle {on},
+      //                mansfield:circle-set {center:[lng,lat], radius}, mansfield:circle-clear
+      //   map -> page: mansfield:view {center, radius, zoom, byUser},
+      //                mansfield:circle {center, radius} (null when cleared), mansfield:draw {on}
+      var areaOrigin = null;
+      var circle = null;          // {center: [lng, lat], radius: metres}
+      var drawing = false, drawStart = null;
+      var AREA_MIN = 100, AREA_MAX = 20000, AREA_TAP = 500;
+
+      function tellPage(m) { if (areaOrigin) window.parent.postMessage(m, areaOrigin); }
+
+      function viewNow(byUser) {
+        var b = map.getBounds(), c = map.getCenter();
+        // The biggest circle that fits on screen: from the middle to the nearer edge.
+        var r = Math.min(metres({ lng: c.lng, lat: c.lat }, { lng: c.lng, lat: b.getNorth() }),
+                         metres({ lng: c.lng, lat: c.lat }, { lng: b.getEast(), lat: c.lat }));
+        return { type: 'mansfield:view', center: [c.lng, c.lat], zoom: map.getZoom(),
+                 radius: Math.round(Math.max(AREA_MIN, Math.min(AREA_MAX, r))), byUser: !!byUser };
+      }
+      map.on('moveend', function (e) { tellPage(viewNow(!!(e && e.originalEvent))); });
+
+      function circleShape(c) {
+        var pts = [], mLng = 111320 * Math.cos(c.center[1] * Math.PI / 180);
+        for (var i = 0; i <= 64; i++) {
+          var a = i / 64 * 2 * Math.PI;
+          pts.push([c.center[0] + c.radius * Math.sin(a) / mLng, c.center[1] + c.radius * Math.cos(a) / 111320]);
+        }
+        return { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [pts] } };
+      }
+      function paintCircle() {
+        if (!mapReady) return;
+        var data = circle ? circleShape(circle) : { type: 'FeatureCollection', features: [] };
+        var src = map.getSource('mansfield-area');
+        if (src) { src.setData(data); return; }
+        map.addSource('mansfield-area', { type: 'geojson', data: data });
+        map.addLayer({ id: 'mansfield-area-fill', type: 'fill', source: 'mansfield-area',
+          paint: { 'fill-color': '#2BEA6B', 'fill-opacity': 0.12, 'fill-emissive-strength': 1 } });
+        map.addLayer({ id: 'mansfield-area-line', type: 'line', source: 'mansfield-area',
+          paint: { 'line-color': '#2BEA6B', 'line-width': 3, 'line-dasharray': [2, 1.5], 'line-emissive-strength': 1 } });
+      }
+      map.on('load', paintCircle);
+
+      function setDrawing(on) {
+        drawing = !!on;
+        drawStart = null;
+        document.body.classList.toggle('is-drawing', drawing);
+        if (drawing) { map.dragPan.disable(); map.dragRotate.disable(); if (openPopup) openPopup.remove(); }
+        else { map.dragPan.enable(); map.dragRotate.enable(); }
+        map.getCanvas().style.cursor = drawing ? 'crosshair' : '';
+        tellPage({ type: 'mansfield:draw', on: drawing });
+      }
+      function drawFrom(e) {
+        if (!drawing) return;
+        if (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 1) return;   // pinch: let it zoom
+        e.preventDefault();
+        drawStart = e.lngLat;
+        circle = { center: [e.lngLat.lng, e.lngLat.lat], radius: AREA_MIN };
+        paintCircle();
+      }
+      function drawTo(e) {
+        if (!drawing || !drawStart) return;
+        circle.radius = Math.max(AREA_MIN, Math.min(AREA_MAX, metres({ lng: drawStart.lng, lat: drawStart.lat }, { lng: e.lngLat.lng, lat: e.lngLat.lat })));
+        paintCircle();
+      }
+      function drawEnd() {
+        if (!drawing || !drawStart) return;
+        if (circle.radius < 150) circle.radius = AREA_TAP;   // a tap: a 500 m circle around that spot
+        circle.radius = Math.round(circle.radius);
+        paintCircle();
+        setDrawing(false);
+        tellPage({ type: 'mansfield:circle', center: circle.center, radius: circle.radius });
+      }
+      map.on('mousedown', drawFrom);
+      map.on('touchstart', drawFrom);
+      map.on('mousemove', drawTo);
+      map.on('touchmove', drawTo);
+      map.on('mouseup', drawEnd);
+      map.on('touchend', drawEnd);
+
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || window.parent === window || !e.data || typeof e.data.type !== 'string') return;
+        var t = e.data.type;
+        if (t === 'mansfield:watch-view') {
+          areaOrigin = e.origin || null;
+          if (mapReady) tellPage(viewNow(false));                 // the style is up (tiles may still be loading)
+          else map.once('load', function () { tellPage(viewNow(false)); });
+        } else if (t === 'mansfield:draw-circle') {
+          areaOrigin = areaOrigin || e.origin || null;
+          setDrawing(!!e.data.on);
+        } else if (t === 'mansfield:circle-set') {
+          var c = e.data.center, r = Number(e.data.radius);
+          if (!Array.isArray(c) || c.length !== 2 || !isFinite(c[0]) || !isFinite(c[1]) || !(r > 0)) return;
+          circle = { center: [Number(c[0]), Number(c[1])], radius: Math.max(AREA_MIN, Math.min(AREA_MAX, r)) };
+          if (mapReady) paintCircle(); else map.once('load', paintCircle);
+        } else if (t === 'mansfield:circle-clear') {
+          circle = null;
+          if (drawing) setDrawing(false);
+          paintCircle();
+        }
+      });
+
       map.on('load', function () {
-        if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
+        if (data.explore) map.jumpTo({ center: data.center, zoom: data.zoom || 13.5 });   // explore: stay where the page asked
+        else if (places.length > 1) map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
         else map.jumpTo({ center: [places[0].lng, places[0].lat], zoom: 13 });
         updateCards();
       });
