@@ -35,7 +35,8 @@
     .pop-card.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip { border-bottom-color: #16181b; }
     .pop-card.mapboxgl-popup-anchor-left .mapboxgl-popup-tip { border-right-color: #16181b; }
     .pop-card.mapboxgl-popup-anchor-right .mapboxgl-popup-tip { border-left-color: #16181b; }
-    .pop { position: relative; width: 270px; height: clamp(190px, calc(100vh - 150px), 300px); color: #fff; font-size: 13px; }
+    .pop { position: relative; width: min(340px, calc(100vw - 28px)); height: clamp(190px, calc(100vh - 150px), 300px); color: #fff; font-size: 13px; }
+    .mapboxgl-popup.pop-card { z-index: 6; }   /* an open card sits above every pin, numbered stops included */
     .pop__slides { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
       overscroll-behavior-x: contain; background: linear-gradient(160deg, #2b2f36, #16181b); }
     .pop__slides::-webkit-scrollbar { display: none; }
@@ -1078,8 +1079,13 @@
           if (!content) return;
           var r = content.getBoundingClientRect(), m = mapEl.getBoundingClientRect();
           var inset = bottomInset();
+          // The page around the map may cover its top with buttons (topUi, see mansfield:insets):
+          // centre the card in the clear space between those and the card row, or if it's too
+          // tall for that, line its top up just below the buttons.
+          var top = Math.max(0, topUi), avail = m.height - inset - top;
           var dx = (r.left + r.width / 2) - (m.left + m.width / 2);
-          var dy = (r.top + r.height / 2) - (m.top + (m.height - inset) / 2);
+          var dy = r.height + 16 > avail ? r.top - (m.top + top + 8)
+                                         : (r.top + r.height / 2) - (m.top + top + avail / 2);
           if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
           map.panBy([dx, dy], { duration: 450, essential: true });
         }
@@ -1093,7 +1099,7 @@
       var bounds = new mapboxgl.LngLatBounds();
       places.forEach(function (place) {
         var node = popupNode(place);
-        var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '300px', className: 'pop-card' }).setDOMContent(node);
+        var popup = new mapboxgl.Popup({ offset: 26, anchor: 'bottom', maxWidth: '360px', className: 'pop-card' }).setDOMContent(node);
         popup._place = place;
         popup._node = node;
         // Only one pin card is open at a time: opening another closes the previous one.
@@ -1909,6 +1915,7 @@
       //                mansfield:area {polygon, center, radius} (null when cleared), mansfield:draw {on}
       // (The "circle" names are kept so older pages still work: an area is any closed shape.)
       var areaOrigin = null;
+      var topUi = 0;              // pixels at the top of the map covered by the page's own buttons
       var shape = null;           // {polygon: [[lng, lat], ...] closed, center: [lng, lat], radius: metres to the farthest corner}
       var drawing = false, path = null, lastPt = null;
       var AREA_MIN = 100, AREA_MAX = 20000, AREA_TAP = 500, MAX_POINTS = 240;
@@ -2040,6 +2047,8 @@
           if (!Array.isArray(c) || c.length !== 2 || !isFinite(c[0]) || !isFinite(c[1]) || !(r > 0)) return;
           shape = shapeFrom(circlePolygon([Number(c[0]), Number(c[1])], Math.max(AREA_MIN, Math.min(AREA_MAX, r))));
           if (mapReady) paintShape(); else map.once('load', function () { paintShape(); });
+        } else if (t === 'mansfield:insets') {
+          topUi = Math.max(0, Math.min(400, Number(e.data.top) || 0));   // how much of the map's top the page's buttons cover
         } else if (t === 'mansfield:circle-clear') {
           shape = null;
           if (drawing) setDrawing(false);
