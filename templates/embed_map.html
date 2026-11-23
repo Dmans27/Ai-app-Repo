@@ -366,9 +366,35 @@
     /* "Start walk": follow the walker along the route (see "Walk mode" in the script). */
     .walkbar, .walkarrive, .walkrecenter { display: none; }
     body.walking .routepill, body.walking .cards { display: none !important; }
-    body.walking .walkbar { display: block; position: absolute; z-index: 6; top: calc(var(--safe-top, 0px) + 10px); left: 10px; right: 10px;
-      padding: 12px 12px 10px 14px; border-radius: 18px; background: rgba(16,18,20,0.9); color: #fff; border: 0.5px solid rgba(255,255,255,0.18);
-      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+    /* Walking directions: a panel on the right with the turn-by-turn list. "Put away" slides it
+       off to the side, leaving a slim tab that still shows the next turn; tap or pull the tab to bring it back. */
+    body.walking .walkbar { display: block; }
+    .walkbar__panel { position: absolute; z-index: 6; top: calc(var(--safe-top, 0px) + 10px); right: 10px; width: min(340px, calc(100% - 20px));
+      max-height: calc(100% - var(--safe-top, 0px) - 160px); box-sizing: border-box; display: flex; flex-direction: column;
+      padding: 12px 12px 10px 14px; border-radius: 18px; background: rgba(16,18,20,0.92); color: #fff; border: 0.5px solid rgba(255,255,255,0.18);
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      transition: transform 0.3s ease, opacity 0.3s ease; }
+    .walkbar.is-tucked .walkbar__panel { transform: translateX(calc(100% + 20px)); opacity: 0; pointer-events: none; }
+    .walkbar__tab { position: absolute; z-index: 6; right: 0; top: 38%; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      width: 58px; padding: 12px 0 10px; border: 0.5px solid rgba(255,255,255,0.2); border-right: 0; border-radius: 16px 0 0 16px;
+      background: rgba(16,18,20,0.92); color: #fff; font: inherit; cursor: pointer; touch-action: none;
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+      transform: translateX(100%); transition: transform 0.3s ease; }
+    .walkbar.is-tucked .walkbar__tab { transform: none; }
+    .walkbar__tab svg { width: 26px; height: 26px; fill: none; stroke: #7ee2bf; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .walkbar__tab .walkbar__tabdist { font-size: 12.5px; font-weight: 800; line-height: 1.1; text-align: center; }
+    .walkbar__tab .walkbar__chev { width: 14px; height: 14px; stroke: rgba(255,255,255,0.6); }
+    .walkbar__tuck { flex: 0 0 auto; width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; }
+    .walkbar__tuck svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .walkbar__list { list-style: none; margin: 8px -4px 0 0; padding: 0 4px 0 0; overflow-y: auto; overscroll-behavior: contain; }
+    .walkbar__list:empty { display: none; }
+    .walkbar__step { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13.5px; line-height: 1.3; color: rgba(255,255,255,0.78); }
+    .walkbar__step svg { flex: 0 0 auto; width: 20px; height: 20px; fill: none; stroke: rgba(255,255,255,0.55); stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+    .walkbar__step span { flex: 1; min-width: 0; }
+    .walkbar__step b { flex: 0 0 auto; font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,0.6); }
+    .walkbar__step.is-stop { color: #fff; font-weight: 700; }
+    .walkbar__step.is-stop svg { stroke: var(--c, #7ee2bf); }
     .walkbar__row { display: flex; align-items: center; gap: 11px; }
     .walkbar__num { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; background: var(--c, #2f9e7e); border: 2.5px solid #fff; box-sizing: border-box;
       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
@@ -1650,9 +1676,13 @@
         bar.className = 'walkbar';
         bar.setAttribute('role', 'status');
         bar.setAttribute('aria-live', 'polite');
-        bar.innerHTML = '<div class="walkbar__row"><span class="walkbar__num" hidden></span><div class="walkbar__text"><div class="walkbar__next"></div>' +
-          '<div class="walkbar__eta"></div></div><button type="button" class="walkbar__end">End</button></div>' +
-          '<div class="walkbar__turn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"></svg><span></span></div>';
+        bar.innerHTML = '<div class="walkbar__panel"><div class="walkbar__row"><span class="walkbar__num" hidden></span><div class="walkbar__text"><div class="walkbar__next"></div>' +
+          '<div class="walkbar__eta"></div></div><button type="button" class="walkbar__end">End</button>' +
+          '<button type="button" class="walkbar__tuck" aria-label="Put the directions away"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div>' +
+          '<div class="walkbar__turn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"></svg><span></span></div>' +
+          '<ol class="walkbar__list" aria-label="Turn by turn"></ol></div>' +
+          '<button type="button" class="walkbar__tab" aria-label="Show the directions"><svg class="walkbar__tabicon" viewBox="0 0 24 24" aria-hidden="true"></svg>' +
+          '<span class="walkbar__tabdist"></span><svg class="walkbar__chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>';
         var arrive = document.createElement('div');
         arrive.className = 'walkarrive';
         arrive.hidden = true;
@@ -1667,6 +1697,19 @@
         document.body.appendChild(arrive);
         document.body.appendChild(recenter);
         bar.querySelector('.walkbar__end').addEventListener('click', endWalk);
+        // Put away / bring back (remembered for the next walk; the first walk starts with it out).
+        var tucked = false;
+        try { tucked = localStorage.getItem('mf-walk-directions') === 'in'; } catch (e) {}
+        bar.classList.toggle('is-tucked', tucked);
+        function setTucked(on) {
+          bar.classList.toggle('is-tucked', on);
+          try { localStorage.setItem('mf-walk-directions', on ? 'in' : 'out'); } catch (e) {}
+        }
+        bar.querySelector('.walkbar__tuck').addEventListener('click', function () { setTucked(true); });
+        var tab = bar.querySelector('.walkbar__tab'), tabX = null;
+        tab.addEventListener('click', function () { setTucked(false); });
+        tab.addEventListener('touchstart', function (e) { tabX = e.touches[0].clientX; }, { passive: true });
+        tab.addEventListener('touchmove', function (e) { if (tabX !== null && tabX - e.touches[0].clientX > 20) { tabX = null; setTucked(false); } }, { passive: true });
         recenter.addEventListener('click', function () {
           if (!walk) return;
           walk.follow = true;
@@ -1682,7 +1725,8 @@
         });
         // Moving the map by hand stops following until Recenter.
         map.on('dragstart', function () { if (walk && walk.follow) { walk.follow = false; recenter.hidden = false; } });
-        walkEls = { bar: bar, num: bar.querySelector('.walkbar__num'), next: bar.querySelector('.walkbar__next'),
+        walkEls = { bar: bar, list: bar.querySelector('.walkbar__list'), tabIcon: bar.querySelector('.walkbar__tabicon'), tabDist: bar.querySelector('.walkbar__tabdist'),
+                    num: bar.querySelector('.walkbar__num'), next: bar.querySelector('.walkbar__next'),
                     eta: bar.querySelector('.walkbar__eta'), turn: bar.querySelector('.walkbar__turn'),
                     turnIcon: bar.querySelector('.walkbar__turn svg'), turnText: bar.querySelector('.walkbar__turn span'),
                     arrive: arrive, kicker: arrive.querySelector('.walkarrive__kicker'), aname: arrive.querySelector('.walkarrive__name'),
@@ -1770,6 +1814,48 @@
         ui.next.textContent = text;
         ui.eta.textContent = sub || '';
         ui.turn.hidden = true;
+        ui.list.innerHTML = '';
+        ui.tabIcon.innerHTML = TURN_ICONS.straight;
+        ui.tabDist.textContent = '\u2026';
+      }
+
+      // The turn-by-turn list: every turn still ahead (to the last stop), the first one highlighted
+      // by the line above it, each with how far it is from the one before.
+      // (current: the turn already shown above the list, so the list starts after it.)
+      function paintStepList(along, off, current) {
+        var ui = walkUi();
+        ui.list.innerHTML = '';
+        if (off > OFF_M) return;
+        var prev = current ? current.along : along, shown = 0;
+        for (var i = 0; i < walk.steps.length && shown < 40; i++) {
+          var st = walk.steps[i];
+          if (st.along <= along + 8 || st === current) continue;
+          var li = document.createElement('li');
+          li.className = 'walkbar__step';
+          var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          icon.setAttribute('viewBox', '0 0 24 24');
+          icon.innerHTML = turnIcon(st);   // fixed icons only
+          li.appendChild(icon);
+          var text = st.text;
+          if (st.type === 'arrive') {
+            var k = walk.next, best = Infinity;
+            for (var j = walk.next; j < route.stops.length; j++) {
+              var d = Math.abs((walk.targets[j] || 0) - st.along);
+              if (d < best) { best = d; k = j; }
+            }
+            var stop = route.stops[k];
+            if (stop) {
+              text = 'Arrive at ' + stop.name;
+              li.className += ' is-stop';
+              li.style.setProperty('--c', categoryColor(stop.category));
+            }
+          }
+          addText(li, 'span', '', text);
+          addText(li, 'b', '', distText(st.along - prev));
+          ui.list.appendChild(li);
+          prev = st.along;
+          shown++;
+        }
       }
 
       function updateWalkBar(along, off, me) {
@@ -1779,6 +1865,9 @@
           ui.next.textContent = route.stops.length === 1 ? 'You\u2019re there' : 'Walk complete';
           ui.eta.textContent = route.stops.length === 1 ? route.stops[0].name + '. Enjoy!' : 'All ' + route.stops.length + ' stops. Nice walk!';
           ui.turn.hidden = true;
+          ui.list.innerHTML = '';
+          ui.tabIcon.innerHTML = TURN_ICONS.arrive;
+          ui.tabDist.textContent = 'Done';
           return;
         }
         var s = route.stops[walk.next];
@@ -1801,6 +1890,10 @@
         else if (!st) ui.turnText.textContent = 'Continue to ' + s.name;
         else if (st.type === 'arrive') ui.turnText.textContent = 'In ' + distText(st.along - along) + ', arrive at ' + s.name;
         else ui.turnText.textContent = 'In ' + distText(st.along - along) + ', ' + st.text.charAt(0).toLowerCase() + st.text.slice(1);
+        // The tab (when the directions are put away) keeps the next turn in view.
+        ui.tabIcon.innerHTML = turnIcon(st);
+        ui.tabDist.textContent = off > OFF_M ? '\u2026' : distText(st ? st.along - along : left);
+        paintStepList(along, off, st);
       }
 
       function arrivedAt(k) {
