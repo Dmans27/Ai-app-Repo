@@ -1552,7 +1552,8 @@
         window.parent.postMessage({ type: 'mansfield:read-about', listing: place.listing || '', name: place.name || '', index: i }, routeOrigin);
       }
 
-      function applyRoute(wanted) {
+      // single: a one-stop "walk me there" (mansfield:route with navigate), started from the walker.
+      function applyRoute(wanted, single) {
         var stops = [];
         (Array.isArray(wanted) ? wanted : []).slice(0, 60).forEach(function (w) {
           var slug = String((w && w.listing) || ''), name = String((w && w.name) || '').trim().toLowerCase();
@@ -1560,7 +1561,7 @@
                       places.filter(function (p) { return name && (p.name || '').toLowerCase() === name; })[0];
           if (place && stops.indexOf(place) < 0) stops.push(place);
         });
-        if (stops.length < 2) return [];
+        if (stops.length < 2 && !(single && stops.length === 1)) return [];
         var legs = [];
         for (var i = 1; i < stops.length; i++) legs.push(metres(stops[i - 1], stops[i]));
         route = { stops: stops, legs: legs };
@@ -1591,7 +1592,7 @@
         pill.className = 'routepill';
         pill.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4" r="2"/><path d="M10 22l2-7 3 3v6M8 12l3-4 4 1 2 4M11 8l-2 6"/></svg>';
         route.pillTitle = addText(pill, 'span', 'routepill__title', total <= 10000 ? 'Walking route' : 'Route');
-        route.pillSub = addText(pill, 'small', '', stops.length + ' stops · ' + kmText(total));
+        route.pillSub = addText(pill, 'small', '', stops.length === 1 ? 'Walk to ' + stops[0].name : stops.length + ' stops · ' + kmText(total));
         var startBtn = document.createElement('button');
         startBtn.type = 'button';
         startBtn.className = 'routepill__start';
@@ -1616,7 +1617,7 @@
         return points.map(function (p) { return (+p[0]).toFixed(5) + ',' + (+p[1]).toFixed(5); }).join(';');
       }
       function fetchWalk() {
-        if (!route || route.stops.length > 25) return;
+        if (!route || route.stops.length > 25 || route.stops.length < 2) return;   // one stop: the path comes from the walker (see onFix)
         fetch('/embed/walk?c=' + encodeURIComponent(walkQuery(route.stops.map(function (p) { return [p.lng, p.lat]; }))), { credentials: 'omit' })
           .then(function (r) { return r.ok ? r.json() : null; })
           .then(function (d) {
@@ -1775,8 +1776,8 @@
         var ui = walkUi();
         if (walk.next >= route.stops.length) {
           ui.num.hidden = true;
-          ui.next.textContent = 'Walk complete';
-          ui.eta.textContent = 'All ' + route.stops.length + ' stops. Nice walk!';
+          ui.next.textContent = route.stops.length === 1 ? 'You\u2019re there' : 'Walk complete';
+          ui.eta.textContent = route.stops.length === 1 ? route.stops[0].name + '. Enjoy!' : 'All ' + route.stops.length + ' stops. Nice walk!';
           ui.turn.hidden = true;
           return;
         }
@@ -1830,6 +1831,9 @@
             if (!walk || !d || !d.geometry) return;
             setWalkPath(d.geometry.coordinates, d.legs, walk.next);
             walk.offCount = 0;
+            // Show the new directions now, not at the next location update.
+            var at = walk.me || me, hit = snapTo(walk.coords, walk.cum, at, 0);
+            updateWalkBar(hit.along, hit.off, at);
           })
           .catch(function () { if (walk) walk.rerouting = false; });
       }
@@ -1856,6 +1860,8 @@
           }
         }
         if (walk.next >= route.stops.length) { updateWalkBar(0, 0, me); return; }
+        // "Walk me there" (one stop): the first fix fetches the path from here to the place.
+        if (route.stops.length === 1 && !walk.fromMe) { walk.fromMe = true; walk.lastReroute = 0; reroute(me); }
         var hit = snapTo(walk.coords, walk.cum, me, 0);
         var s = route.stops[walk.next];
         if (metres({ lng: me[0], lat: me[1] }, s) <= ARRIVE_M ||
@@ -1914,7 +1920,7 @@
         var t = e.data.type;
         if (t === 'mansfield:route') {
           routeOrigin = e.origin || '*';
-          var stops = route ? route.stops : applyRoute(e.data.stops);
+          var stops = route ? route.stops : applyRoute(e.data.stops, !!e.data.navigate);
           var total = route ? route.legs.reduce(function (a, b) { return a + b; }, 0) : 0;
           window.parent.postMessage({ type: 'mansfield:route-ready', total: total, legs: route ? route.legs : [],
             stops: stops.map(function (p) {
@@ -1922,6 +1928,8 @@
               return { listing: p.listing || '', name: p.name || '', category: p.category || '', group: g, color: GROUPS[g].color,
                        address: p.address || '', lat: p.lat, lng: p.lng };
             }) }, routeOrigin);
+          // Navigate: start following the walker straight away (asks for location once).
+          if (e.data.navigate && route && !walk) setTimeout(startWalk, 400);
         } else if (t === 'mansfield:route-step' && route) {
           var i = Math.round(Number(e.data.index));
           if (!(i >= -1 && i < route.stops.length) || i === routeStep) return;
