@@ -1697,14 +1697,9 @@
         document.body.appendChild(arrive);
         document.body.appendChild(recenter);
         bar.querySelector('.walkbar__end').addEventListener('click', endWalk);
-        // Put away / bring back (remembered for the next walk; the first walk starts with it out).
-        var tucked = false;
-        try { tucked = localStorage.getItem('mf-walk-directions') === 'in'; } catch (e) {}
-        bar.classList.toggle('is-tucked', tucked);
-        function setTucked(on) {
-          bar.classList.toggle('is-tucked', on);
-          try { localStorage.setItem('mf-walk-directions', on ? 'in' : 'out'); } catch (e) {}
-        }
+        // Put away / bring back. Every walk starts with the directions tucked on the side (see startWalk).
+        bar.classList.add('is-tucked');
+        function setTucked(on) { bar.classList.toggle('is-tucked', on); }
         bar.querySelector('.walkbar__tuck').addEventListener('click', function () { setTucked(true); });
         var tab = bar.querySelector('.walkbar__tab'), tabX = null;
         tab.addEventListener('click', function () { setTucked(false); });
@@ -1985,6 +1980,7 @@
         setWalkPath(route.path || route.stops.map(function (p) { return [p.lng, p.lat]; }), w ? w.legs : [], 0);
         if (openPopup) openPopup.remove();
         document.body.classList.add('walking');
+        walkUi().bar.classList.add('is-tucked');   // directions start on the side: the tab shows the next turn
         showWalkStatus('Looking for you\u2026', 'Allow location to follow the walk.');
         paintWalkPins();
         walk.watch = navigator.geolocation.watchPosition(onFix, onFixError, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
