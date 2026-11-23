@@ -346,7 +346,7 @@
     .routepill svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .routepill small { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 13px; font-weight: 600; opacity: 0.68; }
     .routepill small::before { content: "\00b7  "; }
-    .routepill { max-width: calc(100% - 20px); box-sizing: border-box; }
+    .routepill { max-width: calc(100% - 20px - 2 * var(--side-ui, 0px)); box-sizing: border-box; }   /* --side-ui: the page's corner buttons (mansfield:insets) */
     /* Narrow phones: drop the "Walking route" words so stops, distance, time and Start fit. */
     @media (max-width: 430px) { .routepill__title { display: none; } .routepill small::before { content: none; } .routepill small { font-size: 13.5px; opacity: 0.85; } }
     body.has-route .routepill { display: inline-flex; }
@@ -2117,6 +2117,9 @@
           topUi = Math.max(0, Math.min(400, Number(e.data.top) || 0));   // how much of the map's top the page's buttons cover
           document.documentElement.style.setProperty('--top-ui', topUi + 'px');
           document.body.classList.toggle('has-top-ui', topUi > 0);
+          // side: how far the page's corner buttons (its account button) reach in from the left/right edge
+          var side = Math.max(0, Math.min(120, Number(e.data.side) || 0));
+          document.documentElement.style.setProperty('--side-ui', side + 'px');
         } else if (t === 'mansfield:circle-clear') {
           shape = null;
           if (drawing) setDrawing(false);
