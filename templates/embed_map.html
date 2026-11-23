@@ -236,6 +236,7 @@
        list starts below them and stops above the page's ask bar. */
     @media (min-width: 641px) {
       body.has-top-ui .cards { top: calc(var(--top-ui, 0px) + 8px); max-height: calc(100% - var(--top-ui, 0px) - 100px); }
+      .cards { margin-left: var(--left-ui, 0px); }   /* room for a tab the page puts on the left edge (mansfield:insets left) */
     }
     body.is-fs .filters { bottom: 18px; }               /* full screen: closer to the bottom edge */
     body.is-fs.has-filters .cards { max-height: calc(100% - 150px); }
@@ -2120,6 +2121,9 @@
           // side: how far the page's corner buttons (its account button) reach in from the left/right edge
           var side = Math.max(0, Math.min(120, Number(e.data.side) || 0));
           document.documentElement.style.setProperty('--side-ui', side + 'px');
+          // left: how much of the left edge a page tab covers (iPad: the list moves over by that much)
+          var leftUi = Math.max(0, Math.min(80, Number(e.data.left) || 0));
+          document.documentElement.style.setProperty('--left-ui', leftUi + 'px');
         } else if (t === 'mansfield:circle-clear') {
           shape = null;
           if (drawing) setDrawing(false);
