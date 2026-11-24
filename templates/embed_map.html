@@ -2049,6 +2049,8 @@
         if (!walk) return;
         // Did they reach the last stop? The page offers to post a finished walk to the community feed.
         var finished = !!route && walk.arrivedAt === route.stops.length - 1;
+        // How many stops they got to (in order): the page puts a walk of 2 or more on the walker's profile.
+        var reached = typeof walk.arrivedAt === 'number' ? walk.arrivedAt + 1 : 0;
         if (walk.watch !== null) navigator.geolocation.clearWatch(walk.watch);
         if (walk.marker) walk.marker.remove();
         clearTimeout(walk.arriveTimer);
@@ -2061,7 +2063,7 @@
         drawRoute();
         cardsKey = '';
         updateCards();
-        window.parent.postMessage({ type: 'mansfield:walk', on: false, finished: finished }, routeOrigin);
+        window.parent.postMessage({ type: 'mansfield:walk', on: false, finished: finished, reached: reached }, routeOrigin);
       }
 
       window.addEventListener('message', function (e) {
