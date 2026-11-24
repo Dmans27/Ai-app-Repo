@@ -987,6 +987,46 @@ def _geocode(text, near=None):
     return found
 
 
+_city_cache = {}
+
+
+def _mapbox_cities(path, params):
+    """Cities from Mapbox's geocoder (types=place): [{name, label, country, lat, lng}], remembered for a day."""
+    token = (os.environ.get("MAPBOX_SECRET_TOKEN") or os.environ.get("MAPBOX_TOKEN") or "").strip()
+    if not token:
+        return None
+    key = (path, tuple(sorted(params.items())))
+    hit = _city_cache.get(key)
+    if hit and hit[0] > time.time():
+        return hit[1]
+    base = (os.environ.get("MAPBOX_GEOCODE_BASE") or "https://api.mapbox.com/geocoding/v5/mapbox.places").rstrip("/")
+    try:
+        r = requests.get(base + "/" + requests.utils.quote(path, safe=",.-") + ".json",
+                         params=dict(params, access_token=token, types="place", language="en"), timeout=8)
+        feats = ((r.json() or {}).get("features") or []) if r.status_code == 200 else None
+    except (requests.RequestException, ValueError) as exc:
+        print(f"[cities] failed for {path!r}: {exc}", flush=True)
+        return None
+    if feats is None:
+        print(f"[cities] Mapbox said {r.status_code} for {path!r}", flush=True)
+        return None
+    out = []
+    for f in feats:
+        center = f.get("center")
+        if not isinstance(center, list) or len(center) != 2:
+            continue
+        country = ""
+        for c in f.get("context") or []:
+            if str(c.get("id", "")).startswith("country."):
+                country = c.get("text") or ""
+        out.append({"name": (f.get("text") or "")[:80], "label": (f.get("place_name") or f.get("text") or "")[:160],
+                    "country": country[:60], "lng": round(float(center[0]), 5), "lat": round(float(center[1]), 5)})
+    if len(_city_cache) > 3000:
+        _city_cache.clear()
+    _city_cache[key] = (time.time() + 86400, out)
+    return out
+
+
 def _float_arg(name, lo, hi):
     try:
         v = float(request.args.get(name))
@@ -1427,6 +1467,24 @@ def register_embed_routes(app, SavedList, query_one):
         reply = jsonify(places=out)
         reply.headers["Cache-Control"] = "no-store"
         return reply
+
+    @app.get("/embed/cities")
+    def embed_cities():
+        """City search for the media site's city feed: ?q=text (up to 5 cities, as you type), or
+        ?lat&lng (the city you're in). Walk key only. {cities: [{name, label, country, lat, lng}]}"""
+        if not _walk_key_ok():
+            return jsonify(error="forbidden"), 403
+        lat, lng = _float_arg("lat", -90, 90), _float_arg("lng", -180, 180)
+        q = " ".join(str(request.args.get("q") or "").split())[:80]
+        if lat is not None and lng is not None:
+            found = _mapbox_cities(f"{lng:.4f},{lat:.4f}", {"limit": 1})
+        elif len(q) >= 2:
+            found = _mapbox_cities(q, {"limit": 5, "autocomplete": "true"})
+        else:
+            found = []
+        if found is None:
+            return jsonify(cities=[], available=False)
+        return jsonify(cities=found, available=True)
 
     @app.get("/embed/google-places")
     def embed_google_places():
