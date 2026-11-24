@@ -1268,6 +1268,31 @@ def register_embed_routes(app, SavedList, query_one):
         reply.headers["Cache-Control"] = "no-store"
         return reply
 
+    @app.get("/embed/places-by-slug")
+    def embed_places_by_slug():
+        """Where these listings are, in this order: ?s=slug,slug (the media site checks a walk a
+        reader posts to the community feed). Walk key only; unknown or unpublished slugs are left out."""
+        if not _walk_key_ok():
+            return jsonify(error="forbidden"), 403
+        slugs = [s for s in str(request.args.get("s") or "").split(",") if _SLUG.match(s)][:WALK_MAX_STOPS]
+        out, seen = [], set()
+        for slug in slugs:
+            if slug in seen:
+                continue
+            seen.add(slug)
+            try:
+                r = query_one("SELECT slug, name, category, address, city, latitude, longitude FROM listings "
+                              "WHERE slug = :slug AND status = 'published' LIMIT 1", {"slug": slug})
+            except Exception:
+                r = None
+            if r and r.get("latitude") is not None and r.get("longitude") is not None:
+                out.append({"slug": r["slug"], "name": r.get("name") or "", "category": r.get("category") or "",
+                            "address": r.get("address") or "", "city": r.get("city") or "",
+                            "lat": float(r["latitude"]), "lng": float(r["longitude"])})
+        reply = jsonify(places=out)
+        reply.headers["Cache-Control"] = "no-store"
+        return reply
+
     @app.get("/embed/route-map")
     def embed_route_map():
         """A map of just these listings, in this order (an AI-planned walk)."""
