@@ -812,6 +812,141 @@ NEAR_MAX_RESULTS = 60
 _geo_cache = {}              # text -> (expires, (lng, lat) or None)
 
 
+# ── Google fallback: places the directory doesn't have yet ──────────────────
+# The walk planner and the route builder on the media site search Google
+# (Places API (New), GOOGLE_MAPS_API_KEY) when the directory has too few places
+# somewhere -- so walkers can use the app in any city. A place only becomes a
+# listing (source 'google', published) when a walker actually picks it for a
+# walk or a route (/embed/places-import). GOOGLE_DAILY_CAP (default 800) caps
+# the Google calls a day, so a bug or abuse can't run up the bill.
+GOOGLE_PLACES_BASE = "https://places.googleapis.com/v1"
+_G_BASIC = ("id", "displayName", "formattedAddress", "location", "primaryType", "primaryTypeDisplayName",
+            "types", "addressComponents", "businessStatus")
+_G_RICH = _G_BASIC + ("rating", "userRatingCount", "nationalPhoneNumber", "websiteUri")
+_GOOGLE_ID = re.compile(r"^[A-Za-z0-9_-]{10,200}$")
+GOOGLE_SEEN_SECONDS = 20 * 60
+_google_seen = {}                       # place id -> (time, place): a search result, so adding it costs no second call
+_google_calls = {"day": "", "n": 0}
+_google_lock = threading.Lock()
+
+
+def _google_key():
+    return (os.environ.get("GOOGLE_MAPS_API_KEY") or "").strip()
+
+
+def _google_base():
+    return (os.environ.get("GOOGLE_PLACES_BASE") or GOOGLE_PLACES_BASE).rstrip("/")
+
+
+def _google_budget_ok():
+    try:
+        cap = int(os.environ.get("GOOGLE_DAILY_CAP") or 800)
+    except ValueError:
+        cap = 800
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    with _google_lock:
+        if _google_calls["day"] != today:
+            _google_calls.update(day=today, n=0)
+        if _google_calls["n"] >= cap:
+            return False
+        _google_calls["n"] += 1
+        return True
+
+
+def _google_shape(p):
+    """A Google place -> the directory's place fields (None for closed places or ones without a spot)."""
+    from my_place import _address_part, _category
+    loc = p.get("location") or {}
+    if not p.get("id") or loc.get("latitude") is None or loc.get("longitude") is None:
+        return None
+    if p.get("businessStatus") not in (None, "OPERATIONAL"):
+        return None
+    category = _category(p)
+    return {
+        "placeId": p["id"], "name": ((p.get("displayName") or {}).get("text") or "")[:160],
+        "category": category, "group": place_group(category),
+        "address": (p.get("formattedAddress") or "")[:300],
+        "city": (_address_part(p, "locality") or _address_part(p, "postal_town"))[:80],
+        "state": _address_part(p, "administrative_area_level_1", short=True)[:40],
+        "lat": float(loc["latitude"]), "lng": float(loc["longitude"]),
+        "rating": _rating(p.get("rating")), "ratingCount": _count(p.get("userRatingCount")),
+        "phone": (p.get("nationalPhoneNumber") or "")[:40], "website": (p.get("websiteUri") or "")[:400],
+    }
+
+
+def _google_remember(place, rich):
+    now = time.time()
+    with _google_lock:
+        if len(_google_seen) > 3000:
+            for k in [k for k, (t, _p, _r) in _google_seen.items() if now - t > GOOGLE_SEEN_SECONDS]:
+                _google_seen.pop(k, None)
+        _google_seen[place["placeId"]] = (now, place, rich)
+
+
+def google_text_search(text, lat=None, lng=None, radius=20000, limit=20, rich=False):
+    """Places for a text search near a point, or None when Google can't be used (no key, over the cap, an error)."""
+    key = _google_key()
+    if not key or not text or not _google_budget_ok():
+        return None
+    body = {"textQuery": text[:200], "pageSize": max(1, min(20, int(limit))), "languageCode": "en"}
+    if lat is not None and lng is not None:
+        body["locationBias"] = {"circle": {"center": {"latitude": lat, "longitude": lng},
+                                           "radius": float(max(100, min(50000, radius)))}}
+    fields = ",".join("places." + f for f in (_G_RICH if rich else _G_BASIC))
+    try:
+        r = requests.post(_google_base() + "/places:searchText", json=body, timeout=10,
+                          headers={"X-Goog-Api-Key": key, "X-Goog-FieldMask": fields})
+    except requests.RequestException as exc:
+        print(f"[google] search failed: {exc}", flush=True)
+        return None
+    if r.status_code != 200:
+        print(f"[google] search said {r.status_code}: {r.text[:300]}", flush=True)
+        return None
+    out = []
+    for p in (r.json() or {}).get("places") or []:
+        place = _google_shape(p)
+        if place:
+            _google_remember(place, rich)
+            out.append(place)
+    return out
+
+
+def google_place(place_id):
+    """One place by its Google id: from a recent search if we have it, else Google's Place Details."""
+    with _google_lock:
+        seen = _google_seen.get(place_id)
+    if seen and time.time() - seen[0] < GOOGLE_SEEN_SECONDS:
+        return seen[1]
+    key = _google_key()
+    if not key or not _google_budget_ok():
+        return None
+    try:
+        r = requests.get(_google_base() + "/places/" + place_id, timeout=10,
+                         headers={"X-Goog-Api-Key": key, "X-Goog-FieldMask": ",".join(_G_RICH)})
+    except requests.RequestException as exc:
+        print(f"[google] details failed: {exc}", flush=True)
+        return None
+    if r.status_code != 200:
+        print(f"[google] details said {r.status_code}: {r.text[:300]}", flush=True)
+        return None
+    place = _google_shape(r.json() or {})
+    if place:
+        _google_remember(place, True)
+    return place
+
+
+def _google_slug(conn, name, city, address):
+    def slugify(v):   # "Café Sperl" -> "cafe-sperl", "Devoción" -> "devocion"
+        import unicodedata
+        v = unicodedata.normalize("NFKD", (v or "").replace("ß", "ss")).encode("ascii", "ignore").decode("ascii")
+        return re.sub(r"-{2,}", "-", re.sub(r"[^a-z0-9]+", "-", v.strip().lower())).strip("-")
+    street = slugify((address or "").split(",")[0])[:40]
+    for cand in (slugify(name)[:80], slugify(f"{name}-{city}")[:100], slugify(f"{name}-{city}-{street}")[:140]):
+        if cand and not conn.execute(sql_text("SELECT 1 FROM listings WHERE slug = :s"), {"s": cand}).first():
+            return cand
+    return (slugify(name)[:60] or "place") + "-" + hashlib.sha1(os.urandom(8)).hexdigest()[:6]
+
+
 def _walk_key_ok():
     want = (os.environ.get("WALK_PLAN_KEY") or "").strip()
     got = (request.headers.get("X-Walk-Key") or "").strip()
@@ -1292,6 +1427,92 @@ def register_embed_routes(app, SavedList, query_one):
         reply = jsonify(places=out)
         reply.headers["Cache-Control"] = "no-store"
         return reply
+
+    @app.get("/embed/google-places")
+    def embed_google_places():
+        """Google's places for a text search: ?q&lat&lng&radius&limit&rich=1&groups&min_rating&within=1.
+        Walk key only. Each place says if it's already a listing (slug). {places, available}."""
+        if not _walk_key_ok():
+            return jsonify(error="forbidden"), 403
+        q = " ".join(str(request.args.get("q") or "").split())[:200]
+        if len(q) < 2:
+            return jsonify(places=[], available=True)
+        lat, lng = _float_arg("lat", -90, 90), _float_arg("lng", -180, 180)
+        radius = _float_arg("radius", 100, 50000) or 20000
+        limit = int(_float_arg("limit", 1, 20) or 20)
+        groups = {g for g in str(request.args.get("groups") or "").lower().split(",") if g in PLACE_GROUPS}
+        min_rating = _float_arg("min_rating", 0, 5) or 0
+        found = google_text_search(q, lat, lng, radius, limit, rich=request.args.get("rich") == "1")
+        if found is None:
+            return jsonify(places=[], available=False)
+        out = []
+        for p in found:
+            if groups and p["group"] not in groups:
+                continue
+            if min_rating and not (p["rating"] and p["rating"] >= min_rating):
+                continue
+            if lat is not None and lng is not None:
+                p = dict(p, distance=round(_metres((lng, lat), (p["lng"], p["lat"]))))
+                if request.args.get("within") == "1" and p["distance"] > radius * 1.15:
+                    continue
+            try:
+                row = query_one("SELECT slug, status FROM listings WHERE place_id = :p LIMIT 1", {"p": p["placeId"]})
+            except Exception:
+                row = None
+            if row and row.get("status") != "published":
+                continue          # the owner keeps this one off the map
+            out.append(dict(p, slug=(row or {}).get("slug") or ""))
+        reply = jsonify(places=out, available=True)
+        reply.headers["Cache-Control"] = "no-store"
+        return reply
+
+    @app.post("/embed/places-import")
+    def embed_places_import():
+        """Make listings for Google places a walker picked: {placeIds: [...]} -> {places: {placeId: {slug, ...}}}.
+        Walk key only. A place that's already a listing just gets its slug back."""
+        if not _walk_key_ok():
+            return jsonify(error="forbidden"), 403
+        ids = []
+        for pid in ((request.get_json(silent=True) or {}).get("placeIds") or [])[:15]:
+            pid = str(pid or "")
+            if _GOOGLE_ID.match(pid) and pid not in ids:
+                ids.append(pid)
+        out = {}
+        for pid in ids:
+            try:
+                row = query_one("SELECT slug, name, category, address, latitude, longitude, status FROM listings "
+                                "WHERE place_id = :p LIMIT 1", {"p": pid})
+            except Exception:
+                row = None
+            if row:
+                if row.get("status") == "published":
+                    out[pid] = {"slug": row["slug"], "name": row.get("name") or "", "category": row.get("category") or "",
+                                "address": row.get("address") or "", "lat": row.get("latitude"), "lng": row.get("longitude")}
+                continue
+            place = google_place(pid)
+            if not place or not place["name"]:
+                continue
+            try:
+                with _engine(app).begin() as conn:
+                    slug = _google_slug(conn, place["name"], place["city"], place["address"])
+                    conn.execute(sql_text(
+                        "INSERT INTO listings (name, slug, category, address, city, state, phone, website, latitude, longitude, "
+                        "place_id, google_rating, google_rating_count, status, featured, source, created_at, updated_at) "
+                        "VALUES (:name, :slug, :category, :address, :city, :state, :phone, :website, :lat, :lng, "
+                        ":pid, :rating, :count, 'published', 0, 'google', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"),
+                        {"name": place["name"], "slug": slug, "category": place["category"], "address": place["address"],
+                         "city": place["city"], "state": place["state"], "phone": place["phone"], "website": place["website"],
+                         "lat": place["lat"], "lng": place["lng"], "pid": pid, "rating": place["rating"],
+                         "count": place["ratingCount"]})
+            except Exception as exc:  # noqa: BLE001 -- e.g. two walkers adding the same place at once
+                print(f"[google] couldn't add {pid}: {exc}", flush=True)
+                row = query_one("SELECT slug FROM listings WHERE place_id = :p LIMIT 1", {"p": pid})
+                if not row:
+                    continue
+                slug = row["slug"]
+            out[pid] = {"slug": slug, "name": place["name"], "category": place["category"],
+                        "address": place["address"], "lat": place["lat"], "lng": place["lng"]}
+        return jsonify(places=out)
 
     @app.get("/embed/route-map")
     def embed_route_map():
