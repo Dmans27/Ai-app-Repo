@@ -457,20 +457,24 @@
                             50% { box-shadow: 0 0 14px 3px rgba(127, 209, 166, 0.8), 0 0 0 1px rgba(15, 34, 25, 0.35); } }
     @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.3; transform: scale(1.8); } .pulse__orb { animation: none; } }
     body.walking .pulse, body.is-drawing .pulse, body.has-route .pulse { display: none; }   /* no pulses over a route */
-    /* Where you are: a steady blue dot (pulses are the moving green ones), with a soft
-       circle for how sure the phone is and a short beam for the way you're facing. */
+    /* Where you are: a steady blue dot (pulses are the moving green ones), with a soft circle for
+       how sure the phone is. Once the phone knows which way you're facing (compass, or moving), a bright
+       glow fans out from the dot that way; the marker itself is turned to match. */
     .you { position: relative; width: 22px; height: 22px; z-index: 4; pointer-events: none; }
     .you__acc { position: absolute; left: 50%; top: 50%; width: var(--acc, 44px); height: var(--acc, 44px); transform: translate(-50%, -50%);
       border-radius: 50%; background: rgba(47,124,246,0.14); border: 1px solid rgba(47,124,246,0.3); transition: width 0.4s, height 0.4s; }
-    .you__beam { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; display: none;
-      background: conic-gradient(from -28deg, rgba(47,124,246,0.42), rgba(47,124,246,0) 56deg, rgba(47,124,246,0) 304deg, rgba(47,124,246,0.42));
-      -webkit-mask: radial-gradient(circle, #000 0 55%, transparent 72%); mask: radial-gradient(circle, #000 0 55%, transparent 72%);
-      border-radius: 50%; transform: rotate(var(--hd, 0deg)); }
+    .you__beam { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; margin: -38px 0 0 -38px; display: none;
+      background: conic-gradient(from -32deg, rgba(92,160,255,0.95), rgba(92,160,255,0.5) 32deg, rgba(92,160,255,0) 64deg,
+                  rgba(92,160,255,0) 296deg, rgba(92,160,255,0.5) 328deg, rgba(92,160,255,0.95));
+      -webkit-mask: radial-gradient(circle, #000 0 22%, rgba(0,0,0,0.75) 40%, transparent 70%);
+      mask: radial-gradient(circle, #000 0 22%, rgba(0,0,0,0.75) 40%, transparent 70%);
+      border-radius: 50%; filter: blur(0.5px); }
     .you.has-heading .you__beam { display: block; }
     .you__dot { position: absolute; inset: 2px; border-radius: 50%; background: #2f7cf6; border: 3px solid #fff; box-sizing: border-box;
       box-shadow: 0 1px 6px rgba(0,0,0,0.45); }
     .you.is-stale .you__dot { background: #8d9a94; }
-    body.walking .you { display: none; }   /* walking has its own dot that follows the route */
+    .you--walk .you__acc { display: none; }
+    body.walking .you:not(.you--walk) { display: none; }   /* walking has its own marker that follows the route */
     /* Pins a page is building (the media site's group maps and route builder): numbered, in order,
        joined by a dashed line; a new one drops in. */
     .bpin { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
@@ -2089,9 +2093,12 @@
         walk.me = me;
         if (!walk.marker) {
           var el = document.createElement('div');
-          el.className = 'me';
-          el.innerHTML = '<span class="me__halo"></span><span class="me__dot"></span>';
-          walk.marker = new mapboxgl.Marker({ element: el }).setLngLat(me).addTo(map);
+          el.className = 'you you--walk';
+          el.setAttribute('role', 'img');
+          el.setAttribute('aria-label', 'You are here');
+          el.innerHTML = YOU_HTML;
+          walk.marker = new mapboxgl.Marker({ element: el, anchor: 'center', rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat(me).addTo(map);
+          paintHeading(walk.marker);
           map.flyTo({ center: me, zoom: Math.max(map.getZoom(), 16.5), duration: 900, essential: true });
         } else {
           walk.marker.setLngLat(me);
@@ -2375,7 +2382,14 @@
       // ---- Where you are ------------------------------------------------------
       // The page sends mansfield:me {lat, lng, acc, heading} as the phone moves (it already
       // has location permission, so the map never asks a second time).
-      var youMarker = null, youStale = null;
+      var youMarker = null, youStale = null, youHeading = null;
+      var YOU_HTML = '<span class="you__acc"></span><span class="you__beam"></span><span class="you__dot"></span>';
+      function paintHeading(marker) {     // turn the marker to the way you're facing (follows the map if it's rotated)
+        if (!marker) return;
+        var on = youHeading !== null;
+        marker.getElement().classList.toggle('has-heading', on);
+        marker.setRotation(on ? youHeading : 0);
+      }
       window.addEventListener('message', function (e) {
         if (e.source !== window.parent || window.parent === window || !e.data || e.data.type !== 'mansfield:me') return;
         var d = e.data, lat = Number(d.lat), lng = Number(d.lng);
@@ -2386,8 +2400,8 @@
           el.className = 'you';
           el.setAttribute('role', 'img');
           el.setAttribute('aria-label', 'You are here');
-          el.innerHTML = '<span class="you__acc"></span><span class="you__beam"></span><span class="you__dot"></span>';
-          youMarker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([lng, lat]).addTo(map);
+          el.innerHTML = YOU_HTML;
+          youMarker = new mapboxgl.Marker({ element: el, anchor: 'center', rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat([lng, lat]).addTo(map);
         } else youMarker.setLngLat([lng, lat]);
         var el2 = youMarker.getElement();
         // The soft circle: how far off the fix may be, drawn to the map's scale (kept between 30 and 220 px).
@@ -2398,8 +2412,9 @@
           el2.dataset.acc = String(acc);
         }
         var hd = Number(d.heading);
-        el2.classList.toggle('has-heading', d.heading !== null && d.heading !== undefined && isFinite(hd));
-        if (isFinite(hd)) el2.style.setProperty('--hd', Math.round(hd) + 'deg');
+        youHeading = d.heading !== null && d.heading !== undefined && isFinite(hd) ? ((Math.round(hd) % 360) + 360) % 360 : null;
+        paintHeading(youMarker);
+        if (walk && walk.marker) paintHeading(walk.marker);
         el2.classList.remove('is-stale');
         clearTimeout(youStale);
         youStale = setTimeout(function () { if (youMarker) youMarker.getElement().classList.add('is-stale'); }, 120000);
