@@ -443,18 +443,34 @@
     body.has-route .mk--done .mk__dot { filter: saturate(0.3) brightness(0.8); }
     body.is-drawing .mapboxgl-marker { pointer-events: none; }   /* drawing a circle: pins don't catch the drag */
     body.is-drawing #map, body.is-drawing .mapboxgl-canvas { touch-action: none; }   /* and the phone doesn't scroll or zoom the page */
-    /* Video pulses (the media site's walk page): a soft green orb breathing in each district with live clips
-       -- just a sign that something's happening there. Tap it and the page plays the clips. */
-    .pulse { position: relative; width: 44px; height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .pulse__ring, .pulse__orb { position: absolute; inset: 15px; border-radius: 50%; pointer-events: none; }
-    .pulse__ring { background: rgba(127, 209, 166, 0.5); animation: pulse-ring 2.6s ease-out infinite; }
+    /* Video pulses (the media site's walk page): a mint ring with a clear middle -- the map shows
+       through it -- and soft rings rippling outward, just a sign that something's happening in
+       that district. Tap it and the page plays the clips. */
+    .pulse { position: relative; width: 48px; height: 48px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .pulse__ring, .pulse__orb { position: absolute; inset: 14px; border-radius: 50%; pointer-events: none; box-sizing: border-box; background: none; }
+    .pulse__orb { border: 3px solid #7fd1a6; box-shadow: 0 0 8px 1px rgba(127, 209, 166, 0.6), 0 0 0 1px rgba(15, 34, 25, 0.35);
+      animation: pulse-glow 2.6s ease-in-out infinite; }
+    .pulse__ring { border: 2px solid rgba(127, 209, 166, 0.85); animation: pulse-ring 2.6s ease-out infinite; }
     .pulse__ring + .pulse__ring { animation-delay: 1.3s; }
-    .pulse__orb { background: radial-gradient(circle at 38% 34%, #d9f7e6 0%, #7fd1a6 55%, #3f9e72 100%);
-      box-shadow: 0 0 10px 3px rgba(127, 209, 166, 0.55); animation: pulse-glow 2.6s ease-in-out infinite; }
-    @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.75; } 100% { transform: scale(3.4); opacity: 0; } }
-    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px 2px rgba(127, 209, 166, 0.45); } 50% { box-shadow: 0 0 16px 6px rgba(127, 209, 166, 0.8); } }
-    @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.35; transform: scale(2); } .pulse__orb { animation: none; } }
+    @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.9; border-width: 2.5px; } 100% { transform: scale(2.7); opacity: 0; border-width: 1px; } }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 6px 1px rgba(127, 209, 166, 0.45), 0 0 0 1px rgba(15, 34, 25, 0.35); }
+                            50% { box-shadow: 0 0 14px 3px rgba(127, 209, 166, 0.8), 0 0 0 1px rgba(15, 34, 25, 0.35); } }
+    @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.3; transform: scale(1.8); } .pulse__orb { animation: none; } }
     body.walking .pulse, body.is-drawing .pulse { display: none; }
+    /* Where you are: a steady blue dot (pulses are the moving green ones), with a soft
+       circle for how sure the phone is and a short beam for the way you're facing. */
+    .you { position: relative; width: 22px; height: 22px; z-index: 4; pointer-events: none; }
+    .you__acc { position: absolute; left: 50%; top: 50%; width: var(--acc, 44px); height: var(--acc, 44px); transform: translate(-50%, -50%);
+      border-radius: 50%; background: rgba(47,124,246,0.14); border: 1px solid rgba(47,124,246,0.3); transition: width 0.4s, height 0.4s; }
+    .you__beam { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; display: none;
+      background: conic-gradient(from -28deg, rgba(47,124,246,0.42), rgba(47,124,246,0) 56deg, rgba(47,124,246,0) 304deg, rgba(47,124,246,0.42));
+      -webkit-mask: radial-gradient(circle, #000 0 55%, transparent 72%); mask: radial-gradient(circle, #000 0 55%, transparent 72%);
+      border-radius: 50%; transform: rotate(var(--hd, 0deg)); }
+    .you.has-heading .you__beam { display: block; }
+    .you__dot { position: absolute; inset: 2px; border-radius: 50%; background: #2f7cf6; border: 3px solid #fff; box-sizing: border-box;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.45); }
+    .you.is-stale .you__dot { background: #8d9a94; }
+    body.walking .you { display: none; }   /* walking has its own dot that follows the route */
     /* Pins a page is building (the media site's group maps and route builder): numbered, in order,
        joined by a dashed line; a new one drops in. */
     .bpin { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
@@ -2354,6 +2370,46 @@
         if (e.source !== window.parent || window.parent === window || !e.data || e.data.type !== 'mansfield:pulses') return;
         pulseOrigin = e.origin || null;
         paintPulses(e.data.pulses);
+      });
+
+      // ---- Where you are ------------------------------------------------------
+      // The page sends mansfield:me {lat, lng, acc, heading} as the phone moves (it already
+      // has location permission, so the map never asks a second time).
+      var youMarker = null, youStale = null;
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || window.parent === window || !e.data || e.data.type !== 'mansfield:me') return;
+        var d = e.data, lat = Number(d.lat), lng = Number(d.lng);
+        if (d.off) { if (youMarker) { youMarker.remove(); youMarker = null; } return; }
+        if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
+        if (!youMarker) {
+          var el = document.createElement('div');
+          el.className = 'you';
+          el.setAttribute('role', 'img');
+          el.setAttribute('aria-label', 'You are here');
+          el.innerHTML = '<span class="you__acc"></span><span class="you__beam"></span><span class="you__dot"></span>';
+          youMarker = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([lng, lat]).addTo(map);
+        } else youMarker.setLngLat([lng, lat]);
+        var el2 = youMarker.getElement();
+        // The soft circle: how far off the fix may be, drawn to the map's scale (kept between 30 and 220 px).
+        var acc = Number(d.acc);
+        if (isFinite(acc) && acc > 0) {
+          var mpp = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+          el2.style.setProperty('--acc', Math.round(Math.max(30, Math.min(220, 2 * acc / mpp))) + 'px');
+          el2.dataset.acc = String(acc);
+        }
+        var hd = Number(d.heading);
+        el2.classList.toggle('has-heading', d.heading !== null && d.heading !== undefined && isFinite(hd));
+        if (isFinite(hd)) el2.style.setProperty('--hd', Math.round(hd) + 'deg');
+        el2.classList.remove('is-stale');
+        clearTimeout(youStale);
+        youStale = setTimeout(function () { if (youMarker) youMarker.getElement().classList.add('is-stale'); }, 120000);
+      });
+      map.on('zoomend', function () {               // keep the accuracy circle true to scale
+        if (!youMarker) return;
+        var el = youMarker.getElement(), acc = Number(el.dataset.acc), lat = youMarker.getLngLat().lat;
+        if (!(acc > 0)) return;
+        var mpp = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, map.getZoom());
+        el.style.setProperty('--acc', Math.round(Math.max(30, Math.min(220, 2 * acc / mpp))) + 'px');
       });
 
       function setDrawing(on) {
