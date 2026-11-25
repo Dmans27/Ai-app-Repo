@@ -83,7 +83,7 @@ DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
 # ?style=light|dark|streets|mansfield (anything else falls back to light).
 # "mansfield" is Danny's own walking style from Mapbox Studio, used for walking
 # routes; MAPBOX_WALK_STYLE in Render can point it at a different published style.
-_DEFAULT_WALK_STYLE = "mapbox://styles/dmans27/cmuwij0nf012501sa5ke4hsl0"
+_DEFAULT_WALK_STYLE = "mapbox://styles/dmans27/cmww22vr500nz01r8a43m3z2z"
 _walk_style = (os.environ.get("MAPBOX_WALK_STYLE") or "").strip()
 # Studio's Share panel also offers https:// links (".../styles/v1/<user>/<style id>.html?..." or
 # ".../styles/v1/<user>/<style id>"): accept those too, as the mapbox://styles/<user>/<style id> they point at.
@@ -101,6 +101,46 @@ STYLES = {
     "streets": "mapbox://styles/mapbox/streets-v12",
     "mansfield": _walk_style if re.match(r"^mapbox://styles/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$", _walk_style) else _DEFAULT_WALK_STYLE,
 }
+
+# Colours laid over the walking map once it loads, so the map can be retuned
+# here without republishing the style in Mapbox Studio. Warm, muted land, roads
+# and labels; cool water; olive parks -- mint stays the app's own colour, gold
+# stays for Saved pins. A style built on Mapbox Standard takes these as its
+# config (lightPreset/theme/colour settings); any other style gets the matching
+# layers recoloured. MAPBOX_WALK_PALETTE in Render can change single colours
+# with JSON, e.g. {"water": "#203845"}, or be "off" to show the style untouched.
+WALK_PALETTE = {
+    "lightPreset": "dusk",          # day | dusk | dawn | night
+    "theme": "default",             # default | faded | monochrome
+    "land": "#2b2622",              # warm charcoal
+    "buildings": "#3a322c",
+    "roads": "#4a4039",             # side streets, warm taupe
+    "trunks": "#6b5644",            # main roads
+    "motorways": "#8a6a4f",         # muted amber, the one warm highlight
+    "water": "#1f3340",             # cool, so the land reads warm
+    "greenspace": "#3b4a35",        # olive parks, not mint
+    "placeLabels": "#efe4d6",       # warm off-white
+    "roadLabels": "#b9a896",
+    "poiLabels": "#cdb08f",         # soft sand
+    "adminBoundaries": "#7a6262",   # faint dusty rose
+}
+_PALETTE_VALUE = re.compile(r"^(#[0-9A-Fa-f]{3,8}|rgba?\([0-9., ]+\)|[a-z]+)$")
+
+
+def _walk_palette():
+    raw = (os.environ.get("MAPBOX_WALK_PALETTE") or "").strip()
+    if raw.lower() in ("off", "none", "0", "false"):
+        return None
+    palette = dict(WALK_PALETTE)
+    if raw:
+        try:
+            extra = json.loads(raw)
+            palette.update({k: v for k, v in extra.items()
+                            if k in WALK_PALETTE and isinstance(v, str) and _PALETTE_VALUE.match(v.strip())})
+        except (ValueError, AttributeError):
+            print("[maps] MAPBOX_WALK_PALETTE isn't valid JSON; using the built-in palette", flush=True)
+    return palette
+
 
 MAX_PLACES = 300  # plenty for one map, and keeps the page light
 
@@ -1634,7 +1674,8 @@ def register_embed_routes(app, SavedList, query_one):
 
 
 def _render(title, places, open_url, req, cards_min_zoom=None, extra=None):
-    style = STYLES.get(req.args.get("style", "light"), STYLES["light"])
+    style_key = req.args.get("style", "light")
+    style = STYLES.get(style_key, STYLES["light"])
     payload = {
         "token": os.environ.get("MAPBOX_TOKEN") or "",
         "style": style,
@@ -1642,6 +1683,7 @@ def _render(title, places, open_url, req, cards_min_zoom=None, extra=None):
         "open": open_url,
         "places": places,
         "cardsMinZoom": cards_min_zoom,
+        "palette": _walk_palette() if style_key == "mansfield" else None,
     }
     payload.update(extra or {})
     return render_template("embed_map.html", payload=payload, title=title)
