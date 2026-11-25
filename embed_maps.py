@@ -85,6 +85,16 @@ DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
 # routes; MAPBOX_WALK_STYLE in Render can point it at a different published style.
 _DEFAULT_WALK_STYLE = "mapbox://styles/dmans27/cmuwij0nf012501sa5ke4hsl0"
 _walk_style = (os.environ.get("MAPBOX_WALK_STYLE") or "").strip()
+# Studio's Share panel also offers https:// links (".../styles/v1/<user>/<style id>.html?..." or
+# ".../styles/v1/<user>/<style id>"): accept those too, as the mapbox://styles/<user>/<style id> they point at.
+# (and the Studio editor's own address, studio.mapbox.com/styles/<user>/<style id>/edit).
+_m = re.match(r"^https://(?:api\.mapbox\.com/styles/v1|studio\.mapbox\.com/styles)/([A-Za-z0-9_-]+)/([A-Za-z0-9_-]+)", _walk_style)
+if _m:
+    _walk_style = f"mapbox://styles/{_m.group(1)}/{_m.group(2)}"
+if _walk_style and not re.match(r"^mapbox://styles/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$", _walk_style):
+    print(f"[maps] MAPBOX_WALK_STYLE isn't a style URL ({_walk_style[:80]!r}); using the default walking style", flush=True)
+    _walk_style = ""
+print(f"[maps] walking map style: {_walk_style or _DEFAULT_WALK_STYLE}", flush=True)
 STYLES = {
     "light": "mapbox://styles/mapbox/light-v11",
     "dark": "mapbox://styles/mapbox/dark-v11",
