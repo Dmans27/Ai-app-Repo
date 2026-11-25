@@ -455,6 +455,14 @@
     @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px 2px rgba(127, 209, 166, 0.45); } 50% { box-shadow: 0 0 16px 6px rgba(127, 209, 166, 0.8); } }
     @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.35; transform: scale(2); } .pulse__orb { animation: none; } }
     body.walking .pulse, body.is-drawing .pulse { display: none; }
+    /* Pins a page is building (the media site's group maps and route builder): numbered, in order,
+       joined by a dashed line; a new one drops in. */
+    .bpin { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+      background: #7fd1a6; color: #0f2219; border: 2.5px solid #fff; font: 800 13px/1 system-ui, -apple-system, sans-serif;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45); }
+    .bpin.is-new { animation: bpin-drop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+    @keyframes bpin-drop { 0% { transform: translateY(-46px) scale(0.6); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .bpin.is-new { animation: none; } }
   </style>
 </head>
 <body>
@@ -2210,6 +2218,46 @@
           paint: { 'line-color': '#2BEA6B', 'line-width': 4, 'line-emissive-strength': 1 } });
       }
       map.on('load', function () { paintShape(); });
+
+      // ---- Pins a page is building (group maps / route builder on the media site) ----
+      //   page -> map: mansfield:pins {pins: [{lat, lng, name}]}  -- the whole list in walking order, each time.
+      // New pins drop in, and the map moves to fit them all (or to the one pin).
+      var buildMarkers = [], buildKeys = [];
+      function paintBuildPins(list) {
+        var pins = (Array.isArray(list) ? list : []).slice(0, 40).filter(function (p) {
+          return p && isFinite(Number(p.lat)) && isFinite(Number(p.lng)) && Math.abs(Number(p.lat)) <= 90 && Math.abs(Number(p.lng)) <= 180;
+        }).map(function (p) { return { lat: Number(p.lat), lng: Number(p.lng), name: String(p.name || '').slice(0, 80) }; });
+        var keys = pins.map(function (p) { return p.lat.toFixed(5) + ',' + p.lng.toFixed(5); });
+        buildMarkers.forEach(function (m) { m.remove(); });
+        buildMarkers = pins.map(function (p, i) {
+          var el = document.createElement('div');
+          el.className = 'bpin' + (buildKeys.indexOf(keys[i]) < 0 ? ' is-new' : '');
+          el.textContent = String(i + 1);
+          el.title = p.name;
+          return new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([p.lng, p.lat]).addTo(map);
+        });
+        buildKeys = keys;
+        function line() {
+          var data = { type: 'FeatureCollection', features: pins.length > 1 ? [{ type: 'Feature', properties: {},
+            geometry: { type: 'LineString', coordinates: pins.map(function (p) { return [p.lng, p.lat]; }) } }] : [] };
+          var src = map.getSource('mansfield-build');
+          if (src) { src.setData(data); return; }
+          map.addSource('mansfield-build', { type: 'geojson', data: data });
+          map.addLayer({ id: 'mansfield-build-line', type: 'line', source: 'mansfield-build', layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: { 'line-color': '#7fd1a6', 'line-width': 3, 'line-dasharray': [1.2, 1.6], 'line-emissive-strength': 1 } });
+        }
+        if (mapReady) line(); else map.once('load', line);
+        if (pins.length === 1) map.easeTo({ center: [pins[0].lng, pins[0].lat], zoom: Math.max(map.getZoom(), 15), duration: 700 });
+        else if (pins.length > 1) {
+          var b = new mapboxgl.LngLatBounds();
+          pins.forEach(function (p) { b.extend([p.lng, p.lat]); });
+          map.fitBounds(b, { padding: 46, maxZoom: 16, duration: 700 });
+        }
+      }
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || window.parent === window || !e.data || e.data.type !== 'mansfield:pins') return;
+        paintBuildPins(e.data.pins);
+      });
 
       // ---- Video pulses (the media site's walk page, pulses.py there) -----------
       //   page -> map: mansfield:pulses {pulses: [{id, lat, lng, count, label}]}  (the whole set, each time; thumb is ignored)
