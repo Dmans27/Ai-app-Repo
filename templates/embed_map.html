@@ -2098,6 +2098,7 @@
           el.setAttribute('aria-label', 'You are here');
           el.innerHTML = YOU_HTML;
           walk.marker = new mapboxgl.Marker({ element: el, anchor: 'center', rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat(me).addTo(map);
+          youHeading = freshHeading();
           paintHeading(walk.marker);
           map.flyTo({ center: me, zoom: Math.max(map.getZoom(), 16.5), duration: 900, essential: true });
         } else {
@@ -2382,8 +2383,50 @@
       // ---- Where you are ------------------------------------------------------
       // The page sends mansfield:me {lat, lng, acc, heading} as the phone moves (it already
       // has location permission, so the map never asks a second time).
-      var youMarker = null, youStale = null, youHeading = null;
+      var youMarker = null, youStale = null, youHeading = null, pageHeading = null;
       var YOU_HTML = '<span class="you__acc"></span><span class="you__beam"></span><span class="you__dot"></span>';
+      // Which way you're facing comes from the page (its compass, or the way you're moving) or, on an
+      // iPhone where the first tap landed on the map, from the map's own compass. Either way the glow
+      // shows whenever it's known -- walking a route or just looking around.
+      var mapCompass = null, mapCompassAt = 0, mapCompassAsked = false, pageCompassOn = false;
+      function freshHeading() {
+        if (mapCompass !== null && Date.now() - mapCompassAt < 3000) return mapCompass;
+        return pageHeading;
+      }
+      function repaintHeading() {
+        youHeading = freshHeading();
+        paintHeading(youMarker);
+        if (walk && walk.marker) paintHeading(walk.marker);
+      }
+      function onMapCompass(e) {
+        if (typeof e.webkitCompassHeading !== 'number' || isNaN(e.webkitCompassHeading)) return;
+        var a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+        var h = Math.round(((e.webkitCompassHeading + (Number(a) || 0)) % 360 + 360) % 360);
+        var turned = mapCompass === null ? 999 : Math.abs(((h - mapCompass + 540) % 360) - 180);
+        mapCompassAt = Date.now();
+        if (turned < 3) return;
+        mapCompass = h;
+        repaintHeading();
+      }
+      function askMapCompass(e) {
+        document.removeEventListener('touchend', askMapCompass, true);
+        document.removeEventListener('click', askMapCompass, true);
+        if (mapCompassAsked || pageCompassOn) return;
+        mapCompassAsked = true;
+        DeviceOrientationEvent.requestPermission().then(function (r) {
+          if (r !== 'granted') return;
+          window.addEventListener('deviceorientation', onMapCompass);
+          try { window.parent.postMessage({ type: 'mansfield:compass', on: true }, '*'); } catch (err) {}
+        }).catch(function () {});
+      }
+      if (window.parent !== window && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        document.addEventListener('touchend', askMapCompass, true);
+        document.addEventListener('click', askMapCompass, true);
+      }
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || window.parent === window || !e.data || e.data.type !== 'mansfield:compass') return;
+        if (e.data.on) pageCompassOn = true;      // the page already has the compass: don't ask twice
+      });
       function paintHeading(marker) {     // turn the marker to the way you're facing (follows the map if it's rotated)
         if (!marker) return;
         var on = youHeading !== null;
@@ -2412,9 +2455,8 @@
           el2.dataset.acc = String(acc);
         }
         var hd = Number(d.heading);
-        youHeading = d.heading !== null && d.heading !== undefined && isFinite(hd) ? ((Math.round(hd) % 360) + 360) % 360 : null;
-        paintHeading(youMarker);
-        if (walk && walk.marker) paintHeading(walk.marker);
+        pageHeading = d.heading !== null && d.heading !== undefined && isFinite(hd) ? ((Math.round(hd) % 360) + 360) % 360 : null;
+        repaintHeading();
         el2.classList.remove('is-stale');
         clearTimeout(youStale);
         youStale = setTimeout(function () { if (youMarker) youMarker.getElement().classList.add('is-stale'); }, 120000);
