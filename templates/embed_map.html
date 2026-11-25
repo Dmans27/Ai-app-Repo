@@ -2083,6 +2083,7 @@
         setWalkPath(route.path || route.stops.map(function (p) { return [p.lng, p.lat]; }), w ? w.legs : [], 0);
         if (openPopup) openPopup.remove();
         document.body.classList.add('walking');
+        syncAreaLine();                              // the drawn area steps aside while you walk
         walkUi().bar.classList.add('is-tucked');   // directions start on the side: the tab shows the next turn
         showWalkStatus('Looking for you\u2026', 'Allow location to follow the walk.');
         paintWalkPins();
@@ -2104,6 +2105,7 @@
         ui.arrive.hidden = true;
         ui.recenter.hidden = true;
         document.body.classList.remove('walking');
+        syncAreaLine();                              // and comes back when the walk ends
         markers.forEach(function (m) { m.getElement().classList.remove('mk--done'); });
         drawRoute();
         cardsKey = '';
@@ -2241,6 +2243,12 @@
         map.addLayer({ id: 'mansfield-area-line', type: 'line', source: 'mansfield-area',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': '#9cc77f', 'line-width': 4, 'line-emissive-strength': 1 } });
+        syncAreaLine();
+      }
+      // Once a walk starts, only the route is drawn: the area outline hides until the walk ends.
+      function syncAreaLine() {
+        if (!map.getLayer('mansfield-area-line')) return;
+        map.setLayoutProperty('mansfield-area-line', 'visibility', document.body.classList.contains('walking') ? 'none' : 'visible');
       }
       map.on('load', function () { paintShape(); });
 
