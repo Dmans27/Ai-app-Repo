@@ -102,47 +102,6 @@ STYLES = {
     "mansfield": _walk_style if re.match(r"^mapbox://styles/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$", _walk_style) else _DEFAULT_WALK_STYLE,
 }
 
-# Colours laid over the walking map once it loads, so the map can be retuned
-# here without republishing the style in Mapbox Studio. "Matcha House": a calm,
-# near-neutral dark map (not green all over), forest-green parks, cool water,
-# cream place names and bamboo for points of interest -- matcha stays the app's
-# own bright colour for routes and buttons. A style built on Mapbox Standard takes
-# these as its config (lightPreset/theme/colour settings); any other style gets the
-# matching layers recoloured. MAPBOX_WALK_PALETTE in Render can change single
-# colours with JSON, e.g. {"water": "#203845"}, or be "off" to show the style untouched.
-WALK_PALETTE = {
-    "lightPreset": "dusk",          # day | dusk | dawn | night
-    "theme": "default",             # default | faded | monochrome
-    "land": "#1e221f",              # ink, barely green
-    "buildings": "#282e29",
-    "roads": "#343b35",             # side streets
-    "trunks": "#4a534b",            # main roads
-    "motorways": "#6b6650",         # dusty bamboo, the one warm highlight
-    "water": "#1f3340",             # cool blue
-    "greenspace": "#2a4430",        # forest-green parks
-    "placeLabels": "#f2ead9",       # cream
-    "roadLabels": "#a9ae9f",
-    "poiLabels": "#d9b886",         # bamboo
-    "adminBoundaries": "#5d665e",
-}
-_PALETTE_VALUE = re.compile(r"^(#[0-9A-Fa-f]{3,8}|rgba?\([0-9., ]+\)|[a-z]+)$")
-
-
-def _walk_palette():
-    raw = (os.environ.get("MAPBOX_WALK_PALETTE") or "").strip()
-    if raw.lower() in ("off", "none", "0", "false"):
-        return None
-    palette = dict(WALK_PALETTE)
-    if raw:
-        try:
-            extra = json.loads(raw)
-            palette.update({k: v for k, v in extra.items()
-                            if k in WALK_PALETTE and isinstance(v, str) and _PALETTE_VALUE.match(v.strip())})
-        except (ValueError, AttributeError):
-            print("[maps] MAPBOX_WALK_PALETTE isn't valid JSON; using the built-in palette", flush=True)
-    return palette
-
-
 MAX_PLACES = 300  # plenty for one map, and keeps the page light
 
 # Only plain "https://host" style entries are accepted, so a typo (or a
@@ -1675,8 +1634,7 @@ def register_embed_routes(app, SavedList, query_one):
 
 
 def _render(title, places, open_url, req, cards_min_zoom=None, extra=None):
-    style_key = req.args.get("style", "light")
-    style = STYLES.get(style_key, STYLES["light"])
+    style = STYLES.get(req.args.get("style", "light"), STYLES["light"])
     payload = {
         "token": os.environ.get("MAPBOX_TOKEN") or "",
         "style": style,
@@ -1684,7 +1642,6 @@ def _render(title, places, open_url, req, cards_min_zoom=None, extra=None):
         "open": open_url,
         "places": places,
         "cardsMinZoom": cards_min_zoom,
-        "palette": _walk_palette() if style_key == "mansfield" else None,
     }
     payload.update(extra or {})
     return render_template("embed_map.html", payload=payload, title=title)

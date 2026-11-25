@@ -1006,68 +1006,6 @@
         cooperativeGestures: window.parent !== window && !STORY_MODE
       });
 
-      // ---- Walking map colours ----------------------------------------------
-      // The site sends a palette for the walking map (WALK_PALETTE in embed_maps.py).
-      // A style built on Mapbox Standard takes it as config; any other style has the
-      // matching layers recoloured instead.
-      var PALETTE = data.palette || null;
-      var STANDARD_KEYS = {
-        lightPreset: 'lightPreset', theme: 'theme', land: 'colorLand', buildings: 'colorBuildings',
-        roads: 'colorRoads', trunks: 'colorTrunks', motorways: 'colorMotorways', water: 'colorWater',
-        greenspace: 'colorGreenspace', placeLabels: 'colorPlaceLabels', roadLabels: 'colorRoadLabels',
-        poiLabels: 'colorPointOfInterestLabels', adminBoundaries: 'colorAdminBoundaries'
-      };
-      function paletteFor(layer) {               // which palette colour a classic layer gets, and where
-        var id = layer.id.toLowerCase(), t = layer.type;
-        if (id.indexOf('mansfield-') === 0) return null;   // the app's own route and area lines
-        if (t === 'background') return ['land', 'background-color'];
-        if (t === 'symbol') {
-          if (/water|marine|ocean/.test(id)) return null;
-          if (/road|street|path|motorway|shield/.test(id)) return ['roadLabels', 'text-color'];
-          if (/poi|airport|transit/.test(id)) return ['poiLabels', 'text-color'];
-          if (/place|settlement|country|state|city|town|village|neighbo|locality|district/.test(id)) return ['placeLabels', 'text-color'];
-          return null;
-        }
-        if (t === 'fill' && /^land$/.test(id)) return ['land', 'fill-color'];
-        if (/water|ocean|lake|river/.test(id) && !/label|shadow/.test(id)) {
-          if (t === 'fill') return ['water', 'fill-color'];
-          if (t === 'line') return ['water', 'line-color'];
-          return null;
-        }
-        if (t === 'fill' && /park|grass|wood|forest|pitch|garden|cemetery|national/.test(id)) return ['greenspace', 'fill-color'];
-        if (/building/.test(id)) {
-          if (t === 'fill') return ['buildings', 'fill-color'];
-          if (t === 'fill-extrusion') return ['buildings', 'fill-extrusion-color'];
-          return null;
-        }
-        if (t === 'line' && /admin|boundary/.test(id)) return ['adminBoundaries', 'line-color'];
-        if (t === 'line' && /road|street|bridge|tunnel|motorway|trunk|primary|secondary/.test(id) && !/case|casing|outline|rail|path|pedestrian|steps|label/.test(id)) {
-          if (/motorway/.test(id)) return ['motorways', 'line-color'];
-          if (/trunk|primary/.test(id)) return ['trunks', 'line-color'];
-          return ['roads', 'line-color'];
-        }
-        return null;
-      }
-      function applyPalette() {
-        if (!PALETTE) return;
-        var style = map.getStyle() || {};
-        var imports = (style.imports || []).map(function (i) { return i.id; });
-        if (imports.length) {                     // built on Mapbox Standard
-          imports.forEach(function (id) {
-            Object.keys(STANDARD_KEYS).forEach(function (k) {
-              if (!PALETTE[k]) return;
-              try { map.setConfigProperty(id, STANDARD_KEYS[k], PALETTE[k]); } catch (e) { /* not in this style */ }
-            });
-          });
-          return;
-        }
-        (style.layers || []).forEach(function (layer) {
-          var hit = paletteFor(layer);
-          if (!hit || !PALETTE[hit[0]]) return;
-          try { map.setPaintProperty(layer.id, hit[1], PALETTE[hit[0]]); } catch (e) { /* layer can't take it */ }
-        });
-      }
-      if (PALETTE) map.on('style.load', applyPalette);
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
       // Full screen the whole page (not just the map) so the
       // place cards stay visible when it is full screen.
