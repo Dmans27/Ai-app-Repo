@@ -103,26 +103,27 @@ STYLES = {
 }
 
 # Colours laid over the walking map once it loads, so the map can be retuned
-# here without republishing the style in Mapbox Studio. Warm, muted land, roads
-# and labels; cool water; olive parks -- mint stays the app's own colour, gold
-# stays for Saved pins. A style built on Mapbox Standard takes these as its
-# config (lightPreset/theme/colour settings); any other style gets the matching
-# layers recoloured. MAPBOX_WALK_PALETTE in Render can change single colours
-# with JSON, e.g. {"water": "#203845"}, or be "off" to show the style untouched.
+# here without republishing the style in Mapbox Studio. "Matcha House": a calm,
+# near-neutral dark map (not green all over), forest-green parks, cool water,
+# cream place names and bamboo for points of interest -- matcha stays the app's
+# own bright colour for routes and buttons. A style built on Mapbox Standard takes
+# these as its config (lightPreset/theme/colour settings); any other style gets the
+# matching layers recoloured. MAPBOX_WALK_PALETTE in Render can change single
+# colours with JSON, e.g. {"water": "#203845"}, or be "off" to show the style untouched.
 WALK_PALETTE = {
     "lightPreset": "dusk",          # day | dusk | dawn | night
     "theme": "default",             # default | faded | monochrome
-    "land": "#2b2622",              # warm charcoal
-    "buildings": "#3a322c",
-    "roads": "#4a4039",             # side streets, warm taupe
-    "trunks": "#6b5644",            # main roads
-    "motorways": "#8a6a4f",         # muted amber, the one warm highlight
-    "water": "#1f3340",             # cool, so the land reads warm
-    "greenspace": "#3b4a35",        # olive parks, not mint
-    "placeLabels": "#efe4d6",       # warm off-white
-    "roadLabels": "#b9a896",
-    "poiLabels": "#cdb08f",         # soft sand
-    "adminBoundaries": "#7a6262",   # faint dusty rose
+    "land": "#1e221f",              # ink, barely green
+    "buildings": "#282e29",
+    "roads": "#343b35",             # side streets
+    "trunks": "#4a534b",            # main roads
+    "motorways": "#6b6650",         # dusty bamboo, the one warm highlight
+    "water": "#1f3340",             # cool blue
+    "greenspace": "#2a4430",        # forest-green parks
+    "placeLabels": "#f2ead9",       # cream
+    "roadLabels": "#a9ae9f",
+    "poiLabels": "#d9b886",         # bamboo
+    "adminBoundaries": "#5d665e",
 }
 _PALETTE_VALUE = re.compile(r"^(#[0-9A-Fa-f]{3,8}|rgba?\([0-9., ]+\)|[a-z]+)$")
 

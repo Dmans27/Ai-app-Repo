@@ -16,7 +16,7 @@
     #map { position: absolute; inset: 0; }
     .note {
       position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center;
-      padding: 24px; text-align: center; color: #514d4a; background: #e9eceb;
+      padding: 24px; text-align: center; color: #4a514d; background: #e9eceb;
     }
     .note[hidden] { display: none; }
     .mapboxgl-popup-close-button { font-size: 18px; line-height: 22px; width: 24px; height: 24px; padding: 0; top: 6px; right: 6px;
@@ -83,10 +83,10 @@
     @media (prefers-reduced-motion: reduce) { .viewer { transition: none; } }
     /* "Save" -- only shown when the map sits in a page that can keep saved places (the media site). */
     .pop__links button.is-save[hidden], .detail__actions button.is-save[hidden] { display: none; }
-    .pop__links button.is-save.is-saved { background: #e0864a; border-color: transparent; }
+    .pop__links button.is-save.is-saved { background: #2f5e3a; border-color: transparent; }
     .detail__actions button { font: inherit; cursor: pointer; padding: 9px 16px; border-radius: 999px; border: 0; background: #eef1ef; color: #1c1f1d; font-weight: 700; font-size: 13.5px; }
-    .detail__actions button:hover { background: #e6e4e2; }
-    .detail__actions button.is-save.is-saved { background: #e0864a; color: #fff; }
+    .detail__actions button:hover { background: #e2e6e3; }
+    .detail__actions button.is-save.is-saved { background: #2f5e3a; color: #fff; }
 
     /* Full-size place panel: covers the map (not the page) with the place's
        pictures, facts from your directory and live details from Google. */
@@ -98,21 +98,21 @@
     @media (prefers-reduced-motion: reduce) { .detail { transition: none; } .detail__scroll { scroll-behavior: auto; } }
     .detail__bar { flex: 0 0 auto; padding: 10px 12px; border-bottom: 1px solid #e3e6e4; background: #fff; }
     .detail__back { font: inherit; font-weight: 700; font-size: 13.5px; padding: 7px 14px; border: 0; border-radius: 999px; background: #eef1ef; color: #1c1f1d; cursor: pointer; }
-    .detail__back:hover { background: #e6e4e2; }
+    .detail__back:hover { background: #e2e6e3; }
     .detail__scroll { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
     .detail__inner { max-width: 760px; margin: 0 auto; padding-bottom: 28px; }
-    .detail__gallery { position: relative; height: clamp(170px, 36vh, 330px); background: #dddbd9; overflow: hidden; }
+    .detail__gallery { position: relative; height: clamp(170px, 36vh, 330px); background: #d9ddda; overflow: hidden; }
     .detail__gallery[hidden] { display: none; }
     .detail__dots { position: absolute; left: 0; right: 0; bottom: 10px; z-index: 2; pointer-events: none; }
     .detail__body { padding: 16px 18px 0; display: flex; flex-direction: column; gap: 14px; }
     .detail__name { margin: 0; font-size: 22px; font-weight: 800; line-height: 1.2; }
-    .detail__take { margin: 14px 0 4px; padding: 12px 14px; border-radius: 14px; background: #faf2eb; border: 1px solid #f0d8c6; }
-    .detail__take-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #4d2b11; }
+    .detail__take { margin: 14px 0 4px; padding: 12px 14px; border-radius: 14px; background: #f2f8ee; border: 1px solid #d8e9cd; }
+    .detail__take-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #1f4128; }
     .detail__take-stars { color: #b07b00; letter-spacing: 0; font-size: 14px; }
     .detail__take-text { margin: 6px 0 0; font-size: 15px; line-height: 1.5; color: #15171a; }
     .detail__take .detail__tags { margin-top: 8px; }
-    .detail__tag--mine { background: #fff; border-color: #f0d8c6; }
-    .detail__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13.5px; color: #514d4a; }
+    .detail__tag--mine { background: #fff; border-color: #d8e9cd; }
+    .detail__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13.5px; color: #4a514d; }
     .detail__cat { padding: 3px 10px; border-radius: 999px; background: #eef1ef; font-weight: 700; text-transform: capitalize; }
     .detail__rating { color: #b8780a; font-weight: 800; }
     .detail__open { font-weight: 800; }
@@ -126,20 +126,20 @@
     .detail__actions > a, .detail__actions > button { flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start; }
     .detail__body > .detail__actions { margin: 0 -18px; padding: 2px 18px; scroll-padding: 0 18px; }
     .detail__actions a { padding: 9px 16px; border-radius: 999px; background: #eef1ef; color: #1c1f1d; font-weight: 700; font-size: 13.5px; text-decoration: none; }
-    .detail__actions a:hover { background: #e6e4e2; }
+    .detail__actions a:hover { background: #e2e6e3; }
     .detail__actions a.is-primary { background: #1d6fa5; color: #fff; }
     .detail__text { margin: 0; font-size: 14.5px; line-height: 1.55; }
-    .detail__note { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid #e0864a; font-style: italic; font-size: 14.5px; line-height: 1.5; color: #403d3a; }
-    .detail__h { margin: 0 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #726e6b; }
+    .detail__note { margin: 0; padding: 2px 0 2px 12px; border-left: 3px solid #2f5e3a; font-style: italic; font-size: 14.5px; line-height: 1.5; color: #3a403d; }
+    .detail__h { margin: 0 0 6px; font-size: 11.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #6b726e; }
     .detail__tags { display: flex; flex-wrap: wrap; gap: 6px; }
-    .detail__tag { padding: 4px 11px; border-radius: 999px; border: 1px solid #dedbd9; font-size: 12.5px; }
+    .detail__tag { padding: 4px 11px; border-radius: 999px; border: 1px solid #d9dedb; font-size: 12.5px; }
     .detail__hours summary { cursor: pointer; font-weight: 700; font-size: 14px; }
     .detail__hours ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13.5px; line-height: 1.7; }
     .detail__hours li.is-today { font-weight: 800; }
     .detail__review { padding: 10px 0; border-top: 1px solid #edf0ee; font-size: 13.5px; line-height: 1.5; }
     .detail__review strong { font-size: 13px; }
     .detail__stars { color: #b8780a; margin-left: 6px; }
-    .detail__loading { margin: 0; font-size: 13px; color: #726e6b; }
+    .detail__loading { margin: 0; font-size: 13px; color: #6b726e; }
     body.is-fs .detail__inner { max-width: 920px; }
     body.is-fs .detail__name { font-size: 28px; }
     body.is-fs .detail__text, body.is-fs .detail__note { font-size: 16px; }
@@ -156,8 +156,8 @@
       text-align: left; font: inherit; color: #fff; background: #121316; border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.28); cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
     .card:hover { border-color: rgba(255,255,255,0.3); }
-    .card:focus-visible { outline: 2px solid #ffc08f; outline-offset: 2px; }
-    .card.is-active { border-color: var(--c, #ffc08f); box-shadow: 0 0 0 1.5px var(--c, #ffc08f), 0 6px 18px rgba(0,0,0,0.28); }
+    .card:focus-visible { outline: 2px solid #b3d69a; outline-offset: 2px; }
+    .card.is-active { border-color: var(--c, #b3d69a); box-shadow: 0 0 0 1.5px var(--c, #b3d69a), 0 6px 18px rgba(0,0,0,0.28); }
     .card__img, .card__ph { flex: 0 0 92px; width: 92px; min-height: 92px; align-self: stretch; object-fit: cover; display: block; background: #23262b; }
     .card__ph { display: flex; align-items: center; justify-content: center; }
     .card__ph svg { width: 30px; height: 30px; fill: none; stroke: var(--c, #fff); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
@@ -224,7 +224,7 @@
       transition: background-color 0.15s ease, color 0.15s ease; }
     .fbtn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .fbtn:hover { background: rgba(255,255,255,0.14); }
-    .fbtn:focus-visible { outline: 2px solid #ffc08f; outline-offset: 1px; }
+    .fbtn:focus-visible { outline: 2px solid #b3d69a; outline-offset: 1px; }
     .fbtn.is-on { background: var(--c, #fff); color: #fff; }
     .fbtn--all.is-on { background: #fff; color: #15171a; }
     .fbtn--top.is-on { background: #f5b301; color: #15171a; }
@@ -358,7 +358,7 @@
     .card__read { align-self: flex-start; margin-top: 3px; padding: 5px 11px; border-radius: 999px; background: #fff; color: #15171a;
       font-size: 12px; font-weight: 800; white-space: nowrap; }
     .pop__links button.is-read { background: #fff; color: #15171a; border-color: transparent; }
-    .routepill__start { pointer-events: auto; margin-left: 4px; padding: 6px 12px; border: 0; border-radius: 999px; background: #ffb37a; color: #2b1708;
+    .routepill__start { pointer-events: auto; margin-left: 4px; padding: 6px 12px; border: 0; border-radius: 999px; background: #9cc77f; color: #131a15;
       font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
     .routepill__start svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
     .routepill__start[hidden] { display: none; }
@@ -381,7 +381,7 @@
       -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 6px 18px rgba(0,0,0,0.3);
       transform: translateX(100%); transition: transform 0.3s ease; }
     .walkbar.is-tucked .walkbar__tab { transform: none; }
-    .walkbar__tab svg { width: 26px; height: 26px; fill: none; stroke: #ffc08f; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .walkbar__tab svg { width: 26px; height: 26px; fill: none; stroke: #b3d69a; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
     .walkbar__tab .walkbar__tabdist { font-size: 12.5px; font-weight: 800; line-height: 1.1; text-align: center; }
     .walkbar__tab .walkbar__chev { width: 14px; height: 14px; stroke: rgba(255,255,255,0.6); }
     .walkbar__tuck { flex: 0 0 auto; width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;
@@ -394,9 +394,9 @@
     .walkbar__step span { flex: 1; min-width: 0; }
     .walkbar__step b { flex: 0 0 auto; font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,0.6); }
     .walkbar__step.is-stop { color: #fff; font-weight: 700; }
-    .walkbar__step.is-stop svg { stroke: var(--c, #ffc08f); }
+    .walkbar__step.is-stop svg { stroke: var(--c, #b3d69a); }
     .walkbar__row { display: flex; align-items: center; gap: 11px; }
-    .walkbar__num { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; background: var(--c, #e0864a); border: 2.5px solid #fff; box-sizing: border-box;
+    .walkbar__num { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; background: var(--c, #2f5e3a); border: 2.5px solid #fff; box-sizing: border-box;
       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
     .walkbar__num[hidden] { display: none; }
     .walkbar__text { flex: 1; min-width: 0; }
@@ -407,7 +407,7 @@
     .walkbar__turn { display: flex; align-items: center; gap: 9px; margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.14);
       font-size: 14px; font-weight: 600; line-height: 1.3; }
     .walkbar__turn[hidden] { display: none; }
-    .walkbar__turn svg { flex: 0 0 auto; width: 22px; height: 22px; fill: none; stroke: #ffc08f; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .walkbar__turn svg { flex: 0 0 auto; width: 22px; height: 22px; fill: none; stroke: #b3d69a; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
     body.walking .walkrecenter:not([hidden]) { display: flex; position: absolute; z-index: 6; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
       align-items: center; gap: 7px; height: 42px; padding: 0 15px 0 12px; border: 0; border-radius: 999px; background: #fff; color: #15171a;
       font: inherit; font-size: 14px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,0.3); cursor: pointer; }
@@ -415,21 +415,21 @@
     body.walking .walkarrive:not([hidden]) { display: block; position: absolute; z-index: 6; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
       padding: 14px 14px 12px; border-radius: 18px; background: #fff; color: #15171a; box-shadow: 0 10px 28px rgba(0,0,0,0.35); }
     body.walking .walkarrive:not([hidden]) ~ .walkrecenter { bottom: calc(210px + env(safe-area-inset-bottom, 0px)); }
-    .walkarrive__kicker { font-size: 11px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c, #e0864a); }
+    .walkarrive__kicker { font-size: 11px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c, #2f5e3a); }
     .walkarrive__name { margin-top: 2px; font-size: 17px; font-weight: 800; }
     .walkarrive__row { display: flex; gap: 8px; margin-top: 10px; }
     /* Footprints: "worth the walk?" 1-5, sent to the page (mansfield:rate), which saves it */
     .walkarrive__rate { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
     .walkarrive__rate[hidden] { display: none; }
-    .walkarrive__ask { font-size: 13px; font-weight: 700; color: #524e4a; }
+    .walkarrive__ask { font-size: 13px; font-weight: 700; color: #4a524e; }
     .walkarrive__fp { display: flex; }
-    .walkarrive__fp button { width: 36px; height: 36px; padding: 0; border: 0; background: none; color: #d8d5d3; cursor: pointer;
+    .walkarrive__fp button { width: 36px; height: 36px; padding: 0; border: 0; background: none; color: #d3d8d5; cursor: pointer;
       display: flex; align-items: center; justify-content: center; transition: color 0.15s, transform 0.15s; }
     .walkarrive__fp button svg { width: 25px; height: 25px; fill: currentColor; }
-    .walkarrive__fp button.is-on { color: #e0864a; }
+    .walkarrive__fp button.is-on { color: #2f5e3a; }
     .walkarrive__fp button:active { transform: scale(0.88); }
-    .walkarrive__thanks { font-size: 12.5px; font-weight: 700; color: #e0864a; min-height: 16px; margin-top: 2px; }
-    .card__walkers { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12px; font-weight: 700; color: #e0864a; }
+    .walkarrive__thanks { font-size: 12.5px; font-weight: 700; color: #2f5e3a; min-height: 16px; margin-top: 2px; }
+    .card__walkers { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 12px; font-weight: 700; color: #2f5e3a; }
     .card__walkers svg { width: 13px; height: 13px; fill: currentColor; flex: none; }
     .walkarrive__row button { flex: 1; height: 40px; border: 0; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
       background: #eef1ef; color: #15171a; }
@@ -448,13 +448,13 @@
        that district. Tap it and the page plays the clips. */
     .pulse { position: relative; width: 48px; height: 48px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .pulse__ring, .pulse__orb { position: absolute; inset: 14px; border-radius: 50%; pointer-events: none; box-sizing: border-box; background: none; }
-    .pulse__orb { border: 3px solid #7fd1a6; box-shadow: 0 0 8px 1px rgba(127, 209, 166, 0.6), 0 0 0 1px rgba(43, 23, 8, 0.35);
+    .pulse__orb { border: 3px solid #f2ead9; box-shadow: 0 0 8px 1px rgba(242, 234, 217, 0.6), 0 0 0 1px rgba(19, 26, 21, 0.35);
       animation: pulse-glow 2.6s ease-in-out infinite; }
-    .pulse__ring { border: 2px solid rgba(127, 209, 166, 0.85); animation: pulse-ring 2.6s ease-out infinite; }
+    .pulse__ring { border: 2px solid rgba(242, 234, 217, 0.85); animation: pulse-ring 2.6s ease-out infinite; }
     .pulse__ring + .pulse__ring { animation-delay: 1.3s; }
     @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.9; border-width: 2.5px; } 100% { transform: scale(2.7); opacity: 0; border-width: 1px; } }
-    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 6px 1px rgba(127, 209, 166, 0.45), 0 0 0 1px rgba(43, 23, 8, 0.35); }
-                            50% { box-shadow: 0 0 14px 3px rgba(127, 209, 166, 0.8), 0 0 0 1px rgba(43, 23, 8, 0.35); } }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 6px 1px rgba(242, 234, 217, 0.45), 0 0 0 1px rgba(19, 26, 21, 0.35); }
+                            50% { box-shadow: 0 0 14px 3px rgba(242, 234, 217, 0.8), 0 0 0 1px rgba(19, 26, 21, 0.35); } }
     @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.3; transform: scale(1.8); } .pulse__orb { animation: none; } }
     body.walking .pulse, body.is-drawing .pulse, body.has-route .pulse { display: none; }   /* no pulses over a route */
     /* Where you are: a steady blue dot (pulses are the moving green ones), with a soft circle for
@@ -472,13 +472,13 @@
     .you.has-heading .you__beam { display: block; }
     .you__dot { position: absolute; inset: 2px; border-radius: 50%; background: #2f7cf6; border: 3px solid #fff; box-sizing: border-box;
       box-shadow: 0 1px 6px rgba(0,0,0,0.45); }
-    .you.is-stale .you__dot { background: #9a938d; }
+    .you.is-stale .you__dot { background: #8d9a94; }
     .you--walk .you__acc { display: none; }
     body.walking .you:not(.you--walk) { display: none; }   /* walking has its own marker that follows the route */
     /* Pins a page is building (the media site's group maps and route builder): numbered, in order,
        joined by a dashed line; a new one drops in. */
     .bpin { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
-      background: #ffb37a; color: #2b1708; border: 2.5px solid #fff; font: 800 13px/1 system-ui, -apple-system, sans-serif;
+      background: #9cc77f; color: #131a15; border: 2.5px solid #fff; font: 800 13px/1 system-ui, -apple-system, sans-serif;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45); }
     .bpin.is-new { animation: bpin-drop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
     @keyframes bpin-drop { 0% { transform: translateY(-46px) scale(0.6); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
@@ -1621,12 +1621,12 @@
         // Layer 1: a soft dark band under the line (the "casing")
         map.addLayer({ id: 'mansfield-route-band', type: 'line', source: 'mansfield-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#2b1708', 'line-opacity': 0.6, 'line-width': 9 } });   // dark outline so the green stands out on light streets too
+        paint: { 'line-color': '#131a15', 'line-opacity': 0.6, 'line-width': 9 } });   // dark outline so the green stands out on light streets too
 
         // Layer 2: the bright green route line on top
         map.addLayer({ id: 'mansfield-route-dots', type: 'line', source: 'mansfield-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#ffb37a', 'line-opacity': 1, 'line-width': 5 } });   // the walking route in the app's mint
+        paint: { 'line-color': '#9cc77f', 'line-opacity': 1, 'line-width': 5 } });   // the walking route in the app's mint
       }
 
       // The whole walk (every stop) plus the area the reader drew, framed clear
@@ -2302,7 +2302,7 @@
         // Just the outline: the inside stays clear so the streets and places show through.
         map.addLayer({ id: 'mansfield-area-line', type: 'line', source: 'mansfield-area',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#ffb37a', 'line-width': 4, 'line-emissive-strength': 1 } });
+          paint: { 'line-color': '#9cc77f', 'line-width': 4, 'line-emissive-strength': 1 } });
       }
       map.on('load', function () { paintShape(); });
 
@@ -2331,7 +2331,7 @@
           if (src) { src.setData(data); return; }
           map.addSource('mansfield-build', { type: 'geojson', data: data });
           map.addLayer({ id: 'mansfield-build-line', type: 'line', source: 'mansfield-build', layout: { 'line-cap': 'round', 'line-join': 'round' },
-            paint: { 'line-color': '#ffb37a', 'line-width': 3, 'line-dasharray': [1.2, 1.6], 'line-emissive-strength': 1 } });
+            paint: { 'line-color': '#9cc77f', 'line-width': 3, 'line-dasharray': [1.2, 1.6], 'line-emissive-strength': 1 } });
         }
         if (mapReady) line(); else map.once('load', line);
         if (pins.length === 1) map.easeTo({ center: [pins[0].lng, pins[0].lat], zoom: Math.max(map.getZoom(), 15), duration: 700 });
