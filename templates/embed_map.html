@@ -2213,6 +2213,8 @@
                  radius: Math.round(Math.max(AREA_MIN, Math.min(AREA_MAX, r))), byUser: !!byUser };
       }
       map.on('moveend', function (e) { tellPage(viewNow(!!(e && e.originalEvent))); });
+      // A single tap on the map itself (not a pin or card, and not while drawing): the page shows its side tabs.
+      map.on('click', function () { if (!drawing) tellPage({ type: 'mansfield:tap' }); });
 
       function circlePolygon(center, radius) {
         var pts = [], mLng = 111320 * Math.cos(center[1] * Math.PI / 180);
