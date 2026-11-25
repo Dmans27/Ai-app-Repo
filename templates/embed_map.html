@@ -443,6 +443,21 @@
     body.has-route .mk--done .mk__dot { filter: saturate(0.3) brightness(0.8); }
     body.is-drawing .mapboxgl-marker { pointer-events: none; }   /* drawing a circle: pins don't catch the drag */
     body.is-drawing #map, body.is-drawing .mapboxgl-canvas { touch-action: none; }   /* and the phone doesn't scroll or zoom the page */
+    /* Video pulses (the media site's walk page): a round thumbnail with rings pulsing out of it, one per district
+       with live clips. Tap it and the page plays them. */
+    .pulse { position: relative; width: 52px; height: 52px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .pulse__ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #ff5a6e; opacity: 0;
+      animation: pulse-ring 2.4s ease-out infinite; pointer-events: none; }
+    .pulse__ring + .pulse__ring { animation-delay: 1.2s; }
+    @keyframes pulse-ring { 0% { transform: scale(0.95); opacity: 0.9; } 100% { transform: scale(2.1); opacity: 0; } }
+    .pulse__face { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: #1c231f center / cover no-repeat;
+      border: 3px solid #ff5a6e; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); }
+    .pulse__count { position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 999px;
+      background: #ff5a6e; color: #fff; font: 800 12px/22px system-ui, -apple-system, sans-serif; text-align: center; box-shadow: 0 0 0 2px #1c231f; }
+    .pulse__label { position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); white-space: nowrap; padding: 2px 8px; border-radius: 999px;
+      background: rgba(28, 35, 31, 0.88); color: #e4e9e5; font: 700 11.5px system-ui, -apple-system, sans-serif; pointer-events: none; }
+    @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.5; transform: scale(1.3); } }
+    body.walking .pulse, body.is-drawing .pulse { display: none; }
   </style>
 </head>
 <body>
@@ -2198,6 +2213,46 @@
           paint: { 'line-color': '#2BEA6B', 'line-width': 4, 'line-emissive-strength': 1 } });
       }
       map.on('load', function () { paintShape(); });
+
+      // ---- Video pulses (the media site's walk page, pulses.py there) -----------
+      //   page -> map: mansfield:pulses {pulses: [{id, lat, lng, count, thumb, label}]}  (the whole set, each time)
+      //   map -> page: mansfield:pulse-open {id}
+      var pulseOrigin = null, pulseMarkers = {};
+      function paintPulses(list) {
+        var keep = {};
+        (Array.isArray(list) ? list : []).slice(0, 200).forEach(function (p) {
+          var id = String(p && p.id || ''), lat = Number(p && p.lat), lng = Number(p && p.lng);
+          if (!/^[A-Za-z0-9_-]{1,40}$/.test(id) || !isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
+          keep[id] = true;
+          var m = pulseMarkers[id];
+          if (!m) {
+            var el = document.createElement('div');
+            el.className = 'pulse';
+            el.setAttribute('role', 'button');
+            el.innerHTML = '<span class="pulse__ring"></span><span class="pulse__ring"></span><span class="pulse__face"></span>' +
+                           '<span class="pulse__count" hidden></span><span class="pulse__label"></span>';
+            el.addEventListener('click', function (ev) {
+              ev.stopPropagation();
+              if (pulseOrigin) window.parent.postMessage({ type: 'mansfield:pulse-open', id: id }, pulseOrigin);
+            });
+            m = pulseMarkers[id] = new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat([lng, lat]).addTo(map);
+          } else m.setLngLat([lng, lat]);
+          var face = m.getElement().querySelector('.pulse__face'), count = m.getElement().querySelector('.pulse__count');
+          var thumb = String(p.thumb || '');
+          face.style.backgroundImage = /^https?:\/\/[^\s"'()]+$/.test(thumb) ? 'url("' + thumb + '")' : '';
+          var n = Math.max(1, Math.round(Number(p.count) || 1));
+          count.hidden = n < 2;
+          count.textContent = n > 99 ? '99+' : String(n);
+          m.getElement().querySelector('.pulse__label').textContent = String(p.label || '').slice(0, 40);
+          m.getElement().setAttribute('aria-label', (p.label ? p.label + ': ' : '') + n + ' video' + (n === 1 ? '' : 's'));
+        });
+        Object.keys(pulseMarkers).forEach(function (id) { if (!keep[id]) { pulseMarkers[id].remove(); delete pulseMarkers[id]; } });
+      }
+      window.addEventListener('message', function (e) {
+        if (e.source !== window.parent || window.parent === window || !e.data || e.data.type !== 'mansfield:pulses') return;
+        pulseOrigin = e.origin || null;
+        paintPulses(e.data.pulses);
+      });
 
       function setDrawing(on) {
         drawing = !!on;
