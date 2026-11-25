@@ -358,7 +358,7 @@
     .card__read { align-self: flex-start; margin-top: 3px; padding: 5px 11px; border-radius: 999px; background: #fff; color: #15171a;
       font-size: 12px; font-weight: 800; white-space: nowrap; }
     .pop__links button.is-read { background: #fff; color: #15171a; border-color: transparent; }
-    .routepill__start { pointer-events: auto; margin-left: 4px; padding: 6px 12px; border: 0; border-radius: 999px; background: #2f9e7e; color: #fff;
+    .routepill__start { pointer-events: auto; margin-left: 4px; padding: 6px 12px; border: 0; border-radius: 999px; background: #7fd1a6; color: #0f2219;
       font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
     .routepill__start svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
     .routepill__start[hidden] { display: none; }
@@ -1543,7 +1543,7 @@
         // Layer 2: the bright green route line on top
         map.addLayer({ id: 'mansfield-route-dots', type: 'line', source: 'mansfield-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#2BEA6B', 'line-opacity': 1, 'line-width': 5 } });   // bright green walking route
+        paint: { 'line-color': '#7fd1a6', 'line-opacity': 1, 'line-width': 5 } });   // the walking route in the app's mint
       }
 
       // The whole walk (every stop) plus the area the reader drew, framed clear
@@ -2215,7 +2215,7 @@
         // Just the outline: the inside stays clear so the streets and places show through.
         map.addLayer({ id: 'mansfield-area-line', type: 'line', source: 'mansfield-area',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#2BEA6B', 'line-width': 4, 'line-emissive-strength': 1 } });
+          paint: { 'line-color': '#7fd1a6', 'line-width': 4, 'line-emissive-strength': 1 } });
       }
       map.on('load', function () { paintShape(); });
 
