@@ -2084,6 +2084,7 @@
         if (openPopup) openPopup.remove();
         document.body.classList.add('walking');
         syncAreaLine();                              // the drawn area steps aside while you walk
+        syncSnow();                                  // and so does the snow
         walkUi().bar.classList.add('is-tucked');   // directions start on the side: the tab shows the next turn
         showWalkStatus('Looking for you\u2026', 'Allow location to follow the walk.');
         paintWalkPins();
@@ -2106,6 +2107,7 @@
         ui.recenter.hidden = true;
         document.body.classList.remove('walking');
         syncAreaLine();                              // and comes back when the walk ends
+        syncSnow();
         markers.forEach(function (m) { m.getElement().classList.remove('mk--done'); });
         drawRoute();
         cardsKey = '';
@@ -2246,6 +2248,45 @@
           layout: { 'line-cap': 'round', 'line-join': 'round' },
           paint: { 'line-color': '#9cc77f', 'line-width': 4, 'line-emissive-strength': 1 } });
         syncAreaLine();
+      }
+      // ---- Snow over chosen areas (SNOW_ZONES in embed_maps.py) ----------------
+      // Mapbox's snow covers the whole screen, so it's switched on only while the middle of the map is
+      // inside one of the areas: it fades in when you stop over one, out when you move away, and is
+      // heavier the closer you zoom. It stays off during walking directions so the route is clear.
+      var SNOW = Array.isArray(data.snow) ? data.snow : [];
+      var snowLevel = 0, snowGoal = 0, snowRaf = 0;
+      function paintSnow(v) {
+        try {
+          map.setSnow({
+            density: ['interpolate', ['linear'], ['zoom'], 11, 0, 13, 0.55 * v, 16, 0.85 * v],
+            intensity: 1, 'center-thinning': 0.1, direction: [0, 50], opacity: v,
+            color: '#ffffff', 'flake-size': 0.71,
+            vignette: ['interpolate', ['linear'], ['zoom'], 11, 0, 13, 0.3 * v],
+            'vignette-color': '#ffffff'
+          });
+        } catch (e) { SNOW = []; }      // an older map that can't snow: leave it be
+      }
+      function snowTo(goal) {
+        if (goal === snowGoal) return;
+        snowGoal = goal;
+        cancelAnimationFrame(snowRaf);
+        var from = snowLevel, t0 = performance.now();
+        (function step(now) {
+          var k = Math.min(1, ((now || performance.now()) - t0) / 900);
+          snowLevel = from + (goal - from) * k;
+          paintSnow(Math.round(snowLevel * 100) / 100);
+          if (k < 1) snowRaf = requestAnimationFrame(step);
+        })(t0);
+      }
+      function syncSnow() {
+        if (!SNOW.length || typeof map.setSnow !== 'function' || !mapReady) return;
+        var c = map.getCenter(), here = { lng: c.lng, lat: c.lat };
+        var inside = SNOW.some(function (z) { return metres(here, { lng: z.center[0], lat: z.center[1] }) <= z.radius; });
+        snowTo(inside && !document.body.classList.contains('walking') ? 1 : 0);
+      }
+      if (SNOW.length) {
+        map.on('moveend', syncSnow);
+        map.on('load', function () { setTimeout(syncSnow, 0); });
       }
       // Once a walk starts, only the route is drawn: the area outline hides until the walk ends.
       function syncAreaLine() {

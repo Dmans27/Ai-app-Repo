@@ -1633,8 +1633,41 @@ def register_embed_routes(app, SavedList, query_one):
         return response
 
 
+# Snow on the walking map: it falls (over the whole screen, like Mapbox's own snow) only while the
+# map is looking at one of these areas, fading in when you get there and out when you leave, and
+# heavier the closer you zoom. Each area is a middle point [lng, lat] and how far it reaches in
+# metres. MAPBOX_SNOW_ZONES in Render can replace the list with JSON in the same shape, or be "off".
+SNOW_ZONES = [
+    {"name": "Innere Stadt", "center": [16.3713, 48.2083], "radius": 1300},
+]
+
+
+def _snow_zones():
+    raw = (os.environ.get("MAPBOX_SNOW_ZONES") or "").strip()
+    if raw.lower() in ("off", "none", "0", "false"):
+        return []
+    zones = SNOW_ZONES
+    if raw:
+        try:
+            zones = json.loads(raw)
+        except ValueError:
+            print("[maps] MAPBOX_SNOW_ZONES isn't valid JSON; using the built-in snow areas", flush=True)
+            zones = SNOW_ZONES
+    out = []
+    for z in zones if isinstance(zones, list) else []:
+        try:
+            lng, lat = float(z["center"][0]), float(z["center"][1])
+            r = float(z.get("radius", 1000))
+        except (KeyError, TypeError, ValueError, IndexError):
+            continue
+        if -180 <= lng <= 180 and -90 <= lat <= 90 and 50 <= r <= 50000:
+            out.append({"name": str(z.get("name") or "")[:60], "center": [lng, lat], "radius": r})
+    return out[:20]
+
+
 def _render(title, places, open_url, req, cards_min_zoom=None, extra=None):
-    style = STYLES.get(req.args.get("style", "light"), STYLES["light"])
+    style_key = req.args.get("style", "light")
+    style = STYLES.get(style_key, STYLES["light"])
     payload = {
         "token": os.environ.get("MAPBOX_TOKEN") or "",
         "style": style,
@@ -1642,6 +1675,7 @@ def _render(title, places, open_url, req, cards_min_zoom=None, extra=None):
         "open": open_url,
         "places": places,
         "cardsMinZoom": cards_min_zoom,
+        "snow": _snow_zones() if style_key == "mansfield" else [],
     }
     payload.update(extra or {})
     return render_template("embed_map.html", payload=payload, title=title)
