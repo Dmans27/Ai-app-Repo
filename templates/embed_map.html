@@ -2511,6 +2511,12 @@
           // left: how much of the left edge a page tab covers (iPad: the list moves over by that much)
           var leftUi = Math.max(0, Math.min(80, Number(e.data.left) || 0));
           document.documentElement.style.setProperty('--left-ui', leftUi + 'px');
+        } else if (t === 'mansfield:center') {
+          // The page found where you are as it opened: start the map there (not while a walk is showing).
+          var lng = Number(e.data.lng), lat = Number(e.data.lat);
+          if (route || !isFinite(lng) || !isFinite(lat) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
+          var to = { center: [lng, lat], zoom: Math.max(map.getZoom(), 14) };
+          if (mapReady) map.easeTo(Object.assign({ duration: 700 }, to)); else map.jumpTo(to);
         } else if (t === 'mansfield:circle-clear') {
           shape = null;
           if (drawing) setDrawing(false);
