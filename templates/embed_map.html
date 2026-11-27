@@ -2342,6 +2342,7 @@
       // ---- Video pulses (the media site's walk page, pulses.py there) -----------
       //   page -> map: mansfield:pulses {pulses: [{id, lat, lng, count, label}]}  (the whole set, each time; thumb is ignored)
       //   map -> page: mansfield:pulse-open {id}
+      var OPEN_ZOOM = 13;   // where the map opens on the walker (was 14+: a few streets)
       var pulseOrigin = null, pulseMarkers = {};
       function paintPulses(list) {
         var keep = {};
@@ -2556,11 +2557,12 @@
           // left: how much of the left edge a page tab covers (iPad: the list moves over by that much)
           var leftUi = Math.max(0, Math.min(80, Number(e.data.left) || 0));
           document.documentElement.style.setProperty('--left-ui', leftUi + 'px');
-        } else if (t === 'mansfield:center') {
+        } else if (t === 'mansfield:center') {   // OPEN_ZOOM: how far out the map opens on you
           // The page found where you are as it opened: start the map there (not while a walk is showing).
           var lng = Number(e.data.lng), lat = Number(e.data.lat);
           if (route || !isFinite(lng) || !isFinite(lat) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
-          var to = { center: [lng, lat], zoom: Math.max(map.getZoom(), 14) };
+          // a neighbourhood view (about 3 km across on a phone) rather than a few streets
+          var to = { center: [lng, lat], zoom: OPEN_ZOOM };
           if (mapReady) map.easeTo(Object.assign({ duration: 700 }, to)); else map.jumpTo(to);
         } else if (t === 'mansfield:circle-clear') {
           shape = null;
