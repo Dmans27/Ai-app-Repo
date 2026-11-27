@@ -753,7 +753,7 @@ def geocode_location_name(location_name):
 
 
 
-def safe_query_all(sql, params=(), fallback=None, label="SAFE_QUERY_ALL"):
+def safe_query_all(sql, params=None, fallback=None, label="SAFE_QUERY_ALL"):
     try:
         return query_all(sql, params)
     except sqlite3.OperationalError as e:
@@ -764,7 +764,7 @@ def safe_query_all(sql, params=(), fallback=None, label="SAFE_QUERY_ALL"):
         return [] if fallback is None else fallback
 
 
-def safe_query_one(sql, params=(), fallback=None, label="SAFE_QUERY_ONE"):
+def safe_query_one(sql, params=None, fallback=None, label="SAFE_QUERY_ONE"):
     try:
         return query_one(sql, params)
     except sqlite3.OperationalError as e:
@@ -7832,6 +7832,9 @@ def login():
         session.permanent = True
         login_user(user, remember=True)
         flash("Welcome back.")
+        nxt = request.args.get("next") or request.form.get("next") or ""
+        if nxt.startswith("/") and not nxt.startswith("//") and "\\" not in nxt:
+            return redirect(nxt)   # e.g. back to the /admin page that sent them here
         if user.is_organization:
             return redirect(url_for("org_dashboard"))
         return redirect(url_for("account"))
@@ -9003,6 +9006,23 @@ register_embed_routes(app, SavedList, query_one)
 # "Add my place": your own listings from your phone (my_place.py, /admin/my-place)
 from my_place import register_my_place
 register_my_place(app, engine, cloudinary.uploader)
+
+
+# Every /admin page and action is for the owner only -- the same rule as "Add my place" (my_place.is_owner):
+# a signed-in account whose role is "admin" or whose email is in ADMIN_EMAILS. Signed out -> the login page
+# (and back here afterwards); signed in as anyone else -> 403. One check here covers every /admin route,
+# including ones added later, so none can be left open by a missing decorator.
+@app.before_request
+def _owner_only_admin():
+    path = request.path or ""
+    if path != "/admin" and not path.startswith("/admin/"):
+        return None
+    from my_place import is_owner
+    if not getattr(current_user, "is_authenticated", False):
+        return redirect(url_for("login", next=request.full_path.rstrip("?")))
+    if not is_owner():
+        abort(403)
+    return None
 
 
 if __name__ == "__main__":
