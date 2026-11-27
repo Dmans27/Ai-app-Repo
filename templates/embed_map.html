@@ -450,12 +450,16 @@
     .pulse__ring, .pulse__orb { position: absolute; inset: 14px; border-radius: 50%; pointer-events: none; box-sizing: border-box; background: none; }
     .pulse__orb { border: 3px solid #f2ead9; box-shadow: 0 0 8px 1px rgba(242, 234, 217, 0.6), 0 0 0 1px rgba(19, 26, 21, 0.35);
       animation: pulse-glow 2.6s ease-in-out infinite; }
-    .pulse__ring { border: 2px solid rgba(242, 234, 217, 0.85); animation: pulse-ring 2.6s ease-out infinite; }
-    .pulse__ring + .pulse__ring { animation-delay: 1.3s; }
-    @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.9; border-width: 2.5px; } 100% { transform: scale(2.7); opacity: 0; border-width: 1px; } }
+    /* Just the pulse now: no solid ring in the middle, three rings that grow out from the centre and fade */
+    .pulse__orb { display: none; }
+    .pulse__ring { border: 2px solid rgba(242, 234, 217, 0.9); opacity: 0; animation: pulse-ring 2.7s cubic-bezier(0.2, 0.6, 0.35, 1) infinite; }
+    .pulse__ring:nth-child(2) { animation-delay: 0.9s; }
+    .pulse__ring:nth-child(3) { animation-delay: 1.8s; }
+    @keyframes pulse-ring { 0% { transform: scale(0.25); opacity: 0; border-width: 3px; } 12% { opacity: 0.95; }
+      100% { transform: scale(2.7); opacity: 0; border-width: 1px; } }
     @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 6px 1px rgba(242, 234, 217, 0.45), 0 0 0 1px rgba(19, 26, 21, 0.35); }
                             50% { box-shadow: 0 0 14px 3px rgba(242, 234, 217, 0.8), 0 0 0 1px rgba(19, 26, 21, 0.35); } }
-    @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.3; transform: scale(1.8); } .pulse__orb { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .pulse__ring { animation: none; opacity: 0.6; transform: scale(1.3); } .pulse__orb { animation: none; } }
     body.walking .pulse, body.is-drawing .pulse, body.has-route .pulse { display: none; }   /* no pulses over a route */
     /* Where you are: a steady blue dot (pulses are the moving green ones), with a soft circle for
        how sure the phone is. Once the phone knows which way you're facing (compass, or moving), a bright
@@ -2350,7 +2354,7 @@
             var el = document.createElement('div');
             el.className = 'pulse';
             el.setAttribute('role', 'button');
-            el.innerHTML = '<span class="pulse__ring"></span><span class="pulse__ring"></span><span class="pulse__orb"></span>';
+            el.innerHTML = '<span class="pulse__ring"></span><span class="pulse__ring"></span><span class="pulse__ring"></span>';
             el.addEventListener('click', function (ev) {
               ev.stopPropagation();
               if (pulseOrigin) window.parent.postMessage({ type: 'mansfield:pulse-open', id: id }, pulseOrigin);
