@@ -77,7 +77,7 @@ from sqlalchemy import text as sql_text
 from sqlalchemy import (Column, DateTime, Integer, MetaData, PrimaryKeyConstraint,
                         String, Table, Text, delete, func, insert, select)
 
-DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com"
+DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com https://locallaneapp.com https://www.locallaneapp.com"
 
 # The embed page only ever uses one of these Mapbox styles, picked with
 # ?style=light|dark|streets|mansfield (anything else falls back to light).
