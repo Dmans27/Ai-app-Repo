@@ -452,7 +452,7 @@
       animation: pulse-glow 2.6s ease-in-out infinite; }
     /* Just the pulse now: no solid ring in the middle, three rings that grow out from the centre and fade */
     .pulse__orb { display: none; }
-    .pulse__ring { border: 2px solid rgba(242, 234, 217, 0.9); opacity: 0; animation: pulse-ring 2.7s cubic-bezier(0.2, 0.6, 0.35, 1) infinite; }
+    .pulse__ring { border: 2px solid rgba(47, 94, 58, 0.8); opacity: 0; animation: pulse-ring 2.7s cubic-bezier(0.2, 0.6, 0.35, 1) infinite; }
     .pulse__ring:nth-child(2) { animation-delay: 0.9s; }
     .pulse__ring:nth-child(3) { animation-delay: 1.8s; }
     @keyframes pulse-ring { 0% { transform: scale(0.25); opacity: 0; border-width: 3px; } 12% { opacity: 0.95; }
@@ -1563,12 +1563,12 @@
         // Layer 1: a soft dark band under the line (the "casing")
         map.addLayer({ id: 'mansfield-route-band', type: 'line', source: 'mansfield-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#131a15', 'line-opacity': 0.6, 'line-width': 9 } });   // dark outline so the green stands out on light streets too
+        paint: { 'line-color': '#c4e0ae', 'line-opacity': 0.9, 'line-width': 10 } });   // soft matcha glow around the route on the light map
 
         // Layer 2: the bright green route line on top
         map.addLayer({ id: 'mansfield-route-dots', type: 'line', source: 'mansfield-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#9cc77f', 'line-opacity': 1, 'line-width': 5 } });   // the walking route in the app's mint
+        paint: { 'line-color': '#2f5e3a', 'line-opacity': 1, 'line-width': 5 } });   // the walking route in forest green (reads on the light map)
       }
 
       // The whole walk (every stop) plus the area the reader drew, framed clear
@@ -2250,7 +2250,7 @@
         // Just the outline: the inside stays clear so the streets and places show through.
         map.addLayer({ id: 'mansfield-area-line', type: 'line', source: 'mansfield-area',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#9cc77f', 'line-width': 4, 'line-emissive-strength': 1 } });
+          paint: { 'line-color': '#2f5e3a', 'line-width': 4, 'line-emissive-strength': 1 } });
         syncAreaLine();
       }
       // ---- Snow over chosen areas (SNOW_ZONES in embed_maps.py) ----------------
@@ -2264,9 +2264,9 @@
           map.setSnow({
             density: ['interpolate', ['linear'], ['zoom'], 11, 0, 13, 0.55 * v, 16, 0.85 * v],
             intensity: 1, 'center-thinning': 0.1, direction: [0, 50], opacity: v,
-            color: '#ffffff', 'flake-size': 0.71,
+            color: '#9db4c0', 'flake-size': 0.71,   // soft grey-blue: white flakes vanish on the light map
             vignette: ['interpolate', ['linear'], ['zoom'], 11, 0, 13, 0.3 * v],
-            'vignette-color': '#ffffff'
+            'vignette-color': '#e6ecee'
           });
         } catch (e) { SNOW = []; }      // an older map that can't snow: leave it be
       }
@@ -2324,7 +2324,7 @@
           if (src) { src.setData(data); return; }
           map.addSource('mansfield-build', { type: 'geojson', data: data });
           map.addLayer({ id: 'mansfield-build-line', type: 'line', source: 'mansfield-build', layout: { 'line-cap': 'round', 'line-join': 'round' },
-            paint: { 'line-color': '#9cc77f', 'line-width': 3, 'line-dasharray': [1.2, 1.6], 'line-emissive-strength': 1 } });
+            paint: { 'line-color': '#2f5e3a', 'line-width': 3, 'line-dasharray': [1.2, 1.6], 'line-emissive-strength': 1 } });
         }
         if (mapReady) line(); else map.once('load', line);
         if (pins.length === 1) map.easeTo({ center: [pins[0].lng, pins[0].lat], zoom: Math.max(map.getZoom(), 15), duration: 700 });
