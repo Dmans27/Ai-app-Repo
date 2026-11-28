@@ -366,6 +366,7 @@
     /* "Start walk": follow the walker along the route (see "Walk mode" in the script). */
     .walkbar, .walkarrive, .walkrecenter { display: none; }
     body.walking .routepill, body.walking .cards { display: none !important; }
+    body.no-cards .cards { display: none !important; }   /* LocalLane: the map stays clear; stops live in the page's list */
     /* Walking directions: a panel on the right with the turn-by-turn list. "Put away" slides it
        off to the side, leaving a slim tab that still shows the next turn; tap or pull the tab to bring it back. */
     body.walking .walkbar { display: block; }
@@ -525,6 +526,8 @@
       // the "Back to story" button the page puts along the bottom.
       var STORY_MODE = /(^|[?&])mode=story(&|$)/.test(location.search);
       if (STORY_MODE) document.body.classList.add('story-mode');
+      // LocalLane's walk map (style=mansfield): no photo cards along the bottom -- the page's stop list has the details
+      if (/(^|[?&])style=mansfield(&|$)/.test(location.search)) document.body.classList.add('no-cards');
       (function () {   // the story page's status-bar height, so the filter chips sit below it
         var m = /(?:^|[?&])safe=(\d{1,3})(?:&|$)/.exec(location.search);
         var px = m ? Math.min(+m[1], 80) : (STORY_MODE ? 44 : 0);   // no value passed: assume a notch rather than risk a cut-off bar
@@ -1193,6 +1196,7 @@
       // would cover the pin card, so the card is centred in the part of the map
       // above that row. Returns how many pixels the row takes up (0 if none).
       function bottomInset() {
+        if (document.body.classList.contains('no-cards')) return 96;   // LocalLane: keep the route clear of the page's ask bar at the bottom
         if (!cardsEl.classList.contains('is-visible')) return 0;
         if (getComputedStyle(cardsEl).flexDirection !== 'row') return 0;   // desktop: the list sits at the side
         var c = cardsEl.getBoundingClientRect(), m = mapEl.getBoundingClientRect();
@@ -1200,7 +1204,7 @@
       }
 
       function listInset() {   // wide screens: how far the card list down the left reaches into the map
-        if (!cardsEl.classList.contains('is-visible') || getComputedStyle(cardsEl).flexDirection !== 'column') return 0;
+        if (document.body.classList.contains('no-cards') || !cardsEl.classList.contains('is-visible') || getComputedStyle(cardsEl).flexDirection !== 'column') return 0;
         return Math.max(0, Math.round(cardsEl.getBoundingClientRect().right - mapEl.getBoundingClientRect().left));
       }
 
@@ -1365,7 +1369,7 @@
         if (!refit || !shown.length) { updateCards(); return; }
         var phone = window.innerWidth <= 640;
         var pad = { top: 56, bottom: 56, left: 56, right: 56 };
-        if (phone) { pad.top += 40; pad.bottom += 100; }               // the bar on top, the card row along the bottom
+        if (phone) { pad.top += 40; pad.bottom += document.body.classList.contains('no-cards') ? 30 : 100; }   // the bar on top, the card row along the bottom
         else { pad.bottom += 40; if (mapEl.clientWidth > 700) pad.left += 240; }   // the bar along the bottom, the card list on the left
         if (shown.length === 1) {
           map.flyTo({ center: [shown[0].lng, shown[0].lat], zoom: Math.max(map.getZoom(), 14), duration: 700, essential: true });
