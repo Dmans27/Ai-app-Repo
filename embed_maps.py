@@ -83,7 +83,7 @@ DEFAULT_ALLOWED_ORIGINS = "https://the-sod-father.onrender.com https://locallane
 # ?style=light|dark|streets|mansfield (anything else falls back to light).
 # "mansfield" is Danny's own walking style from Mapbox Studio, used for walking
 # routes; MAPBOX_WALK_STYLE in Render can point it at a different published style.
-_DEFAULT_WALK_STYLE = "mapbox://styles/dmans27/cmww22vr500nz01r8a43m3z2z"
+_DEFAULT_WALK_STYLE = "mapbox://styles/dmans27/cmk8opaya000g01s05w2006oc"
 _walk_style = (os.environ.get("MAPBOX_WALK_STYLE") or "").strip()
 # Studio's Share panel also offers https:// links (".../styles/v1/<user>/<style id>.html?..." or
 # ".../styles/v1/<user>/<style id>"): accept those too, as the mapbox://styles/<user>/<style id> they point at.
