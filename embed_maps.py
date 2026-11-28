@@ -1459,7 +1459,8 @@ def register_embed_routes(app, SavedList, query_one):
     @app.get("/embed/places-by-slug")
     def embed_places_by_slug():
         """Where these listings are, in this order: ?s=slug,slug (the media site checks a walk a
-        reader posts to the community feed). Walk key only; unknown or unpublished slugs are left out."""
+        reader posts to the community feed, or saves a walk's stop to their places). Walk key only; unknown or
+        unpublished slugs are left out. `id` is the listing id (the media site saves it as "<host>:L<id>", like a map pin)."""
         if not _walk_key_ok():
             return jsonify(error="forbidden"), 403
         slugs = [s for s in str(request.args.get("s") or "").split(",") if _SLUG.match(s)][:WALK_MAX_STOPS]
@@ -1469,12 +1470,12 @@ def register_embed_routes(app, SavedList, query_one):
                 continue
             seen.add(slug)
             try:
-                r = query_one("SELECT slug, name, category, address, city, latitude, longitude FROM listings "
+                r = query_one("SELECT id, slug, name, category, address, city, latitude, longitude FROM listings "
                               "WHERE slug = :slug AND status = 'published' LIMIT 1", {"slug": slug})
             except Exception:
                 r = None
             if r and r.get("latitude") is not None and r.get("longitude") is not None:
-                out.append({"slug": r["slug"], "name": r.get("name") or "", "category": r.get("category") or "",
+                out.append({"id": r.get("id"), "slug": r["slug"], "name": r.get("name") or "", "category": r.get("category") or "",
                             "address": r.get("address") or "", "city": r.get("city") or "",
                             "lat": float(r["latitude"]), "lng": float(r["longitude"])})
         reply = jsonify(places=out)
